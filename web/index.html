@@ -746,6 +746,42 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
 .srv-spd-line { font-size: .76rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 560px) { .src-picker { grid-template-columns: 1fr; } }
 
+
+/* Prominent Top-Left Update Available Pill */
+.top-upd-btn {
+  position: fixed; top: 14px; left: 16px; z-index: 1005;
+  display: none; align-items: center; gap: 10px;
+  padding: 10px 20px; border-radius: var(--rn, 999px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 26%, var(--surface)), color-mix(in srgb, var(--yellow) 22%, var(--surface)));
+  border: 1.5px solid color-mix(in srgb, var(--accent) 70%, var(--yellow));
+  color: var(--text); font-family: inherit; font-size: .86rem; font-weight: 800;
+  cursor: pointer; backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 10px 28px -6px var(--shadow), 0 0 22px var(--accent-glow);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+  animation: updGlow 2.4s ease-in-out infinite;
+}
+.top-upd-btn.show { display: inline-flex; }
+.top-upd-btn:hover { transform: translateY(-2px) scale(1.02); filter: brightness(1.08); }
+.top-upd-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--yellow);
+  box-shadow: 0 0 10px var(--yellow); flex-shrink: 0;
+}
+.top-upd-ver {
+  font-family: var(--ff-m); font-size: .74rem; padding: 2px 8px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+}
+@keyframes updGlow {
+  0%, 100% { box-shadow: 0 10px 28px -6px var(--shadow), 0 0 16px var(--accent-glow); }
+  50% { box-shadow: 0 10px 32px -4px var(--shadow), 0 0 28px color-mix(in srgb, var(--yellow) 55%, var(--accent)); }
+}
+body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left: auto; right: 16px; }
+@media (max-width: 860px) {
+  .top-upd-btn {
+    top: auto; bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    left: 12px; right: 12px; justify-content: center; padding: 10px 14px; font-size: .82rem;
+  }
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -912,7 +948,6 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
             <button class="btn btn-sky btn-sm" id="btn-loc-speed" onclick="runLocalSpeedtest()">Speedtest</button>
             <button class="btn btn-warn btn-sm" onclick="openMasterTweakModal()">Tweak</button>
             <button class="btn btn-ghost btn-sm" id="btn-logs" data-i18n="btn_logs">Live logs</button>
-            <button class="btn btn-ghost btn-sm" id="loc-upd-btn" data-go="update" data-i18n="btn_update_center">Update center</button>
           </div>
         </div>
         <div class="local-grid">
@@ -2576,7 +2611,15 @@ async function checkUpdates(notify) {
   };
   $('upd-gh').innerHTML = fmt(c.github); $('upd-ir').innerHTML = fmt(c.mirror);
   updAvail = !!c.update_available; renderNav();
-  $('loc-upd-btn').textContent = updAvail ? t('upd_btn_new') : t('btn_update_center');
+  const topBtn = $('top-upd-btn');
+  if (topBtn) {
+    topBtn.classList.toggle('show', updAvail);
+    const latestVer = (c.github && c.github.available && c.github.version) || (c.mirror && c.mirror.available && c.mirror.version) || '';
+    const vEl = $('top-upd-ver');
+    if (vEl) { vEl.textContent = latestVer ? ('v' + latestVer) : ''; vEl.style.display = latestVer ? 'inline-block' : 'none'; }
+    const tEl = $('top-upd-txt');
+    if (tEl) tEl.textContent = t('upd_btn_new');
+  }
   if (notify) toast(updAvail ? t('upd_notify_new') : t('upd_notify_ok'));
 }
 function showUpdateProgress(pct, stage, logs, state) {
@@ -3001,8 +3044,15 @@ function startTimers() {
   pollLocalStats(); localTimer = setInterval(pollLocalStats, 2000);
   setTimeout(backgroundProbeServers, 1500);
   srvTimer = setInterval(backgroundProbeServers, 4000);
+  setTimeout(() => checkUpdates(false), 2500);
+  updAutoTimer = setInterval(() => checkUpdates(false), 300000);
 }
-function stopTimers() { if (localTimer) clearInterval(localTimer); if (srvTimer) clearInterval(srvTimer); localTimer = srvTimer = null; }
+function stopTimers() {
+  if (localTimer) clearInterval(localTimer);
+  if (srvTimer) clearInterval(srvTimer);
+  if (updAutoTimer) clearInterval(updAutoTimer);
+  localTimer = srvTimer = updAutoTimer = null;
+}
 
 /* ═══════════════ auth & boot ═══════════════ */
 function enterApp() {
