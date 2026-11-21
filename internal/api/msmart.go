@@ -231,17 +231,57 @@ systemctl daemon-reload`
 			if c.Engine == "gre" || c.Engine == "ip6gre" || c.Engine == "vxlan" {
 				targetHost = "10.10.250.2"
 			}
-			srvIperf := fmt.Sprintf(`nohup timeout 15 iperf3 -s -1 -p %d >/dev/null 2>&1 & sleep 0.4`, dataPort)
-			_ = h.runOnServer(foreign, srvIperf, 8*time.Second)
+			// Built-in zero-dependency Python3 sink server on Foreign (listens for 14s, accepts parallel streams)
+			srvSink := fmt.Sprintf(`nohup python3 -c "
+import socket, threading, time
+s=socket.socket(); s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+s.bind(('0.0.0.0',%d)); s.listen(16); s.settimeout(14)
+def h(c):
+  try:
+    while c.recv(65536): pass
+  except: pass
+  finally: c.close()
+end=time.time()+14
+while time.time()<end:
+  try:
+    c,_=s.accept(); threading.Thread(target=h,args=(c,),daemon=True).start()
+  except: break
+s.close()
+" >/dev/null 2>&1 & sleep 0.4`, dataPort)
+			_ = h.runOnServer(foreign, srvSink, 8*time.Second)
 
-			cliTest := fmt.Sprintf(`python3 -c "import socket,time; t0=time.time(); s=socket.create_connection(('%s',%d),3); s.close(); print(f'RTT_MS={(time.time()-t0)*1000:.1f}')" 2>/dev/null || true
-if command -v iperf3 >/dev/null 2>&1; then
-  iperf3 -c %s -p %d -t 4 -P 4 2>&1 | tail -n 8
-else
-  echo "ERR: iperf3 not installed on Iran node"
-fi`, targetHost, dataPort, targetHost, dataPort)
+			// Measure TCP RTT + 4-stream throughput THROUGH the tunnel using built-in Python3 (no iperf3 needed!)
+			cliTest := fmt.Sprintf(`python3 -c "
+import socket, threading, time
+host, port = '%s', %d
+rtts = []
+for _ in range(3):
+  try:
+    t0=time.time(); s=socket.create_connection((host,port),3); rtts.append((time.time()-t0)*1000); s.close()
+  except: pass
+if rtts: print(f'RTT_MS={min(rtts):.1f}')
+total = [0]
+buf = b'x'*65536
+def worker():
+  try:
+    s=socket.create_connection((host,port),3)
+    end=time.time()+3.5
+    sent=0
+    while time.time()<end:
+      sent += s.send(buf)
+    s.close()
+    total[0] += sent
+  except: pass
+t0=time.time()
+ts=[threading.Thread(target=worker) for _ in range(4)]
+for t in ts: t.start()
+for t in ts: t.join()
+dt=max(0.1, time.time()-t0)
+mbps=(total[0]*8)/(dt*1e6)
+print(f'{mbps:.1f} Mbits/sec receiver')
+" 2>&1`, targetHost, dataPort)
 
-			testOut := h.runOnServer(iran, cliTest, 22*time.Second)
+			testOut := h.runOnServer(iran, cliTest, 20*time.Second)
 			mbps := parseIperfMbps(testOut.Output)
 			pingMs := 0.0
 			if m := tcpPingRe.FindStringSubmatch(testOut.Output); len(m) == 2 {

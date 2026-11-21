@@ -211,7 +211,7 @@ systemctl daemon-reload
 systemctl enable %s.service
 systemctl restart %s.service
 sleep 1
-systemctl is-active %s.service
+systemctl is-active %s.service || true
 `, cfgDir, cfgDir, unit, toml, unit, t.ID, t.Name, cfgDir, unit, unit, unit, unit)
 		}
 		return makeBH(iranToml), makeBH(forToml)
@@ -251,7 +251,7 @@ systemctl daemon-reload
 systemctl enable %s.service
 systemctl restart %s.service
 sleep 1
-systemctl is-active %s.service
+systemctl is-active %s.service || true
 `, cfgDir, cfgDir, unit, toml, unit, t.ID, t.Name, cfgDir, unit, unit, unit, unit)
 		}
 		return makeRH(iranToml), makeRH(forToml)
@@ -278,7 +278,7 @@ RestartSec=2
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && systemctl is-active %s.service
+systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && (systemctl is-active %s.service || true)
 `, unit, t.ID, t.Name, t.TunnelPort, t.Token, strings.Join(fwdFlags, " "), unit, unit, unit)
 
 		forCmd := fmt.Sprintf(`set -e
@@ -298,7 +298,7 @@ RestartSec=2
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && systemctl is-active %s.service
+systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && (systemctl is-active %s.service || true)
 `, unit, t.ID, t.Name, iran.Host, t.TunnelPort, t.Token, unit, unit, unit)
 		return iranCmd, forCmd
 

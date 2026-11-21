@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+- Fixed MSmart Benchmark `0 Mbps` failure when `iperf3` is missing: replaced external `iperf3` dependency with a built-in zero-dependency Python3 multi-stream TCP throughput & RTT benchmarker (works out-of-the-box on every server without needing `iperf3`).
+- Fixed `Backhaul KCP` / `Rathole` false-negative deploy errors caused by `systemctl is-active` returning `activating` (exit code 3) under `set -e`.
+- Fixed `iperf3` 1-click install in Setup Studio to verify the binary actually runs and cleanly fall back to `apt-get` / `dnf` if missing from the bundle.
+
 ## 1.1.2
 - Fixed `iperf3` missing from the static bundle by compiling a guaranteed static `iperf3` binary directly inside `.github/workflows/bundle.yml` (plus smart fallback in `setup.go`).
 - Made every status pill inside Server Setup Studio (`iperf3`, `Speedtest`, `jq`, `Backhaul`, `Rathole`, `Paqet`, `Realm`, `Kernel GRE`, `Peer Agent`) directly clickable to install/reinstall that specific component.
