@@ -966,39 +966,30 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
       <div class="srv-list" id="servers-grid"></div>
     </section>
 
-    <!-- TUNNELS & CORE -->
+    <!-- TUNNELS (Phase 2 Unified Tunnel Manager) -->
     <section id="tab-tunnels" class="page">
-      <div class="toolbar"><h3 data-i18n="nav_tunnels">Tunnels (Phase 2)</h3></div>
-      <div class="stats-row" style="margin-bottom:18px;">
-        <div class="card"><h4 style="color:var(--accent); margin-bottom:6px;">Backhaul Core (Anti-DPI)</h4><p class="hint" style="margin:0;">TLS / XHTTPS / WSS / KCPMUX orchestration across Iran &amp; Foreign nodes.</p></div>
-        <div class="card"><h4 style="color:var(--yellow); margin-bottom:6px;">MSmart Auto-Failover</h4><p class="hint" style="margin:0;">Automated multi-path benchmarking &amp; failover control from central panel.</p></div>
-        <div class="card"><h4 style="color:var(--purple); margin-bottom:6px;">Kernel Fabrics (GRE / VXLAN)</h4><p class="hint" style="margin:0;">L2/L3 mesh tunnels, vIP pools, and port forwarding matrix.</p></div>
-      </div>
-      <div class="card sp">
-        <h3 style="color:var(--accent); margin-bottom:8px;" data-i18n="core_title">Node Service & Command Control</h3>
-        <p class="hint" data-i18n="core_note">Manage tunnel services or run diagnostics on any connected node via Peer Agent v2 or SSH.</p>
-        <div class="field"><label data-i18n="lbl_pick_server">Server</label><select id="core-srv" class="sel-wide"></select></div>
+      <div class="toolbar">
+        <h3>Tunnels (Iran ⇄ Foreign)</h3>
         <div class="flexw">
-          <button class="btn btn-ghost" data-svc="status" data-i18n="act_status">Status</button>
-          <button class="btn btn-ghost" data-svc="logs" data-i18n="act_logs">Logs</button>
-          <button class="btn btn-sky" data-svc="start" data-i18n="act_start">Start</button>
-          <button class="btn btn-warn" data-svc="restart" data-i18n="act_restart">Restart</button>
-          <button class="btn btn-danger" data-svc="stop" data-i18n="act_stop">Stop</button>
-          <button class="btn btn-ghost" id="btn-core-install" data-i18n="act_reinstall">Install / update core</button>
+          <button class="btn btn-ghost" onclick="openLinkTestModal()">Link Test (iperf3)</button>
+          <button class="btn btn-ghost" onclick="loadTunnels()">Refresh</button>
+          <button class="btn btn-sky" onclick="openNewTunnelModal()">+ New Tunnel</button>
         </div>
       </div>
-      <div class="card sp">
-        <h4 style="margin-bottom:10px;" data-i18n="run_cmd">Run a command</h4>
-        <div class="warnbox" data-i18n="exec_warn">Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.</div>
-        <div class="flexw" style="flex-wrap:nowrap; margin-bottom:10px;">
-          <input id="core-cmd" class="mono" style="flex:1; padding:10px 13px; border-radius:min(var(--rb),14px); border:1px solid var(--border); background:color-mix(in srgb, var(--bg) 60%, transparent); color:var(--text); font-size:.85rem; outline:none; min-width:0;" data-i18n-ph="ph_cmd" placeholder="e.g. df -h" spellcheck="false">
-          <button class="btn btn-sky" id="btn-core-run" data-i18n="btn_run">Run</button>
-        </div>
-        <div class="chips" id="core-presets"></div>
+
+      <div id="tunnels-list" class="srv-list" style="margin-bottom:18px;"></div>
+      <div id="tunnels-empty" class="card" style="text-align:center; padding:34px 20px; display:none;">
+        <h4 style="color:var(--accent); margin-bottom:6px;">No Tunnels Configured Yet</h4>
+        <p class="hint" style="margin-bottom:14px;">Deploy a 2-sided Backhaul, Rathole, Paqet, or Kernel (GRE / IP6GRE / VXLAN) tunnel between any Iran &amp; Foreign server in one click.</p>
+        <button class="btn btn-sky" onclick="openNewTunnelModal()">+ Create First Tunnel</button>
       </div>
-      <div class="card">
-        <div class="toolbar" style="margin-bottom:10px;"><h4 data-i18n="output">Output</h4><button class="btn btn-ghost btn-sm" id="btn-core-clear" data-i18n="btn_clear">Clear</button></div>
-        <pre class="term" id="core-out" style="min-height:220px; max-height:420px;">—</pre>
+
+      <div class="card" id="tun-term-card" style="display:none; margin-top:14px;">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h4 id="tun-term-title" style="color:var(--accent);">Tunnel Output</h4>
+          <button class="btn btn-ghost btn-sm" onclick="$('tun-term-card').style.display='none'">Hide</button>
+        </div>
+        <pre class="term" id="tun-term" style="height:220px;"></pre>
       </div>
     </section>
 
@@ -1136,10 +1127,11 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
               <div class="field">
                 <label>Package Target</label>
                 <select id="cache-target">
-                  <option value="backhaul">backhaul (Tunnel Engine)</option>
-                  <option value="rathole">rathole (Tunnel Engine)</option>
-                  <option value="paqet">paqet (Tunnel Engine)</option>
-                  <option value="gost">gost (Tunnel Engine)</option>
+                  <option value="bundle">mcontrol-bundle-linux-amd64.tar.gz (Full Static Bundle)</option>
+                  <option value="bh">bh (Backhaul Binary)</option>
+                  <option value="rathole">rathole (Rathole Binary)</option>
+                  <option value="paqet">paqet (Paqet Binary)</option>
+                  <option value="realm">realm (Realm Binary)</option>
                   
                 </select>
               </div>
@@ -1966,6 +1958,7 @@ function switchTab(name) {
   if (name === 'themes') { openThemesQuick(); return; }
   if (name === 'tunnels') fillCoreSelect();
   if (name === 'update') checkUpdates(false);
+  if (name === 'tunnels') { loadTunnels(); loadProfiles(); }
   if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
@@ -2203,6 +2196,153 @@ async function runServerSpeedtest(id) {
 }
 
 
+
+
+let TUNNELS = [];
+
+async function loadTunnels() {
+  const r = await api('api/tunnels');
+  if (!r.ok) return;
+  TUNNELS = r.tunnels || [];
+  const box = $('tunnels-list'), emp = $('tunnels-empty');
+  if (!box) return;
+  if (!TUNNELS.length) {
+    box.innerHTML = '';
+    if (emp) emp.style.display = 'block';
+    return;
+  }
+  if (emp) emp.style.display = 'none';
+  box.innerHTML = TUNNELS.map(tu => {
+    const ok = tu.status === 'active';
+    const bCls = ok ? 'b-iran' : (tu.status === 'error' ? 'b-miss' : 'b-foreign');
+    return `<div class="srv-row-wrap role-${ok ? 'iran' : 'foreign'}">
+      <div class="srv-row-head" style="cursor:default;">
+        <div style="min-width:0;">
+          <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+            <span class="dot ${ok ? 'online' : 'offline'}"></span>
+            <strong style="font-size:.96rem;">${esc(tu.name)}</strong>
+            <span class="badge b-ok mono">${esc(tu.engine.toUpperCase())}${tu.transport && tu.engine === 'backhaul' ? ':' + esc(tu.transport) : ''}</span>
+            <span class="badge ${bCls}">${esc(tu.status.toUpperCase())}</span>
+          </div>
+          <div style="font-size:.78rem; color:var(--muted); margin-top:6px;" class="mono">
+            ${esc(tu.iran_name)} (${esc(tu.iran_host)}) ⇄ ${esc(tu.foreign_name)} (${esc(tu.foreign_host)}) • :${tu.tunnel_port}
+          </div>
+          <div style="font-size:.75rem; color:var(--accent); margin-top:4px;" class="mono">
+            Ports: ${esc(tu.ports)}${tu.subnet ? ' • Subnet: ' + esc(tu.subnet) + '.0/30' : ''}
+          </div>
+          ${tu.last_error ? `<div style="font-size:.74rem; color:var(--red); margin-top:4px;">${esc(tu.last_error)}</div>` : ''}
+        </div>
+        <div style="grid-column: -2 / -1; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+          <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'status')">Status</button>
+          <button class="btn btn-sky btn-sm" onclick="tunnelAction(${tu.id},'restart')">Restart</button>
+          <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'${ok ? 'stop' : 'start'}')">${ok ? 'Stop' : 'Start'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'logs')">Logs</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTunnel(${tu.id})">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function populateServerSelects(iranId, forId) {
+  const irOpts = SERVERS.map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)}) [${esc(s.role)}]</option>`).join('');
+  if ($(iranId)) $(iranId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
+  if ($(forId)) $(forId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
+  const firstIran = SERVERS.find(s => s.role === 'iran');
+  const firstFor = SERVERS.find(s => s.role === 'foreign');
+  if (firstIran && $(iranId)) $(iranId).value = firstIran.id;
+  if (firstFor && $(forId)) $(forId).value = firstFor.id;
+}
+
+function onTunnelEngineChange() {
+  const eng = $('t-engine').value;
+  $('t-trans-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
+}
+
+function applyPortProfileToTunnel() {
+  const v = $('t-port-prof').value;
+  if (v) $('t-ports').value = v;
+}
+
+function openNewTunnelModal() {
+  populateServerSelects('t-iran', 't-foreign');
+  const pp = $('t-port-prof');
+  if (pp) {
+    pp.innerHTML = '<option value="">— Custom Ports —</option>' +
+      PORT_PROFILES.map(p => `<option value="${esc(p.ports)}">${esc(p.name)} (${esc(p.ports)})</option>`).join('');
+  }
+  $('t-name').value = '';
+  $('t-token').value = '';
+  onTunnelEngineChange();
+  $('tun-modal').classList.add('active');
+}
+
+async function deployTunnel() {
+  const btn = $('btn-tun-deploy'); btn.disabled = true; btn.textContent = 'Deploying...';
+  try {
+    const payload = {
+      name: $('t-name').value.trim(),
+      engine: $('t-engine').value,
+      transport: $('t-trans').value,
+      iran_server_id: parseInt($('t-iran').value || '0', 10),
+      foreign_server_id: parseInt($('t-foreign').value || '0', 10),
+      tunnel_port: parseInt($('t-port').value || '3080', 10),
+      token: $('t-token').value.trim(),
+      ports: $('t-ports').value.trim()
+    };
+    const r = await api('api/tunnels', 'POST', payload);
+    $('tun-term-card').style.display = 'block';
+    $('tun-term-title').textContent = 'Deploy Result — ' + payload.name;
+    $('tun-term').textContent = r.output || (r.ok ? 'Deployed!' : r.error);
+    if (r.ok) {
+      toast('Tunnel deployed on both servers!');
+      closeModal('tun-modal');
+      loadTunnels();
+    } else {
+      toast(r.error || 'Deploy failed', true);
+      loadTunnels();
+    }
+  } finally {
+    btn.disabled = false; btn.textContent = 'Deploy to Both Servers';
+  }
+}
+
+async function tunnelAction(id, action) {
+  toast('Running ' + action + ' on both nodes...');
+  const r = await api('api/tunnels/' + id + '/action', 'POST', { action });
+  $('tun-term-card').style.display = 'block';
+  $('tun-term-title').textContent = 'Tunnel #' + id + ' — ' + action.toUpperCase();
+  $('tun-term').textContent = r.output || r.error || 'Done.';
+  loadTunnels();
+}
+
+async function deleteTunnel(id) {
+  if (!confirm('Stop and completely remove this tunnel from BOTH Iran & Foreign servers?')) return;
+  const r = await api('api/tunnels/' + id, 'DELETE');
+  if (r.ok) { toast('Tunnel removed from both servers.'); loadTunnels(); }
+  else toast(r.error || 'Delete failed', true);
+}
+
+function openLinkTestModal() {
+  populateServerSelects('lt-iran', 'lt-foreign');
+  $('lt-out').textContent = 'Select two servers and click Run to measure real latency and throughput between them.';
+  $('linktest-modal').classList.add('active');
+}
+
+async function runLinkTest() {
+  const btn = $('btn-lt-run'); btn.disabled = true; btn.textContent = 'Testing (8s)...';
+  $('lt-out').textContent = 'Starting iperf3 listener on Target & running Ping + Bandwidth test from Source...';
+  try {
+    const r = await api('api/tunnels/linktest', 'POST', {
+      iran_server_id: parseInt($('lt-iran').value || '0', 10),
+      foreign_server_id: parseInt($('lt-foreign').value || '0', 10),
+      port: 5201
+    });
+    $('lt-out').textContent = r.output || r.error || 'No output.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Run Ping & iperf3 Test';
+  }
+}
 
 let setupTargetId = 0, setupSource = 'github';
 

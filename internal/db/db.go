@@ -72,6 +72,27 @@ type PortProfile struct {
 	CreatedAt int64  `json:"created_at"`
 }
 
+type Tunnel struct {
+	ID              int64  `json:"id"`
+	Name            string `json:"name"`
+	Engine          string `json:"engine"`
+	Transport       string `json:"transport"`
+	IranServerID    int64  `json:"iran_server_id"`
+	ForeignServerID int64  `json:"foreign_server_id"`
+	IranName        string `json:"iran_name"`
+	IranHost        string `json:"iran_host"`
+	ForeignName     string `json:"foreign_name"`
+	ForeignHost     string `json:"foreign_host"`
+	TunnelPort      int    `json:"tunnel_port"`
+	Token           string `json:"token"`
+	Ports           string `json:"ports"`
+	Forwarder       string `json:"forwarder"`
+	Subnet          string `json:"subnet"`
+	Status          string `json:"status"`
+	LastError       string `json:"last_error"`
+	CreatedAt       int64  `json:"created_at"`
+}
+
 type Settings struct {
 	GitHubRepoURL   string `json:"github_repo_url"`
 	IranMirrorURL   string `json:"iran_mirror_url"`
@@ -201,6 +222,22 @@ func (s *Store) migrate() error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
 		ports TEXT NOT NULL DEFAULT '',
+		created_at INTEGER NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS tunnels (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL,
+		engine TEXT NOT NULL,
+		transport TEXT NOT NULL DEFAULT 'tcp',
+		iran_server_id INTEGER NOT NULL,
+		foreign_server_id INTEGER NOT NULL,
+		tunnel_port INTEGER NOT NULL DEFAULT 3080,
+		token TEXT NOT NULL DEFAULT '',
+		ports TEXT NOT NULL DEFAULT '',
+		forwarder TEXT NOT NULL DEFAULT 'internal',
+		subnet TEXT NOT NULL DEFAULT '',
+		status TEXT NOT NULL DEFAULT 'active',
+		last_error TEXT NOT NULL DEFAULT '',
 		created_at INTEGER NOT NULL
 	);
 	`
@@ -850,4 +887,74 @@ func (s *Store) UpdatePortProfile(id int64, name, ports string) error {
 
 func (s *Store) SetPanelName(name string) error {
 	return s.setSetting("panel_name", strings.TrimSpace(name))
+}
+
+func (s *Store) ListTunnels() ([]Tunnel, error) {
+	rows, err := s.db.Query(`
+		SELECT t.id, t.name, t.engine, t.transport, t.iran_server_id, t.foreign_server_id,
+			COALESCE(si.name, 'Deleted'), COALESCE(si.host, ''),
+			COALESCE(sf.name, 'Deleted'), COALESCE(sf.host, ''),
+			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.status, t.last_error, t.created_at
+		FROM tunnels t
+		LEFT JOIN servers si ON si.id = t.iran_server_id
+		LEFT JOIN servers sf ON sf.id = t.foreign_server_id
+		ORDER BY t.id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []Tunnel
+	for rows.Next() {
+		var t Tunnel
+		if err := rows.Scan(&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
+			&t.IranName, &t.IranHost, &t.ForeignName, &t.ForeignHost,
+			&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.Status, &t.LastError, &t.CreatedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, t)
+	}
+	if list == nil {
+		list = []Tunnel{}
+	}
+	return list, nil
+}
+
+func (s *Store) GetTunnel(id int64) (*Tunnel, error) {
+	var t Tunnel
+	err := s.db.QueryRow(`
+		SELECT t.id, t.name, t.engine, t.transport, t.iran_server_id, t.foreign_server_id,
+			COALESCE(si.name, 'Deleted'), COALESCE(si.host, ''),
+			COALESCE(sf.name, 'Deleted'), COALESCE(sf.host, ''),
+			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.status, t.last_error, t.created_at
+		FROM tunnels t
+		LEFT JOIN servers si ON si.id = t.iran_server_id
+		LEFT JOIN servers sf ON sf.id = t.foreign_server_id
+		WHERE t.id = ?`, id).Scan(&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
+		&t.IranName, &t.IranHost, &t.ForeignName, &t.ForeignHost,
+		&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.Status, &t.LastError, &t.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (s *Store) AddTunnel(t *Tunnel) (int64, error) {
+	res, err := s.db.Exec(`
+		INSERT INTO tunnels (name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, token, ports, forwarder, subnet, status, last_error, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.Name, t.Engine, t.Transport, t.IranServerID, t.ForeignServerID, t.TunnelPort, t.Token, t.Ports, t.Forwarder, t.Subnet, t.Status, t.LastError, time.Now().Unix())
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (s *Store) UpdateTunnelStatus(id int64, status, lastErr string) error {
+	_, err := s.db.Exec("UPDATE tunnels SET status=?, last_error=? WHERE id=?", status, lastErr, id)
+	return err
+}
+
+func (s *Store) DeleteTunnel(id int64) error {
+	_, err := s.db.Exec("DELETE FROM tunnels WHERE id=?", id)
+	return err
 }
