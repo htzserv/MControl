@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+- Fixed `iperf3` missing from the static bundle by compiling a guaranteed static `iperf3` binary directly inside `.github/workflows/bundle.yml` (plus smart fallback in `setup.go`).
+- Made every status pill inside Server Setup Studio (`iperf3`, `Speedtest`, `jq`, `Backhaul`, `Rathole`, `Paqet`, `Realm`, `Kernel GRE`, `Peer Agent`) directly clickable to install/reinstall that specific component.
+- Hardened Master Panel live hardware telemetry (`pollLocalStats`) with null-safe DOM updates, error isolation, and immediate refresh on tab switch.
+- Added **MSmart Lab (Real In-Tunnel Benchmark & Auto-Ranker)** in the `Tunnels` tab: sequentially deploys isolated temporary tunnels between Iran & Foreign nodes, measures real in-tunnel `iperf3` throughput and latency, cleans up automatically, ranks candidates by `Balanced` / `Max Speed` / `Low Ping` profiles, and provides 1-click **Deploy Winner**.
+
 ## 1.1.1
 - Fixed blank/white page crash caused by legacy `#btn-core-*` / `#core-cmd` / `#core-srv` DOM listeners after replacing the Phase 2 Tunnels tab.
 
