@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.8
+- Upgraded automatic background update checker to run immediately on load, every **60 seconds** (down from 5 minutes), and automatically whenever you switch back to the panel browser tab (`visibilitychange`).
+- Shows an automatic toast alert and lights up the top-left round Update button the moment a new release is detected—no need to open the Update tab manually.
+
+## 1.1.7
+- Restored the **Top-Left Round Update Indicator Button (`#top-upd-btn`)** on the main screen with glowing animation and version badge whenever a new release is available.
+- Added a **Floating Round `+` Button (FAB)** at the bottom corner of the `Tunnels` tab for instant 1-tap tunnel creation on desktop and mobile.
+- Integrated **Check Protocols** directly inside the `+ New Tunnel` modal: once two distinct servers (Iran & Foreign) are selected, a `⚡ Check Protocols` button appears to benchmark all protocols between those two nodes and select the winning protocol straight back into the tunnel form without losing entered fields.
+
 ## 1.1.6
 - Automatically opens **Server Setup Studio** right after adding a new server so you immediately see and install prerequisites/engines without hunting through menus.
 - Added **Custom VIP / Subnet & Multi-VIP Load Balancing** for Kernel Tunnels (`GRE`, `IP6GRE`, `VXLAN`):
