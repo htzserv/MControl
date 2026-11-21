@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.9.1
+- Switched release versioning to 4-segment format (`v1.1.9.1`).
+- Added instant client-side re-scoring and re-ranking in **MSmart Benchmark**: switching between **Balanced**, **Max Speed**, and **Low Ping** immediately reorders and updates scores for both current and saved benchmark results without needing to re-run the test.
+
+## 1.1.9
+- Replaced `[iran]` / `[foreign]` text tags in server selectors with clean icons (`🇮🇷` / `🌍`).
+- Expanded **Kernel Tunnel Load Balancing** (`GRE` / `IP6GRE` / `VXLAN`) with full smart modes: **Round-Robin**, **Random**, **Lowest Ping (RTT)**, **Lightest Load (Least Connections)**, and **Least Traffic (Lowest Bandwidth)** with real Linux `iptables` / `conntrack` / `ping` target selection.
+- Fixed **Check Protocols** navigation inside `+ New Tunnel`: clicking `⚡ Check Protocols` now cleanly transitions directly into the Protocol Checker modal and returns to your pre-filled tunnel form once a protocol is selected.
+
 ## 1.1.8
 - Upgraded automatic background update checker to run immediately on load, every **60 seconds** (down from 5 minutes), and automatically whenever you switch back to the panel browser tab (`visibilitychange`).
 - Shows an automatic toast alert and lights up the top-left round Update button the moment a new release is detected—no need to open the Update tab manually.

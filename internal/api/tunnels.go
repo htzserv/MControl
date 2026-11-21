@@ -127,7 +127,9 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	if tun.Subnet == "" {
 		tun.Subnet = fmt.Sprintf("10.10.%d", (id%240)+10)
 	}
-	if tun.LBMode != "roundrobin" && tun.LBMode != "random" {
+	switch tun.LBMode {
+	case "roundrobin", "random", "lowest_ping", "lightest", "least_traffic":
+	default:
 		tun.LBMode = "none"
 	}
 
@@ -399,6 +401,12 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 						} else if t.LBMode == "random" {
 							prob := 1.0 / float64(rem)
 							iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m statistic --mode random --probability %.4f -m comment --comment %s -j DNAT --to-destination %s:%d\n", proto, p, prob, tag, dst, p))
+						} else if t.LBMode == "lowest_ping" || t.LBMode == "lightest" || t.LBMode == "least_traffic" {
+							// Smart target selection evaluated dynamically at startup via $BEST_VIP
+							if i == 0 {
+								iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m comment --comment %s -j DNAT --to-destination ${BEST_VIP}:%d\n", proto, p, tag, p))
+							}
+							break
 						} else {
 							iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m statistic --mode nth --every %d --packet 0 -m comment --comment %s -j DNAT --to-destination %s:%d\n", proto, p, rem, tag, dst, p))
 						}
@@ -407,6 +415,36 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 			}
 		}
 		iptRules.WriteString(fmt.Sprintf("iptables -t nat -A POSTROUTING -o %s -m comment --comment %s -j MASQUERADE\n", ifName, tag))
+		if len(targets) > 1 && (t.LBMode == "lowest_ping" || t.LBMode == "lightest" || t.LBMode == "least_traffic") {
+			var selector string
+			tList := strings.Join(targets, " ")
+			switch t.LBMode {
+			case "lowest_ping":
+				selector = fmt.Sprintf(`BEST_VIP="%s"; BEST_VAL=999999
+for vip in %s; do
+  ms=$(ping -c 2 -W 1 "$vip" 2>/dev/null | awk -F'/' 'END{print ($5==""?999999:int($5*10))}')
+  if [ "${ms:-999999}" -lt "$BEST_VAL" ]; then BEST_VAL="$ms"; BEST_VIP="$vip"; fi
+done
+`, targets[0], tList)
+			case "lightest":
+				selector = fmt.Sprintf(`BEST_VIP="%s"; BEST_VAL=999999
+for vip in %s; do
+  cnt=$(ss -Htan dst "$vip" 2>/dev/null | wc -l)
+  if [ "${cnt:-999999}" -lt "$BEST_VAL" ]; then BEST_VAL="$cnt"; BEST_VIP="$vip"; fi
+done
+`, targets[0], tList)
+			case "least_traffic":
+				selector = fmt.Sprintf(`BEST_VIP="%s"; BEST_VAL=999999999999
+for vip in %s; do
+  byt=$(iptables -t nat -L PREROUTING -vnx 2>/dev/null | awk -v ip="$vip" '$0 ~ ip {s+=$2} END{print s+0}')
+  if [ "${byt:-0}" -lt "$BEST_VAL" ]; then BEST_VAL="$byt"; BEST_VIP="$vip"; fi
+done
+`, targets[0], tList)
+			}
+			iptRulesStr := selector + iptRules.String()
+			iptRules.Reset()
+			iptRules.WriteString(iptRulesStr)
+		}
 
 		makeKernel := func(linkCmd, cidr, extraRules string) string {
 			return fmt.Sprintf(`set -e
