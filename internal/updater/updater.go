@@ -30,6 +30,17 @@ const (
 	buildTimeoutMin = 10
 )
 
+
+var rawGHRe = regexp.MustCompile(`^https?://raw\.githubusercontent\.com/([^/]+)/([^/]+)/.+`)
+
+func normalizeReleaseURL(baseURL string) string {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if m := rawGHRe.FindStringSubmatch(baseURL); len(m) == 3 {
+		return fmt.Sprintf("https://github.com/%s/%s/releases/latest/download", m[1], m[2])
+	}
+	return baseURL
+}
+
 var validBase = regexp.MustCompile(`^https?://[A-Za-z0-9._~:/@%+-]{1,300}$`)
 
 type SourceStatus struct {
@@ -129,7 +140,7 @@ func finishJob(success bool, stage, errMsg string) {
 }
 
 func fetchRemoteVersion(baseURL string) SourceStatus {
-	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	baseURL = normalizeReleaseURL(baseURL)
 	if baseURL == "" {
 		return SourceStatus{Error: "URL not configured"}
 	}
@@ -527,7 +538,7 @@ func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool
 		return errors.New("an update is already in progress")
 	}
 	go func() {
-		baseURL := strings.TrimRight(strings.TrimSpace(githubURL), "/")
+		baseURL := normalizeReleaseURL(githubURL)
 		if source == "mirror" {
 			baseURL = strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
 		}
