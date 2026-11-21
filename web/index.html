@@ -957,7 +957,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.1.4</span>
+            <span class="badge b-ok" id="loc-ver">v1.1.6</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -1024,7 +1024,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
       <div class="toolbar">
         <h3>Tunnels (Iran ⇄ Foreign)</h3>
         <div class="flexw">
-          <button class="btn btn-warn" onclick="openMSmartModal()">⚡ MSmart Benchmark</button>
+          <button class="btn btn-warn" id="btn-open-msmart" onclick="openMSmartModal()">⚡ MSmart Benchmark</button>
           <button class="btn btn-ghost" onclick="openLinkTestModal()">Link Test (iperf3)</button>
           <button class="btn btn-ghost" onclick="loadTunnels()">Refresh</button>
           <button class="btn btn-sky" onclick="openNewTunnelModal()">+ New Tunnel</button>
@@ -1408,6 +1408,20 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
     <div style="display:none;">
     </div>
     <div class="field"><label>Secret Token (leave blank for random)</label><input id="t-token" class="mono" placeholder="Auto-generated secure token"></div>
+    <div id="t-vip-wrap" style="display:none; background:var(--row); border:1px solid var(--border); border-radius:12px; padding:11px 13px; margin-bottom:12px;">
+      <div style="font-size:.74rem; font-weight:800; color:var(--accent); text-transform:uppercase; margin-bottom:8px;">Kernel Tunnel VIP &amp; Load Balancing (GRE / VXLAN)</div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:8px;"><label>Tunnel VIP Subnet (optional)</label><input id="t-subnet" class="mono" placeholder="Auto (e.g. 10.10.50)"></div>
+        <div class="field" style="margin-bottom:8px;"><label>Load-Balance Mode</label>
+          <select id="t-lbmode">
+            <option value="none">Off (Single VIP Peer)</option>
+            <option value="roundrobin">Round-Robin (iptables nth)</option>
+            <option value="random">Random (iptables random)</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin:0;"><label>VIP Targets for Load Balancing (comma-separated, optional)</label><input id="t-viptargets" class="mono" placeholder="e.g. 10.10.50.2, 10.10.51.2"></div>
+    </div>
     <div class="field">
       <label>Forward Ports — Pick Saved Profile or Enter Custom</label>
       <select id="t-port-prof" style="margin-bottom:8px;" onchange="applyPortProfileToTunnel()">
@@ -1498,6 +1512,12 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
     <div class="bar-wrap" style="margin-bottom:12px;"><div class="bar-fill" id="ms-bar" style="width:0%; background:var(--accent);"></div></div>
 
     <div id="ms-results" style="display:flex; flex-direction:column; gap:7px; margin-bottom:12px;"></div>
+    <div class="toolbar" style="margin-bottom:6px; gap:8px;">
+      <select id="ms-hist-sel" style="max-width:340px; padding:6px 10px; font-size:.76rem;" onchange="viewSavedBenchRun()">
+        <option value="">— Saved Benchmark History —</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="downloadMSmartLog()">Download Log</button>
+    </div>
     <pre class="term" id="ms-logs" style="height:135px;">Select Iran & Foreign nodes and click Start Real Benchmark.</pre>
   </div>
 </div>
@@ -2103,7 +2123,7 @@ function switchTab(name) {
   if (name === 'tunnels') fillCoreSelect();
   if (name === 'update') checkUpdates(false);
   if (name === 'overview') { pollLocalStats(); }
-  if (name === 'tunnels') { loadTunnels(); loadProfiles(); }
+  if (name === 'tunnels') { loadTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
@@ -2284,9 +2304,14 @@ async function saveServer() {
     };
     const res = editId ? await api('api/servers/' + editId, 'PUT', payload) : await api('api/servers', 'POST', payload);
     if (res.ok) {
+      const wasNew = !editId;
       toast(editId ? t('toast_saved') : t('toast_added'));
-      closeModal('srv-modal'); loadServers();
+      closeModal('srv-modal');
+      await loadServers();
       if (res.probe_error) toast(res.probe_error, true);
+      if (wasNew && res.id) {
+        setTimeout(() => openSetupModal(res.id), 250);
+      }
     } else toast(res.error || 'Failed', true);
   } finally { btn.disabled = false; btn.textContent = label; }
 }
@@ -2373,7 +2398,7 @@ async function loadTunnels() {
             ${esc(tu.iran_name)} (${esc(tu.iran_host)}) ⇄ ${esc(tu.foreign_name)} (${esc(tu.foreign_host)}) • :${tu.tunnel_port}
           </div>
           <div style="font-size:.75rem; color:var(--accent); margin-top:4px;" class="mono">
-            Ports: ${esc(tu.ports)}${tu.subnet ? ' • Subnet: ' + esc(tu.subnet) + '.0/30' : ''}
+            Ports: ${esc(tu.ports)}${tu.subnet ? ' • VIP: ' + esc(tu.subnet) + '.1⇄.2' : ''}${tu.lb_mode && tu.lb_mode !== 'none' ? ' • LB: ' + esc(tu.lb_mode.toUpperCase()) + (tu.vip_targets ? ' (' + esc(tu.vip_targets) + ')' : '') : ''}
           </div>
           ${tu.last_error ? `<div style="font-size:.74rem; color:var(--red); margin-top:4px;">${esc(tu.last_error)}</div>` : ''}
         </div>
@@ -2403,6 +2428,7 @@ function populateServerSelects(iranId, forId) {
 function onTunnelEngineChange() {
   const eng = $('t-engine').value;
   $('t-trans-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
+  const vw = $('t-vip-wrap'); if (vw) vw.style.display = (eng === 'gre' || eng === 'ip6gre' || eng === 'vxlan') ? 'block' : 'none';
 }
 
 function applyPortProfileToTunnel() {
@@ -2435,7 +2461,10 @@ async function deployTunnel() {
       tunnel_port: parseInt($('t-port').value || '3080', 10),
       token: $('t-token').value.trim(),
       ports: $('t-ports').value.trim(),
-      ip_mode: $('t-ipmode') ? $('t-ipmode').value : 'v4'
+      ip_mode: $('t-ipmode') ? $('t-ipmode').value : 'v4',
+      subnet: $('t-subnet') ? $('t-subnet').value.trim() : '',
+      vip_targets: $('t-viptargets') ? $('t-viptargets').value.trim() : '',
+      lb_mode: $('t-lbmode') ? $('t-lbmode').value : 'none'
     };
     const r = await api('api/tunnels', 'POST', payload);
     $('tun-term-card').style.display = 'block';
@@ -2487,9 +2516,60 @@ function pickMSProf(p) {
   document.querySelectorAll('#ms-prof-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.msProf === p));
 }
 
+let MS_HISTORY = [];
+
+async function loadMSmartHistory() {
+  const r = await api('api/tunnels/benchmark/history');
+  if (!r.ok) return;
+  MS_HISTORY = r.runs || [];
+  const sel = $('ms-hist-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Saved Benchmark History (' + MS_HISTORY.length + ') —</option>' +
+    MS_HISTORY.map((run, idx) => {
+      const dt = new Date(run.created_at * 1000).toLocaleString();
+      return `<option value="${idx}">${esc(run.iran_name)} ⇄ ${esc(run.foreign_name)} (${esc(run.profile)}) — ${esc(dt)}</option>`;
+    }).join('');
+}
+
+function viewSavedBenchRun() {
+  const idx = $('ms-hist-sel').value;
+  if (idx === '') return;
+  const run = MS_HISTORY[+idx];
+  if (!run) return;
+  $('ms-logs').textContent = run.logs_text || '';
+  try {
+    const res = JSON.parse(run.results_json || '[]');
+    renderMSmartResults(res, 0, 0);
+  } catch (e) {}
+}
+
+function downloadMSmartLog() {
+  const txt = $('ms-logs') ? $('ms-logs').textContent : '';
+  if (!txt) { toast('No logs to download', true); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' }));
+  a.download = 'msmart-benchmark-' + Date.now() + '.log';
+  a.click();
+}
+
+function renderMSmartResults(results, iranId, forId) {
+  const box = $('ms-results');
+  if (!box) return;
+  box.innerHTML = (results || []).map(x => `
+    <div class="kv" style="margin:0; border-inline-start:3px solid ${x.ok ? (x.rank===1 ? 'var(--green)' : 'var(--accent)') : 'var(--red)'};">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span class="badge ${x.ok ? 'b-iran' : 'b-miss'} mono">#${x.rank}</span>
+        <strong>${esc(x.label)}</strong>
+        ${x.ok ? `<span class="mono" style="color:var(--green);">${x.mbps} Mbps</span><span class="mono" style="color:var(--muted);">RTT ${x.ping_ms} ms</span><span class="badge b-ok">Score ${x.score}</span>` : `<span style="color:var(--red); font-size:.75rem;">${esc(x.error || 'Failed')}</span>`}
+      </div>
+      ${x.ok ? `<button class="btn btn-sky btn-sm" onclick="deployWinner('${esc(x.engine)}','${esc(x.transport)}','${esc(x.ip_mode || 'v4')}',${iranId || 0},${forId || 0})">Deploy Winner</button>` : ''}
+    </div>`).join('');
+}
+
 function openMSmartModal() {
   populateServerSelects('ms-iran', 'ms-foreign');
   $('msmart-modal').classList.add('active');
+  loadMSmartHistory();
   pollMSmartStatus();
 }
 
@@ -2527,19 +2607,20 @@ async function pollMSmartStatus() {
   if (j.logs && j.logs.length) {
     const lg = $('ms-logs'); lg.textContent = j.logs.join('\n'); lg.scrollTop = lg.scrollHeight;
   }
-  const box = $('ms-results');
-  if (box && j.results && j.results.length) {
-    box.innerHTML = j.results.map(x => `
-      <div class="kv" style="margin:0; border-inline-start:3px solid ${x.ok ? (x.rank===1 ? 'var(--green)' : 'var(--accent)') : 'var(--red)'};">
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <span class="badge ${x.ok ? 'b-iran' : 'b-miss'} mono">#${x.rank}</span>
-          <strong>${esc(x.label)}</strong>
-          ${x.ok ? `<span class="mono" style="color:var(--green);">${x.mbps} Mbps</span><span class="mono" style="color:var(--muted);">RTT ${x.ping_ms} ms</span><span class="badge b-ok">Score ${x.score}</span>` : `<span style="color:var(--red); font-size:.75rem;">${esc(x.error || 'Failed')}</span>`}
-        </div>
-        ${x.ok ? `<button class="btn btn-sky btn-sm" onclick="deployWinner('${esc(x.engine)}','${esc(x.transport)}','${esc(x.ip_mode || 'v4')}',${j.iran_server_id},${j.foreign_server_id})">Deploy Winner</button>` : ''}
-      </div>`).join('');
+  if (j.results && j.results.length) {
+    renderMSmartResults(j.results, j.iran_server_id, j.foreign_server_id);
   }
-  if (!j.running && msPollTimer) { clearInterval(msPollTimer); msPollTimer = null; }
+  const openBtn = $('btn-open-msmart');
+  if (openBtn) {
+    openBtn.textContent = j.running ? `⚡ Benchmark (${j.percent}%)...` : '⚡ MSmart Benchmark';
+  }
+  if (j.running && !msPollTimer) {
+    msPollTimer = setInterval(pollMSmartStatus, 2000);
+  }
+  if (!j.running && msPollTimer) {
+    clearInterval(msPollTimer); msPollTimer = null;
+    loadMSmartHistory();
+  }
 }
 
 function deployWinner(engine, transport, ipMode, iranId, forId) {

@@ -72,6 +72,16 @@ type PortProfile struct {
 	CreatedAt int64  `json:"created_at"`
 }
 
+type BenchmarkRun struct {
+	ID          int64  `json:"id"`
+	IranName    string `json:"iran_name"`
+	ForeignName string `json:"foreign_name"`
+	Profile     string `json:"profile"`
+	ResultsJSON string `json:"results_json"`
+	LogsText    string `json:"logs_text"`
+	CreatedAt   int64  `json:"created_at"`
+}
+
 type Tunnel struct {
 	ID              int64  `json:"id"`
 	Name            string `json:"name"`
@@ -88,6 +98,8 @@ type Tunnel struct {
 	Ports           string `json:"ports"`
 	Forwarder       string `json:"forwarder"`
 	Subnet          string `json:"subnet"`
+	VIPTargets      string `json:"vip_targets"`
+	LBMode          string `json:"lb_mode"`
 	Status          string `json:"status"`
 	LastError       string `json:"last_error"`
 	CreatedAt       int64  `json:"created_at"`
@@ -224,6 +236,15 @@ func (s *Store) migrate() error {
 		ports TEXT NOT NULL DEFAULT '',
 		created_at INTEGER NOT NULL
 	);
+	CREATE TABLE IF NOT EXISTS benchmark_runs (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		iran_name TEXT NOT NULL,
+		foreign_name TEXT NOT NULL,
+		profile TEXT NOT NULL DEFAULT 'balanced',
+		results_json TEXT NOT NULL DEFAULT '[]',
+		logs_text TEXT NOT NULL DEFAULT '',
+		created_at INTEGER NOT NULL
+	);
 	CREATE TABLE IF NOT EXISTS tunnels (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
@@ -236,6 +257,8 @@ func (s *Store) migrate() error {
 		ports TEXT NOT NULL DEFAULT '',
 		forwarder TEXT NOT NULL DEFAULT 'internal',
 		subnet TEXT NOT NULL DEFAULT '',
+		vip_targets TEXT NOT NULL DEFAULT '',
+		lb_mode TEXT NOT NULL DEFAULT 'none',
 		status TEXT NOT NULL DEFAULT 'active',
 		last_error TEXT NOT NULL DEFAULT '',
 		created_at INTEGER NOT NULL
@@ -894,7 +917,7 @@ func (s *Store) ListTunnels() ([]Tunnel, error) {
 		SELECT t.id, t.name, t.engine, t.transport, t.iran_server_id, t.foreign_server_id,
 			COALESCE(si.name, 'Deleted'), COALESCE(si.host, ''),
 			COALESCE(sf.name, 'Deleted'), COALESCE(sf.host, ''),
-			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.status, t.last_error, t.created_at
+			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.vip_targets, t.lb_mode, t.status, t.last_error, t.created_at
 		FROM tunnels t
 		LEFT JOIN servers si ON si.id = t.iran_server_id
 		LEFT JOIN servers sf ON sf.id = t.foreign_server_id
@@ -908,7 +931,7 @@ func (s *Store) ListTunnels() ([]Tunnel, error) {
 		var t Tunnel
 		if err := rows.Scan(&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
 			&t.IranName, &t.IranHost, &t.ForeignName, &t.ForeignHost,
-			&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.Status, &t.LastError, &t.CreatedAt); err != nil {
+			&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.VIPTargets, &t.LBMode, &t.Status, &t.LastError, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, t)
@@ -925,13 +948,13 @@ func (s *Store) GetTunnel(id int64) (*Tunnel, error) {
 		SELECT t.id, t.name, t.engine, t.transport, t.iran_server_id, t.foreign_server_id,
 			COALESCE(si.name, 'Deleted'), COALESCE(si.host, ''),
 			COALESCE(sf.name, 'Deleted'), COALESCE(sf.host, ''),
-			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.status, t.last_error, t.created_at
+			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.vip_targets, t.lb_mode, t.status, t.last_error, t.created_at
 		FROM tunnels t
 		LEFT JOIN servers si ON si.id = t.iran_server_id
 		LEFT JOIN servers sf ON sf.id = t.foreign_server_id
 		WHERE t.id = ?`, id).Scan(&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
 		&t.IranName, &t.IranHost, &t.ForeignName, &t.ForeignHost,
-		&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.Status, &t.LastError, &t.CreatedAt)
+		&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.VIPTargets, &t.LBMode, &t.Status, &t.LastError, &t.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -940,9 +963,9 @@ func (s *Store) GetTunnel(id int64) (*Tunnel, error) {
 
 func (s *Store) AddTunnel(t *Tunnel) (int64, error) {
 	res, err := s.db.Exec(`
-		INSERT INTO tunnels (name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, token, ports, forwarder, subnet, status, last_error, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.Name, t.Engine, t.Transport, t.IranServerID, t.ForeignServerID, t.TunnelPort, t.Token, t.Ports, t.Forwarder, t.Subnet, t.Status, t.LastError, time.Now().Unix())
+		INSERT INTO tunnels (name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, token, ports, forwarder, subnet, vip_targets, lb_mode, status, last_error, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.Name, t.Engine, t.Transport, t.IranServerID, t.ForeignServerID, t.TunnelPort, t.Token, t.Ports, t.Forwarder, t.Subnet, t.VIPTargets, t.LBMode, t.Status, t.LastError, time.Now().Unix())
 	if err != nil {
 		return 0, err
 	}
@@ -957,4 +980,41 @@ func (s *Store) UpdateTunnelStatus(id int64, status, lastErr string) error {
 func (s *Store) DeleteTunnel(id int64) error {
 	_, err := s.db.Exec("DELETE FROM tunnels WHERE id=?", id)
 	return err
+}
+
+func (s *Store) AddBenchmarkRun(r *BenchmarkRun) (int64, error) {
+	res, err := s.db.Exec(
+		"INSERT INTO benchmark_runs (iran_name, foreign_name, profile, results_json, logs_text, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+		r.IranName, r.ForeignName, r.Profile, r.ResultsJSON, r.LogsText, time.Now().Unix(),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (s *Store) ListBenchmarkRuns(limit int) ([]BenchmarkRun, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	rows, err := s.db.Query(
+		"SELECT id, iran_name, foreign_name, profile, results_json, logs_text, created_at FROM benchmark_runs ORDER BY id DESC LIMIT ?",
+		limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []BenchmarkRun
+	for rows.Next() {
+		var r BenchmarkRun
+		if err := rows.Scan(&r.ID, &r.IranName, &r.ForeignName, &r.Profile, &r.ResultsJSON, &r.LogsText, &r.CreatedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, r)
+	}
+	if list == nil {
+		list = []BenchmarkRun{}
+	}
+	return list, nil
 }

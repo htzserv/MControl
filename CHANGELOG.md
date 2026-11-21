@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.6
+- Automatically opens **Server Setup Studio** right after adding a new server so you immediately see and install prerequisites/engines without hunting through menus.
+- Added **Custom VIP / Subnet & Multi-VIP Load Balancing** for Kernel Tunnels (`GRE`, `IP6GRE`, `VXLAN`):
+  - Supports custom `/30` tunnel subnet (or auto-assigned `10.10.x.0/30`).
+  - Supports multiple VIP targets with kernel-level `iptables` load balancing (`Round-Robin / nth` and `Random` modes).
+
+## 1.1.5
+- Fixed GRE / IP6GRE `File exists` conflict when benchmarking or deploying multiple tunnels between the same two servers by assigning a unique GRE `key <id>` to every tunnel.
+- Improved kernel tunnel error reporting to return the exact kernel/script error instead of a generic systemd failure message.
+- Added **Persistent Benchmark History & Saved Logs** (SQLite `benchmark_runs` table): every MSmart benchmark run automatically saves its full logs and ranked results; users can view past runs or download logs anytime.
+- Added **Seamless Background Resume**: closing the MSmart modal, switching tabs, or refreshing the browser automatically resumes live benchmark progress and shows a live status badge on the MSmart button.
+
 ## 1.1.4
 - Added **1-Click In-Tunnel Speedtest** (`Speedtest` button on every deployed tunnel card, `POST /api/tunnels/{id}/speedtest`) measuring real RTT & throughput directly through the active tunnel.
 - Redesigned **MSmart Benchmark** protocol selector into clean, well-spaced categories: **Backhaul** (with IPv4/IPv6 option), **Rathole** (with IPv4/IPv6 option), **GRE** (`4-to-4`, `6-to-4`, `6-to-6`), **VXLAN** (`IPv4` / `IPv6`), and **Paqet** (`Raw Packet`).

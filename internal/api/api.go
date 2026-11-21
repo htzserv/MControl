@@ -380,6 +380,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/tunnels/linktest", h.auth(h.handleLinkTest))
 	mux.HandleFunc("POST /api/tunnels/benchmark", h.auth(h.handleBenchmarkStart))
 	mux.HandleFunc("GET /api/tunnels/benchmark/status", h.auth(h.handleBenchmarkStatus))
+	mux.HandleFunc("GET /api/tunnels/benchmark/history", h.auth(h.handleBenchmarkHistory))
 	mux.HandleFunc("GET /api/update/check", h.auth(h.handleUpdateCheck))
 	mux.HandleFunc("POST /api/update/remote", h.auth(h.handleUpdateRemote))
 	mux.HandleFunc("POST /api/update/upload", h.auth(h.handleUpdateUpload))

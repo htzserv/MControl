@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -348,14 +349,25 @@ print(f'{mbps:.1f} Mbits/sec receiver')
 	}
 
 	rankBenchResults(results, profile)
+	benchLog("All candidates tested and ranked. Saving run to history...")
 	benchMu.Lock()
 	benchJob.Results = results
 	benchJob.Running = false
 	benchJob.Done = true
 	benchJob.Percent = 100
 	benchJob.Current = "Benchmark Complete!"
+	logsCopy := strings.Join(benchJob.Logs, "\n")
 	benchMu.Unlock()
-	benchLog("All candidates tested and ranked.")
+
+	if resBytes, err := json.Marshal(results); err == nil {
+		_, _ = h.store.AddBenchmarkRun(&db.BenchmarkRun{
+			IranName:    iran.Name,
+			ForeignName: foreign.Name,
+			Profile:     profile,
+			ResultsJSON: string(resBytes),
+			LogsText:    logsCopy,
+		})
+	}
 }
 
 func rankBenchResults(results []BenchResult, profile string) {
@@ -396,4 +408,13 @@ func rankBenchResults(results []BenchResult, profile string) {
 	for i := range results {
 		results[i].Rank = i + 1
 	}
+}
+
+func (h *Handler) handleBenchmarkHistory(w http.ResponseWriter, r *http.Request) {
+	list, err := h.store.ListBenchmarkRuns(15)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "runs": list})
 }

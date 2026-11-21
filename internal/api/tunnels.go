@@ -41,6 +41,9 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		Ports           string `json:"ports"`
 		Forwarder       string `json:"forwarder"`
 		IPMode          string `json:"ip_mode"` // v4 | v6 | 6to4 | 6to6
+		Subnet          string `json:"subnet"`
+		VIPTargets      string `json:"vip_targets"`
+		LBMode          string `json:"lb_mode"` // none | roundrobin | random
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -110,6 +113,9 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		Token:           req.Token,
 		Ports:           normPorts,
 		Forwarder:       req.Forwarder,
+		Subnet:          strings.TrimSpace(req.Subnet),
+		VIPTargets:      strings.TrimSpace(req.VIPTargets),
+		LBMode:          strings.TrimSpace(req.LBMode),
 		Status:          "deploying",
 	}
 	id, err := h.store.AddTunnel(tun)
@@ -118,7 +124,12 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tun.ID = id
-	tun.Subnet = fmt.Sprintf("10.10.%d", (id%240)+10)
+	if tun.Subnet == "" {
+		tun.Subnet = fmt.Sprintf("10.10.%d", (id%240)+10)
+	}
+	if tun.LBMode != "roundrobin" && tun.LBMode != "random" {
+		tun.LBMode = "none"
+	}
 
 	iranCmd, forCmd := buildTunnelDeployScripts(tun, iranSrv, forSrv, portList)
 
@@ -354,17 +365,46 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 			iranLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, forAddr, iranAddr, t.TunnelPort)
 			forLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, iranAddr, forAddr, t.TunnelPort)
 		} else if t.Engine == "ip6gre" || ipMode == "6to4" || ipMode == "6to6" {
-			iranLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s ttl 255", ifName, forAddr, iranAddr)
-			forLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s ttl 255", ifName, iranAddr, forAddr)
+			iranLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s key %d ttl 255", ifName, forAddr, iranAddr, t.ID)
+			forLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s key %d ttl 255", ifName, iranAddr, forAddr, t.ID)
 		} else {
-			iranLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s ttl 255", ifName, foreign.Host, iran.Host)
-			forLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s ttl 255", ifName, iran.Host, foreign.Host)
+			iranLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s key %d ttl 255", ifName, foreign.Host, iran.Host, t.ID)
+			forLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s key %d ttl 255", ifName, iran.Host, foreign.Host, t.ID)
 		}
 
+		// Build target VIP list for single-peer or multi-VIP load balancing
+		var targets []string
+		if strings.TrimSpace(t.VIPTargets) != "" {
+			for _, raw := range strings.Split(t.VIPTargets, ",") {
+				ip := strings.TrimSpace(raw)
+				if ip != "" {
+					targets = append(targets, ip)
+				}
+			}
+		}
+		if len(targets) == 0 {
+			targets = []string{forPeerIP}
+		}
 		var iptRules strings.Builder
 		for _, p := range ports {
-			iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p tcp --dport %d -m comment --comment %s -j DNAT --to-destination %s:%d\n", p, tag, forPeerIP, p))
-			iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p udp --dport %d -m comment --comment %s -j DNAT --to-destination %s:%d\n", p, tag, forPeerIP, p))
+			for _, proto := range []string{"tcp", "udp"} {
+				if len(targets) == 1 || t.LBMode == "" || t.LBMode == "none" {
+					iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m comment --comment %s -j DNAT --to-destination %s:%d\n", proto, p, tag, targets[0], p))
+				} else {
+					n := len(targets)
+					for i, dst := range targets {
+						rem := n - i
+						if rem == 1 {
+							iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m comment --comment %s -j DNAT --to-destination %s:%d\n", proto, p, tag, dst, p))
+						} else if t.LBMode == "random" {
+							prob := 1.0 / float64(rem)
+							iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m statistic --mode random --probability %.4f -m comment --comment %s -j DNAT --to-destination %s:%d\n", proto, p, prob, tag, dst, p))
+						} else {
+							iptRules.WriteString(fmt.Sprintf("iptables -t nat -A PREROUTING -p %s --dport %d -m statistic --mode nth --every %d --packet 0 -m comment --comment %s -j DNAT --to-destination %s:%d\n", proto, p, rem, tag, dst, p))
+						}
+					}
+				}
+			}
 		}
 		iptRules.WriteString(fmt.Sprintf("iptables -t nat -A POSTROUTING -o %s -m comment --comment %s -j MASQUERADE\n", ifName, tag))
 
@@ -403,9 +443,9 @@ WantedBy=multi-user.target
 EOF
 systemctl daemon-reload
 systemctl enable %s.service
-systemctl restart %s.service
+if ! systemctl restart %s.service 2>/dev/null; then journalctl -u %s.service -n 8 --no-pager -o cat >&2; exit 1; fi
 ip -br addr show %s
-`, cfgDir, cfgDir, unit, ifName, ifName, linkCmd, cidr, ifName, ifName, tag, extraRules, cfgDir, unit, unit, t.ID, t.Name, cfgDir, unit, ifName, unit, unit, ifName)
+`, cfgDir, cfgDir, unit, ifName, ifName, linkCmd, cidr, ifName, ifName, tag, extraRules, cfgDir, unit, unit, t.ID, t.Name, cfgDir, unit, ifName, unit, unit, unit, ifName)
 		}
 		return makeKernel(iranLink, iranLocal, iptRules.String()), makeKernel(forLink, forLocal, "")
 	}
