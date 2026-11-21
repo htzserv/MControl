@@ -1008,6 +1008,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
       <div class="toolbar">
         <h3>Tunnels (Iran ⇄ Foreign)</h3>
         <div class="flexw">
+          <button class="btn btn-warn" onclick="openMSmartModal()">⚡ MSmart Benchmark</button>
           <button class="btn btn-ghost" onclick="openLinkTestModal()">Link Test (iperf3)</button>
           <button class="btn btn-ghost" onclick="loadTunnels()">Refresh</button>
           <button class="btn btn-sky" onclick="openNewTunnelModal()">+ New Tunnel</button>
@@ -1392,6 +1393,56 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
       <button class="btn btn-ghost" data-close="tun-modal">Cancel</button>
       <button class="btn btn-sky" id="btn-tun-deploy" onclick="deployTunnel()">Deploy to Both Servers</button>
     </div>
+  </div>
+</div>
+
+<!-- MSMART REAL IN-TUNNEL BENCHMARK & AUTO-RANKER MODAL -->
+<div class="modal-bg" id="msmart-modal">
+  <div class="card modal-box" style="max-width:680px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <div>
+        <h3 style="color:var(--accent);">⚡ MSmart Tunnel Benchmark &amp; Ranker</h3>
+        <div class="hint" style="margin:2px 0 0;">Deploys real isolated tunnels, tests throughput &amp; RTT inside each tunnel, cleans up, and ranks the best protocol.</div>
+      </div>
+      <button class="btn btn-danger btn-sm" data-close="msmart-modal">Close</button>
+    </div>
+
+    <div class="row2">
+      <div class="field"><label>Iran Server (Entry)</label><select id="ms-iran"></select></div>
+      <div class="field"><label>Foreign Server (Exit)</label><select id="ms-foreign"></select></div>
+    </div>
+
+    <div class="field" style="margin-bottom:10px;">
+      <label>Ranking Priority</label>
+      <div class="src-picker" id="ms-prof-picker">
+        <div class="role-opt active" data-ms-prof="balanced" onclick="pickMSProf('balanced')">Balanced</div>
+        <div class="role-opt" data-ms-prof="speed" onclick="pickMSProf('speed')">Max Speed</div>
+        <div class="role-opt" data-ms-prof="ping" onclick="pickMSProf('ping')">Low Ping</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:12px;">
+      <label>Protocols to Test</label>
+      <div class="flexw" id="ms-cands" style="gap:8px;">
+        <label class="check" style="margin:0;"><input type="checkbox" value="backhaul:tcp:Backhaul TCP" checked><span>BH TCP</span></label>
+        <label class="check" style="margin:0;"><input type="checkbox" value="backhaul:tcpmux:Backhaul TCPMUX" checked><span>BH TCPMUX</span></label>
+        <label class="check" style="margin:0;"><input type="checkbox" value="backhaul:ws:Backhaul WS" checked><span>BH WS</span></label>
+        <label class="check" style="margin:0;"><input type="checkbox" value="backhaul:kcp:Backhaul KCP" checked><span>BH KCP</span></label>
+        <label class="check" style="margin:0;"><input type="checkbox" value="rathole:tcp:Rathole TCP" checked><span>Rathole</span></label>
+        <label class="check" style="margin:0;"><input type="checkbox" value="gre:raw:Kernel GRE" checked><span>GRE</span></label>
+        <label class="check" style="margin:0;"><input type="checkbox" value="vxlan:raw:Kernel VXLAN"><span>VXLAN</span></label>
+      </div>
+    </div>
+
+    <div class="flexw" style="margin-bottom:12px;">
+      <button class="btn btn-sky" id="btn-ms-start" onclick="startMSmartBench()">Start Real Benchmark</button>
+      <span class="mono" id="ms-stage" style="font-size:.78rem; color:var(--muted);">Ready</span>
+    </div>
+
+    <div class="bar-wrap" style="margin-bottom:12px;"><div class="bar-fill" id="ms-bar" style="width:0%; background:var(--accent);"></div></div>
+
+    <div id="ms-results" style="display:flex; flex-direction:column; gap:7px; margin-bottom:12px;"></div>
+    <pre class="term" id="ms-logs" style="height:135px;">Select Iran & Foreign nodes and click Start Real Benchmark.</pre>
   </div>
 </div>
 
@@ -1995,6 +2046,7 @@ function switchTab(name) {
   if (name === 'themes') { openThemesQuick(); return; }
   if (name === 'tunnels') fillCoreSelect();
   if (name === 'update') checkUpdates(false);
+  if (name === 'overview') { pollLocalStats(); }
   if (name === 'tunnels') { loadTunnels(); loadProfiles(); }
   if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
