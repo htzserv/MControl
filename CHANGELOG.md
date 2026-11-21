@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1
+- Fixed blank/white page crash caused by legacy `#btn-core-*` / `#core-cmd` / `#core-srv` DOM listeners after replacing the Phase 2 Tunnels tab.
+
 ## 1.1.0 (Phase 2 — Unified Tunnels & Zero-APT Static Bundle)
 - Added automated static bundle workflow (`.github/workflows/bundle.yml`) building `mcontrol-bundle-linux-amd64.tar.gz` + `.sha256` with `iperf3`, `speedtest`, `jq`, `socat`, `bh` (Backhaul), `rathole`, `paqet`, and `realm` (dropped `mporter`, `haproxy`, `gost`; zero `apt` and zero `unzip` required on Ubuntu 22/24/26).
 - Upgraded Setup Studio to deploy directly from the static `.tar.gz` bundle via GitHub, Iran Mirror, or Direct from Master Cache.

@@ -939,7 +939,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.1.0</span>
+            <span class="badge b-ok" id="loc-ver">v1.1.1</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -2566,9 +2566,9 @@ async function runInstall(source) {
 }
 
 /* ═══════════════ core control ═══════════════ */
-function coreOut(s) { const o = $('core-out'); o.textContent = s; o.scrollTop = o.scrollHeight; }
+function coreOut(s) { const o = $('core-out'); if (!o) return; o.textContent = s; o.scrollTop = o.scrollHeight; }
 function fillCoreSelect() {
-  const sel = $('core-srv'), keep = sel.value;
+  const sel = $('core-srv'); if (!sel) return; const keep = sel.value;
   sel.innerHTML = SERVERS.map(s => `<option value="${+s.id}">${esc(s.name)} (${esc(s.host)})${s.core_installed ? '' : ' — ' + esc(t('badge_notinst'))}</option>`).join('');
   if (keep && SERVERS.some(s => String(s.id) === keep)) sel.value = keep;
 }
@@ -3161,10 +3161,10 @@ $('loc-ipv4').onclick = function () { copyText(this.dataset.ip, 'IPv4'); };
 $('loc-ipv6').onclick = function () { copyText(this.dataset.ip, 'IPv6'); };
 $('s-auth').onchange = toggleAuth;
 $('btn-save-srv').onclick = saveServer;
-$('btn-core-install').onclick = () => { const id = +$('core-srv').value; if (id) openInstallModal(id); else toast(t('select_srv_first'), true); };
-$('btn-core-run').onclick = runCmd;
-$('core-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
-$('btn-core-clear').onclick = () => coreOut('—');
+if ($('btn-core-install')) $('btn-core-install').onclick = () => { const id = $('core-srv') ? +$('core-srv').value : 0; if (id) openInstallModal(id); else toast(t('select_srv_first'), true); };
+if ($('btn-core-run')) $('btn-core-run').onclick = runCmd;
+if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
+if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
 $('btn-reset-custom').onclick = () => { custom = {}; applyTheme(); renderStudio(); };
