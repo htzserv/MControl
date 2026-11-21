@@ -62,7 +62,7 @@ else
   VERSION_TXT="$(curl -fsSL "${RELEASE_BASE}/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "latest")"
 fi
 
-[ -n "$VERSION_TXT" ] || VERSION_TXT="1.0.2"
+[ -n "$VERSION_TXT" ] || VERSION_TXT="1.1.0"
 
 echo "[2/3] Installing binary to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR" "$DATA_DIR"

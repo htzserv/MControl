@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 (Phase 2 — Unified Tunnels & Zero-APT Static Bundle)
+- Added automated static bundle workflow (`.github/workflows/bundle.yml`) building `mcontrol-bundle-linux-amd64.tar.gz` + `.sha256` with `iperf3`, `speedtest`, `jq`, `socat`, `bh` (Backhaul), `rathole`, `paqet`, and `realm` (dropped `mporter`, `haproxy`, `gost`; zero `apt` and zero `unzip` required on Ubuntu 22/24/26).
+- Upgraded Setup Studio to deploy directly from the static `.tar.gz` bundle via GitHub, Iran Mirror, or Direct from Master Cache.
+- Implemented Phase 2 Unified Tunnel Management (`internal/api/tunnels.go`, SQLite `tunnels` table, and redesigned `Tunnels` tab):
+  - Atomic 2-sided deployment (Iran ⇄ Foreign) over Peer Agent v2 (TLS) or SSH.
+  - Supports **Backhaul** (`tcp`, `tcpmux`, `tcp+tls`, `ws`, `wss`, `kcp`, `udp`), **Rathole**, **Paqet**, and Kernel Tunnels (**GRE**, **IP6GRE**, **VXLAN**) with automatic `/30` subnetting and persistent `iptables` port forwarding.
+  - Direct integration with Saved Port Profiles + live `Start`, `Stop`, `Restart`, `Status`, `Logs`, and clean 2-sided `Delete`.
+- Added **Link Test (Ping + iperf3)** tool to benchmark real latency and throughput between any two nodes directly from the Tunnels tab.
+
+## 1.0.3
+- Auto-migrated legacy `raw.githubusercontent.com` panel update URLs to GitHub Releases (`releases/latest/download`) in both SQLite and `updater.go` so 1-click GitHub updates never hit HTTP 404.
+- Added automatic background update checking (runs on login and every 5 minutes automatically).
+- Replaced the small `Update available!` button on the Control Server card with a prominent glowing top-left `Update available!` pill button in the empty top-left space.
+
 ## 1.0.2
 - Fixed mobile utility bar overlap bug (removed `backdrop-filter` containing-block trap from bottom `#chrome` bar that forced the language/theme/logout buttons on top of navigation tabs).
 - Added a clean native-style fixed Mobile Top Header Bar (`<= 820px`, LTR & RTL aware) keeping the MControl logo on one side and utility buttons (Theme, Dark/Light, Language, Logout, Collapse) neatly on the opposite side with zero overlap against page buttons or bottom tabs.
