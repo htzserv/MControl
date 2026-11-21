@@ -1313,6 +1313,77 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
   </div>
 </div>
 
+<!-- NEW TUNNEL MODAL -->
+<div class="modal-bg" id="tun-modal">
+  <div class="card modal-box" style="max-width:580px;">
+    <div class="toolbar" style="margin-bottom:12px;">
+      <h3 style="color:var(--accent);">+ New 2-Sided Tunnel</h3>
+      <button class="btn btn-danger btn-sm" data-close="tun-modal">Close</button>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Tunnel Name</label><input id="t-name" placeholder="e.g. IR1-to-DE1"></div>
+      <div class="field"><label>Engine</label>
+        <select id="t-engine" onchange="onTunnelEngineChange()">
+          <option value="backhaul">Backhaul (Anti-DPI / Multi-Transport)</option>
+          <option value="rathole">Rathole (Lightweight Reverse)</option>
+          <option value="paqet">Paqet (Raw Packet)</option>
+          <option value="gre">GRE (Kernel Layer-3 + iptables)</option>
+          <option value="ip6gre">IP6GRE (Kernel IPv6 + iptables)</option>
+          <option value="vxlan">VXLAN (Kernel Layer-2 + iptables)</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Iran Server (Entry)</label><select id="t-iran"></select></div>
+      <div class="field"><label>Foreign Server (Exit)</label><select id="t-foreign"></select></div>
+    </div>
+    <div class="row2">
+      <div class="field" id="t-trans-wrap"><label>Transport</label>
+        <select id="t-trans">
+          <option value="tcp">TCP</option>
+          <option value="tcpmux">TCPMUX</option>
+          <option value="tcp+tls">TCP + TLS</option>
+          <option value="ws">WebSocket (WS)</option>
+          <option value="wss">WebSocket Secure (WSS)</option>
+          <option value="kcp">KCP (UDP)</option>
+          <option value="udp">UDP</option>
+        </select>
+      </div>
+      <div class="field"><label>Tunnel Control Port</label><input id="t-port" type="number" value="3080"></div>
+    </div>
+    <div class="field"><label>Secret Token (leave blank for random)</label><input id="t-token" class="mono" placeholder="Auto-generated secure token"></div>
+    <div class="field">
+      <label>Forward Ports — Pick Saved Profile or Enter Custom</label>
+      <select id="t-port-prof" style="margin-bottom:8px;" onchange="applyPortProfileToTunnel()">
+        <option value="">— Custom Ports —</option>
+      </select>
+      <input id="t-ports" class="mono" placeholder="443, 8443, 2053, 2083">
+    </div>
+    <div class="flexw" style="justify-content:flex-end; margin-top:14px;">
+      <button class="btn btn-ghost" data-close="tun-modal">Cancel</button>
+      <button class="btn btn-sky" id="btn-tun-deploy" onclick="deployTunnel()">Deploy to Both Servers</button>
+    </div>
+  </div>
+</div>
+
+<!-- LINK TEST (PING + IPERF3) MODAL -->
+<div class="modal-bg" id="linktest-modal">
+  <div class="card modal-box" style="max-width:580px;">
+    <div class="toolbar" style="margin-bottom:12px;">
+      <h3 style="color:var(--accent);">Link Test (Ping + iperf3)</h3>
+      <button class="btn btn-danger btn-sm" data-close="linktest-modal">Close</button>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Source Node (Iran)</label><select id="lt-iran"></select></div>
+      <div class="field"><label>Target Node (Foreign)</label><select id="lt-foreign"></select></div>
+    </div>
+    <div class="flexw" style="margin-bottom:12px;">
+      <button class="btn btn-sky" id="btn-lt-run" onclick="runLinkTest()">Run Ping &amp; iperf3 Test</button>
+    </div>
+    <pre class="term" id="lt-out" style="height:210px;">Select two servers and click Run to measure real latency and throughput between them.</pre>
+  </div>
+</div>
+
 <!-- SERVER SETUP STUDIO MODAL -->
 <div class="modal-bg" id="setup-modal">
   <div class="card modal-box" style="max-width:640px;">
@@ -1339,20 +1410,17 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
     </div>
 
     <div class="tweak-grid" style="margin-bottom:10px;">
-      <button class="btn btn-sky" style="grid-column:1 / -1; justify-content:center;" id="btn-setup-all" onclick="runSetupAction('all')">⚡ Install All (Prerequisites + Tunnel Engines)</button>
-      <button class="btn btn-ghost" onclick="runSetupAction('prereqs')">Install Prerequisites</button>
-      <button class="btn btn-ghost" onclick="runSetupAction('core')">Reinstall Peer Agent v2</button>
-      <button class="btn btn-ghost" style="grid-column:1 / -1; justify-content:center;" onclick="runSetupAction('tunnels')">Install All Tunnel Engines</button>
+      <button class="btn btn-sky" style="grid-column:1 / -1; justify-content:center;" id="btn-setup-all" onclick="runSetupAction('all')">⚡ Install Static Bundle (All Prereqs + Engines — Zero APT)</button>
+      <button class="btn btn-ghost" style="grid-column:1 / -1; justify-content:center;" onclick="runSetupAction('kernel')">Enable Kernel Tunnel Modules (GRE / IP6GRE / VXLAN)</button>
     </div>
 
     <div class="field" style="margin-bottom:12px;">
       <label>Install Individual Tunnel Engine</label>
       <div class="flexw">
-        <button class="chip mono" onclick="runSetupAction('engine','backhaul')">+ Backhaul</button>
+        <button class="chip mono" onclick="runSetupAction('engine','bh')">+ Backhaul (bh)</button>
         <button class="chip mono" onclick="runSetupAction('engine','rathole')">+ Rathole</button>
         <button class="chip mono" onclick="runSetupAction('engine','paqet')">+ Paqet</button>
-        <button class="chip mono" onclick="runSetupAction('engine','gost')">+ GOST</button>
-        <button class="chip mono" onclick="runSetupAction('engine','haproxy')">+ HAProxy</button>
+        <button class="chip mono" onclick="runSetupAction('engine','realm')">+ Realm</button>
       </div>
     </div>
 
@@ -2173,13 +2241,14 @@ async function refreshSetupStatus() {
   const st = r.status;
   $('setup-meta').textContent = `${st.os || 'Linux'} • Arch: ${st.arch || 'amd64'}`;
   const items = [
-    ['Prerequisites', st.prereqs],
-    
+    ['iperf3', st.iperf3],
+    ['Speedtest', st.speedtest],
+    ['jq', st.jq],
     ['Backhaul', st.backhaul],
     ['Rathole', st.rathole],
     ['Paqet', st.paqet],
-    ['GOST', st.gost],
-    ['HAProxy', st.haproxy],
+    ['Realm', st.realm],
+    ['Kernel GRE', st.kernel],
     ['Peer Agent', st.agent]
   ];
   $('setup-status-grid').innerHTML = items.map(([lbl, ok, ver]) =>
