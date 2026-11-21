@@ -40,6 +40,7 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		Token           string `json:"token"`
 		Ports           string `json:"ports"`
 		Forwarder       string `json:"forwarder"`
+		IPMode          string `json:"ip_mode"` // v4 | v6 | 6to4 | 6to6
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -69,6 +70,11 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Transport == "" {
 		req.Transport = "tcp"
+	}
+	if req.IPMode == "v6" || req.IPMode == "6to4" || req.IPMode == "6to6" {
+		if !strings.Contains(req.Transport, "@") {
+			req.Transport = req.Transport + "@" + req.IPMode
+		}
 	}
 	normPorts, portList, err := normalizePorts(req.Ports)
 	if err != nil || len(portList) == 0 {
@@ -153,9 +159,42 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+
+func splitTransportIPMode(raw string) (transport, ipMode string) {
+	parts := strings.SplitN(raw, "@", 2)
+	transport = parts[0]
+	if len(parts) == 2 {
+		ipMode = parts[1]
+	} else {
+		ipMode = "v4"
+	}
+	return
+}
+
+func hostForMode(s *db.Server, ipMode string) string {
+	if (ipMode == "v6" || ipMode == "6to4" || ipMode == "6to6") && s.IPv6 != "" && s.IPv6 != "N/A" {
+		return s.IPv6
+	}
+	return s.Host
+}
+
+func formatHostPort(host string, port int) string {
+	if strings.Contains(host, ":") && !strings.HasPrefix(host, "[") {
+		return fmt.Sprintf("[%s]:%d", host, port)
+	}
+	return fmt.Sprintf("%s:%d", host, port)
+}
+
 func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []int) (string, string) {
 	unit := fmt.Sprintf("mcontrol-tun-%d", t.ID)
 	cfgDir := "/etc/mcontrol/tunnels"
+	baseTrans, ipMode := splitTransportIPMode(t.Transport)
+	iranAddr := hostForMode(iran, ipMode)
+	forAddr := hostForMode(foreign, ipMode)
+	bindWild := "0.0.0.0"
+	if ipMode == "v6" || ipMode == "6to6" {
+		bindWild = "[::]"
+	}
 
 	switch t.Engine {
 	case "backhaul":
@@ -164,7 +203,7 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 			portLines = append(portLines, fmt.Sprintf(`"%d=%d"`, p, p))
 		}
 		iranToml := fmt.Sprintf(`[server]
-bind_addr = "0.0.0.0:%d"
+bind_addr = "%s:%d"
 transport = "%s"
 token = "%s"
 nodelay = true
@@ -173,17 +212,17 @@ heartbeat = 40
 channel_size = 2048
 sniffer = false
 ports = [%s]
-`, t.TunnelPort, t.Transport, t.Token, strings.Join(portLines, ", "))
+`, bindWild, t.TunnelPort, baseTrans, t.Token, strings.Join(portLines, ", "))
 
 		forToml := fmt.Sprintf(`[client]
-remote_addr = "%s:%d"
+remote_addr = "%s"
 transport = "%s"
 token = "%s"
 connection_pool = 8
 retry_interval = 3
 nodelay = true
 keepalive_period = 75
-`, iran.Host, t.TunnelPort, t.Transport, t.Token)
+`, formatHostPort(iranAddr, t.TunnelPort), baseTrans, t.Token)
 
 		makeBH := func(toml string) string {
 			return fmt.Sprintf(`set -e
@@ -222,8 +261,8 @@ systemctl is-active %s.service || true
 			srvSvcs.WriteString(fmt.Sprintf("\n[server.services.p%d]\nbind_addr = \"0.0.0.0:%d\"\n", p, p))
 			cliSvcs.WriteString(fmt.Sprintf("\n[client.services.p%d]\nlocal_addr = \"127.0.0.1:%d\"\n", p, p))
 		}
-		iranToml := fmt.Sprintf("[server]\nbind_addr = \"0.0.0.0:%d\"\ndefault_token = \"%s\"\n%s", t.TunnelPort, t.Token, srvSvcs.String())
-		forToml := fmt.Sprintf("[client]\nremote_addr = \"%s:%d\"\ndefault_token = \"%s\"\n%s", iran.Host, t.TunnelPort, t.Token, cliSvcs.String())
+		iranToml := fmt.Sprintf("[server]\nbind_addr = \"%s:%d\"\ndefault_token = \"%s\"\n%s", bindWild, t.TunnelPort, t.Token, srvSvcs.String())
+		forToml := fmt.Sprintf("[client]\nremote_addr = \"%s\"\ndefault_token = \"%s\"\n%s", formatHostPort(iranAddr, t.TunnelPort), t.Token, cliSvcs.String())
 		makeRH := func(toml string) string {
 			return fmt.Sprintf(`set -e
 BIN=$(command -v rathole 2>/dev/null || true)
@@ -312,11 +351,11 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 		var iranLink, forLink string
 		if t.Engine == "vxlan" {
 			vni := 100 + t.ID
-			iranLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, foreign.Host, iran.Host, t.TunnelPort)
-			forLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, iran.Host, foreign.Host, t.TunnelPort)
-		} else if t.Engine == "ip6gre" {
-			iranLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s ttl 255", ifName, foreign.Host, iran.Host)
-			forLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s ttl 255", ifName, iran.Host, foreign.Host)
+			iranLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, forAddr, iranAddr, t.TunnelPort)
+			forLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, iranAddr, forAddr, t.TunnelPort)
+		} else if t.Engine == "ip6gre" || ipMode == "6to4" || ipMode == "6to6" {
+			iranLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s ttl 255", ifName, forAddr, iranAddr)
+			forLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s ttl 255", ifName, iranAddr, forAddr)
 		} else {
 			iranLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s ttl 255", ifName, foreign.Host, iran.Host)
 			forLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s ttl 255", ifName, iran.Host, foreign.Host)
@@ -510,4 +549,98 @@ fi`, iranSrv.Name, forSrv.Name, sshclient.ShQuote(forSrv.Host), sshclient.ShQuot
 		out = "[Foreign listener warning: " + rFor.Output + "]\n\n" + out
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "output": out})
+}
+
+func (h *Handler) handleTunnelSpeedtest(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	tun, err := h.store.GetTunnel(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "tunnel not found")
+		return
+	}
+	iranSrv, err := h.store.GetServerWithSecret(tun.IranServerID)
+	if err != nil {
+		fail(w, http.StatusNotFound, "Iran server not found")
+		return
+	}
+	forSrv, err := h.store.GetServerWithSecret(tun.ForeignServerID)
+	if err != nil {
+		fail(w, http.StatusNotFound, "Foreign server not found")
+		return
+	}
+
+	_, portList, _ := normalizePorts(tun.Ports)
+	testPort := 49155
+	if len(portList) > 0 {
+		testPort = portList[0]
+	}
+
+	// For kernel tunnels (GRE/IP6GRE/VXLAN), test directly over the tunnel subnet IP (.2)
+	targetHost := "127.0.0.1"
+	if tun.Engine == "gre" || tun.Engine == "ip6gre" || tun.Engine == "vxlan" {
+		sub := tun.Subnet
+		if sub == "" {
+			sub = fmt.Sprintf("10.10.%d", (tun.ID%240)+10)
+		}
+		targetHost = sub + ".2"
+		testPort = 49155
+	}
+
+	// Start temporary sink on Foreign (if port isn't already occupied by a service)
+	srvSink := fmt.Sprintf(`nohup python3 -c "
+import socket, threading, time
+s=socket.socket(); s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+try:
+  s.bind(('0.0.0.0',%d)); s.listen(16); s.settimeout(12)
+  def h(c):
+    try:
+      while c.recv(65536): pass
+    except: pass
+    finally: c.close()
+  end=time.time()+12
+  while time.time()<end:
+    try:
+      c,_=s.accept(); threading.Thread(target=h,args=(c,),daemon=True).start()
+    except: break
+except Exception as e:
+  print('BIND_NOTE:', e)
+finally: s.close()
+" >/dev/null 2>&1 & sleep 0.4`, testPort)
+	_ = h.runOnServer(forSrv, srvSink, 8*time.Second)
+
+	cliCmd := fmt.Sprintf(`echo "=== IN-TUNNEL SPEEDTEST: %s (%s) -> %s:%d ==="
+python3 -c "
+import socket, threading, time
+host, port = '%s', %d
+rtts = []
+for _ in range(3):
+  try:
+    t0=time.time(); s=socket.create_connection((host,port),3); rtts.append((time.time()-t0)*1000); s.close()
+  except Exception as e:
+    print('Connect err:', e)
+if rtts: print(f'RTT (min/avg): {min(rtts):.1f} ms / {sum(rtts)/len(rtts):.1f} ms')
+total = [0]
+buf = b'x'*65536
+def worker():
+  try:
+    s=socket.create_connection((host,port),3)
+    end=time.time()+4.0
+    sent=0
+    while time.time()<end: sent += s.send(buf)
+    s.close(); total[0] += sent
+  except: pass
+t0=time.time()
+ts=[threading.Thread(target=worker) for _ in range(4)]
+for t in ts: t.start()
+for t in ts: t.join()
+dt=max(0.1, time.time()-t0)
+mbps=(total[0]*8)/(dt*1e6)
+print(f'Throughput (4 streams): {mbps:.1f} Mbps')
+" 2>&1`, tun.Name, strings.ToUpper(tun.Engine), targetHost, testPort, targetHost, testPort)
+
+	res := h.runOnServer(iranSrv, cliCmd, 22*time.Second)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "output": res.Output})
 }

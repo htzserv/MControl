@@ -375,6 +375,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/tunnels", h.auth(h.handleListTunnels))
 	mux.HandleFunc("POST /api/tunnels", h.auth(h.handleCreateTunnel))
 	mux.HandleFunc("POST /api/tunnels/{id}/action", h.auth(h.handleTunnelAction))
+	mux.HandleFunc("POST /api/tunnels/{id}/speedtest", h.auth(h.handleTunnelSpeedtest))
 	mux.HandleFunc("DELETE /api/tunnels/{id}", h.auth(h.handleDeleteTunnel))
 	mux.HandleFunc("POST /api/tunnels/linktest", h.auth(h.handleLinkTest))
 	mux.HandleFunc("POST /api/tunnels/benchmark", h.auth(h.handleBenchmarkStart))

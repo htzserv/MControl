@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4
+- Added **1-Click In-Tunnel Speedtest** (`Speedtest` button on every deployed tunnel card, `POST /api/tunnels/{id}/speedtest`) measuring real RTT & throughput directly through the active tunnel.
+- Redesigned **MSmart Benchmark** protocol selector into clean, well-spaced categories: **Backhaul** (with IPv4/IPv6 option), **Rathole** (with IPv4/IPv6 option), **GRE** (`4-to-4`, `6-to-4`, `6-to-6`), **VXLAN** (`IPv4` / `IPv6`), and **Paqet** (`Raw Packet`).
+- Added automatic **IPv6 activation & probe** (`net.ipv6.conf.all.disable_ipv6=0` + `ping -6`) when testing or deploying IPv6 tunnels, even if IPv6 was disabled on one of the nodes.
+- Upgraded **New Tunnel** modal with categorized Engine/IP-mode selection (`GRE 4-to-4`, `GRE 6-to-4`, `GRE 6-to-6`, plus IPv6 toggle for Backhaul/Rathole/VXLAN).
+
 ## 1.1.3
 - Fixed MSmart Benchmark `0 Mbps` failure when `iperf3` is missing: replaced external `iperf3` dependency with a built-in zero-dependency Python3 multi-stream TCP throughput & RTT benchmarker (works out-of-the-box on every server without needing `iperf3`).
 - Fixed `Backhaul KCP` / `Rathole` false-negative deploy errors caused by `systemctl is-active` returning `activating` (exit code 3) under `set -e`.

@@ -18,6 +18,7 @@ import (
 type BenchCandidate struct {
 	Engine    string `json:"engine"`
 	Transport string `json:"transport"`
+	IPMode    string `json:"ip_mode"`
 	Label     string `json:"label"`
 }
 
@@ -25,6 +26,7 @@ type BenchResult struct {
 	Rank      int     `json:"rank"`
 	Engine    string  `json:"engine"`
 	Transport string  `json:"transport"`
+	IPMode    string  `json:"ip_mode"`
 	Label     string  `json:"label"`
 	OK        bool    `json:"ok"`
 	Mbps      float64 `json:"mbps"`
@@ -183,6 +185,40 @@ iptables-save -t nat | grep -v "mc_tun_999" | iptables-restore -T nat 2>/dev/nul
 pkill -f "iperf3 -s.*49151" 2>/dev/null || true
 systemctl daemon-reload`
 
+	
+	needV6 := false
+	for _, c := range cands {
+		if c.IPMode == "v6" || c.IPMode == "6to4" || c.IPMode == "6to6" || c.Engine == "ip6gre" {
+			needV6 = true
+			break
+		}
+	}
+	if needV6 {
+		benchLog("IPv6 candidate selected: ensuring IPv6 is enabled on both nodes & probing IPv6 reachability...")
+		enV6 := `sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1 || true
+sysctl -w net.ipv6.conf.default.disable_ipv6=0 >/dev/null 2>&1 || true
+sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1 || true
+ip -6 route get 2606:4700:4700::1111 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}'`
+		var wg6 sync.WaitGroup
+		var v6I, v6F sshclient.Result
+		wg6.Add(2)
+		go func() { defer wg6.Done(); v6I = h.runOnServer(iran, enV6, 10*time.Second) }()
+		go func() { defer wg6.Done(); v6F = h.runOnServer(foreign, enV6, 10*time.Second) }()
+		wg6.Wait()
+		if s := strings.TrimSpace(v6I.Output); s != "" && strings.Contains(s, ":") {
+			iran.IPv6 = s
+		}
+		if s := strings.TrimSpace(v6F.Output); s != "" && strings.Contains(s, ":") {
+			foreign.IPv6 = s
+		}
+		if iran.IPv6 != "" && iran.IPv6 != "N/A" && foreign.IPv6 != "" && foreign.IPv6 != "N/A" {
+			p6 := h.runOnServer(iran, fmt.Sprintf("ping -6 -c 2 -W 2 %s 2>&1 | tail -n 2", sshclient.ShQuote(foreign.IPv6)), 8*time.Second)
+			benchLog(fmt.Sprintf("IPv6 detected: Iran=%s | Foreign=%s | %s", iran.IPv6, foreign.IPv6, strings.ReplaceAll(strings.TrimSpace(p6.Output), "\n", " ")))
+		} else {
+			benchLog(fmt.Sprintf("IPv6 notice: Iran=%s | Foreign=%s (missing global IPv6 on one side may cause IPv6 candidates to fail)", iran.IPv6, foreign.IPv6))
+		}
+	}
+
 	for idx, c := range cands {
 		pct := int(float64(idx)/float64(len(cands))*92) + 5
 		benchMu.Lock()
@@ -195,7 +231,7 @@ systemctl daemon-reload`
 			ID:         benchID,
 			Name:       "bench-" + c.Engine,
 			Engine:     c.Engine,
-			Transport:  c.Transport,
+			Transport:  c.Transport + "@" + c.IPMode,
 			TunnelPort: ctrlPort,
 			Token:      "mcbench" + randTunnelToken()[:8],
 			Subnet:     "10.10.250",
@@ -209,7 +245,7 @@ systemctl daemon-reload`
 		go func() { defer wg.Done(); rF = h.runOnServer(foreign, forDeploy, 35*time.Second) }()
 		wg.Wait()
 
-		res := BenchResult{Engine: c.Engine, Transport: c.Transport, Label: c.Label}
+		res := BenchResult{Engine: c.Engine, Transport: c.Transport, IPMode: c.IPMode, Label: c.Label}
 		if rI.Err != nil || rF.Err != nil {
 			errMsg := ""
 			if rI.Err != nil {
