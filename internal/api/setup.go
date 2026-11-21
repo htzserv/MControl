@@ -299,27 +299,40 @@ echo "=== All Prerequisites & Tunnel Engines Installed Successfully ==="
 		if eng == "backhaul" {
 			eng = "bh"
 		}
-		if eng != "bh" && eng != "rathole" && eng != "paqet" && eng != "realm" {
-			fail(w, http.StatusBadRequest, "unsupported engine")
+		validEng := map[string]bool{
+			"bh": true, "rathole": true, "paqet": true, "realm": true,
+			"iperf3": true, "speedtest": true, "jq": true, "socat": true,
+		}
+		if !validEng[eng] {
+			fail(w, http.StatusBadRequest, "unsupported component: "+eng)
 			return
+		}
+		fallbackCmd := ""
+		if eng == "iperf3" || eng == "jq" || eng == "socat" {
+			fallbackCmd = fmt.Sprintf(` || (command -v apt-get >/dev/null 2>&1 && DEBIAN_FRONTEND=noninteractive apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq %s)`, eng)
 		}
 		if req.Source == "master" {
 			rel := "engines/" + eng
-			if _, err := os.Stat(filepath.Join(h.cacheDir(), filepath.FromSlash(rel))); err != nil {
-				fail(w, http.StatusNotFound, "binary not uploaded to Master Cache yet (Settings -> Downloads & Engines)")
-				return
-			}
-			dlURL := h.masterDistBaseURL(h.createDistToken()) + "/" + rel
-			cmd = fmt.Sprintf(`set -e; curl -kfsSL %s -o /usr/local/bin/%s && chmod 755 /usr/local/bin/%s && echo "%s installed from Master Cache."`, sshclient.ShQuote(dlURL), eng, eng, eng)
-			if eng == "bh" {
-				cmd += ` && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul`
+			if _, err := os.Stat(filepath.Join(h.cacheDir(), filepath.FromSlash(rel))); err == nil {
+				dlURL := h.masterDistBaseURL(h.createDistToken()) + "/" + rel
+				cmd = fmt.Sprintf(`set -e; curl -kfsSL %s -o /usr/local/bin/%s && chmod 755 /usr/local/bin/%s && echo "%s installed from Master Cache."`, sshclient.ShQuote(dlURL), eng, eng, eng)
+				if eng == "bh" {
+					cmd += ` && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul`
+				}
+			} else {
+				if err := h.ensureCachedFile("bundle/"+bundleFileName, bundleGH, bundleIR); err != nil {
+					fail(w, http.StatusBadGateway, "failed to cache bundle on Master: "+err.Error())
+					return
+				}
+				dlURL := h.masterDistBaseURL(h.createDistToken()) + "/bundle/" + bundleFileName
+				cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -kfsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; ( [ -f "$TMPD/bin/%s" ] && install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s )%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, fallbackCmd, eng, eng)
 			}
 		} else {
 			dlURL := bundleGH
 			if req.Source == "mirror" {
 				dlURL = bundleIR
 			}
-			cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -fsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, eng)
+			cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -fsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; ( [ -f "$TMPD/bin/%s" ] && install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s )%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, fallbackCmd, eng, eng)
 		}
 	default:
 		fail(w, http.StatusBadRequest, "unsupported setup action")

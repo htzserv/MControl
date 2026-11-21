@@ -740,7 +740,9 @@ body[dir="rtl"] .util.collapsed .util-toggle svg { transform: rotate(0deg); }
 .st-pill {
   padding: 7px 10px; border-radius: 10px; background: var(--row); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between; font-size: .74rem; font-weight: 600;
+  cursor: pointer; transition: border-color .15s, background .15s, transform .12s;
 }
+.st-pill:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
 .st-pill.ok { border-color: color-mix(in srgb, var(--green) 45%, transparent); color: var(--green); }
 .st-pill.miss { color: var(--muted); }
 .srv-spd-line { font-size: .76rem; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2416,18 +2418,18 @@ async function refreshSetupStatus() {
   const st = r.status;
   $('setup-meta').textContent = `${st.os || 'Linux'} • Arch: ${st.arch || 'amd64'}`;
   const items = [
-    ['iperf3', st.iperf3],
-    ['Speedtest', st.speedtest],
-    ['jq', st.jq],
-    ['Backhaul', st.backhaul],
-    ['Rathole', st.rathole],
-    ['Paqet', st.paqet],
-    ['Realm', st.realm],
-    ['Kernel GRE', st.kernel],
-    ['Peer Agent', st.agent]
+    ['iperf3', st.iperf3, "runSetupAction('engine','iperf3')"],
+    ['Speedtest', st.speedtest, "runSetupAction('engine','speedtest')"],
+    ['jq', st.jq, "runSetupAction('engine','jq')"],
+    ['Backhaul', st.backhaul, "runSetupAction('engine','bh')"],
+    ['Rathole', st.rathole, "runSetupAction('engine','rathole')"],
+    ['Paqet', st.paqet, "runSetupAction('engine','paqet')"],
+    ['Realm', st.realm, "runSetupAction('engine','realm')"],
+    ['Kernel GRE', st.kernel, "runSetupAction('kernel')"],
+    ['Peer Agent', st.agent, `updatePeerAgent(${setupTargetId})`]
   ];
-  $('setup-status-grid').innerHTML = items.map(([lbl, ok, ver]) =>
-    `<div class="st-pill ${ok ? 'ok' : 'miss'}"><span>${esc(lbl)}</span><span>${ok ? (ver ? esc(ver) : '✔') : '—'}</span></div>`
+  $('setup-status-grid').innerHTML = items.map(([lbl, ok, act]) =>
+    `<button type="button" class="st-pill ${ok ? 'ok' : 'miss'}" title="Click to install / reinstall ${esc(lbl)}" onclick="${act}"><span>${esc(lbl)}</span><span>${ok ? '✔' : '+ Install'}</span></button>`
   ).join('');
 }
 
