@@ -30,17 +30,6 @@ jobs:
           tar -xzf tmp_dl/speedtest.tgz -C tmp_dl speedtest
           install -m 755 tmp_dl/speedtest bundle/bin/speedtest
 
-          # Build guaranteed static iperf3 from source (works on Ubuntu 22/24/26 with zero shared libs)
-          sudo apt-get update -qq && sudo apt-get install -y -qq build-essential autoconf automake libtool >/dev/null
-          curl -fsSL "https://github.com/esnet/iperf/archive/refs/tags/3.17.1.tar.gz" -o tmp_dl/iperf3.tar.gz
-          tar -xzf tmp_dl/iperf3.tar.gz -C tmp_dl
-          (
-            cd tmp_dl/iperf-3.17.1
-            ./configure --disable-shared --enable-static --without-openssl >/dev/null
-            make -j"$(nproc)" LDFLAGS="-all-static" >/dev/null 2>&1 || make -j"$(nproc)" >/dev/null
-            install -m 755 src/iperf3 ../../bundle/bin/iperf3
-          )
-
           curl -fsSL "https://github.com/andrew-d/static-binaries/raw/master/binaries/linux/x86_64/socat" -o bundle/bin/socat || true
           [ -s bundle/bin/socat ] && chmod 755 bundle/bin/socat || rm -f bundle/bin/socat
 
