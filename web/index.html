@@ -2412,6 +2412,76 @@ async function deleteTunnel(id) {
   else toast(r.error || 'Delete failed', true);
 }
 
+
+let msProf = 'balanced', msPollTimer = null;
+
+function pickMSProf(p) {
+  msProf = p;
+  document.querySelectorAll('#ms-prof-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.msProf === p));
+}
+
+function openMSmartModal() {
+  populateServerSelects('ms-iran', 'ms-foreign');
+  $('msmart-modal').classList.add('active');
+  pollMSmartStatus();
+}
+
+async function startMSmartBench() {
+  const cands = [...document.querySelectorAll('#ms-cands input:checked')].map(cb => {
+    const [engine, transport, label] = cb.value.split(':');
+    return { engine, transport, label };
+  });
+  if (!cands.length) { toast('Select at least one protocol', true); return; }
+  const r = await api('api/tunnels/benchmark', 'POST', {
+    iran_server_id: parseInt($('ms-iran').value || '0', 10),
+    foreign_server_id: parseInt($('ms-foreign').value || '0', 10),
+    profile: msProf,
+    candidates: cands
+  });
+  if (!r.ok) { toast(r.error || 'Failed to start benchmark', true); return; }
+  toast('MSmart Benchmark started!');
+  if (msPollTimer) clearInterval(msPollTimer);
+  pollMSmartStatus();
+  msPollTimer = setInterval(pollMSmartStatus, 2000);
+}
+
+async function pollMSmartStatus() {
+  const r = await api('api/tunnels/benchmark/status');
+  if (!r.ok || !r.job) return;
+  const j = r.job;
+  $('ms-stage').textContent = (j.current || 'Ready') + (j.running ? ` (${j.percent}%)` : '');
+  $('ms-bar').style.width = Math.min(100, j.percent || 0) + '%';
+  $('btn-ms-start').disabled = !!j.running;
+  if (j.logs && j.logs.length) {
+    const lg = $('ms-logs'); lg.textContent = j.logs.join('\n'); lg.scrollTop = lg.scrollHeight;
+  }
+  const box = $('ms-results');
+  if (box && j.results && j.results.length) {
+    box.innerHTML = j.results.map(x => `
+      <div class="kv" style="margin:0; border-inline-start:3px solid ${x.ok ? (x.rank===1 ? 'var(--green)' : 'var(--accent)') : 'var(--red)'};">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="badge ${x.ok ? 'b-iran' : 'b-miss'} mono">#${x.rank}</span>
+          <strong>${esc(x.label)}</strong>
+          ${x.ok ? `<span class="mono" style="color:var(--green);">${x.mbps} Mbps</span><span class="mono" style="color:var(--muted);">RTT ${x.ping_ms} ms</span><span class="badge b-ok">Score ${x.score}</span>` : `<span style="color:var(--red); font-size:.75rem;">${esc(x.error || 'Failed')}</span>`}
+        </div>
+        ${x.ok ? `<button class="btn btn-sky btn-sm" onclick="deployWinner('${esc(x.engine)}','${esc(x.transport)}',${j.iran_server_id},${j.foreign_server_id})">Deploy Winner</button>` : ''}
+      </div>`).join('');
+  }
+  if (!j.running && msPollTimer) { clearInterval(msPollTimer); msPollTimer = null; }
+}
+
+function deployWinner(engine, transport, iranId, forId) {
+  closeModal('msmart-modal');
+  openNewTunnelModal();
+  $('t-engine').value = engine;
+  onTunnelEngineChange();
+  if (engine === 'backhaul') $('t-trans').value = transport;
+  if (iranId) $('t-iran').value = String(iranId);
+  if (forId) $('t-foreign').value = String(forId);
+  $('t-name').value = 'MSmart-' + engine.toUpperCase();
+  toast('Winner pre-filled! Pick a Port Profile and click Deploy.');
+}
+
 function openLinkTestModal() {
   populateServerSelects('lt-iran', 'lt-foreign');
   $('lt-out').textContent = 'Select two servers and click Run to measure real latency and throughput between them.';
@@ -3048,12 +3118,13 @@ function drawSpark(id, series) {
 }
 async function pollLocalStats() {
   if (!token) return;
-  const res = await api('api/local/stats');
-  if (!res.ok || !res.stats) return;
-  const s = res.stats, setT = (id, v) => { $(id).textContent = v; };
-  setT('loc-host', (SETTINGS && SETTINGS.panel_name) ? SETTINGS.panel_name : (s.hostname || 'Control Server'));
-  const e4 = $('loc-ipv4'); e4.textContent = 'IPv4: ' + s.ipv4; e4.dataset.ip = s.ipv4;
-  const e6 = $('loc-ipv6'); e6.textContent = 'IPv6: ' + s.ipv6; e6.dataset.ip = s.ipv6;
+  try {
+    const res = await api('api/local/stats');
+    if (!res.ok || !res.stats) return;
+    const s = res.stats, setT = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+    setT('loc-host', (SETTINGS && SETTINGS.panel_name) ? SETTINGS.panel_name : (s.hostname || 'Control Server'));
+    const e4 = $('loc-ipv4'); if (e4) { e4.textContent = 'IPv4: ' + (s.ipv4 || 'N/A'); e4.dataset.ip = s.ipv4 || ''; }
+    const e6 = $('loc-ipv6'); if (e6) { e6.textContent = 'IPv6: ' + (s.ipv6 || 'N/A'); e6.dataset.ip = s.ipv6 || ''; }
   setT('loc-cpu', (s.cpu_percent || 0).toFixed(1) + '%'); $('bar-cpu').style.width = Math.min(100, s.cpu_percent || 0) + '%'; setT('loc-load', s.load_avg);
   setT('loc-ram', (s.ram_percent || 0).toFixed(1) + '%'); $('bar-ram').style.width = Math.min(100, s.ram_percent || 0) + '%'; setT('loc-ram-mb', s.ram_used_mb + ' / ' + s.ram_total_mb + ' MB');
   setT('loc-disk', (s.disk_percent || 0).toFixed(1) + '%'); $('bar-disk').style.width = Math.min(100, s.disk_percent || 0) + '%';
@@ -3070,6 +3141,7 @@ async function pollLocalStats() {
   const cs = getComputedStyle(document.body);
   drawSpark('spark-cpu', [{ data: cpuHist, color: cs.getPropertyValue('--accent').trim() || '#38bdf8' }]);
   drawSpark('spark-net', [{ data: rxHist, color: cs.getPropertyValue('--green').trim() || '#34d399' }, { data: txHist, color: cs.getPropertyValue('--yellow').trim() || '#fbbf24' }]);
+  } catch (e) { console.error('pollLocalStats:', e); }
 }
 
 let liveServers = true, liveProbeBusy = false;
