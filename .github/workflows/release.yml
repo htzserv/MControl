@@ -1,0 +1,89 @@
+name: Build & Publish MControl Release
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "README.md"
+      - "CHANGELOG.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Read VERSION
+        id: ver
+        run: |
+          V=$(tr -d '[:space:]' < VERSION)
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${V}" >> "$GITHUB_OUTPUT"
+          echo "Building MControl v${V}"
+
+      - name: Tidy & Verify Go code
+        run: |
+          go mod tidy
+          go vet ./...
+
+      - name: Build static Linux binaries (amd64 & arm64)
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/mcontrol-linux-amd64 .
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/mcontrol-linux-arm64 .
+          cp VERSION dist/VERSION
+          cp mcontrol-cli.sh dist/mcontrol-cli.sh
+
+      - name: Package release ZIPs & SHA-256 checksums
+        run: |
+          cd dist
+          # Default amd64 ZIP (MControl-latest.zip) for 1-click panel updates
+          mkdir -p pkg_amd64 pkg_arm64
+          cp mcontrol-linux-amd64 pkg_amd64/mcontrol-linux-amd64
+          cp mcontrol-cli.sh pkg_amd64/mcontrol-cli.sh
+          cp VERSION pkg_amd64/VERSION
+          (cd pkg_amd64 && zip -9 -q ../MControl-latest.zip mcontrol-linux-amd64 mcontrol-cli.sh VERSION)
+          cp MControl-latest.zip MControl-linux-amd64.zip
+
+          cp mcontrol-linux-arm64 pkg_arm64/mcontrol-linux-arm64
+          cp mcontrol-cli.sh pkg_arm64/mcontrol-cli.sh
+          cp VERSION pkg_arm64/VERSION
+          (cd pkg_arm64 && zip -9 -q ../MControl-linux-arm64.zip mcontrol-linux-arm64 mcontrol-cli.sh VERSION)
+
+          rm -rf pkg_amd64 pkg_arm64
+
+          for f in MControl-latest.zip MControl-linux-amd64.zip MControl-linux-arm64.zip mcontrol-linux-amd64 mcontrol-linux-arm64; do
+            sha256sum "$f" > "${f}.sha256"
+          done
+          ls -lh
+
+      - name: Create / Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: MControl ${{ steps.ver.outputs.tag }}
+          make_latest: true
+          generate_release_notes: true
+          files: |
+            dist/VERSION
+            dist/mcontrol-cli.sh
+            dist/MControl-latest.zip
+            dist/MControl-latest.zip.sha256
+            dist/MControl-linux-amd64.zip
+            dist/MControl-linux-amd64.zip.sha256
+            dist/MControl-linux-arm64.zip
+            dist/MControl-linux-arm64.zip.sha256
+            dist/mcontrol-linux-amd64
+            dist/mcontrol-linux-amd64.sha256
+            dist/mcontrol-linux-arm64
+            dist/mcontrol-linux-arm64.sha256
