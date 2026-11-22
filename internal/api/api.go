@@ -247,6 +247,29 @@ func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return id, true
 }
 
+func (h *Handler) serverSocksProxy(srv *db.Server) string {
+	if srv == nil {
+		return ""
+	}
+	use := srv.UseOutbound
+	if !use && srv.Role == "foreign" {
+		cfg := h.loadOutboundCfg()
+		if cfg.Enabled && cfg.UseForeign {
+			use = true
+		}
+	}
+	if use && isOutboundActive() {
+		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	return ""
+}
+
+func (h *Handler) targetOfSrv(srv *db.Server) sshclient.Target {
+	t := targetOf(srv)
+	t.SocksProxy = h.serverSocksProxy(srv)
+	return t
+}
+
 func targetOf(srv *db.Server) sshclient.Target {
 	return sshclient.Target{
 		Host:     srv.Host,
@@ -278,9 +301,9 @@ func (h *Handler) probeServer(id int64) (*sshclient.ProbeResult, error) {
 	}
 	var p sshclient.ProbeResult
 	if srv.AuthMode == "peer" && srv.PeerCode != "" {
-		p = sshclient.ProbePeer(srv.Host, srv.AgentPort, srv.PeerCode)
+		p = sshclient.ProbePeer(srv.Host, srv.AgentPort, srv.PeerCode, h.serverSocksProxy(srv))
 	} else {
-		p = sshclient.Probe(targetOf(srv))
+		p = sshclient.Probe(h.targetOfSrv(srv))
 	}
 	h.applyProbe(srv, p)
 	return &p, nil
@@ -546,6 +569,7 @@ type serverReq struct {
 	AuthType string `json:"auth_type"`
 	Secret       string `json:"secret"`
 	SSHProfileID int64  `json:"ssh_profile_id"`
+	UseOutbound  bool   `json:"use_outbound"`
 }
 
 // normalize validates and cleans a server request, returning an error message ("" when fine).
@@ -626,7 +650,11 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 
 	g := geo.Lookup(req.Host)
 	pingMs := sshclient.MeasurePingFromMaster(req.Host, req.Port)
-	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType})
+	reqProxy := ""
+	if req.UseOutbound && isOutboundActive() {
+		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
 
 	status := "offline"
 	hostKey := ""
@@ -1003,6 +1031,12 @@ func (h *Handler) handleUpdateRemote(w http.ResponseWriter, r *http.Request) {
 		req.Source = "github"
 	}
 	st := h.store.GetSettings()
+	if req.Source == "github" && st.BetaBuilds {
+		chk := updater.CheckAll(st.PanelGitHubURL, st.PanelMirrorURL, h.githubSocksProxy(), true, st.InstalledBetaBuild)
+		if !chk.GitHub.Available && chk.Beta.Available {
+			req.Source = "beta"
+		}
+	}
 	log.Printf("remote update requested from %s by %s", req.Source, r.Header.Get("X-MC-User"))
 	h.maybeSendPreUpdateBackup(req.Source)
 	err := updater.StartRemoteUpdate(req.Source, st.PanelGitHubURL, st.PanelMirrorURL, h.githubSocksProxy(), st.AllowUnverified, func(build int) {
@@ -1405,7 +1439,11 @@ func (h *Handler) handleTestServer(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	pingMs := sshclient.MeasurePingFromMaster(req.Host, req.Port)
-	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType})
+	reqProxy := ""
+	if req.UseOutbound && isOutboundActive() {
+		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
 	if !p.Online {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": false, "ping_ms": pingMs, "error": p.Error})
 		return
@@ -1863,10 +1901,11 @@ func verifyTOTP(secretB32, code string) bool {
 }
 
 func (h *Handler) runOnServer(srv *db.Server, cmd string, timeout time.Duration) sshclient.Result {
+	px := h.serverSocksProxy(srv)
 	if srv.AuthMode == "peer" && srv.PeerCode != "" {
-		return sshclient.PeerExec(srv.Host, srv.AgentPort, srv.PeerCode, cmd, timeout)
+		return sshclient.PeerExec(srv.Host, srv.AgentPort, srv.PeerCode, cmd, timeout, px)
 	}
-	return sshclient.Run(targetOf(srv), cmd, 10*time.Second, timeout)
+	return sshclient.Run(h.targetOfSrv(srv), cmd, 10*time.Second, timeout)
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
@@ -1910,10 +1949,10 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v2 upgrade triggered.'", sshclient.ShQuote(script))
 		res = sshclient.PeerExec(srv.Host, srv.AgentPort, srv.PeerCode, bgCmd, 15*time.Second)
 		if res.Err != nil && srv.Password != "" {
-			res = sshclient.Run(targetOf(srv), script, 10*time.Second, 35*time.Second)
+			res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 35*time.Second)
 		}
 	} else if srv.Password != "" {
-		res = sshclient.Run(targetOf(srv), script, 10*time.Second, 35*time.Second)
+		res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 35*time.Second)
 	} else {
 		fail(w, http.StatusBadRequest, "cannot upgrade agent (old agent lacks /exec and no SSH password stored; Edit server to set SSH password once, then Pair again)")
 		return

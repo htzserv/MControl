@@ -70,13 +70,24 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/mcontrol-linux-arm64 .
           cp VERSION dist/VERSION
           cp mcontrol-cli.sh dist/mcontrol-cli.sh
-          printf '{"version":"%s","build":%s,"commit":"%s","tag":"%s-beta.%s","built_at":%s}\n' \
-            "${{ steps.ver.outputs.version }}" \
-            "${{ steps.ver.outputs.build_num }}" \
-            "${{ steps.ver.outputs.short_sha }}" \
-            "${{ steps.ver.outputs.version }}" \
-            "${{ steps.ver.outputs.build_num }}" \
-            "$(date +%s)" > dist/beta-meta.json
+          cp CHANGELOG.md dist/CHANGELOG.md
+          python3 - <<'PYEOF'
+import json, subprocess, time
+ver = "${{ steps.ver.outputs.version }}"
+bnum = int("${{ steps.ver.outputs.build_num }}")
+sha = "${{ steps.ver.outputs.short_sha }}"
+msg = subprocess.check_output(["git", "log", "-1", "--pretty=format:%s%n%b"], text=True).strip()
+meta = {
+    "version": ver,
+    "build": bnum,
+    "commit": sha,
+    "tag": f"{ver}-beta.{bnum}",
+    "built_at": int(time.time()),
+    "changelog": msg,
+}
+with open("dist/beta-meta.json", "w", encoding="utf-8") as f:
+    json.dump(meta, f, ensure_ascii=False)
+PYEOF
 
       - name: Package release ZIPs & SHA-256 checksums
         run: |
@@ -110,6 +121,7 @@ jobs:
           generate_release_notes: true
           files: |
             dist/VERSION
+            dist/CHANGELOG.md
             dist/mcontrol-cli.sh
             dist/MControl-latest.zip
             dist/MControl-latest.zip.sha256

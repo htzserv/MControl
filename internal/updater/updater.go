@@ -150,6 +150,7 @@ type BetaStatus struct {
 	Build     int    `json:"build"`
 	Commit    string `json:"commit"`
 	Available bool   `json:"available"`
+	Changelog string `json:"changelog,omitempty"`
 	Error     string `json:"error,omitempty"`
 }
 
@@ -158,6 +159,9 @@ type CheckResult struct {
 	InstalledBetaBuild int          `json:"installed_beta_build"`
 	ViaOutbound        bool         `json:"via_outbound"`
 	UpdateAvailable    bool         `json:"update_available"`
+	Changelog          string       `json:"changelog,omitempty"`
+	ChangelogTitle     string       `json:"changelog_title,omitempty"`
+	ChangelogKind      string       `json:"changelog_kind,omitempty"`
 	GitHub          SourceStatus `json:"github"`
 	Mirror          SourceStatus `json:"mirror"`
 	Beta            BetaStatus   `json:"beta"`
@@ -313,10 +317,11 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 			continue
 		}
 		var meta struct {
-			Version string `json:"version"`
-			Build   int    `json:"build"`
-			Commit  string `json:"commit"`
-			Tag     string `json:"tag"`
+			Version   string `json:"version"`
+			Build     int    `json:"build"`
+			Commit    string `json:"commit"`
+			Tag       string `json:"tag"`
+			Changelog string `json:"changelog"`
 		}
 		decErr := json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&meta)
 		resp.Body.Close()
@@ -328,6 +333,7 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 		st.Build = meta.Build
 		st.Commit = meta.Commit
 		st.Tag = meta.Tag
+		st.Changelog = strings.TrimSpace(meta.Changelog)
 		if st.Tag == "" {
 			st.Tag = fmt.Sprintf("%s-beta.%d", st.Version, st.Build)
 		}
@@ -340,6 +346,70 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 	}
 	st.Error = lastErr
 	return st
+}
+
+
+var clHeaderRe = regexp.MustCompile(`(?m)^##\s+v?([0-9]+(?:\.[0-9]+)+)`)
+
+func extractChangelogRange(md, fromVer, toVer string) string {
+	locs := clHeaderRe.FindAllStringSubmatchIndex(md, -1)
+	if len(locs) == 0 {
+		return ""
+	}
+	var out []string
+	for i, loc := range locs {
+		secVer := md[loc[2]:loc[3]]
+		start := loc[0]
+		end := len(md)
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		}
+		if version.Compare(secVer, fromVer) > 0 && version.Compare(secVer, toVer) <= 0 {
+			out = append(out, strings.TrimSpace(md[start:end]))
+		}
+	}
+	if len(out) == 0 && len(locs) > 0 {
+		end := len(md)
+		if len(locs) > 1 {
+			end = locs[1][0]
+		}
+		return strings.TrimSpace(md[locs[0][0]:end])
+	}
+	return strings.Join(out, "\n\n")
+}
+
+func fetchReleaseChangelog(githubURL, mirrorURL, socksProxy, fromVer, toVer string) string {
+	var urls []string
+	if gh := normalizeReleaseURL(githubURL); gh != "" && validBase.MatchString(gh) {
+		urls = append(urls, gh+"/CHANGELOG.md")
+	}
+	urls = append(urls, "https://raw.githubusercontent.com/htzserv/MControl/main/CHANGELOG.md")
+	if ir := strings.TrimRight(strings.TrimSpace(mirrorURL), "/"); ir != "" && validBase.MatchString(ir) {
+		urls = append(urls, ir+"/CHANGELOG.md")
+	}
+	for idx, u := range urls {
+		px := socksProxy
+		if idx == len(urls)-1 && strings.HasPrefix(u, strings.TrimRight(strings.TrimSpace(mirrorURL), "/")) {
+			px = ""
+		}
+		client := MakeHTTPClient(7*time.Second, px)
+		resp, err := client.Get(u + "?t=" + fmt.Sprint(time.Now().Unix()))
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			continue
+		}
+		raw, err := io.ReadAll(io.LimitReader(resp.Body, 256<<10))
+		resp.Body.Close()
+		if err == nil && len(raw) > 0 {
+			if txt := extractChangelogRange(string(raw), fromVer, toVer); txt != "" {
+				return txt
+			}
+		}
+	}
+	return ""
 }
 
 func CheckAll(githubURL, mirrorURL, socksProxy string, betaEnabled bool, installedBetaBuild int) CheckResult {
@@ -368,6 +438,22 @@ func CheckAll(githubURL, mirrorURL, socksProxy string, betaEnabled bool, install
 	}
 	wg.Wait()
 	res.UpdateAvailable = res.GitHub.Available || res.Mirror.Available || (betaEnabled && res.Beta.Available)
+	if res.GitHub.Available || res.Mirror.Available {
+		targetVer := res.GitHub.Version
+		if targetVer == "" {
+			targetVer = res.Mirror.Version
+		}
+		res.ChangelogKind = "release"
+		res.ChangelogTitle = fmt.Sprintf("Release Changelog (v%s → v%s)", version.Current, targetVer)
+		res.Changelog = fetchReleaseChangelog(githubURL, mirrorURL, socksProxy, version.Current, targetVer)
+	} else if betaEnabled && res.Beta.Available {
+		res.ChangelogKind = "beta"
+		res.ChangelogTitle = fmt.Sprintf("Beta #%d Changelog (%s)", res.Beta.Build, res.Beta.Commit)
+		res.Changelog = res.Beta.Changelog
+		if res.Changelog == "" {
+			res.Changelog = fmt.Sprintf("Rolling Beta build #%d (%s)", res.Beta.Build, res.Beta.Tag)
+		}
+	}
 	return res
 }
 

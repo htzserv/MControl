@@ -52,6 +52,7 @@ type Server struct {
 	PeerCode       string `json:"peer_code,omitempty"`
 	AgentPort      int    `json:"agent_port"`
 	PingMs         string `json:"ping_ms"`
+	UseOutbound    bool   `json:"use_outbound"`
 	LastSpeed      string `json:"last_speed"`
 	CreatedAt      int64  `json:"created_at"`
 }
@@ -289,6 +290,7 @@ func (s *Store) migrate() error {
 		"ALTER TABLE servers ADD COLUMN agent_port INTEGER DEFAULT 2054",
 		"ALTER TABLE servers ADD COLUMN ping_ms TEXT DEFAULT '---'",
 		"ALTER TABLE servers ADD COLUMN last_speed TEXT DEFAULT ''",
+		"ALTER TABLE servers ADD COLUMN use_outbound INTEGER DEFAULT 0",
 		"ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1",
 		"ALTER TABLE tunnels ADD COLUMN vip_targets TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE tunnels ADD COLUMN lb_mode TEXT NOT NULL DEFAULT 'none'",
@@ -501,14 +503,18 @@ func (s *Store) AddServer(srv *Server) (int64, error) {
 	if srv.CoreInstalled {
 		installedInt = 1
 	}
+	useOBInt := 0
+	if srv.UseOutbound {
+		useOBInt = 1
+	}
 	if srv.AuthType != "key" {
 		srv.AuthType = "password"
 	}
 	res, err := s.db.Exec(`
 		INSERT INTO servers (name, role, host, port, username, password_enc, auth_type, host_key, last_error,
 			country, country_code, datacenter, core_installed, core_version, status, cpu, ram, uptime,
-			ipv4, ipv6, net_rx, net_tx, installed_tools, ping_ms, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			ipv4, ipv6, net_rx, net_tx, installed_tools, ping_ms, use_outbound, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		srv.Name, srv.Role, srv.Host, srv.Port, srv.Username, encSecret, srv.AuthType, srv.HostKey, srv.LastError,
 		srv.Country, srv.CountryCode, srv.Datacenter, installedInt, srv.CoreVersion,
 		srv.Status, srv.CPU, srv.RAM, srv.Uptime,
@@ -521,9 +527,13 @@ func (s *Store) AddServer(srv *Server) (int64, error) {
 }
 
 // UpdateServer edits a server. An empty secret keeps the stored one.
-func (s *Store) UpdateServer(id int64, name, role, host string, port int, username, authType, secret string, resetHostKey bool) error {
-	q := "UPDATE servers SET name=?, role=?, host=?, port=?, username=?, auth_type=?"
-	args := []any{name, role, host, port, username, authType}
+func (s *Store) UpdateServer(id int64, name, role, host string, port int, username, authType, secret string, resetHostKey, useOutbound bool) error {
+	obInt := 0
+	if useOutbound {
+		obInt = 1
+	}
+	q := "UPDATE servers SET name=?, role=?, host=?, port=?, username=?, auth_type=?, use_outbound=?"
+	args := []any{name, role, host, port, username, authType, obInt}
 	if secret != "" {
 		enc, err := s.Encrypt(secret)
 		if err != nil {
@@ -558,7 +568,7 @@ func (s *Store) ListServers() ([]Server, error) {
 		       country, country_code, datacenter,
 		       core_installed, core_version, status, cpu, ram, uptime,
 		       COALESCE(ipv4,''), COALESCE(ipv6,''), COALESCE(net_rx,'0 B/s'), COALESCE(net_tx,'0 B/s'), COALESCE(installed_tools,''),
-		       COALESCE(auth_mode,'ssh'), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(last_speed,''), created_at
+		       COALESCE(auth_mode,'ssh'), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(last_speed,''), COALESCE(use_outbound,0), created_at
 		FROM servers ORDER BY role ASC, id DESC`)
 	if err != nil {
 		return nil, err
@@ -568,18 +578,19 @@ func (s *Store) ListServers() ([]Server, error) {
 	var list []Server
 	for rows.Next() {
 		var srv Server
-		var inst int
+		var inst, useOB int
 		if err := rows.Scan(
 			&srv.ID, &srv.Name, &srv.Role, &srv.Host, &srv.Port, &srv.Username,
 			&srv.AuthType, &srv.HostKey, &srv.LastError,
 			&srv.Country, &srv.CountryCode, &srv.Datacenter,
 			&inst, &srv.CoreVersion, &srv.Status, &srv.CPU, &srv.RAM, &srv.Uptime,
 			&srv.IPv4, &srv.IPv6, &srv.NetRx, &srv.NetTx, &srv.InstalledTools,
-			&srv.AuthMode, &srv.AgentPort, &srv.PingMs, &srv.LastSpeed, &srv.CreatedAt,
+			&srv.AuthMode, &srv.AgentPort, &srv.PingMs, &srv.LastSpeed, &useOB, &srv.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
 		srv.CoreInstalled = inst == 1
+		srv.UseOutbound = useOB == 1
 		list = append(list, srv)
 	}
 	if list == nil {
@@ -591,26 +602,27 @@ func (s *Store) ListServers() ([]Server, error) {
 func (s *Store) GetServerWithSecret(id int64) (*Server, error) {
 	var srv Server
 	var encPass string
-	var inst int
+	var inst, useOB int
 	err := s.db.QueryRow(`
 		SELECT id, name, role, host, port, username, password_enc,
 		       COALESCE(auth_type,'password'), COALESCE(host_key,''), COALESCE(last_error,''),
 		       country, country_code, datacenter,
 		       core_installed, core_version, status, cpu, ram, uptime,
 		       COALESCE(ipv4,''), COALESCE(ipv6,''), COALESCE(net_rx,'0 B/s'), COALESCE(net_tx,'0 B/s'), COALESCE(installed_tools,''),
-		       COALESCE(auth_mode,'ssh'), COALESCE(peer_code,''), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(last_speed,''), created_at
+		       COALESCE(auth_mode,'ssh'), COALESCE(peer_code,''), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(last_speed,''), COALESCE(use_outbound,0), created_at
 		FROM servers WHERE id = ?`, id).Scan(
 		&srv.ID, &srv.Name, &srv.Role, &srv.Host, &srv.Port, &srv.Username, &encPass,
 		&srv.AuthType, &srv.HostKey, &srv.LastError,
 		&srv.Country, &srv.CountryCode, &srv.Datacenter,
 		&inst, &srv.CoreVersion, &srv.Status, &srv.CPU, &srv.RAM, &srv.Uptime,
 		&srv.IPv4, &srv.IPv6, &srv.NetRx, &srv.NetTx, &srv.InstalledTools,
-		&srv.AuthMode, &srv.PeerCode, &srv.AgentPort, &srv.PingMs, &srv.LastSpeed, &srv.CreatedAt,
+		&srv.AuthMode, &srv.PeerCode, &srv.AgentPort, &srv.PingMs, &srv.LastSpeed, &useOB, &srv.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 	srv.CoreInstalled = inst == 1
+	srv.UseOutbound = useOB == 1
 	if encPass != "" {
 		pass, err := s.Decrypt(encPass)
 		if err == nil {

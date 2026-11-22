@@ -43,12 +43,14 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		Token           string `json:"token"`
 		Ports           string `json:"ports"`
 		Forwarder       string `json:"forwarder"`
-		IPMode          string `json:"ip_mode"` // v4 | v6 | 6to4 | 6to6
-		IranIPVer       string `json:"iran_ip_ver"`
-		ForeignIPVer    string `json:"foreign_ip_ver"`
-		Subnet          string `json:"subnet"`
-		VIPTargets      string `json:"vip_targets"`
-		LBMode          string `json:"lb_mode"` // none | roundrobin | random
+		IPMode           string `json:"ip_mode"` // v4 | v6 | 6to4 | 6to6
+		IranIPVer        string `json:"iran_ip_ver"`
+		ForeignIPVer     string `json:"foreign_ip_ver"`
+		Underlay         string `json:"underlay"`           // "" | "ip" | "gre" | "vxlan"
+		UnderlayTunnelID int64  `json:"underlay_tunnel_id"` // 0 = auto-create, >0 = existing GRE/VXLAN tunnel ID
+		Subnet           string `json:"subnet"`
+		VIPTargets       string `json:"vip_targets"`
+		LBMode           string `json:"lb_mode"` // none | roundrobin | random
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -113,6 +115,75 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fail(w, http.StatusNotFound, "Foreign server not found")
 		return
+	}
+
+	req.Underlay = strings.ToLower(strings.TrimSpace(req.Underlay))
+	if (req.Engine == "backhaul" || req.Engine == "rathole" || req.Engine == "paqet") && (req.Underlay == "gre" || req.Underlay == "vxlan") {
+		var baseSub string
+		if req.UnderlayTunnelID > 0 {
+			uTun, uErr := h.store.GetTunnel(req.UnderlayTunnelID)
+			if uErr != nil {
+				fail(w, http.StatusNotFound, "Selected underlying GRE/VXLAN tunnel not found")
+				return
+			}
+			baseSub = uTun.Subnet
+			if baseSub == "" {
+				baseSub = fmt.Sprintf("10.10.%d", (uTun.ID%240)+10)
+			}
+		} else {
+			// Auto-create underlying GRE or VXLAN carrier tunnel between Iran & Foreign
+			uEng := req.Underlay
+			uMode := "v4"
+			if req.IranIPVer == "v6" || req.ForeignIPVer == "v6" {
+				if uEng == "gre" {
+					uEng = "ip6gre"
+					uMode = "6to4"
+				} else {
+					uMode = "v6"
+				}
+			}
+			uPort := req.TunnelPort + 100
+			if uPort > 65000 {
+				uPort = req.TunnelPort - 100
+			}
+			uTun := &db.Tunnel{
+				Name:            req.Name + "-" + strings.ToUpper(req.Underlay),
+				Engine:          uEng,
+				Transport:       "raw@" + uMode,
+				IranServerID:    req.IranServerID,
+				ForeignServerID: req.ForeignServerID,
+				TunnelPort:      uPort,
+				Token:           randTunnelToken(),
+				Ports:           strconv.Itoa(req.TunnelPort),
+				Forwarder:       "iptables",
+				LBMode:          "none",
+				Status:          "deploying",
+			}
+			uID, uErr := h.store.AddTunnel(uTun)
+			if uErr != nil {
+				fail(w, http.StatusInternalServerError, "failed to create underlay tunnel: "+uErr.Error())
+				return
+			}
+			uTun.ID = uID
+			uTun.Subnet = fmt.Sprintf("10.10.%d", (uID%240)+10)
+			baseSub = uTun.Subnet
+			uIranCmd, uForCmd := buildTunnelDeployScripts(uTun, iranSrv, forSrv, []int{req.TunnelPort})
+			var uwg sync.WaitGroup
+			var urI, urF sshclient.Result
+			uwg.Add(2)
+			go func() { defer uwg.Done(); urI = h.runOnServer(iranSrv, uIranCmd, 45*time.Second) }()
+			go func() { defer uwg.Done(); urF = h.runOnServer(forSrv, uForCmd, 45*time.Second) }()
+			uwg.Wait()
+			if urI.Err != nil || urF.Err != nil {
+				_ = h.store.UpdateTunnelStatus(uID, "error", urI.Output+" "+urF.Output)
+				fail(w, http.StatusBadGateway, "underlying "+strings.ToUpper(req.Underlay)+" tunnel failed to deploy")
+				return
+			}
+			_ = h.store.UpdateTunnelStatus(uID, "active", "")
+		}
+		req.Subnet = baseSub
+		baseT, _ := splitTransportIPMode(req.Transport)
+		req.Transport = baseT + "@" + req.Underlay
 	}
 
 	tun := &db.Tunnel{
@@ -219,6 +290,9 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 	bindWild := "0.0.0.0"
 	if ipMode == "v6" || ipMode == "6to6" {
 		bindWild = "[::]"
+	} else if (ipMode == "gre" || ipMode == "vxlan") && t.Subnet != "" {
+		iranAddr = t.Subnet + ".1"
+		bindWild = t.Subnet + ".1"
 	}
 
 	switch t.Engine {
@@ -355,7 +429,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=$BIN client -r %s:%d -k %s
+ExecStart=$BIN client -r %s -k %s
 Restart=always
 RestartSec=2
 
@@ -363,7 +437,7 @@ RestartSec=2
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && (systemctl is-active %s.service || true)
-`, unit, t.ID, t.Name, iran.Host, t.TunnelPort, t.Token, unit, unit, unit)
+`, unit, t.ID, t.Name, formatHostPort(iranAddr, t.TunnelPort), t.Token, unit, unit, unit)
 		return iranCmd, forCmd
 
 	default:

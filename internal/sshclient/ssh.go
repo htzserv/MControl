@@ -2,7 +2,9 @@ package sshclient
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"encoding/json"
 	"io"
 	"errors"
@@ -28,7 +30,8 @@ type Target struct {
 	User     string
 	Secret   string // password, or an unencrypted PEM private key when AuthType == "key"
 	AuthType string // "password" or "key"
-	KnownKey string // pinned SHA256 host-key fingerprint; "" means trust on first use
+	KnownKey   string // pinned SHA256 host-key fingerprint; "" means trust on first use
+	SocksProxy string // optional local SOCKS5 proxy e.g. 127.0.0.1:10808
 }
 
 type ProbeResult struct {
@@ -112,6 +115,73 @@ func authMethods(t Target) ([]ssh.AuthMethod, error) {
 }
 
 // dial connects with a hard deadline covering TCP connect + SSH handshake and enforces host-key pinning.
+
+func dialViaSOCKS5(proxyAddr, targetAddr string, timeout time.Duration) (net.Conn, error) {
+	host, portStr, err := net.SplitHostPort(targetAddr)
+	if err != nil {
+		return nil, err
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil || port < 1 || port > 65535 {
+		return nil, fmt.Errorf("invalid port: %s", portStr)
+	}
+	conn, err := net.DialTimeout("tcp", proxyAddr, timeout)
+	if err != nil {
+		return nil, err
+	}
+	_ = conn.SetDeadline(time.Now().Add(timeout))
+	if _, err := conn.Write([]byte{0x05, 0x01, 0x00}); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	resp := make([]byte, 2)
+	if _, err := io.ReadFull(conn, resp); err != nil || resp[0] != 0x05 || resp[1] != 0x00 {
+		conn.Close()
+		return nil, errors.New("socks5 handshake failed")
+	}
+	if len(host) > 255 {
+		conn.Close()
+		return nil, errors.New("hostname too long")
+	}
+	req := make([]byte, 0, 7+len(host))
+	req = append(req, 0x05, 0x01, 0x00, 0x03, byte(len(host)))
+	req = append(req, host...)
+	var pbuf [2]byte
+	binary.BigEndian.PutUint16(pbuf[:], uint16(port))
+	req = append(req, pbuf[0], pbuf[1])
+	if _, err := conn.Write(req); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	hdr := make([]byte, 4)
+	if _, err := io.ReadFull(conn, hdr); err != nil || hdr[0] != 0x05 || hdr[1] != 0x00 {
+		conn.Close()
+		return nil, fmt.Errorf("socks5 connect failed (rep=%d)", hdr[1])
+	}
+	var skip int
+	switch hdr[3] {
+	case 0x01:
+		skip = 6
+	case 0x04:
+		skip = 18
+	case 0x03:
+		lb := make([]byte, 1)
+		if _, err := io.ReadFull(conn, lb); err != nil {
+			conn.Close()
+			return nil, err
+		}
+		skip = int(lb[0]) + 2
+	}
+	if skip > 0 {
+		if _, err := io.ReadFull(conn, make([]byte, skip)); err != nil {
+			conn.Close()
+			return nil, err
+		}
+	}
+	_ = conn.SetDeadline(time.Time{})
+	return conn, nil
+}
+
 func dial(t Target, timeout time.Duration) (*ssh.Client, string, error) {
 	auth, err := authMethods(t)
 	if err != nil {
@@ -132,7 +202,12 @@ func dial(t Target, timeout time.Duration) (*ssh.Client, string, error) {
 		Timeout: timeout,
 	}
 	addr := net.JoinHostPort(t.Host, strconv.Itoa(t.Port))
-	conn, err := net.DialTimeout("tcp", addr, timeout)
+	var conn net.Conn
+	if t.SocksProxy != "" {
+		conn, err = dialViaSOCKS5(t.SocksProxy, addr, timeout)
+	} else {
+		conn, err = net.DialTimeout("tcp", addr, timeout)
+	}
 	if err != nil {
 		return nil, "", err
 	}
@@ -347,20 +422,27 @@ func RunSpeedtest(t Target) SpeedResult {
 	return ParseSpeedOutput(res.Output)
 }
 
-func peerClient(timeout time.Duration) *http.Client {
-	return &http.Client{
-		Timeout: timeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
+func peerClient(timeout time.Duration, socksProxy string) *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
+	if socksProxy != "" {
+		tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return dialViaSOCKS5(socksProxy, addr, timeout)
+		}
+	}
+	return &http.Client{Timeout: timeout, Transport: tr}
 }
 
-func peerRequest(method, host string, agentPort int, path, peerCode string, body []byte, timeout time.Duration) (*http.Response, error) {
+func peerRequest(method, host string, agentPort int, path, peerCode string, body []byte, timeout time.Duration, socksProxy ...string) (*http.Response, error) {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
-	client := peerClient(timeout)
+	px := ""
+	if len(socksProxy) > 0 {
+		px = socksProxy[0]
+	}
+	client := peerClient(timeout, px)
 	hostPort := net.JoinHostPort(host, strconv.Itoa(agentPort))
 	var lastErr error
 	for _, scheme := range []string{"https", "http"} {
@@ -386,7 +468,7 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 	return nil, lastErr
 }
 
-func ProbePeer(host string, agentPort int, peerCode string) ProbeResult {
+func ProbePeer(host string, agentPort int, peerCode string, socksProxy ...string) ProbeResult {
 	resp, err := peerRequest("GET", host, agentPort, "/stats", peerCode, nil, 5*time.Second)
 	if err != nil {
 		return ProbeResult{Online: false, CPU: "---", RAM: "---", Uptime: "---", Error: "peer agent unreachable"}
@@ -416,9 +498,9 @@ func RunPeerSpeedtest(host string, agentPort int, peerCode string) SpeedResult {
 	return sr
 }
 
-func PeerExec(host string, agentPort int, peerCode, command string, timeout time.Duration) Result {
+func PeerExec(host string, agentPort int, peerCode, command string, timeout time.Duration, socksProxy ...string) Result {
 	payload, _ := json.Marshal(map[string]any{"command": command, "timeout": int(timeout.Seconds())})
-	resp, err := peerRequest("POST", host, agentPort, "/exec", peerCode, payload, timeout+5*time.Second)
+	resp, err := peerRequest("POST", host, agentPort, "/exec", peerCode, payload, timeout+5*time.Second, socksProxy...)
 	if err != nil {
 		return Result{Err: fmt.Errorf("peer exec failed: %w", err)}
 	}
