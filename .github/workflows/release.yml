@@ -64,6 +64,10 @@ jobs:
           go vet ./...
 
       - name: Build static Linux binaries (amd64 & arm64)
+        env:
+          MC_VER: ${{ steps.ver.outputs.version }}
+          MC_BNUM: ${{ steps.ver.outputs.build_num }}
+          MC_SHA: ${{ steps.ver.outputs.short_sha }}
         run: |
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/mcontrol-linux-amd64 .
@@ -72,22 +76,22 @@ jobs:
           cp mcontrol-cli.sh dist/mcontrol-cli.sh
           cp CHANGELOG.md dist/CHANGELOG.md
           python3 - <<'PYEOF'
-import json, subprocess, time
-ver = "${{ steps.ver.outputs.version }}"
-bnum = int("${{ steps.ver.outputs.build_num }}")
-sha = "${{ steps.ver.outputs.short_sha }}"
-msg = subprocess.check_output(["git", "log", "-1", "--pretty=format:%s%n%b"], text=True).strip()
-meta = {
-    "version": ver,
-    "build": bnum,
-    "commit": sha,
-    "tag": f"{ver}-beta.{bnum}",
-    "built_at": int(time.time()),
-    "changelog": msg,
-}
-with open("dist/beta-meta.json", "w", encoding="utf-8") as f:
-    json.dump(meta, f, ensure_ascii=False)
-PYEOF
+          import json, os, subprocess, time
+          ver = os.environ["MC_VER"]
+          bnum = int(os.environ["MC_BNUM"])
+          sha = os.environ["MC_SHA"]
+          msg = subprocess.check_output(["git", "log", "-1", "--pretty=format:%s%n%b"], text=True).strip()
+          meta = {
+              "version": ver,
+              "build": bnum,
+              "commit": sha,
+              "tag": f"{ver}-beta.{bnum}",
+              "built_at": int(time.time()),
+              "changelog": msg,
+          }
+          with open("dist/beta-meta.json", "w", encoding="utf-8") as f:
+              json.dump(meta, f, ensure_ascii=False)
+          PYEOF
 
       - name: Package release ZIPs & SHA-256 checksums
         run: |
