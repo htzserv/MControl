@@ -930,23 +930,51 @@ body.light-mode .eng-pill.active {
 .ob-node-addr { font-family: var(--ff-m); font-size: .72rem; color: var(--muted); unicode-bidi: isolate; direction: ltr; }
 
 
-/* Model 3 Neon Ribbon M — Animated Login & Brand Logo */
-@keyframes mcRibbonDraw {
-  0% { stroke-dashoffset: 220; opacity: .2; }
-  100% { stroke-dashoffset: 0; opacity: 1; }
+/* Model 3 Neon Ribbon M — Fixed Signature Brand Color & Infinite Back-and-Forth Animation */
+@keyframes mcRibbonFlow {
+  0%   { stroke-dashoffset: 100; }
+  42%  { stroke-dashoffset: 0; }
+  58%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 100; }
 }
-@keyframes mcNeonPulse {
-  0%, 100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 55%, transparent)) drop-shadow(0 0 12px color-mix(in srgb, var(--accent2) 40%, transparent)); }
-  50% { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 90%, transparent)) drop-shadow(0 0 22px color-mix(in srgb, var(--accent2) 68%, transparent)); }
+@keyframes mcBrandNeonPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, .48)) drop-shadow(0 0 16px rgba(168, 85, 247, .32));
+    transform: translateY(0);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(56, 189, 248, .85)) drop-shadow(0 0 28px rgba(168, 85, 247, .58));
+    transform: translateY(-4px);
+  }
 }
-.login-emblem {
-  width: 78px !important; height: 78px !important; border-radius: 22px !important;
-  box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 26%, transparent), inset 0 0 14px color-mix(in srgb, var(--accent2) 18%, transparent);
+.login-brand-hero {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  margin-bottom: 18px; user-select: none;
 }
-.mc-logo-anim { width: 52px !important; height: 52px !important; animation: mcNeonPulse 3.2s ease-in-out infinite; }
-.mc-logo-anim .rb-main { stroke-dasharray: 220; stroke-dashoffset: 220; animation: mcRibbonDraw 1.5s cubic-bezier(.22,1,.36,1) forwards; }
-.mc-logo-anim .rb-sub  { stroke-dasharray: 220; stroke-dashoffset: 220; animation: mcRibbonDraw 1.8s cubic-bezier(.22,1,.36,1) .2s forwards; }
-.brand .mc-brand-svg { width: 28px; height: 28px; flex-shrink: 0; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.mc-logo-anim {
+  width: 118px; height: 118px; display: block; margin-bottom: 6px;
+  animation: mcBrandNeonPulse 3.6s ease-in-out infinite;
+}
+.mc-logo-anim .rb-main {
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  animation: mcRibbonFlow 3.6s cubic-bezier(.45, .05, .55, .95) infinite;
+}
+.mc-logo-anim .rb-sub {
+  stroke-dasharray: 100; stroke-dashoffset: 100;
+  animation: mcRibbonFlow 3.6s cubic-bezier(.45, .05, .55, .95) -0.35s infinite;
+}
+.login-brand-title {
+  font-size: 1.95rem; font-weight: 900; letter-spacing: -.5px; margin: 0 0 4px;
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 52%, #c084fc 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.login-brand-sub {
+  margin: 0; font-size: .84rem; color: var(--muted); font-weight: 500;
+}
+.brand .mc-brand-svg {
+  width: 32px; height: 32px; flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, .42));
+}
 
 /* Cloudflare Domains UI */
 .cf-rec-row {
@@ -1011,21 +1039,26 @@ body.light-mode .eng-pill.active {
     <div class="login-grid-fx"></div>
   </div>
   <div class="login-shell">
+    <div class="login-brand-hero">
+      <svg class="mc-logo-anim" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="mcFixedGrad" x1="6" y1="10" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#38bdf8"/>
+            <stop offset="52%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#c084fc"/>
+          </linearGradient>
+        </defs>
+        <!-- Subtle permanent silhouette tracks -->
+        <path d="M12 50V22c0-6.8 7.8-10 12-4.4L32 28l8-10.4C44.2 12 52 15.2 52 22v28" stroke="url(#mcFixedGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".16"/>
+        <path d="M21 50V30c0-3.4 4.1-5.4 6.4-2.3L32 34l4.6-6.3C38.9 24.6 43 26.6 43 30v20" stroke="url(#mcFixedGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".14"/>
+        <!-- Animated infinite back-and-forth neon ribbons -->
+        <path class="rb-main" pathLength="100" d="M12 50V22c0-6.8 7.8-10 12-4.4L32 28l8-10.4C44.2 12 52 15.2 52 22v28" stroke="url(#mcFixedGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path class="rb-sub" pathLength="100" d="M21 50V30c0-3.4 4.1-5.4 6.4-2.3L32 34l4.6-6.3C38.9 24.6 43 26.6 43 30v20" stroke="url(#mcFixedGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
+      </svg>
+      <h2 class="login-brand-title">MControl</h2>
+      <p class="login-brand-sub" data-i18n="login_sub">MDesign central control plane</p>
+    </div>
     <div class="card login-card" style="text-align:center;">
-      <div class="login-emblem">
-        <svg class="mc-logo-anim" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="mcLoginGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="var(--accent)"/>
-              <stop offset="100%" stop-color="var(--accent2)"/>
-            </linearGradient>
-          </defs>
-          <path class="rb-main" d="M13 49V23c0-6.5 7.5-9.5 11.5-4.2L32 28.5l7.5-9.7C43.5 13.5 51 16.5 51 23v26" stroke="url(#mcLoginGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path class="rb-sub" d="M21 49V30c0-3.2 4-5.2 6.2-2.2L32 34l4.8-6.2C39 24.8 43 26.8 43 30v19" stroke="url(#mcLoginGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity=".82"/>
-        </svg>
-      </div>
-      <h2 class="login-title">MControl</h2>
-      <p class="hint" style="margin-bottom:18px;" data-i18n="login_sub">MDesign central control plane</p>
       <div id="http-warn" class="warnbox" style="display:none; text-align:start; font-size:.75rem;" data-i18n="http_warn">Plain HTTP: your password is sent unencrypted. Enable HTTPS or use a reverse proxy.</div>
 
       <div class="field in-ico-wrap">
@@ -1082,9 +1115,10 @@ body.light-mode .eng-pill.active {
     <div class="brand">
       <svg class="mc-brand-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mcBrandGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="var(--accent)"/>
-            <stop offset="100%" stop-color="var(--accent2)"/>
+          <linearGradient id="mcBrandGrad" x1="6" y1="10" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#38bdf8"/>
+            <stop offset="52%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#c084fc"/>
           </linearGradient>
         </defs>
         <path d="M13 49V23c0-6.5 7.5-9.5 11.5-4.2L32 28.5l7.5-9.7C43.5 13.5 51 16.5 51 23v26" stroke="url(#mcBrandGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
