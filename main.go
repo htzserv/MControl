@@ -56,6 +56,7 @@ func main() {
 	apiHandler.StartAutoProbe()
 	apiHandler.StartTelegramBot()
 	apiHandler.StartCloudflareAutoSync()
+	apiHandler.StartTunnelWatchdog()
 
 	subFS, err := fs.Sub(webFS, "web")
 	if err != nil {

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%226%22%20y1%3D%228%22%20x2%3D%2258%22%20y2%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2322d3ee%22%2F%3E%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23e879f9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23090f1d%22%2F%3E%3Cpath%20d%3D%22M11%2049V23c0-7.5%208.5-11%2013.5-5L32%2028.5%2039.5%2018C44.5%2012%2053%2015.5%2053%2023v26%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%226.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M20%2049V31c0-3.5%204.2-5.5%206.8-2.2L32%2035.5l5.2-6.7C39.8%2025.5%2044%2027.5%2044%2031v18%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%223.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.82%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2218%22%20r%3D%223.4%22%20fill%3D%22%2322d3ee%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%228%22%20y1%3D%228%22%20x2%3D%2256%22%20y2%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2322d3ee%22%2F%3E%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f472b6%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23090f1d%22%2F%3E%3Cpath%20d%3D%22M10%2052V20c0-8.5%2010.5-11.5%2015.5-4.5L32%2027.5l6.5-12C43.5%208.5%2054%2011.5%2054%2020v32%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%227.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -930,24 +930,22 @@ body.light-mode .eng-pill.active {
 .ob-node-addr { font-family: var(--ff-m); font-size: .72rem; color: var(--muted); unicode-bidi: isolate; direction: ltr; }
 
 
-/* Modernized MControl Logo — Large, Fixed Flowing Gradient, Bidirectional Infinity Fill */
-@keyframes mcBiFlow {
-  0%   { stroke-dashoffset: 100; }
-  40%  { stroke-dashoffset: 0; }
-  60%  { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -100; }
+/* Modernized Clean MControl Logo — Large, Continuous Left->Right & Right->Left Opposing Gradient Streams */
+@keyframes mcFlowLR {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -170; }
 }
-@keyframes mcCorePulse {
-  0%, 100% { r: 3.1; opacity: .7; }
-  50%      { r: 4.5; opacity: 1; }
+@keyframes mcFlowRL {
+  0%   { stroke-dashoffset: -170; }
+  100% { stroke-dashoffset: 0; }
 }
-@keyframes mcHeroGlow {
+@keyframes mcHeroFloat {
   0%, 100% {
-    filter: drop-shadow(0 0 8px rgba(34, 211, 238, .48)) drop-shadow(0 0 22px rgba(168, 85, 247, .34));
+    filter: drop-shadow(0 0 10px rgba(34, 211, 238, .42)) drop-shadow(0 0 26px rgba(168, 85, 247, .30));
     transform: translateY(0);
   }
   50% {
-    filter: drop-shadow(0 0 16px rgba(34, 211, 238, .85)) drop-shadow(0 0 36px rgba(232, 121, 249, .58));
+    filter: drop-shadow(0 0 18px rgba(34, 211, 238, .72)) drop-shadow(0 0 40px rgba(244, 114, 182, .48));
     transform: translateY(-4px);
   }
 }
@@ -961,31 +959,35 @@ body.light-mode .eng-pill.active {
   margin-bottom: 20px; user-select: none;
 }
 .mc-logo-anim {
-  width: 152px; height: 152px; display: block; margin-bottom: 6px;
-  animation: mcHeroGlow 4s ease-in-out infinite;
+  width: 196px; height: 196px; display: block; margin-bottom: 4px;
+  animation: mcHeroFloat 5.5s ease-in-out infinite;
 }
-.mc-logo-anim .rb-bi-out {
-  stroke-dasharray: 100; stroke-dashoffset: 100;
-  animation: mcBiFlow 3.4s cubic-bezier(.45, .05, .55, .95) infinite;
+.mc-logo-anim .rb-stream-lr {
+  stroke-dasharray: 76 94;
+  animation: mcFlowLR 6.4s linear infinite;
+  mix-blend-mode: screen;
 }
-.mc-logo-anim .rb-bi-in {
-  stroke-dasharray: 100; stroke-dashoffset: 100;
-  animation: mcBiFlow 3.4s cubic-bezier(.45, .05, .55, .95) -0.35s infinite;
+.mc-logo-anim .rb-stream-rl {
+  stroke-dasharray: 76 94;
+  animation: mcFlowRL 7.6s linear infinite;
+  mix-blend-mode: screen;
 }
-.mc-logo-anim .rb-core {
-  animation: mcCorePulse 2.4s ease-in-out infinite;
+body.light-mode .mc-logo-anim .rb-stream-lr,
+body.light-mode .mc-logo-anim .rb-stream-rl {
+  mix-blend-mode: normal;
+  opacity: .88;
 }
 .login-brand-title {
-  font-size: 2.1rem; font-weight: 900; letter-spacing: -.6px; margin: 0 0 4px;
-  background: linear-gradient(120deg, #22d3ee, #818cf8, #e879f9, #38bdf8, #22d3ee);
-  background-size: 240% 240%;
-  animation: mcTitleShift 6s ease infinite;
+  font-size: 2.25rem; font-weight: 900; letter-spacing: -.6px; margin: 0 0 4px;
+  background: linear-gradient(120deg, #22d3ee, #6366f1, #ec4899, #f59e0b, #22d3ee);
+  background-size: 260% 260%;
+  animation: mcTitleShift 8s ease infinite;
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.login-brand-sub { margin: 0; font-size: .85rem; color: var(--muted); font-weight: 500; }
+.login-brand-sub { margin: 0; font-size: .86rem; color: var(--muted); font-weight: 500; }
 .brand .mc-brand-svg {
   width: 34px; height: 34px; flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, .44));
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, .40));
 }
 
 /* Cloudflare Domains — MDesign Bubble Tabs, Polished Inputs & Grouped Cards */
@@ -1759,6 +1761,80 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
   box-sizing: border-box !important;
 }
 
+
+/* Taller, Airier 3-Step Tunnel Wizard Modal */
+#tun-modal .tun-wiz-shell { max-width: 640px; }
+#tun-modal .modal-box {
+  min-height: 500px;
+  padding: 24px 26px !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+#tun-modal .tun-step-pane {
+  flex: 1;
+  min-height: 320px;
+  padding: 6px 0 10px;
+}
+#tun-modal .tun-step-pane.active {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+}
+#tun-modal .tun-sec { padding: 16px 18px !important; }
+#tun-modal .field label { margin-bottom: 7px; }
+#tun-modal .field input, #tun-modal .field select { padding: 11px 13px !important; }
+
+/* Overview Card 3: Quick Backup & Restore Styling */
+.mc-bak-actions {
+  display: flex; flex-direction: column; gap: 7px; margin: 8px 0 4px;
+}
+.mc-bak-row {
+  display: flex; align-items: center; gap: 6px;
+}
+.mc-bak-file {
+  flex: 1; min-width: 0; font-size: .7rem; color: var(--muted);
+  background: var(--row); border: 1px dashed var(--border);
+  border-radius: 10px; padding: 5px 8px; cursor: pointer;
+}
+
+/* Settings: Clean 2-Row Sub-Tabs & Flattened Straightforward Cards */
+#tab-settings .sub-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  max-width: 680px !important;
+  margin: 0 auto 18px !important;
+  padding: 6px !important;
+  border-radius: 20px !important;
+}
+#tab-settings .sub-tab {
+  text-align: center !important;
+  justify-content: center !important;
+  padding: 9px 12px !important;
+  border-radius: 14px !important;
+  font-size: .8rem !important;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  #tab-settings .sub-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+/* Flatten convoluted nested boxes inside Settings cards so options are direct & clean */
+#tab-settings .sub-pane .tun-sec,
+#tab-settings .sub-pane .bak-box {
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent) !important;
+  border-radius: 0 !important;
+  padding: 14px 0 4px !important;
+  margin-top: 12px !important;
+  box-shadow: none !important;
+}
+#tab-settings .sub-pane .tun-sec-title {
+  margin-bottom: 10px !important;
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1803,31 +1879,43 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
     <div class="login-brand-hero">
       <svg class="mc-logo-anim" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mcFlowGrad" x1="6" y1="8" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+          <!-- Soft base track gradient -->
+          <linearGradient id="mcBaseGrad" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#22d3ee"/>
+            <stop offset="50%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#f472b6"/>
+          </linearGradient>
+          <!-- Stream 1 (Left -> Right): Cool Spectrum (Cyan -> Sky -> Indigo -> Violet) -->
+          <linearGradient id="mcGradLR" x1="8" y1="52" x2="56" y2="12" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stop-color="#22d3ee">
-              <animate attributeName="stop-color" values="#22d3ee;#818cf8;#e879f9;#38bdf8;#22d3ee" dur="6s" repeatCount="indefinite"/>
+              <animate attributeName="stop-color" values="#22d3ee;#34d399;#38bdf8;#22d3ee" dur="9s" repeatCount="indefinite"/>
             </stop>
-            <stop offset="50%" stop-color="#818cf8">
-              <animate attributeName="stop-color" values="#818cf8;#e879f9;#22d3ee;#a855f7;#818cf8" dur="6s" repeatCount="indefinite"/>
+            <stop offset="50%" stop-color="#6366f1">
+              <animate attributeName="stop-color" values="#6366f1;#38bdf8;#818cf8;#6366f1" dur="9s" repeatCount="indefinite"/>
             </stop>
-            <stop offset="100%" stop-color="#e879f9">
-              <animate attributeName="stop-color" values="#e879f9;#22d3ee;#38bdf8;#818cf8;#e879f9" dur="6s" repeatCount="indefinite"/>
+            <stop offset="100%" stop-color="#a855f7">
+              <animate attributeName="stop-color" values="#a855f7;#818cf8;#c084fc;#a855f7" dur="9s" repeatCount="indefinite"/>
+            </stop>
+          </linearGradient>
+          <!-- Stream 2 (Right -> Left): Warm/Vivid Spectrum (Amber -> Rose -> Magenta -> Violet) -->
+          <linearGradient id="mcGradRL" x1="56" y1="52" x2="8" y2="12" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#f59e0b">
+              <animate attributeName="stop-color" values="#f59e0b;#fb7185;#ec4899;#f59e0b" dur="10s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="50%" stop-color="#ec4899">
+              <animate attributeName="stop-color" values="#ec4899;#e879f9;#f43f5e;#ec4899" dur="10s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" stop-color="#38bdf8">
+              <animate attributeName="stop-color" values="#38bdf8;#c084fc;#22d3ee;#38bdf8" dur="10s" repeatCount="indefinite"/>
             </stop>
           </linearGradient>
         </defs>
-        <!-- Subtle permanent silhouette tracks -->
-        <path d="M11 50V23c0-7.5 8.5-11 13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".15"/>
-        <path d="M53 50V23c0-7.5-8.5-11-13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".15"/>
-        <path d="M20 50V31c0-3.5 4.2-5.5 6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".14"/>
-        <path d="M44 50V31c0-3.5-4.2-5.5-6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".14"/>
-        <!-- Bidirectional Symmetric Animated Outer Ribbons (Left & Right flow simultaneously to center & back) -->
-        <path class="rb-bi-out" pathLength="100" d="M11 50V23c0-7.5 8.5-11 13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path class="rb-bi-out" pathLength="100" d="M53 50V23c0-7.5-8.5-11-13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <!-- Bidirectional Symmetric Animated Inner Ribbons -->
-        <path class="rb-bi-in" pathLength="100" d="M20 50V31c0-3.5 4.2-5.5 6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-        <path class="rb-bi-in" pathLength="100" d="M44 50V31c0-3.5-4.2-5.5-6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-        <!-- Glowing Central Control Node -->
-        <circle class="rb-core" cx="32" cy="17.5" r="3.6" fill="url(#mcFlowGrad)"/>
+        <!-- Clean single-ribbon permanent M silhouette -->
+        <path d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcBaseGrad)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" opacity=".22"/>
+        <!-- Opposing Continuous Stream 1: Left -> Right (full path, zero center stall) -->
+        <path class="rb-stream-lr" pathLength="100" d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcGradLR)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Opposing Continuous Stream 2: Right -> Left (blends with Stream 1 into living rainbow gradient) -->
+        <path class="rb-stream-rl" pathLength="100" d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcGradRL)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
       </svg>
       <h2 class="login-brand-title">MControl</h2>
       <p class="login-brand-sub" data-i18n="login_sub">MDesign central control plane</p>
@@ -1891,15 +1979,13 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
     <div class="brand">
       <svg class="mc-brand-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mcBrandGrad" x1="6" y1="8" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+          <linearGradient id="mcBrandGrad" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stop-color="#22d3ee"/>
             <stop offset="50%" stop-color="#818cf8"/>
-            <stop offset="100%" stop-color="#e879f9"/>
+            <stop offset="100%" stop-color="#f472b6"/>
           </linearGradient>
         </defs>
-        <path d="M11 50V23c0-7.5 8.5-11 13.5-5L32 28.5 39.5 18C44.5 12 53 15.5 53 23v27" stroke="url(#mcBrandGrad)" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M20 50V31c0-3.5 4.2-5.5 6.8-2.2L32 35.5l5.2-6.7C39.8 25.5 44 27.5 44 31v19" stroke="url(#mcBrandGrad)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" opacity=".86"/>
-        <circle cx="32" cy="17.5" r="3.5" fill="url(#mcBrandGrad)"/>
+        <path d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcBrandGrad)" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span class="bt">MControl</span>
     </div>
@@ -1968,6 +2054,7 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
             <span class="badge b-foreign mono" id="loc-ipv6" style="cursor:pointer;">IPv6: ---</span>
+            <span class="badge b-miss mono" id="loc-disk-pill" title="Master Disk Usage">Disk: ---</span>
             <span class="badge b-ok mono" id="loc-speed" style="display:none;"></span>
             <button class="btn btn-sky btn-sm" id="btn-loc-speed" onclick="runLocalSpeedtest()">Speedtest</button>
             <button class="btn btn-warn btn-sm" onclick="openMasterTweakModal()">Tweak</button>
@@ -2032,31 +2119,25 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
           <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-ram-mb">---</span></div>
         </div>
 
-        <!-- Card 3: Disk -->
-        <div class="card metric-card mc-disk">
+        <!-- Card 3: Quick Backup & Restore -->
+        <div class="card metric-card mc-backup">
           <div class="mc-top">
             <div>
-              <div class="mc-lbl" data-i18n="loc_disk">Disk</div>
-              <div class="mc-val mc-top-pct" id="loc-disk" style="color:var(--purple);">0%</div>
-              <div class="mc-top-meta mono" id="mc-disk-meta">Storage</div>
+              <div class="mc-lbl" data-i18n="backup_title">Backup &amp; Restore</div>
+              <div style="font-size:.98rem; font-weight:800; color:var(--purple); margin-top:2px;">Panel Snapshot</div>
             </div>
             <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--purple) 16%, transparent); color:var(--purple);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </span>
           </div>
-          <div class="mc-ring-wrap">
-            <svg class="mc-ring-svg" viewBox="0 0 116 116">
-              <circle class="mc-ring-track" cx="58" cy="58" r="48"/>
-              <circle class="mc-ring-fg" id="ring-disk" cx="58" cy="58" r="48" style="stroke:var(--purple);"/>
-            </svg>
-            <div class="mc-ring-center">
-              <span class="mc-ring-pct" id="ring-disk-txt" style="color:var(--purple);">0%</span>
-              <span class="mc-ring-sub" id="ring-disk-state">STORAGE</span>
+          <div class="mc-bak-actions">
+            <button type="button" class="btn btn-sky btn-sm" style="width:100%; justify-content:center;" onclick="downloadBackup()">⬇ Download Backup (.zip)</button>
+            <div class="mc-bak-row">
+              <input type="file" id="ov-restore-file" class="mc-bak-file" accept=".zip,.db,.sqlite,.sqlite3" title="Pick .zip or .db backup">
+              <button type="button" class="btn btn-danger btn-sm" id="btn-ov-restore" onclick="restoreBackupFromOverview()">Restore</button>
             </div>
           </div>
-          <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-disk" style="width:0%; background:var(--purple);"></div></div>
-          <canvas id="spark-disk" width="240" height="44" class="mc-spark"></canvas>
-          <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-disk-gb">---</span></div>
+          <div class="mc-foot"><span>DB + Key + SSL</span><span class="mono" style="color:var(--purple);">AES-256</span></div>
         </div>
 
         <!-- Card 4: Network -->
@@ -4188,7 +4269,7 @@ async function loadTunnels() {
 
 function populateServerSelects(iranId, forId) {
   const irOpts = SERVERS.map(s => {
-    const tag = s.role === 'iran' ? 'IR' : 'EX';
+    const tag = s.role === 'iran' ? 'IR • Entry' : 'EX • Exit';
     return `<option value="${s.id}">[${tag}] ${esc(s.name)} — ${esc(s.host)}</option>`;
   }).join('');
   if ($(iranId)) $(iranId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
@@ -6416,6 +6497,22 @@ async function downloadBackup() {
     toast(t('backup_ok'));
   } catch (e) { toast(t('err_network'), true); }
 }
+
+async function restoreBackupFromOverview() {
+  const inp = $('ov-restore-file');
+  if (!inp || !inp.files || !inp.files[0]) { toast(t('restore_pick'), true); return; }
+  if (!confirm(t('confirm_restore'))) return;
+  const btn = $('btn-ov-restore'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const fd = new FormData(); fd.append('file', inp.files[0]);
+    const r = await fetch('api/backup/restore', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+    const res = await r.json();
+    if (res.ok) { toast(res.message || 'OK'); setTimeout(() => location.reload(), 3000); }
+    else { toast(res.error || 'Restore failed', true); btn.disabled = false; btn.textContent = label; }
+  } catch (e) { toast(t('err_network'), true); btn.disabled = false; btn.textContent = label; }
+}
+
 async function restoreBackup() {
   const inp = $('db-restore-file');
   if (!inp.files || !inp.files[0]) { toast(t('restore_pick'), true); return; }
@@ -6538,6 +6635,7 @@ async function pollLocalStats() {
   setT('loc-ram', (s.ram_percent || 0).toFixed(1) + '%'); $('bar-ram').style.width = Math.min(100, s.ram_percent || 0) + '%'; setT('loc-ram-mb', s.ram_used_mb + ' / ' + s.ram_total_mb + ' MB');
   setT('loc-disk', (s.disk_percent || 0).toFixed(1) + '%'); $('bar-disk').style.width = Math.min(100, s.disk_percent || 0) + '%';
   setT('loc-disk-gb', (s.disk_used_gb || 0).toFixed(1) + ' / ' + (s.disk_total_gb || 0).toFixed(1) + ' GB');
+  setT('loc-disk-pill', 'Disk: ' + Math.round(s.disk_percent || 0) + '%');
   setT('loc-rx-spd', '↓ ' + fmtBytes(s.net_rx_speed) + '/s'); setT('loc-tx-spd', '↑ ' + fmtBytes(s.net_tx_speed) + '/s');
   setT('loc-net-tot', '↓' + fmtBytes(s.net_rx_total) + ' / ↑' + fmtBytes(s.net_tx_total));
   const oc = $('orb-cpu'); if (oc) oc.textContent = Math.round(s.cpu_percent || 0) + '%';

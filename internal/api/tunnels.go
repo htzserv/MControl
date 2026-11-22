@@ -308,27 +308,35 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 		for _, p := range ports {
 			portLines = append(portLines, fmt.Sprintf(`"%d=%d"`, p, p))
 		}
+		muxSrvExtra := ""
+		muxCliExtra := ""
+		if strings.HasSuffix(baseTrans, "mux") {
+			muxSrvExtra = "mux_con = 8\nmux_version = 2\nmux_framesize = 32768\nmux_recievebuffer = 4194304\nmux_streambuffer = 2097152\n"
+			muxCliExtra = "mux_version = 2\nmux_framesize = 32768\nmux_recievebuffer = 4194304\nmux_streambuffer = 2097152\n"
+		}
 		iranToml := fmt.Sprintf(`[server]
 bind_addr = "%s:%d"
 transport = "%s"
 token = "%s"
 nodelay = true
-keepalive_period = 75
-heartbeat = 40
+keepalive_period = 20
+heartbeat = 10
 channel_size = 2048
 sniffer = false
-ports = [%s]
-`, bindWild, t.TunnelPort, baseTrans, t.Token, strings.Join(portLines, ", "))
+%sports = [%s]
+`, bindWild, t.TunnelPort, baseTrans, t.Token, muxSrvExtra, strings.Join(portLines, ", "))
 
 		forToml := fmt.Sprintf(`[client]
 remote_addr = "%s"
 transport = "%s"
 token = "%s"
 connection_pool = 8
-retry_interval = 3
+aggressive_pool = true
+retry_interval = 1
+dial_timeout = 10
 nodelay = true
-keepalive_period = 75
-`, formatHostPort(iranAddr, t.TunnelPort), baseTrans, t.Token)
+keepalive_period = 20
+%s`, formatHostPort(iranAddr, t.TunnelPort), baseTrans, t.Token, muxCliExtra)
 
 		makeBH := func(toml string) string {
 			return fmt.Sprintf(`set -e
@@ -340,13 +348,15 @@ cat <<'EOF' > %s/%s.toml
 cat <<EOF > /etc/systemd/system/%s.service
 [Unit]
 Description=MControl Backhaul Tunnel %d (%s)
+Wants=network-online.target
 After=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 ExecStart=$BIN -c %s/%s.toml
 Restart=always
-RestartSec=2
+RestartSec=1
 LimitNOFILE=1048576
 
 [Install]
@@ -364,11 +374,38 @@ systemctl is-active %s.service || true
 	case "rathole":
 		var srvSvcs, cliSvcs strings.Builder
 		for _, p := range ports {
-			srvSvcs.WriteString(fmt.Sprintf("\n[server.services.p%d]\nbind_addr = \"0.0.0.0:%d\"\n", p, p))
-			cliSvcs.WriteString(fmt.Sprintf("\n[client.services.p%d]\nlocal_addr = \"127.0.0.1:%d\"\n", p, p))
+			srvSvcs.WriteString(fmt.Sprintf("\n[server.services.p%d]\ntype = \"tcp\"\nbind_addr = \"0.0.0.0:%d\"\nnodelay = true\n", p, p))
+			cliSvcs.WriteString(fmt.Sprintf("\n[client.services.p%d]\ntype = \"tcp\"\nlocal_addr = \"127.0.0.1:%d\"\nnodelay = true\n", p, p))
 		}
-		iranToml := fmt.Sprintf("[server]\nbind_addr = \"%s:%d\"\ndefault_token = \"%s\"\n%s", bindWild, t.TunnelPort, t.Token, srvSvcs.String())
-		forToml := fmt.Sprintf("[client]\nremote_addr = \"%s\"\ndefault_token = \"%s\"\n%s", formatHostPort(iranAddr, t.TunnelPort), t.Token, cliSvcs.String())
+		iranToml := fmt.Sprintf(`[server]
+bind_addr = "%s:%d"
+default_token = "%s"
+heartbeat_interval = 15
+
+[server.transport]
+type = "tcp"
+
+[server.transport.tcp]
+nodelay = true
+keepalive_secs = 15
+keepalive_interval = 5
+%s`, bindWild, t.TunnelPort, t.Token, srvSvcs.String())
+
+		forToml := fmt.Sprintf(`[client]
+remote_addr = "%s"
+default_token = "%s"
+heartbeat_timeout = 40
+retry_interval = 1
+
+[client.transport]
+type = "tcp"
+
+[client.transport.tcp]
+nodelay = true
+keepalive_secs = 15
+keepalive_interval = 5
+%s`, formatHostPort(iranAddr, t.TunnelPort), t.Token, cliSvcs.String())
+
 		makeRH := func(toml string) string {
 			return fmt.Sprintf(`set -e
 BIN=$(command -v rathole 2>/dev/null || true)
@@ -380,13 +417,15 @@ EOF
 cat <<EOF > /etc/systemd/system/%s.service
 [Unit]
 Description=MControl Rathole Tunnel %d (%s)
+Wants=network-online.target
 After=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 ExecStart=$BIN %s/%s.toml
 Restart=always
-RestartSec=2
+RestartSec=1
 LimitNOFILE=1048576
 
 [Install]
@@ -465,13 +504,14 @@ cat <<EOF > /etc/systemd/system/%s.service
 Description=MControl Paqet Server %d (%s)
 Wants=network-online.target
 After=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=root
 ExecStart=$BIN run -c %s
 Restart=always
-RestartSec=3
+RestartSec=1
 LimitNOFILE=1048576
 
 [Install]
@@ -523,13 +563,14 @@ chmod 600 %s
 Description=MControl Paqet Client %d (%s)
 Wants=network-online.target
 After=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 User=root
 ExecStart=$BIN run -c %s
 Restart=always
-RestartSec=3
+RestartSec=1
 LimitNOFILE=1048576
 
 [Install]
@@ -602,6 +643,10 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 			}
 		}
 		iptRules.WriteString(fmt.Sprintf("iptables -t nat -A POSTROUTING -o %s -m comment --comment %s -j MASQUERADE\n", ifName, tag))
+		iptRules.WriteString(fmt.Sprintf("iptables -C FORWARD -i %s -m comment --comment %s -j ACCEPT 2>/dev/null || iptables -A FORWARD -i %s -m comment --comment %s -j ACCEPT\n", ifName, tag, ifName, tag))
+		iptRules.WriteString(fmt.Sprintf("iptables -C FORWARD -o %s -m comment --comment %s -j ACCEPT 2>/dev/null || iptables -A FORWARD -o %s -m comment --comment %s -j ACCEPT\n", ifName, tag, ifName, tag))
+		iptRules.WriteString(fmt.Sprintf("iptables -t mangle -C FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -m comment --comment %s -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || iptables -t mangle -A FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -m comment --comment %s -j TCPMSS --clamp-mss-to-pmtu\n", ifName, tag, ifName, tag))
+		iptRules.WriteString(fmt.Sprintf("iptables -t mangle -C FORWARD -i %s -p tcp --tcp-flags SYN,RST SYN -m comment --comment %s -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || iptables -t mangle -A FORWARD -i %s -p tcp --tcp-flags SYN,RST SYN -m comment --comment %s -j TCPMSS --clamp-mss-to-pmtu\n", ifName, tag, ifName, tag))
 		if len(targets) > 1 && (t.LBMode == "lowest_ping" || t.LBMode == "lightest" || t.LBMode == "least_traffic") {
 			var selector string
 			tList := strings.Join(targets, " ")
@@ -640,6 +685,9 @@ cat <<'EOF' > %s/%s.sh
 #!/usr/bin/env bash
 set -e
 sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+sysctl -w net.ipv6.conf.all.forwarding=1 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.conf.all.rp_filter=0 >/dev/null 2>&1 || true
+sysctl -w net.ipv4.conf.default.rp_filter=0 >/dev/null 2>&1 || true
 modprobe ip_gre 2>/dev/null || true
 modprobe ip6_gre 2>/dev/null || true
 modprobe vxlan 2>/dev/null || true
@@ -648,6 +696,7 @@ ip tunnel del %s 2>/dev/null || true
 %s
 ip addr add %s dev %s
 ip link set %s mtu 1420 up
+sysctl -w net.ipv4.conf.%s.rp_filter=0 >/dev/null 2>&1 || true
 for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "%s" | iptables-restore -T "$tbl" 2>/dev/null || true; done
 %s
 EOF
@@ -670,7 +719,7 @@ systemctl daemon-reload
 systemctl enable %s.service
 if ! systemctl restart %s.service 2>/dev/null; then journalctl -u %s.service -n 8 --no-pager -o cat >&2; exit 1; fi
 ip -br addr show %s
-`, cfgDir, cfgDir, unit, ifName, ifName, linkCmd, cidr, ifName, ifName, tag, extraRules, cfgDir, unit, unit, t.ID, t.Name, cfgDir, unit, ifName, unit, unit, unit, ifName)
+`, cfgDir, cfgDir, unit, ifName, ifName, linkCmd, cidr, ifName, ifName, ifName, tag, extraRules, cfgDir, unit, unit, t.ID, t.Name, cfgDir, unit, ifName, unit, unit, unit, ifName)
 		}
 		return makeKernel(iranLink, iranLocal, iptRules.String()), makeKernel(forLink, forLocal, "")
 	}
@@ -992,4 +1041,31 @@ func (h *Handler) handleTunnelPing8(w http.ResponseWriter, r *http.Request) {
 		"avg_ms":   avgMs,
 		"loss_pct": lossPct,
 	})
+}
+
+// StartTunnelWatchdog checks active MControl tunnels every 45 seconds and automatically
+// restarts any systemd tunnel unit that dropped or became inactive on either side.
+func (h *Handler) StartTunnelWatchdog() {
+	go func() {
+		for {
+			time.Sleep(45 * time.Second)
+			list, err := h.store.ListTunnels()
+			if err != nil || len(list) == 0 {
+				continue
+			}
+			for _, tun := range list {
+				if tun.Status != "active" {
+					continue
+				}
+				unit := fmt.Sprintf("mcontrol-tun-%d.service", tun.ID)
+				healCmd := fmt.Sprintf("if [ -f /etc/systemd/system/%s ]; then systemctl is-active --quiet %s || systemctl restart %s; fi", unit, unit, unit)
+				if iranSrv, err := h.store.GetServerWithSecret(tun.IranServerID); err == nil {
+					_ = h.runOnServer(iranSrv, healCmd, 15*time.Second)
+				}
+				if forSrv, err := h.store.GetServerWithSecret(tun.ForeignServerID); err == nil {
+					_ = h.runOnServer(forSrv, healCmd, 15*time.Second)
+				}
+			}
+		}
+	}()
 }
