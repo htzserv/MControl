@@ -1146,6 +1146,96 @@ body:is([data-family="Material"], [data-family="Studio"]) { --accent-glow: trans
       <button type="button" class="fab-tun" title="New Tunnel" aria-label="New Tunnel" onclick="openNewTunnelModal()">+</button>
     </section>
 
+    <!-- MASTER OUTBOUND (XRAY CORE + SUBS + LOAD BALANCING / FAILOVER) -->
+    <section id="tab-outbound" class="page">
+      <div class="toolbar">
+        <div>
+          <h3>Master Outbound (Xray Core)</h3>
+          <div class="hint" style="margin:2px 0 0;">Isolated local SOCKS5 (<span class="mono">127.0.0.1:10808</span>) strictly for the Master Panel — completely separate from user tunnels.</div>
+        </div>
+        <div class="flexw" style="gap:8px;">
+          <span class="badge b-foreign mono" id="ob-badge">STOPPED</span>
+          <button class="btn btn-ghost btn-sm" onclick="loadMasterOutbound()">Refresh</button>
+        </div>
+      </div>
+
+      <!-- 1. Xray Core Status & Controls -->
+      <div class="card sp" style="margin-bottom:14px;">
+        <div class="toolbar" style="margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <strong style="color:var(--accent);">Xray Core Engine</strong>
+            <span class="badge b-miss mono" id="ob-core-status">CHECKING...</span>
+            <span class="badge b-ok mono" id="ob-core-ver" style="display:none;"></span>
+          </div>
+          <button class="btn btn-sky btn-sm" id="btn-ob-install" onclick="installXrayCore()">Install Xray Core</button>
+        </div>
+
+        <div class="row2">
+          <div class="field" style="margin-bottom:10px;">
+            <label>Load Balancing &amp; Auto-Failover Mode</label>
+            <select id="ob-lb">
+              <option value="leastPing">Least Ping + Auto-Failover (Recommended)</option>
+              <option value="leastLoad">Least Load + Auto-Failover (Balanced)</option>
+              <option value="roundRobin">Round-Robin + Auto-Failover</option>
+              <option value="random">Random + Auto-Failover</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Health Probe Interval</label>
+            <select id="ob-int">
+              <option value="15s">Every 15s (Fast Failover)</option>
+              <option value="30s" selected>Every 30s (Balanced)</option>
+              <option value="60s">Every 60s (Light)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flexw" style="gap:16px; margin-bottom:12px;">
+          <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Master Outbound</span></label>
+          <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
+          <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
+          <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes Control</span></label>
+        </div>
+
+        <div class="flexw" style="gap:8px;">
+          <button class="btn btn-sky" id="btn-ob-save" onclick="saveMasterOutbound()">Save &amp; Start</button>
+          <button class="btn btn-warn" id="btn-ob-test" onclick="testMasterOutbound()">Test Outbound</button>
+          <button class="btn btn-danger" onclick="stopMasterOutbound()">Stop</button>
+        </div>
+        <pre class="term" id="ob-out" style="height:90px; margin-top:12px; display:none;"></pre>
+      </div>
+
+      <!-- 2. Subscriptions -->
+      <div class="card sp" style="margin-bottom:14px;">
+        <h4 style="color:var(--accent); margin-bottom:10px;">Subscriptions (Auto-Import Nodes)</h4>
+        <div class="row2" style="margin-bottom:8px;">
+          <div class="field" style="margin:0;"><label>Subscription Name</label><input id="ob-sub-name" placeholder="e.g. Main Sub"></div>
+          <div class="field" style="margin:0;"><label>Subscription URL</label><input id="ob-sub-url" class="mono" placeholder="https://example.com/sub/..."></div>
+        </div>
+        <div class="flexw" style="margin-bottom:12px;">
+          <button class="btn btn-sky btn-sm" id="btn-ob-sub-add" onclick="addOutboundSub()">+ Add &amp; Fetch Subscription</button>
+        </div>
+        <div id="ob-subs-list" style="display:flex; flex-direction:column; gap:7px;"></div>
+      </div>
+
+      <!-- 3. Outbound Nodes Pool -->
+      <div class="card sp">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h4 style="color:var(--accent);">Outbound Nodes Pool <span class="badge b-ok mono" id="ob-nodes-cnt">0</span></h4>
+          <div class="flexw" style="gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(true)">Enable All</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(false)">Disable All</button>
+            <button class="btn btn-danger btn-sm" onclick="clearOutboundNodes()">Clear All</button>
+          </div>
+        </div>
+        <div class="flexw" style="gap:8px; margin-bottom:12px;">
+          <input id="ob-manual-uri" class="mono" style="flex:1; min-width:220px;" placeholder="Paste manual URI (vless://, vmess://, trojan://, ss://, socks5://)">
+          <button class="btn btn-sky btn-sm" onclick="addManualOutboundNode()">+ Add Node</button>
+        </div>
+        <div id="ob-nodes-list" style="display:flex; flex-direction:column; gap:6px; max-height:360px; overflow-y:auto;"></div>
+      </div>
+    </section>
+
     <!-- UPDATE -->
     <section id="tab-update" class="page">
       <div class="card sp" style="max-width:760px;">
@@ -1273,31 +1363,7 @@ body:is([data-family="Material"], [data-family="Studio"]) { --accent-glow: trans
             <button class="btn btn-sky" id="btn-save-settings" data-i18n="btn_save_settings">Save settings</button>
           </div>
 
-                    <div class="card sp" style="margin-top:14px;">
-            <div class="toolbar" style="margin-bottom:8px;">
-              <div>
-                <h4 style="color:var(--accent);">Master Outbound (Xray Core)</h4>
-                <div class="hint" style="margin:2px 0 0;">Isolated local SOCKS5 (127.0.0.1:10808) strictly for the Master Panel (GitHub updates, Telegram bot, Foreign control) — completely separate from user tunnels.</div>
-              </div>
-              <span class="badge b-foreign mono" id="ob-badge">STOPPED</span>
-            </div>
-            <div class="field">
-              <label>Outbound URI (VLESS / VMess / Trojan / SOCKS5)</label>
-              <input id="ob-link" class="mono" placeholder="vless://... or trojan://... or vmess://... or socks5://...">
-            </div>
-            <div class="flexw" style="gap:14px; margin-bottom:12px;">
-              <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Master Outbound</span></label>
-              <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
-              <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
-              <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes Control</span></label>
-            </div>
-            <div class="flexw" style="gap:8px;">
-              <button class="btn btn-sky btn-sm" id="btn-ob-save" onclick="saveMasterOutbound()">Save &amp; Start</button>
-              <button class="btn btn-warn btn-sm" id="btn-ob-test" onclick="testMasterOutbound()">Test Outbound</button>
-              <button class="btn btn-danger btn-sm" onclick="stopMasterOutbound()">Stop</button>
-            </div>
-            <pre class="term" id="ob-out" style="height:82px; margin-top:10px; display:none;"></pre>
-          </div>
+                    
 
 <div class="card" style="margin-top:16px;">
             <div class="toolbar" style="margin-bottom:10px;">
@@ -1830,7 +1896,7 @@ en: {
   setup_done: 'Setup complete! Restarting panel...', setup_url: 'Your permanent MControl URL:', t_random: 'Random',
   login_sub: 'MDesign central control plane', http_warn: 'Plain HTTP: your password is sent unencrypted. Enable HTTPS (tls.crt / tls.key) or use a reverse proxy.',
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
-  nav_overview: 'Overview', nav_servers: 'Servers', nav_tunnels: 'Tunnels', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
+  nav_overview: 'Overview', nav_servers: 'Servers', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
   load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
@@ -1884,7 +1950,7 @@ fa: {
   setup_done: 'راه‌اندازی کامل شد! در حال راه‌اندازی مجدد پنل...', setup_url: 'آدرس دائمی پنل شما:', t_random: 'تصادفی',
   login_sub: 'پنل مرکزی کنترل MDesign', http_warn: 'اتصال HTTP ساده است و رمز شما بدون رمزگذاری ارسال می‌شود. HTTPS (فایل‌های tls.crt و tls.key) یا ریورس‌پروکسی را فعال کنید.',
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
-  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_tunnels: 'تانل‌ها', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
+  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
   load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
@@ -1992,6 +2058,7 @@ T('emerald', 'Emerald Desk', 'Studio', 'rail deck round solid sans cozy grid til
 /* ═══════════════ icons ═══════════════ */
 const IC = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
   server: '<rect x="2" y="3" width="20" height="7" rx="1.5"/><rect x="2" y="14" width="20" height="7" rx="1.5"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/>',
   term: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
   palette: '<circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 22c-1.5 0-2-1.5-1-2.6.8-.9.4-2.4-1-2.4H8a4 4 0 0 1-4-4"/>',
@@ -2003,7 +2070,7 @@ const IC = {
   key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['outbound', 'nav_outbound', 'route'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -2288,7 +2355,8 @@ function switchTab(name) {
   if (name === 'update') checkUpdates(false);
   if (name === 'overview') { pollLocalStats(); }
   if (name === 'tunnels') { loadTunnels(); loadProfiles(); pollMSmartStatus(); }
-  if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadMasterOutbound(); }
+  if (name === 'outbound') { loadMasterOutbound(); }
+  if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
 }
@@ -3039,32 +3107,185 @@ async function runSetupAction(action, engine) {
 }
 
 
+let OB_CFG = { enabled: false, lb_strategy: 'leastPing', probe_interval: '30s', use_github: true, use_telegram: true, use_foreign: false, subs: [], nodes: [] };
+
+function renderOutboundLists() {
+  const subsBox = $('ob-subs-list');
+  if (subsBox) {
+    const subs = OB_CFG.subs || [];
+    subsBox.innerHTML = subs.length ? subs.map((s, idx) => {
+      const dt = s.last_sync ? new Date(s.last_sync * 1000).toLocaleString() : 'Never';
+      return `<div class="kv" style="margin:0;">
+        <div>
+          <strong>${esc(s.name)}</strong>
+          <span class="badge b-ok mono" style="margin-inline-start:6px;">${s.node_count || 0} nodes</span>
+          <div class="mono" style="font-size:.7rem; color:var(--muted); margin-top:2px; word-break:break-all;">${esc(s.url)} • Synced: ${esc(dt)}</div>
+        </div>
+        <div class="flexw" style="gap:6px;">
+          <button class="btn btn-sky btn-sm" onclick="refreshOutboundSub(${idx})">Refresh</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOutboundSub(${idx})">Delete</button>
+        </div>
+      </div>`;
+    }).join('') : '<div class="hint" style="margin:0;">No subscriptions added yet.</div>';
+  }
+
+  const nodesBox = $('ob-nodes-list');
+  const nodes = OB_CFG.nodes || [];
+  const enabledCount = nodes.filter(n => n.enabled).length;
+  if ($('ob-nodes-cnt')) $('ob-nodes-cnt').textContent = enabledCount + ' / ' + nodes.length + ' active';
+  if (nodesBox) {
+    const subMap = {};
+    (OB_CFG.subs || []).forEach(s => { subMap[s.id] = s.name; });
+    nodesBox.innerHTML = nodes.length ? nodes.map((n, idx) => {
+      const srcLbl = n.source === 'manual' ? 'Manual' : (subMap[n.source] || 'Sub');
+      return `<div class="kv" style="margin:0; opacity:${n.enabled ? '1' : '.52'};">
+        <label class="check" style="margin:0; flex:1; min-width:0;">
+          <input type="checkbox" ${n.enabled ? 'checked' : ''} onchange="toggleOutboundNode(${idx}, this.checked)">
+          <span style="min-width:0;">
+            <span class="badge b-iran mono" style="margin-inline-end:6px;">${esc(n.proto || 'NODE')}</span>
+            <strong>${esc(n.name || 'Node')}</strong>
+            <span class="badge b-foreign" style="margin-inline-start:6px;">${esc(srcLbl)}</span>
+            ${n.address ? `<span class="mono" style="font-size:.72rem; color:var(--muted); margin-inline-start:6px;">${esc(n.address)}</span>` : ''}
+          </span>
+        </label>
+        <button class="btn btn-danger btn-sm" onclick="deleteOutboundNode(${idx})">✕</button>
+      </div>`;
+    }).join('') : '<div class="hint" style="margin:0;">No outbound nodes yet. Add a subscription above or paste a manual URI.</div>';
+  }
+}
+
 async function loadMasterOutbound() {
   const r = await api('api/outbound/status');
   if (!r.ok) return;
-  const c = r.config || {};
-  if ($('ob-link')) $('ob-link').value = c.link || '';
-  if ($('ob-en')) $('ob-en').checked = !!c.enabled;
-  if ($('ob-gh')) $('ob-gh').checked = c.use_github !== false;
-  if ($('ob-tg')) $('ob-tg').checked = c.use_telegram !== false;
-  if ($('ob-fr')) $('ob-fr').checked = !!c.use_foreign;
+  OB_CFG = r.config || OB_CFG;
+  if (!Array.isArray(OB_CFG.subs)) OB_CFG.subs = [];
+  if (!Array.isArray(OB_CFG.nodes)) OB_CFG.nodes = [];
+
+  if ($('ob-en')) $('ob-en').checked = !!OB_CFG.enabled;
+  if ($('ob-gh')) $('ob-gh').checked = OB_CFG.use_github !== false;
+  if ($('ob-tg')) $('ob-tg').checked = OB_CFG.use_telegram !== false;
+  if ($('ob-fr')) $('ob-fr').checked = !!OB_CFG.use_foreign;
+  if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
+  if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
+
   const b = $('ob-badge');
   if (b) {
     b.textContent = r.running ? 'ACTIVE (127.0.0.1:10808)' : 'STOPPED';
     b.className = 'badge mono ' + (r.running ? 'b-iran' : 'b-foreign');
   }
+  const cs = $('ob-core-status'), cv = $('ob-core-ver'), ib = $('btn-ob-install');
+  if (cs) {
+    cs.textContent = r.xray_installed ? 'INSTALLED' : 'NOT INSTALLED';
+    cs.className = 'badge mono ' + (r.xray_installed ? 'b-iran' : 'b-miss');
+  }
+  if (cv) {
+    if (r.xray_installed && r.xray_version) {
+      cv.textContent = 'Xray ' + r.xray_version;
+      cv.style.display = 'inline-block';
+    } else {
+      cv.style.display = 'none';
+    }
+  }
+  if (ib) {
+    ib.textContent = r.xray_installed ? 'Update Xray Core' : 'Install Xray Core';
+  }
+  renderOutboundLists();
+}
+
+async function installXrayCore() {
+  const btn = $('btn-ob-install');
+  btn.disabled = true; btn.textContent = 'Installing Xray...';
+  try {
+    const r = await api('api/outbound/install', 'POST');
+    if (r.ok) { toast(r.message || 'Xray Core installed!'); loadMasterOutbound(); }
+    else toast(r.error || 'Install failed', true);
+  } finally { btn.disabled = false; }
+}
+
+async function addOutboundSub() {
+  const name = ($('ob-sub-name').value || '').trim();
+  const url = ($('ob-sub-url').value || '').trim();
+  if (!url) { toast('Enter a subscription URL first', true); return; }
+  const btn = $('btn-ob-sub-add'); btn.disabled = true; btn.textContent = 'Fetching...';
+  try {
+    const r = await api('api/outbound/sub/fetch', 'POST', { name, url });
+    if (r.ok) {
+      OB_CFG = r.config || OB_CFG;
+      $('ob-sub-name').value = ''; $('ob-sub-url').value = '';
+      renderOutboundLists();
+      toast(r.message || 'Subscription imported! Click Save & Start to apply.');
+    } else toast(r.error || 'Failed to fetch subscription', true);
+  } finally { btn.disabled = false; btn.textContent = '+ Add & Fetch Subscription'; }
+}
+
+async function refreshOutboundSub(idx) {
+  const sub = (OB_CFG.subs || [])[idx];
+  if (!sub) return;
+  toast('Refreshing ' + sub.name + '...');
+  const r = await api('api/outbound/sub/fetch', 'POST', { id: sub.id, name: sub.name, url: sub.url });
+  if (r.ok) {
+    OB_CFG = r.config || OB_CFG;
+    renderOutboundLists();
+    toast(r.message || 'Subscription refreshed!');
+  } else toast(r.error || 'Refresh failed', true);
+}
+
+function deleteOutboundSub(idx) {
+  const sub = (OB_CFG.subs || [])[idx];
+  if (!sub) return;
+  OB_CFG.subs.splice(idx, 1);
+  OB_CFG.nodes = (OB_CFG.nodes || []).filter(n => n.source !== sub.id);
+  renderOutboundLists();
+  toast('Subscription removed. Click Save & Start to apply.');
+}
+
+function addManualOutboundNode() {
+  const inp = $('ob-manual-uri');
+  const uri = (inp.value || '').trim();
+  if (!uri || !uri.includes('://')) { toast('Paste a valid vless://, vmess://, trojan://, ss://, or socks5:// URI', true); return; }
+  const proto = uri.split('://')[0].toUpperCase();
+  let name = proto + ' Node', addr = '';
+  try {
+    if (proto !== 'VMESS') {
+      const u = new URL(uri);
+      addr = u.host || '';
+      if (u.hash && u.hash.length > 1) name = decodeURIComponent(u.hash.slice(1));
+      else if (addr) name = proto + ' • ' + addr;
+    }
+  } catch (e) {}
+  OB_CFG.nodes.push({ id: 'm-' + Date.now(), name, uri, proto, address: addr, source: 'manual', enabled: true });
+  inp.value = '';
+  renderOutboundLists();
+  toast('Node added. Click Save & Start to apply.');
+}
+
+function toggleOutboundNode(idx, checked) {
+  if (OB_CFG.nodes[idx]) { OB_CFG.nodes[idx].enabled = checked; renderOutboundLists(); }
+}
+function toggleAllOutboundNodes(state) {
+  (OB_CFG.nodes || []).forEach(n => { n.enabled = state; });
+  renderOutboundLists();
+}
+function deleteOutboundNode(idx) {
+  OB_CFG.nodes.splice(idx, 1);
+  renderOutboundLists();
+}
+function clearOutboundNodes() {
+  if (!confirm('Remove all outbound nodes?')) return;
+  OB_CFG.nodes = [];
+  renderOutboundLists();
 }
 
 async function saveMasterOutbound() {
   const btn = $('btn-ob-save'); btn.disabled = true; btn.textContent = 'Applying...';
   try {
-    const r = await api('api/outbound/save', 'POST', {
-      enabled: $('ob-en').checked,
-      link: $('ob-link').value.trim(),
-      use_github: $('ob-gh').checked,
-      use_telegram: $('ob-tg').checked,
-      use_foreign: $('ob-fr').checked
-    });
+    OB_CFG.enabled = $('ob-en').checked;
+    OB_CFG.use_github = $('ob-gh').checked;
+    OB_CFG.use_telegram = $('ob-tg').checked;
+    OB_CFG.use_foreign = $('ob-fr').checked;
+    OB_CFG.lb_strategy = $('ob-lb').value;
+    OB_CFG.probe_interval = $('ob-int').value;
+    const r = await api('api/outbound/save', 'POST', OB_CFG);
     if (r.ok) { toast(r.message || 'Master Outbound saved'); loadMasterOutbound(); }
     else toast(r.error || 'Failed to save outbound', true);
   } finally { btn.disabled = false; btn.textContent = 'Save & Start'; }
@@ -3240,8 +3461,9 @@ async function checkUpdates(notify) {
     const res = await api('api/update/check');
     if (!res.ok || !res.check) return;
     const c = res.check;
-    if ($('upd-cur')) $('upd-cur').textContent = 'v' + c.current_version;
-    if ($('loc-ver')) $('loc-ver').textContent = 'v' + c.current_version;
+    const curLbl = 'v' + c.current_version + (c.installed_beta_build > 0 ? (' • Beta #' + c.installed_beta_build) : '');
+    if ($('upd-cur')) $('upd-cur').innerHTML = esc(curLbl) + (c.via_outbound ? ' <span class="badge b-iran mono" style="margin-inline-start:6px;">via Outbound</span>' : '');
+    if ($('loc-ver')) $('loc-ver').textContent = curLbl;
     const fmt = s => {
       if (s.error) return `<span style="color:var(--red);">${esc(s.error)}</span>`;
       if (s.available) return `<span style="color:var(--yellow);">v${esc(s.version)} (${t('upd_new')})</span>`;

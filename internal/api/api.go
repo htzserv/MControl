@@ -376,6 +376,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/outbound/save", h.auth(h.handleOutboundSave))
 	mux.HandleFunc("POST /api/outbound/stop", h.auth(h.handleOutboundStop))
 	mux.HandleFunc("POST /api/outbound/test", h.auth(h.handleOutboundTest))
+	mux.HandleFunc("POST /api/outbound/install", h.auth(h.handleOutboundInstallCore))
+	mux.HandleFunc("POST /api/outbound/sub/fetch", h.auth(h.handleOutboundFetchSub))
 	mux.HandleFunc("GET /api/tunnels", h.auth(h.handleListTunnels))
 	mux.HandleFunc("POST /api/tunnels", h.auth(h.handleCreateTunnel))
 	mux.HandleFunc("POST /api/tunnels/{id}/action", h.auth(h.handleTunnelAction))
@@ -961,7 +963,7 @@ func (h *Handler) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	st := h.store.GetSettings()
-	res := updater.CheckAll(st.PanelGitHubURL, st.PanelMirrorURL, st.BetaBuilds, st.InstalledBetaBuild)
+	res := updater.CheckAll(st.PanelGitHubURL, st.PanelMirrorURL, h.githubSocksProxy(), st.BetaBuilds, st.InstalledBetaBuild)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "check": res})
 }
 
@@ -979,7 +981,7 @@ func (h *Handler) handleUpdateRemote(w http.ResponseWriter, r *http.Request) {
 	}
 	st := h.store.GetSettings()
 	log.Printf("remote update requested from %s by %s", req.Source, r.Header.Get("X-MC-User"))
-	err := updater.StartRemoteUpdate(req.Source, st.PanelGitHubURL, st.PanelMirrorURL, st.AllowUnverified, func(build int) {
+	err := updater.StartRemoteUpdate(req.Source, st.PanelGitHubURL, st.PanelMirrorURL, h.githubSocksProxy(), st.AllowUnverified, func(build int) {
 		_ = h.store.SetInstalledBetaBuild(build)
 	}, func() {
 		time.Sleep(1500 * time.Millisecond)

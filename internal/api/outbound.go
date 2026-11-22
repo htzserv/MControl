@@ -1,13 +1,17 @@
 package api
 
 import (
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -19,12 +23,41 @@ const (
 	outboundUnit      = "mcontrol-outbound.service"
 )
 
+type outboundNode struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	URI     string `json:"uri"`
+	Proto   string `json:"proto"`
+	Address string `json:"address"`
+	Source  string `json:"source"` // "manual" or subscription ID
+	Enabled bool   `json:"enabled"`
+}
+
+type outboundSub struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	URL       string `json:"url"`
+	LastSync  int64  `json:"last_sync"`
+	NodeCount int    `json:"node_count"`
+}
+
 type outboundConfig struct {
-	Enabled     bool   `json:"enabled"`
-	Link        string `json:"link"`
-	UseGitHub   bool   `json:"use_github"`
-	UseTelegram bool   `json:"use_telegram"`
-	UseForeign  bool   `json:"use_foreign"`
+	Enabled       bool           `json:"enabled"`
+	Link          string         `json:"link"`           // legacy single-link field
+	LBStrategy    string         `json:"lb_strategy"`    // leastPing | leastLoad | roundRobin | random
+	ProbeURL      string         `json:"probe_url"`      // default https://www.gstatic.com/generate_204
+	ProbeInterval string         `json:"probe_interval"` // default 30s
+	UseGitHub     bool           `json:"use_github"`
+	UseTelegram   bool           `json:"use_telegram"`
+	UseForeign    bool           `json:"use_foreign"`
+	Subs          []outboundSub  `json:"subs"`
+	Nodes         []outboundNode `json:"nodes"`
+}
+
+func shortRandID() string {
+	b := make([]byte, 4)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 func (h *Handler) loadOutboundCfg() outboundConfig {
@@ -33,6 +66,27 @@ func (h *Handler) loadOutboundCfg() outboundConfig {
 	if raw != "" {
 		_ = json.Unmarshal([]byte(raw), &cfg)
 	}
+	if cfg.LBStrategy == "" {
+		cfg.LBStrategy = "leastPing"
+	}
+	if cfg.ProbeURL == "" {
+		cfg.ProbeURL = "https://www.gstatic.com/generate_204"
+	}
+	if cfg.ProbeInterval == "" {
+		cfg.ProbeInterval = "30s"
+	}
+	if cfg.Subs == nil {
+		cfg.Subs = []outboundSub{}
+	}
+	if cfg.Nodes == nil {
+		cfg.Nodes = []outboundNode{}
+	}
+	// Auto-migrate legacy single Link into Nodes list
+	if len(cfg.Nodes) == 0 && strings.TrimSpace(cfg.Link) != "" {
+		if n, ok := parseNodeSummary(cfg.Link, "manual"); ok {
+			cfg.Nodes = append(cfg.Nodes, n)
+		}
+	}
 	return cfg
 }
 
@@ -40,6 +94,14 @@ func (h *Handler) saveOutboundCfg(cfg outboundConfig) {
 	if b, err := json.Marshal(cfg); err == nil {
 		_ = h.store.SetSetting("master_outbound_json", string(b))
 	}
+}
+
+func (h *Handler) githubSocksProxy() string {
+	cfg := h.loadOutboundCfg()
+	if cfg.Enabled && cfg.UseGitHub && isOutboundActive() {
+		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	return ""
 }
 
 func isOutboundActive() bool {
@@ -59,18 +121,269 @@ func xrayBinPath() string {
 	return ""
 }
 
+var xrayVerRe = regexp.MustCompile(`Xray\s+([0-9]+\.[0-9]+(?:\.[0-9]+)?)`)
+
+func xrayVersionString() string {
+	bin := xrayBinPath()
+	if bin == "" {
+		return ""
+	}
+	out, err := exec.Command(bin, "version").Output()
+	if err != nil {
+		return "installed"
+	}
+	if m := xrayVerRe.FindStringSubmatch(string(out)); len(m) == 2 {
+		return "v" + m[1]
+	}
+	firstLine := strings.TrimSpace(strings.Split(string(out), "\n")[0])
+	if len(firstLine) > 40 {
+		firstLine = firstLine[:40]
+	}
+	return firstLine
+}
+
+func parseNodeSummary(uri, source string) (outboundNode, bool) {
+	uri = strings.TrimSpace(uri)
+	low := strings.ToLower(uri)
+	var proto, name, addr string
+
+	switch {
+	case strings.HasPrefix(low, "vless://"):
+		proto = "VLESS"
+		if u, err := url.Parse(uri); err == nil {
+			addr = u.Host
+			name = u.Fragment
+		}
+	case strings.HasPrefix(low, "trojan://"):
+		proto = "TROJAN"
+		if u, err := url.Parse(uri); err == nil {
+			addr = u.Host
+			name = u.Fragment
+		}
+	case strings.HasPrefix(low, "vmess://"):
+		proto = "VMESS"
+		b64 := strings.TrimSpace(uri[8:])
+		if raw, err := decodeFlexibleBase64(b64); err == nil {
+			var vm map[string]any
+			if json.Unmarshal(raw, &vm) == nil {
+				addr = fmt.Sprintf("%v:%v", vm["add"], vm["port"])
+				if ps, ok := vm["ps"].(string); ok {
+					name = ps
+				}
+			}
+		}
+	case strings.HasPrefix(low, "ss://"):
+		proto = "SS"
+		if u, err := url.Parse(uri); err == nil {
+			addr = u.Host
+			name = u.Fragment
+		}
+	case strings.HasPrefix(low, "socks://") || strings.HasPrefix(low, "socks5://"):
+		proto = "SOCKS5"
+		if u, err := url.Parse(uri); err == nil {
+			addr = u.Host
+			name = u.Fragment
+		}
+	default:
+		return outboundNode{}, false
+	}
+
+	if dec, err := url.QueryUnescape(name); err == nil && dec != "" {
+		name = dec
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		if addr != "" {
+			name = proto + " • " + addr
+		} else {
+			name = proto + " Node"
+		}
+	}
+	return outboundNode{
+		ID:      shortRandID(),
+		Name:    name,
+		URI:     uri,
+		Proto:   proto,
+		Address: addr,
+		Source:  source,
+		Enabled: true,
+	}, true
+}
+
+func decodeFlexibleBase64(s string) ([]byte, error) {
+	s = strings.TrimSpace(s)
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	for _, enc := range []*base64.Encoding{
+		base64.StdEncoding,
+		base64.RawStdEncoding,
+		base64.URLEncoding,
+		base64.RawURLEncoding,
+	} {
+		if b, err := enc.DecodeString(s); err == nil {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("base64 decode failed")
+}
+
+func parseSubscriptionBody(body, subID string) []outboundNode {
+	txt := strings.TrimSpace(body)
+	if !strings.Contains(txt, "://") {
+		if dec, err := decodeFlexibleBase64(txt); err == nil {
+			txt = string(dec)
+		}
+	}
+	var nodes []outboundNode
+	seen := map[string]bool{}
+	for _, line := range strings.Split(txt, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || seen[line] {
+			continue
+		}
+		if n, ok := parseNodeSummary(line, subID); ok {
+			seen[line] = true
+			nodes = append(nodes, n)
+		}
+	}
+	return nodes
+}
+
 func (h *Handler) handleOutboundStatus(w http.ResponseWriter, r *http.Request) {
 	cfg := h.loadOutboundCfg()
+	installed := xrayBinPath() != ""
+	ver := ""
+	if installed {
+		ver = xrayVersionString()
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":             true,
 		"config":         cfg,
-		"xray_installed": xrayBinPath() != "",
+		"xray_installed": installed,
+		"xray_version":   ver,
 		"running":        isOutboundActive(),
 		"socks_addr":     fmt.Sprintf("127.0.0.1:%d", outboundSocksPort),
 	})
 }
 
-func parseLinkToXrayOutbound(link string) (map[string]any, error) {
+func (h *Handler) handleOutboundInstallCore(w http.ResponseWriter, r *http.Request) {
+	bin, err := installOrUpdateXray()
+	if err != nil {
+		fail(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	ver := xrayVersionString()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":             true,
+		"xray_installed": bin != "",
+		"xray_version":   ver,
+		"message":        "Xray Core installed: " + ver,
+	})
+}
+
+func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	req.URL = strings.TrimSpace(req.URL)
+	req.Name = strings.TrimSpace(req.Name)
+	if req.URL == "" || (!strings.HasPrefix(req.URL, "http://") && !strings.HasPrefix(req.URL, "https://")) {
+		fail(w, http.StatusBadRequest, "valid http(s) subscription URL is required")
+		return
+	}
+	if req.Name == "" {
+		if u, err := url.Parse(req.URL); err == nil && u.Hostname() != "" {
+			req.Name = u.Hostname()
+		} else {
+			req.Name = "Subscription"
+		}
+	}
+
+	// Fetch subscription (direct first; fallback via curl --socks5-hostname if outbound is active)
+	var bodyStr string
+	client := &http.Client{Timeout: 12 * time.Second}
+	httpReq, _ := http.NewRequest("GET", req.URL, nil)
+	httpReq.Header.Set("User-Agent", "MControl/1.2.0 v2rayN/6.0")
+	resp, err := client.Do(httpReq)
+	if err == nil && resp.StatusCode == http.StatusOK {
+		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+		resp.Body.Close()
+		bodyStr = string(raw)
+	} else {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		if isOutboundActive() {
+			out, cerr := exec.Command("curl", "-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.2.0", req.URL).Output()
+			if cerr == nil {
+				bodyStr = string(out)
+			}
+		}
+	}
+	if strings.TrimSpace(bodyStr) == "" {
+		fail(w, http.StatusBadGateway, "failed to download subscription URL (check connectivity or enable Outbound first)")
+		return
+	}
+
+	cfg := h.loadOutboundCfg()
+	subID := req.ID
+	if subID == "" {
+		subID = "sub-" + shortRandID()
+	}
+
+	parsed := parseSubscriptionBody(bodyStr, subID)
+	if len(parsed) == 0 {
+		fail(w, http.StatusBadRequest, "no supported VLESS/VMess/Trojan/SS/SOCKS5 nodes found in subscription")
+		return
+	}
+
+	// Update or add sub entry
+	foundSub := false
+	for i := range cfg.Subs {
+		if cfg.Subs[i].ID == subID {
+			cfg.Subs[i].Name = req.Name
+			cfg.Subs[i].URL = req.URL
+			cfg.Subs[i].LastSync = time.Now().Unix()
+			cfg.Subs[i].NodeCount = len(parsed)
+			foundSub = true
+			break
+		}
+	}
+	if !foundSub {
+		cfg.Subs = append(cfg.Subs, outboundSub{
+			ID:        subID,
+			Name:      req.Name,
+			URL:       req.URL,
+			LastSync:  time.Now().Unix(),
+			NodeCount: len(parsed),
+		})
+	}
+
+	// Replace old nodes from this sub and append fresh ones
+	kept := make([]outboundNode, 0, len(cfg.Nodes)+len(parsed))
+	for _, n := range cfg.Nodes {
+		if n.Source != subID {
+			kept = append(kept, n)
+		}
+	}
+	kept = append(kept, parsed...)
+	cfg.Nodes = kept
+	h.saveOutboundCfg(cfg)
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"added":   len(parsed),
+		"config":  cfg,
+		"message": fmt.Sprintf("Synced %d nodes from %s", len(parsed), req.Name),
+	})
+}
+
+func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 	link = strings.TrimSpace(link)
 	if link == "" {
 		return nil, fmt.Errorf("outbound link is empty")
@@ -123,13 +436,19 @@ func parseLinkToXrayOutbound(link string) (map[string]any, error) {
 			stream["wsSettings"] = ws
 		} else if netType == "grpc" {
 			stream["grpcSettings"] = map[string]any{"serviceName": q.Get("serviceName")}
+		} else if netType == "xhttp" || netType == "splithttp" {
+			xh := map[string]any{"path": q.Get("path")}
+			if host := q.Get("host"); host != "" {
+				xh["host"] = host
+			}
+			stream["xhttpSettings"] = xh
 		}
 		user := map[string]any{"id": u.User.Username(), "encryption": "none"}
 		if fl := q.Get("flow"); fl != "" {
 			user["flow"] = fl
 		}
 		return map[string]any{
-			"tag":      "proxy",
+			"tag":      tag,
 			"protocol": "vless",
 			"settings": map[string]any{
 				"vnext": []any{map[string]any{
@@ -155,8 +474,29 @@ func parseLinkToXrayOutbound(link string) (map[string]any, error) {
 		if sni == "" {
 			sni = u.Hostname()
 		}
+		netType := q.Get("type")
+		if netType == "" {
+			netType = "tcp"
+		}
+		stream := map[string]any{
+			"network":  netType,
+			"security": "tls",
+			"tlsSettings": map[string]any{
+				"serverName":    sni,
+				"allowInsecure": q.Get("allowInsecure") == "1",
+			},
+		}
+		if netType == "ws" {
+			ws := map[string]any{"path": q.Get("path")}
+			if host := q.Get("host"); host != "" {
+				ws["headers"] = map[string]any{"Host": host}
+			}
+			stream["wsSettings"] = ws
+		} else if netType == "grpc" {
+			stream["grpcSettings"] = map[string]any{"serviceName": q.Get("serviceName")}
+		}
 		return map[string]any{
-			"tag":      "proxy",
+			"tag":      tag,
 			"protocol": "trojan",
 			"settings": map[string]any{
 				"servers": []any{map[string]any{
@@ -165,25 +505,14 @@ func parseLinkToXrayOutbound(link string) (map[string]any, error) {
 					"password": u.User.Username(),
 				}},
 			},
-			"streamSettings": map[string]any{
-				"network":  "tcp",
-				"security": "tls",
-				"tlsSettings": map[string]any{
-					"serverName":    sni,
-					"allowInsecure": q.Get("allowInsecure") == "1",
-				},
-			},
+			"streamSettings": stream,
 		}, nil
 
 	case strings.HasPrefix(low, "vmess://"):
-		b64 := strings.TrimPrefix(link, "vmess://")
-		b64 = strings.TrimPrefix(b64, "VMESS://")
-		raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(b64))
+		b64 := strings.TrimSpace(link[8:])
+		raw, err := decodeFlexibleBase64(b64)
 		if err != nil {
-			raw, err = base64.RawStdEncoding.DecodeString(strings.TrimSpace(b64))
-			if err != nil {
-				return nil, fmt.Errorf("invalid vmess base64")
-			}
+			return nil, fmt.Errorf("invalid vmess base64")
 		}
 		var vm map[string]any
 		if err := json.Unmarshal(raw, &vm); err != nil {
@@ -218,7 +547,7 @@ func parseLinkToXrayOutbound(link string) (map[string]any, error) {
 			}
 		}
 		return map[string]any{
-			"tag":      "proxy",
+			"tag":      tag,
 			"protocol": "vmess",
 			"settings": map[string]any{
 				"vnext": []any{map[string]any{
@@ -228,6 +557,53 @@ func parseLinkToXrayOutbound(link string) (map[string]any, error) {
 				}},
 			},
 			"streamSettings": stream,
+		}, nil
+
+	case strings.HasPrefix(low, "ss://"):
+		u, err := url.Parse(link)
+		if err != nil {
+			return nil, fmt.Errorf("invalid ss URI: %w", err)
+		}
+		var method, password, host string
+		var port int
+		if u.User != nil && u.Hostname() != "" {
+			host = u.Hostname()
+			port, _ = strconv.Atoi(u.Port())
+			if p, ok := u.User.Password(); ok {
+				method = u.User.Username()
+				password = p
+			} else if dec, err := decodeFlexibleBase64(u.User.Username()); err == nil {
+				parts := strings.SplitN(string(dec), ":", 2)
+				if len(parts) == 2 {
+					method, password = parts[0], parts[1]
+				}
+			}
+		} else {
+			// Legacy full base64 ss://base64(method:pass@host:port)
+			rawPart := strings.SplitN(link[5:], "#", 2)[0]
+			if dec, err := decodeFlexibleBase64(rawPart); err == nil {
+				if u2, err := url.Parse("ss://" + string(dec)); err == nil && u2.User != nil {
+					host = u2.Hostname()
+					port, _ = strconv.Atoi(u2.Port())
+					method = u2.User.Username()
+					password, _ = u2.User.Password()
+				}
+			}
+		}
+		if host == "" || port == 0 || method == "" {
+			return nil, fmt.Errorf("incomplete shadowsocks URI")
+		}
+		return map[string]any{
+			"tag":      tag,
+			"protocol": "shadowsocks",
+			"settings": map[string]any{
+				"servers": []any{map[string]any{
+					"address":  host,
+					"port":     port,
+					"method":   method,
+					"password": password,
+				}},
+			},
 		}, nil
 
 	case strings.HasPrefix(low, "socks://") || strings.HasPrefix(low, "socks5://"):
@@ -245,26 +621,32 @@ func parseLinkToXrayOutbound(link string) (map[string]any, error) {
 			srv["users"] = []any{map[string]any{"user": u.User.Username(), "pass": p}}
 		}
 		return map[string]any{
-			"tag":      "proxy",
+			"tag":      tag,
 			"protocol": "socks",
 			"settings": map[string]any{"servers": []any{srv}},
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported URI scheme (use vless://, vmess://, trojan://, or socks5://)")
+		return nil, fmt.Errorf("unsupported URI scheme (use vless://, vmess://, trojan://, ss://, or socks5://)")
 	}
 }
 
-func ensureXrayInstalled() (string, error) {
-	if p := xrayBinPath(); p != "" {
-		return p, nil
+func installOrUpdateXray() (string, error) {
+	proxyFlag := ""
+	if isOutboundActive() {
+		proxyFlag = fmt.Sprintf("--socks5-hostname 127.0.0.1:%d", outboundSocksPort)
 	}
-	cmd := exec.Command("bash", "-c", `set -e
+	script := fmt.Sprintf(`set -e
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
-curl -fsSL "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip" -o "$TMPD/xray.zip"
+ARCH=$(uname -m)
+ASSET="Xray-linux-64.zip"
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then ASSET="Xray-linux-arm64-v8a.zip"; fi
+URL="https://github.com/XTLS/Xray-core/releases/latest/download/${ASSET}"
+curl -fsSL %s "$URL" -o "$TMPD/xray.zip" || curl -fsSL "$URL" -o "$TMPD/xray.zip"
 python3 -c "import zipfile; zipfile.ZipFile('$TMPD/xray.zip').extract('xray', '$TMPD')"
-install -m 755 "$TMPD/xray" /usr/local/bin/xray`)
+install -m 755 "$TMPD/xray" /usr/local/bin/xray`, proxyFlag)
+	cmd := exec.Command("bash", "-c", script)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to install xray: %s (%w)", strings.TrimSpace(string(out)), err)
@@ -272,23 +654,71 @@ install -m 755 "$TMPD/xray" /usr/local/bin/xray`)
 	return "/usr/local/bin/xray", nil
 }
 
+func ensureXrayInstalled() (string, error) {
+	if p := xrayBinPath(); p != "" {
+		return p, nil
+	}
+	return installOrUpdateXray()
+}
+
 func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 	var req outboundConfig
 	if !readJSON(w, r, &req) {
 		return
 	}
+	if req.LBStrategy == "" {
+		req.LBStrategy = "leastPing"
+	}
+	if req.ProbeURL == "" {
+		req.ProbeURL = "https://www.gstatic.com/generate_204"
+	}
+	if req.ProbeInterval == "" {
+		req.ProbeInterval = "30s"
+	}
+	if req.Subs == nil {
+		req.Subs = []outboundSub{}
+	}
+	if req.Nodes == nil {
+		req.Nodes = []outboundNode{}
+	}
+	// Legacy single link fallback
 	req.Link = strings.TrimSpace(req.Link)
+	if len(req.Nodes) == 0 && req.Link != "" {
+		if n, ok := parseNodeSummary(req.Link, "manual"); ok {
+			req.Nodes = append(req.Nodes, n)
+		}
+	}
 	h.saveOutboundCfg(req)
 
-	if !req.Enabled || req.Link == "" {
+	if !req.Enabled {
 		_ = exec.Command("systemctl", "disable", "--now", outboundUnit).Run()
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "running": false, "message": "Master Outbound disabled."})
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "running": false, "message": "Master Outbound disabled & saved."})
 		return
 	}
 
-	outObj, err := parseLinkToXrayOutbound(req.Link)
-	if err != nil {
-		fail(w, http.StatusBadRequest, err.Error())
+	// Build Xray outbounds array from all enabled nodes
+	var outbounds []any
+	var firstErr error
+	for _, n := range req.Nodes {
+		if !n.Enabled || strings.TrimSpace(n.URI) == "" {
+			continue
+		}
+		tag := fmt.Sprintf("proxy-%d", len(outbounds))
+		obj, err := parseLinkToXrayOutbound(n.URI, tag)
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		outbounds = append(outbounds, obj)
+	}
+	if len(outbounds) == 0 {
+		msg := "no enabled valid outbound nodes found"
+		if firstErr != nil {
+			msg = firstErr.Error()
+		}
+		fail(w, http.StatusBadRequest, msg)
 		return
 	}
 
@@ -309,7 +739,52 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 				"settings": map[string]any{"auth": "noauth", "udp": true},
 			},
 		},
-		"outbounds": []any{outObj},
+		"outbounds": outbounds,
+	}
+
+	// Enable Xray Observatory + Load Balancer + Auto-Failover whenever 2+ nodes are active
+	if len(outbounds) > 1 {
+		strat := req.LBStrategy
+		switch strat {
+		case "leastPing", "leastLoad", "roundRobin", "random":
+		default:
+			strat = "leastPing"
+		}
+		if strat == "leastLoad" {
+			fullCfg["burstObservatory"] = map[string]any{
+				"subjectSelector": []string{"proxy-"},
+				"pingConfig": map[string]any{
+					"destination":  req.ProbeURL,
+					"interval":     req.ProbeInterval,
+					"sampling":     3,
+					"timeout":      "5s",
+				},
+			}
+		} else {
+			fullCfg["observatory"] = map[string]any{
+				"subjectSelector":   []string{"proxy-"},
+				"probeUrl":          req.ProbeURL,
+				"probeInterval":     req.ProbeInterval,
+				"enableConcurrency": true,
+			}
+		}
+		fullCfg["routing"] = map[string]any{
+			"balancers": []any{
+				map[string]any{
+					"tag":         "mc-balancer",
+					"selector":    []string{"proxy-"},
+					"strategy":    map[string]any{"type": strat},
+					"fallbackTag": "proxy-0",
+				},
+			},
+			"rules": []any{
+				map[string]any{
+					"type":        "field",
+					"inboundTag":  []string{"mc-local-socks"},
+					"balancerTag": "mc-balancer",
+				},
+			},
+		}
 	}
 
 	_ = os.MkdirAll("/etc/mcontrol", 0750)
@@ -343,12 +818,19 @@ WantedBy=multi-user.target
 		fail(w, http.StatusInternalServerError, "start outbound failed: "+strings.TrimSpace(string(out)))
 		return
 	}
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(850 * time.Millisecond)
+	active := isOutboundActive()
+	modeDesc := "Single Node"
+	if len(outbounds) > 1 {
+		modeDesc = fmt.Sprintf("%d Nodes (%s + Auto-Failover)", len(outbounds), req.LBStrategy)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":         true,
-		"running":    isOutboundActive(),
-		"socks_addr": fmt.Sprintf("127.0.0.1:%d", outboundSocksPort),
-		"message":    fmt.Sprintf("Master Outbound active on 127.0.0.1:%d", outboundSocksPort),
+		"ok":           true,
+		"running":      active,
+		"xray_version": xrayVersionString(),
+		"active_nodes": len(outbounds),
+		"socks_addr":   fmt.Sprintf("127.0.0.1:%d", outboundSocksPort),
+		"message":      fmt.Sprintf("Master Outbound active on 127.0.0.1:%d • %s", outboundSocksPort, modeDesc),
 	})
 }
 

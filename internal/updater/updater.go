@@ -6,17 +6,20 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +47,95 @@ func normalizeReleaseURL(baseURL string) string {
 
 var validBase = regexp.MustCompile(`^https?://[A-Za-z0-9._~:/@%+-]{1,300}$`)
 
+
+// dialSOCKS5 connects to target addr through a local SOCKS5 proxy (e.g. 127.0.0.1:10808)
+// using domain-name addressing (ATYP=0x03) so DNS is resolved remotely through the outbound.
+func dialSOCKS5(ctx context.Context, proxyAddr, network, addr string) (net.Conn, error) {
+	host, portStr, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil || port < 1 || port > 65535 {
+		return nil, fmt.Errorf("invalid port: %s", portStr)
+	}
+	var d net.Dialer
+	conn, err := d.DialContext(ctx, "tcp", proxyAddr)
+	if err != nil {
+		return nil, err
+	}
+	if dl, ok := ctx.Deadline(); ok {
+		_ = conn.SetDeadline(dl)
+	}
+	// Greeting: VER=5, NMETHODS=1, METHOD=0 (no auth)
+	if _, err := conn.Write([]byte{0x05, 0x01, 0x00}); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	resp := make([]byte, 2)
+	if _, err := io.ReadFull(conn, resp); err != nil || resp[0] != 0x05 || resp[1] != 0x00 {
+		conn.Close()
+		return nil, errors.New("socks5 handshake failed")
+	}
+	// CONNECT request with domain name (ATYP=0x03)
+	if len(host) > 255 {
+		conn.Close()
+		return nil, errors.New("hostname too long for socks5")
+	}
+	req := make([]byte, 0, 7+len(host))
+	req = append(req, 0x05, 0x01, 0x00, 0x03, byte(len(host)))
+	req = append(req, host...)
+	var pbuf [2]byte
+	binary.BigEndian.PutUint16(pbuf[:], uint16(port))
+	req = append(req, pbuf[0], pbuf[1])
+	if _, err := conn.Write(req); err != nil {
+		conn.Close()
+		return nil, err
+	}
+	hdr := make([]byte, 4)
+	if _, err := io.ReadFull(conn, hdr); err != nil || hdr[0] != 0x05 || hdr[1] != 0x00 {
+		conn.Close()
+		return nil, fmt.Errorf("socks5 connect failed (rep=%d)", hdr[1])
+	}
+	// Drain bound address
+	var skip int
+	switch hdr[3] {
+	case 0x01:
+		skip = 4 + 2
+	case 0x04:
+		skip = 16 + 2
+	case 0x03:
+		lb := make([]byte, 1)
+		if _, err := io.ReadFull(conn, lb); err != nil {
+			conn.Close()
+			return nil, err
+		}
+		skip = int(lb[0]) + 2
+	}
+	if skip > 0 {
+		if _, err := io.ReadFull(conn, make([]byte, skip)); err != nil {
+			conn.Close()
+			return nil, err
+		}
+	}
+	_ = conn.SetDeadline(time.Time{})
+	return conn, nil
+}
+
+func makeHTTPClient(timeout time.Duration, socksProxy string) *http.Client {
+	if socksProxy == "" {
+		return &http.Client{Timeout: timeout}
+	}
+	tr := &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return dialSOCKS5(ctx, socksProxy, network, addr)
+		},
+		ForceAttemptHTTP2:   true,
+		TLSHandshakeTimeout: 10 * time.Second,
+	}
+	return &http.Client{Timeout: timeout, Transport: tr}
+}
+
 type SourceStatus struct {
 	Version   string `json:"version"`
 	Available bool   `json:"available"`
@@ -62,8 +154,10 @@ type BetaStatus struct {
 }
 
 type CheckResult struct {
-	CurrentVersion  string       `json:"current_version"`
-	UpdateAvailable bool         `json:"update_available"`
+	CurrentVersion     string       `json:"current_version"`
+	InstalledBetaBuild int          `json:"installed_beta_build"`
+	ViaOutbound        bool         `json:"via_outbound"`
+	UpdateAvailable    bool         `json:"update_available"`
 	GitHub          SourceStatus `json:"github"`
 	Mirror          SourceStatus `json:"mirror"`
 	Beta            BetaStatus   `json:"beta"`
@@ -151,7 +245,7 @@ func finishJob(success bool, stage, errMsg string) {
 	}
 }
 
-func fetchRemoteVersion(baseURL string) SourceStatus {
+func fetchRemoteVersion(baseURL, socksProxy string) SourceStatus {
 	baseURL = normalizeReleaseURL(baseURL)
 	if baseURL == "" {
 		return SourceStatus{Error: "URL not configured"}
@@ -159,7 +253,7 @@ func fetchRemoteVersion(baseURL string) SourceStatus {
 	if !validBase.MatchString(baseURL) {
 		return SourceStatus{Error: "invalid URL"}
 	}
-	client := &http.Client{Timeout: 6 * time.Second}
+	client := makeHTTPClient(8*time.Second, socksProxy)
 	resp, err := client.Get(baseURL + "/VERSION?t=" + fmt.Sprint(time.Now().Unix()))
 	if err != nil {
 		return SourceStatus{Error: "unreachable"}
@@ -192,7 +286,7 @@ func releaseDownloadRoot(baseURL string) string {
 	return u
 }
 
-func fetchBetaStatus(githubURL, mirrorURL string, installedBuild int) BetaStatus {
+func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int) BetaStatus {
 	st := BetaStatus{Enabled: true}
 	var candidates []string
 	if ghRoot := releaseDownloadRoot(githubURL); ghRoot != "" && validBase.MatchString(ghRoot) {
@@ -201,9 +295,13 @@ func fetchBetaStatus(githubURL, mirrorURL string, installedBuild int) BetaStatus
 	if ir := strings.TrimRight(strings.TrimSpace(mirrorURL), "/"); ir != "" && validBase.MatchString(ir) {
 		candidates = append(candidates, ir+"/beta-latest/beta-meta.json")
 	}
-	client := &http.Client{Timeout: 6 * time.Second}
 	var lastErr string
-	for _, u := range candidates {
+	for idx, u := range candidates {
+		proxy := ""
+		if idx == 0 {
+			proxy = socksProxy
+		}
+		client := makeHTTPClient(8*time.Second, proxy)
 		resp, err := client.Get(u + "?t=" + fmt.Sprint(time.Now().Unix()))
 		if err != nil {
 			lastErr = "unreachable"
@@ -244,26 +342,28 @@ func fetchBetaStatus(githubURL, mirrorURL string, installedBuild int) BetaStatus
 	return st
 }
 
-func CheckAll(githubURL, mirrorURL string, betaEnabled bool, installedBetaBuild int) CheckResult {
+func CheckAll(githubURL, mirrorURL, socksProxy string, betaEnabled bool, installedBetaBuild int) CheckResult {
 	res := CheckResult{
-		CurrentVersion: version.Current,
-		CheckedAt:      time.Now().Unix(),
+		CurrentVersion:     version.Current,
+		InstalledBetaBuild: installedBetaBuild,
+		ViaOutbound:        socksProxy != "",
+		CheckedAt:          time.Now().Unix(),
 	}
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		res.GitHub = fetchRemoteVersion(githubURL)
+		res.GitHub = fetchRemoteVersion(githubURL, socksProxy)
 	}()
 	go func() {
 		defer wg.Done()
-		res.Mirror = fetchRemoteVersion(mirrorURL)
+		res.Mirror = fetchRemoteVersion(mirrorURL, "")
 	}()
 	if betaEnabled {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			res.Beta = fetchBetaStatus(githubURL, mirrorURL, installedBetaBuild)
+			res.Beta = fetchBetaStatus(githubURL, mirrorURL, socksProxy, installedBetaBuild)
 		}()
 	}
 	wg.Wait()
@@ -611,7 +711,7 @@ func StartZipUpdate(zipPath string, onRestart func()) error {
 }
 
 // StartRemoteUpdate downloads and installs the latest package from the chosen source, verifying its SHA-256.
-func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool, onBetaInstalled func(int), onRestart func()) error {
+func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnverified bool, onBetaInstalled func(int), onRestart func()) error {
 	if !resetJob("Starting remote update from " + source + "...") {
 		return errors.New("an update is already in progress")
 	}
@@ -621,7 +721,7 @@ func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool
 		if source == "mirror" {
 			baseURL = strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
 		} else if source == "beta" {
-			bs := fetchBetaStatus(githubURL, mirrorURL, 0)
+			bs := fetchBetaStatus(githubURL, mirrorURL, socksProxy, 0)
 			betaBuildNum = bs.Build
 			ghRoot := releaseDownloadRoot(githubURL)
 			if ghRoot != "" {
@@ -637,7 +737,14 @@ func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool
 			return
 		}
 
-		client := &http.Client{Timeout: 5 * time.Minute}
+		activeProxy := socksProxy
+		if source == "mirror" {
+			activeProxy = ""
+		}
+		if activeProxy != "" {
+			appendLog("[OUTBOUND] Routing download through Master Outbound (" + activeProxy + ")")
+		}
+		client := makeHTTPClient(5*time.Minute, activeProxy)
 		restart := func() {
 			if betaBuildNum > 0 && onBetaInstalled != nil {
 				onBetaInstalled(betaBuildNum)
