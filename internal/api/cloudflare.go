@@ -9,21 +9,27 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/htzserv/MControl/internal/updater"
 )
 
 type cfConfig struct {
+	// Cloudflare independent config
 	Enabled         bool   `json:"enabled"`
 	AuthMode        string `json:"auth_mode"` // "token" or "global"
 	APIToken        string `json:"api_token"`
 	Email           string `json:"email"`
 	APIKey          string `json:"api_key"`
-	ArvanEnabled    bool   `json:"arvan_enabled"`
-	ArvanAPIKey     string `json:"arvan_api_key"`
 	AutoSync        bool   `json:"auto_sync"`
-	SyncIntervalMin int    `json:"sync_interval_min"` // 30..1440 minutes
+	SyncIntervalMin int    `json:"sync_interval_min"` // 1..1440 minutes
+
+	// ArvanCloud independent config
+	ArvanEnabled         bool   `json:"arvan_enabled"`
+	ArvanAPIKey          string `json:"arvan_api_key"`
+	ArvanAutoSync        bool   `json:"arvan_auto_sync"`
+	ArvanSyncIntervalMin int    `json:"arvan_sync_interval_min"` // 1..1440 minutes
 }
 
 type cfZone struct {
@@ -49,26 +55,40 @@ type cfDNSRecord struct {
 }
 
 type cfCache struct {
-	SyncedAt int64         `json:"synced_at"`
-	Zones    []cfZone      `json:"zones"`
-	Records  []cfDNSRecord `json:"records"`
+	SyncedAt      int64         `json:"synced_at"`
+	CFSyncedAt    int64         `json:"cf_synced_at"`
+	ArvanSyncedAt int64         `json:"arvan_synced_at"`
+	Zones         []cfZone      `json:"zones"`
+	Records       []cfDNSRecord `json:"records"`
+}
+
+var dnsSyncMu sync.Mutex
+
+func clampSyncMin(v int) int {
+	if v < 1 {
+		return 60
+	}
+	if v > 1440 {
+		return 1440
+	}
+	return v
 }
 
 func (h *Handler) loadCFConfig() cfConfig {
 	raw := h.store.GetSetting("cloudflare_cfg_json")
-	cfg := cfConfig{AuthMode: "token", SyncIntervalMin: 60}
+	cfg := cfConfig{
+		AuthMode:             "token",
+		SyncIntervalMin:      60,
+		ArvanSyncIntervalMin: 60,
+	}
 	if raw != "" {
 		_ = json.Unmarshal([]byte(raw), &cfg)
 	}
 	if cfg.AuthMode == "" {
 		cfg.AuthMode = "token"
 	}
-	if cfg.SyncIntervalMin < 30 {
-		cfg.SyncIntervalMin = 60
-	}
-	if cfg.SyncIntervalMin > 1440 {
-		cfg.SyncIntervalMin = 1440
-	}
+	cfg.SyncIntervalMin = clampSyncMin(cfg.SyncIntervalMin)
+	cfg.ArvanSyncIntervalMin = clampSyncMin(cfg.ArvanSyncIntervalMin)
 	return cfg
 }
 
@@ -258,146 +278,244 @@ func buildArvanPayload(recType, name, content string, ttl int, proxied bool) map
 	}
 }
 
-func (h *Handler) syncAllDNSProviders(cfg cfConfig) (cfCache, error) {
-	cache := cfCache{
-		SyncedAt: time.Now().Unix(),
-		Zones:    []cfZone{},
-		Records:  []cfDNSRecord{},
+func (h *Handler) fetchCloudflareData(cfg cfConfig) ([]cfZone, []cfDNSRecord, error) {
+	if (cfg.AuthMode == "global" && (cfg.Email == "" || cfg.APIKey == "")) || (cfg.AuthMode != "global" && cfg.APIToken == "") {
+		return nil, nil, fmt.Errorf("Cloudflare credentials are incomplete")
 	}
-	var errs []string
-	didAny := false
-
-	// 1. Sync Cloudflare
-	if cfg.Enabled {
-		didAny = true
-		if (cfg.AuthMode == "global" && (cfg.Email == "" || cfg.APIKey == "")) || (cfg.AuthMode != "global" && cfg.APIToken == "") {
-			errs = append(errs, "Cloudflare credentials incomplete")
-		} else {
-			rawZ, err := h.cfHTTPDo("GET", "https://api.cloudflare.com/client/v4/zones?per_page=50", cfg, nil)
-			if err != nil {
-				errs = append(errs, "Cloudflare: "+err.Error())
-			} else if ok, msg := parseCFError(rawZ); !ok {
-				errs = append(errs, "Cloudflare: "+msg)
-			} else {
-				var zResp struct {
-					Result []cfZone `json:"result"`
-				}
-				_ = json.Unmarshal(rawZ, &zResp)
-				for _, z := range zResp.Result {
-					z.Provider = "cloudflare"
-					cache.Zones = append(cache.Zones, z)
-					u := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records?per_page=500", url.PathEscape(z.ID))
-					rawR, err := h.cfHTTPDo("GET", u, cfg, nil)
-					if err != nil {
-						continue
-					}
-					if ok, _ := parseCFError(rawR); !ok {
-						continue
-					}
-					var rResp struct {
-						Result []struct {
-							ID      string `json:"id"`
-							Type    string `json:"type"`
-							Name    string `json:"name"`
-							Content string `json:"content"`
-							TTL     int    `json:"ttl"`
-							Proxied bool   `json:"proxied"`
-						} `json:"result"`
-					}
-					_ = json.Unmarshal(rawR, &rResp)
-					for _, rec := range rResp.Result {
-						cache.Records = append(cache.Records, cfDNSRecord{
-							ID:       rec.ID,
-							ZoneID:   z.ID,
-							ZoneName: z.Name,
-							Provider: "cloudflare",
-							Type:     rec.Type,
-							Name:     rec.Name,
-							Content:  rec.Content,
-							TTL:      rec.TTL,
-							Proxied:  rec.Proxied,
-						})
-					}
-				}
-			}
-		}
+	rawZ, err := h.cfHTTPDo("GET", "https://api.cloudflare.com/client/v4/zones?per_page=50", cfg, nil)
+	if err != nil {
+		return nil, nil, err
 	}
+	if ok, msg := parseCFError(rawZ); !ok {
+		return nil, nil, fmt.Errorf("Cloudflare: %s", msg)
+	}
+	var zResp struct {
+		Result []cfZone `json:"result"`
+	}
+	_ = json.Unmarshal(rawZ, &zResp)
 
-	// 2. Sync ArvanCloud (ابر آروان)
-	if cfg.ArvanEnabled && strings.TrimSpace(cfg.ArvanAPIKey) != "" {
-		didAny = true
-		rawD, code, err := h.arvanHTTPDo("GET", "https://napi.arvancloud.ir/cdn/4.0/domains?per_page=100", cfg.ArvanAPIKey, nil)
+	var zones []cfZone
+	var recs []cfDNSRecord
+	for _, z := range zResp.Result {
+		z.Provider = "cloudflare"
+		zones = append(zones, z)
+		u := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records?per_page=500", url.PathEscape(z.ID))
+		rawR, err := h.cfHTTPDo("GET", u, cfg, nil)
 		if err != nil {
-			errs = append(errs, "ArvanCloud: "+err.Error())
-		} else if code < 200 || code >= 300 {
-			errs = append(errs, fmt.Sprintf("ArvanCloud: HTTP %d", code))
-		} else {
-			var dResp struct {
-				Data []struct {
-					ID     string `json:"id"`
-					Domain string `json:"domain"`
-					Status string `json:"status"`
-				} `json:"data"`
-			}
-			_ = json.Unmarshal(rawD, &dResp)
-			for _, d := range dResp.Data {
-				if d.Domain == "" {
-					continue
-				}
-				zID := "arvan:" + d.Domain
-				cache.Zones = append(cache.Zones, cfZone{
-					ID:       zID,
-					Name:     d.Domain,
-					Status:   d.Status,
-					Provider: "arvan",
-				})
-				u := fmt.Sprintf("https://napi.arvancloud.ir/cdn/4.0/domains/%s/dns-records?per_page=500", url.PathEscape(d.Domain))
-				rawR, rCode, rErr := h.arvanHTTPDo("GET", u, cfg.ArvanAPIKey, nil)
-				if rErr != nil || rCode < 200 || rCode >= 300 {
-					continue
-				}
-				var rResp struct {
-					Data []struct {
-						ID    string `json:"id"`
-						Type  string `json:"type"`
-						Name  string `json:"name"`
-						Value any    `json:"value"`
-						TTL   int    `json:"ttl"`
-						Cloud bool   `json:"cloud"`
-					} `json:"data"`
-				}
-				_ = json.Unmarshal(rawR, &rResp)
-				for _, rec := range rResp.Data {
-					fullName := rec.Name
-					if fullName == "@" || fullName == "" {
-						fullName = d.Domain
-					} else if !strings.HasSuffix(strings.ToLower(fullName), "."+strings.ToLower(d.Domain)) && !strings.EqualFold(fullName, d.Domain) {
-						fullName = fullName + "." + d.Domain
-					}
-					cache.Records = append(cache.Records, cfDNSRecord{
-						ID:       rec.ID,
-						ZoneID:   zID,
-						ZoneName: d.Domain,
-						Provider: "arvan",
-						Type:     strings.ToUpper(rec.Type),
-						Name:     fullName,
-						Content:  extractArvanValue(rec.Type, rec.Value),
-						TTL:      rec.TTL,
-						Proxied:  rec.Cloud,
-					})
-				}
-			}
+			continue
+		}
+		if ok, _ := parseCFError(rawR); !ok {
+			continue
+		}
+		var rResp struct {
+			Result []struct {
+				ID      string `json:"id"`
+				Type    string `json:"type"`
+				Name    string `json:"name"`
+				Content string `json:"content"`
+				TTL     int    `json:"ttl"`
+				Proxied bool   `json:"proxied"`
+			} `json:"result"`
+		}
+		_ = json.Unmarshal(rawR, &rResp)
+		for _, rec := range rResp.Result {
+			recs = append(recs, cfDNSRecord{
+				ID:       rec.ID,
+				ZoneID:   z.ID,
+				ZoneName: z.Name,
+				Provider: "cloudflare",
+				Type:     rec.Type,
+				Name:     rec.Name,
+				Content:  rec.Content,
+				TTL:      rec.TTL,
+				Proxied:  rec.Proxied,
+			})
 		}
 	}
+	return zones, recs, nil
+}
 
-	if !didAny {
-		return cfCache{}, fmt.Errorf("enable Cloudflare or ArvanCloud API first")
+func (h *Handler) fetchArvanData(cfg cfConfig) ([]cfZone, []cfDNSRecord, error) {
+	if strings.TrimSpace(cfg.ArvanAPIKey) == "" {
+		return nil, nil, fmt.Errorf("ArvanCloud API Key is empty")
 	}
-	if len(cache.Zones) == 0 && len(errs) > 0 {
-		return cfCache{}, fmt.Errorf("%s", strings.Join(errs, " | "))
+	rawD, code, err := h.arvanHTTPDo("GET", "https://napi.arvancloud.ir/cdn/4.0/domains?per_page=100", cfg.ArvanAPIKey, nil)
+	if err != nil {
+		return nil, nil, err
 	}
-	h.saveCFCache(cache)
-	return cache, nil
+	if code < 200 || code >= 300 {
+		return nil, nil, fmt.Errorf("ArvanCloud: HTTP %d", code)
+	}
+	var dResp struct {
+		Data []struct {
+			ID     string `json:"id"`
+			Domain string `json:"domain"`
+			Status string `json:"status"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(rawD, &dResp)
+
+	var zones []cfZone
+	var recs []cfDNSRecord
+	for _, d := range dResp.Data {
+		if d.Domain == "" {
+			continue
+		}
+		zID := "arvan:" + d.Domain
+		zones = append(zones, cfZone{
+			ID:       zID,
+			Name:     d.Domain,
+			Status:   d.Status,
+			Provider: "arvan",
+		})
+		u := fmt.Sprintf("https://napi.arvancloud.ir/cdn/4.0/domains/%s/dns-records?per_page=500", url.PathEscape(d.Domain))
+		rawR, rCode, rErr := h.arvanHTTPDo("GET", u, cfg.ArvanAPIKey, nil)
+		if rErr != nil || rCode < 200 || rCode >= 300 {
+			continue
+		}
+		var rResp struct {
+			Data []struct {
+				ID    string `json:"id"`
+				Type  string `json:"type"`
+				Name  string `json:"name"`
+				Value any    `json:"value"`
+				TTL   int    `json:"ttl"`
+				Cloud bool   `json:"cloud"`
+			} `json:"data"`
+		}
+		_ = json.Unmarshal(rawR, &rResp)
+		for _, rec := range rResp.Data {
+			fullName := rec.Name
+			if fullName == "@" || fullName == "" {
+				fullName = d.Domain
+			} else if !strings.HasSuffix(strings.ToLower(fullName), "."+strings.ToLower(d.Domain)) && !strings.EqualFold(fullName, d.Domain) {
+				fullName = fullName + "." + d.Domain
+			}
+			recs = append(recs, cfDNSRecord{
+				ID:       rec.ID,
+				ZoneID:   zID,
+				ZoneName: d.Domain,
+				Provider: "arvan",
+				Type:     strings.ToUpper(rec.Type),
+				Name:     fullName,
+				Content:  extractArvanValue(rec.Type, rec.Value),
+				TTL:      rec.TTL,
+				Proxied:  rec.Cloud,
+			})
+		}
+	}
+	return zones, recs, nil
+}
+
+// syncDNSProvider syncs "cloudflare", "arvan", or "all" (""), preserving the other provider's cached data.
+func (h *Handler) syncDNSProvider(cfg cfConfig, provider string) (cfCache, error) {
+	dnsSyncMu.Lock()
+	defer dnsSyncMu.Unlock()
+
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	if provider == "" {
+		provider = "all"
+	}
+
+	cur := h.loadCFCache()
+	now := time.Now().Unix()
+
+	keepZones := func(excludeProv string) []cfZone {
+		var out []cfZone
+		for _, z := range cur.Zones {
+			if z.Provider != excludeProv {
+				out = append(out, z)
+			}
+		}
+		return out
+	}
+	keepRecs := func(excludeProv string) []cfDNSRecord {
+		var out []cfDNSRecord
+		for _, r := range cur.Records {
+			if r.Provider != excludeProv {
+				out = append(out, r)
+			}
+		}
+		return out
+	}
+
+	switch provider {
+	case "cloudflare":
+		if !cfg.Enabled {
+			cur.Zones = keepZones("cloudflare")
+			cur.Records = keepRecs("cloudflare")
+			h.saveCFCache(cur)
+			return cur, nil
+		}
+		z, r, err := h.fetchCloudflareData(cfg)
+		if err != nil {
+			return cur, err
+		}
+		cur.Zones = append(keepZones("cloudflare"), z...)
+		cur.Records = append(keepRecs("cloudflare"), r...)
+		cur.CFSyncedAt = now
+		cur.SyncedAt = now
+		h.saveCFCache(cur)
+		return cur, nil
+
+	case "arvan":
+		if !cfg.ArvanEnabled {
+			cur.Zones = keepZones("arvan")
+			cur.Records = keepRecs("arvan")
+			h.saveCFCache(cur)
+			return cur, nil
+		}
+		z, r, err := h.fetchArvanData(cfg)
+		if err != nil {
+			return cur, err
+		}
+		cur.Zones = append(keepZones("arvan"), z...)
+		cur.Records = append(keepRecs("arvan"), r...)
+		cur.ArvanSyncedAt = now
+		cur.SyncedAt = now
+		h.saveCFCache(cur)
+		return cur, nil
+
+	default:
+		var errs []string
+		didAny := false
+		if cfg.Enabled {
+			didAny = true
+			if z, r, err := h.fetchCloudflareData(cfg); err == nil {
+				cur.Zones = append(keepZones("cloudflare"), z...)
+				cur.Records = append(keepRecs("cloudflare"), r...)
+				cur.CFSyncedAt = now
+				cur.SyncedAt = now
+			} else {
+				errs = append(errs, err.Error())
+			}
+		} else {
+			cur.Zones = keepZones("cloudflare")
+			cur.Records = keepRecs("cloudflare")
+		}
+		if cfg.ArvanEnabled {
+			didAny = true
+			if z, r, err := h.fetchArvanData(cfg); err == nil {
+				cur.Zones = append(keepZones("arvan"), z...)
+				cur.Records = append(keepRecs("arvan"), r...)
+				cur.ArvanSyncedAt = now
+				cur.SyncedAt = now
+			} else {
+				errs = append(errs, err.Error())
+			}
+		} else {
+			cur.Zones = keepZones("arvan")
+			cur.Records = keepRecs("arvan")
+		}
+		if !didAny {
+			return cur, fmt.Errorf("enable Cloudflare or ArvanCloud API first")
+		}
+		h.saveCFCache(cur)
+		if len(cur.Zones) == 0 && len(errs) > 0 {
+			return cur, fmt.Errorf("%s", strings.Join(errs, " | "))
+		}
+		return cur, nil
+	}
 }
 
 func (h *Handler) matchRecordsWithServers(records []cfDNSRecord) ([]cfDNSRecord, map[int64][]string) {
@@ -448,71 +566,122 @@ func (h *Handler) handleCFStatus(w http.ResponseWriter, r *http.Request) {
 	cache := h.loadCFCache()
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":             true,
-		"config":         cfg,
-		"synced_at":      cache.SyncedAt,
-		"zones":          cache.Zones,
-		"records":        matched,
-		"server_domains": srvDomains,
+		"ok":              true,
+		"config":          cfg,
+		"synced_at":       cache.SyncedAt,
+		"cf_synced_at":    cache.CFSyncedAt,
+		"arvan_synced_at": cache.ArvanSyncedAt,
+		"zones":           cache.Zones,
+		"records":         matched,
+		"server_domains":  srvDomains,
 	})
 }
 
 func (h *Handler) handleCFSave(w http.ResponseWriter, r *http.Request) {
-	var req cfConfig
+	var req struct {
+		Provider             string `json:"provider"` // "cloudflare" | "arvan" | "all"
+		Enabled              bool   `json:"enabled"`
+		AuthMode             string `json:"auth_mode"`
+		APIToken             string `json:"api_token"`
+		Email                string `json:"email"`
+		APIKey               string `json:"api_key"`
+		AutoSync             bool   `json:"auto_sync"`
+		SyncIntervalMin      int    `json:"sync_interval_min"`
+		ArvanEnabled         bool   `json:"arvan_enabled"`
+		ArvanAPIKey          string `json:"arvan_api_key"`
+		ArvanAutoSync        bool   `json:"arvan_auto_sync"`
+		ArvanSyncIntervalMin int    `json:"arvan_sync_interval_min"`
+	}
 	if !readJSON(w, r, &req) {
 		return
 	}
-	req.APIToken = strings.TrimSpace(req.APIToken)
-	req.Email = strings.TrimSpace(req.Email)
-	req.APIKey = strings.TrimSpace(req.APIKey)
-	req.ArvanAPIKey = strings.TrimSpace(req.ArvanAPIKey)
-	if req.AuthMode != "global" {
-		req.AuthMode = "token"
-	}
-	if req.SyncIntervalMin < 30 {
-		req.SyncIntervalMin = 30
-	}
-	if req.SyncIntervalMin > 1440 {
-		req.SyncIntervalMin = 1440
-	}
-	h.saveCFConfig(req)
-
-	if !req.Enabled && !req.ArvanEnabled {
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "DNS API settings saved (disabled)."})
-		return
+	prov := strings.ToLower(strings.TrimSpace(req.Provider))
+	if prov == "" {
+		prov = "all"
 	}
 
-	cache, err := h.syncAllDNSProviders(req)
+	cfg := h.loadCFConfig()
+	if prov == "cloudflare" || prov == "all" {
+		cfg.Enabled = req.Enabled
+		cfg.AuthMode = req.AuthMode
+		if cfg.AuthMode != "global" {
+			cfg.AuthMode = "token"
+		}
+		cfg.APIToken = strings.TrimSpace(req.APIToken)
+		cfg.Email = strings.TrimSpace(req.Email)
+		cfg.APIKey = strings.TrimSpace(req.APIKey)
+		cfg.AutoSync = req.AutoSync
+		cfg.SyncIntervalMin = clampSyncMin(req.SyncIntervalMin)
+	}
+	if prov == "arvan" || prov == "all" {
+		cfg.ArvanEnabled = req.ArvanEnabled
+		cfg.ArvanAPIKey = strings.TrimSpace(req.ArvanAPIKey)
+		cfg.ArvanAutoSync = req.ArvanAutoSync
+		cfg.ArvanSyncIntervalMin = clampSyncMin(req.ArvanSyncIntervalMin)
+	}
+	h.saveCFConfig(cfg)
+
+	cache, err := h.syncDNSProvider(cfg, prov)
 	if err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
+	msg := fmt.Sprintf("Saved & synced! (%d domains, %d records)", len(cache.Zones), len(matched))
+	if prov == "cloudflare" {
+		msg = "Cloudflare settings saved & synced!"
+		if !cfg.Enabled {
+			msg = "Cloudflare disabled."
+		}
+	} else if prov == "arvan" {
+		msg = "ArvanCloud settings saved & synced!"
+		if !cfg.ArvanEnabled {
+			msg = "ArvanCloud disabled."
+		}
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":             true,
-		"synced_at":      cache.SyncedAt,
-		"zones":          cache.Zones,
-		"records":        matched,
-		"server_domains": srvDomains,
-		"message":        fmt.Sprintf("Connected! Synced %d domains & %d DNS records.", len(cache.Zones), len(matched)),
+		"ok":              true,
+		"synced_at":       cache.SyncedAt,
+		"cf_synced_at":    cache.CFSyncedAt,
+		"arvan_synced_at": cache.ArvanSyncedAt,
+		"zones":           cache.Zones,
+		"records":         matched,
+		"server_domains":  srvDomains,
+		"message":         msg,
 	})
 }
 
 func (h *Handler) handleCFSync(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Provider string `json:"provider"`
+	}
+	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req)
+	prov := strings.ToLower(strings.TrimSpace(req.Provider))
+	if prov == "" {
+		prov = "all"
+	}
 	cfg := h.loadCFConfig()
-	cache, err := h.syncAllDNSProviders(cfg)
+	cache, err := h.syncDNSProvider(cfg, prov)
 	if err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
+	lbl := "All DNS providers"
+	if prov == "cloudflare" {
+		lbl = "Cloudflare"
+	} else if prov == "arvan" {
+		lbl = "ArvanCloud"
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":             true,
-		"synced_at":      cache.SyncedAt,
-		"zones":          cache.Zones,
-		"records":        matched,
-		"server_domains": srvDomains,
-		"message":        fmt.Sprintf("Synced %d domains & %d DNS records.", len(cache.Zones), len(matched)),
+		"ok":              true,
+		"synced_at":       cache.SyncedAt,
+		"cf_synced_at":    cache.CFSyncedAt,
+		"arvan_synced_at": cache.ArvanSyncedAt,
+		"zones":           cache.Zones,
+		"records":         matched,
+		"server_domains":  srvDomains,
+		"message":         fmt.Sprintf("%s synced! (%d domains, %d records)", lbl, len(cache.Zones), len(matched)),
 	})
 }
 
@@ -537,8 +706,10 @@ func (h *Handler) handleCFCreateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := h.loadCFConfig()
+	prov := "cloudflare"
 
 	if strings.HasPrefix(req.ZoneID, "arvan:") {
+		prov = "arvan"
 		domain := strings.TrimPrefix(req.ZoneID, "arvan:")
 		sub := strings.TrimSuffix(strings.TrimSuffix(req.Name, domain), ".")
 		if sub == "" {
@@ -576,7 +747,7 @@ func (h *Handler) handleCFCreateRecord(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cache, _ := h.syncAllDNSProviders(cfg)
+	cache, _ := h.syncDNSProvider(cfg, prov)
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":             true,
@@ -605,8 +776,10 @@ func (h *Handler) handleCFUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := h.loadCFConfig()
+	prov := "cloudflare"
 
 	if strings.HasPrefix(req.ZoneID, "arvan:") {
+		prov = "arvan"
 		domain := strings.TrimPrefix(req.ZoneID, "arvan:")
 		sub := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(req.Name), domain), ".")
 		if sub == "" {
@@ -644,7 +817,7 @@ func (h *Handler) handleCFUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cache, _ := h.syncAllDNSProviders(cfg)
+	cache, _ := h.syncDNSProvider(cfg, prov)
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":             true,
@@ -668,8 +841,10 @@ func (h *Handler) handleCFDeleteRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := h.loadCFConfig()
+	prov := "cloudflare"
 
 	if strings.HasPrefix(req.ZoneID, "arvan:") {
+		prov = "arvan"
 		domain := strings.TrimPrefix(req.ZoneID, "arvan:")
 		u := fmt.Sprintf("https://napi.arvancloud.ir/cdn/4.0/domains/%s/dns-records/%s", url.PathEscape(domain), url.PathEscape(req.RecordID))
 		raw, code, err := h.arvanHTTPDo("DELETE", u, cfg.ArvanAPIKey, nil)
@@ -694,7 +869,7 @@ func (h *Handler) handleCFDeleteRecord(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cache, _ := h.syncAllDNSProviders(cfg)
+	cache, _ := h.syncDNSProvider(cfg, prov)
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":             true,
@@ -708,21 +883,26 @@ func (h *Handler) handleCFDeleteRecord(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) StartCloudflareAutoSync() {
 	go func() {
 		for {
-			time.Sleep(60 * time.Second)
+			time.Sleep(30 * time.Second)
 			cfg := h.loadCFConfig()
-			if (!cfg.Enabled && !cfg.ArvanEnabled) || !cfg.AutoSync {
-				continue
-			}
-			iv := cfg.SyncIntervalMin
-			if iv < 30 {
-				iv = 30
-			}
 			cache := h.loadCFCache()
-			if cache.SyncedAt > 0 && time.Since(time.Unix(cache.SyncedAt, 0)) < time.Duration(iv)*time.Minute {
-				continue
+
+			if cfg.Enabled && cfg.AutoSync {
+				iv := clampSyncMin(cfg.SyncIntervalMin)
+				if cache.CFSyncedAt == 0 || time.Since(time.Unix(cache.CFSyncedAt, 0)) >= time.Duration(iv)*time.Minute {
+					if _, err := h.syncDNSProvider(cfg, "cloudflare"); err != nil {
+						log.Printf("[cloudflare] auto-sync warning: %v", err)
+					}
+				}
 			}
-			if _, err := h.syncAllDNSProviders(cfg); err != nil {
-				log.Printf("[dns-sync] auto-sync warning: %v", err)
+
+			if cfg.ArvanEnabled && cfg.ArvanAutoSync {
+				iv := clampSyncMin(cfg.ArvanSyncIntervalMin)
+				if cache.ArvanSyncedAt == 0 || time.Since(time.Unix(cache.ArvanSyncedAt, 0)) >= time.Duration(iv)*time.Minute {
+					if _, err := h.syncDNSProvider(cfg, "arvan"); err != nil {
+						log.Printf("[arvancloud] auto-sync warning: %v", err)
+					}
+				}
 			}
 		}
 	}()

@@ -1282,6 +1282,26 @@ body.light-mode .eng-pill.active {
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
+
+/* Independent Provider Bubble Cards inside Cloud DNS Tab */
+.dns-prov-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px;
+}
+.dns-prov-bubble {
+  border-radius: max(var(--rc, 18px), 20px) !important;
+  padding: 18px 20px !important;
+  border: 1.5px solid var(--border) !important;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.dns-prov-bubble.prov-cf {
+  border-color: color-mix(in srgb, #f97316 38%, var(--border)) !important;
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, #f97316 28%, transparent);
+}
+.dns-prov-bubble.prov-arvan {
+  border-color: color-mix(in srgb, #06b6d4 38%, var(--border)) !important;
+  box-shadow: 0 12px 32px -14px color-mix(in srgb, #06b6d4 28%, transparent);
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1578,71 +1598,88 @@ body.light-mode .eng-pill.active {
     <section id="tab-domains" class="page">
       <div class="toolbar">
         <div>
-          <h3>Domains &amp; DNS (Cloudflare &amp; ArvanCloud)</h3>
-          <div class="hint" style="margin:2px 0 0;">Manage your Cloudflare zones &amp; subdomains with automatic server IP matching.</div>
+          <h3>Domains &amp; DNS</h3>
+          <div class="hint" style="margin:2px 0 0;">Manage Cloudflare &amp; ArvanCloud zones with independent sync schedules and automatic server IP matching.</div>
         </div>
-        <div class="flexw" style="gap:8px;">
-          <span class="badge b-foreign mono" id="cf-sync-badge">NOT SYNCED</span>
-          <span class="badge b-ok mono" id="cf-auto-badge" style="display:none;"></span>
-          <button class="btn btn-sky btn-sm" id="btn-cf-sync" onclick="syncCloudflare()">Sync Now</button>
-          <button class="btn btn-warn btn-sm" id="btn-cf-add" onclick="openCFRecordModal(null)">+ Add DNS Record</button>
-          <button class="btn btn-ghost btn-sm" onclick="openCFSettingsInTab()">⚙ API Settings</button>
+        <div class="flexw" style="gap:7px;">
+          <span class="badge b-foreign mono" id="cf-dom-badge" style="display:none;"></span>
+          <span class="badge b-foreign mono" id="arvan-dom-badge" style="display:none;"></span>
+          <button class="btn btn-sky btn-sm" id="btn-dom-sync-cf" style="display:none;" onclick="syncDNSProvider('cloudflare', this)">Sync CF</button>
+          <button class="btn btn-sky btn-sm" id="btn-dom-sync-arvan" style="display:none;" onclick="syncDNSProvider('arvan', this)">Sync Arvan</button>
+          <button class="btn btn-warn btn-sm" id="btn-cf-add" style="display:none;" onclick="openCFRecordModal(null)">+ Add DNS Record</button>
+          <button class="btn btn-ghost btn-sm" onclick="openCFSettingsInTab()">⚙ DNS Settings</button>
         </div>
       </div>
 
-      <!-- First-Time Setup Card (automatically hidden once configured; editable anytime in Settings -> Cloudflare API) -->
-      <div class="card sp" id="cf-setup-card" style="display:none; max-width:680px; margin:0 auto 14px;">
-        <div class="toolbar" style="margin-bottom:10px;">
-          <div>
-            <h4 style="color:var(--accent);">Connect Cloudflare / ArvanCloud DNS</h4>
-            <div class="hint" style="margin:2px 0 0;">Enter your API credentials once. Afterward, you can modify them anytime from <b>Settings ➔ Cloudflare API</b>.</div>
+      <!-- First-Time Setup: Two Independent Provider Bubbles -->
+      <div id="cf-setup-card" style="display:none; margin-bottom:14px;">
+        <div class="dns-prov-grid">
+          <div class="card sp dns-prov-bubble prov-cf">
+            <div>
+              <div class="toolbar" style="margin-bottom:10px;">
+                <span class="cf-prov-tag cf-prov-cf" style="font-size:.72rem; padding:4px 10px;">CLOUDFLARE</span>
+                <select id="cf-init-mode" class="cf-ctrl-sel" style="width:auto;" onchange="toggleCFInitMode()">
+                  <option value="token">API Token</option>
+                  <option value="global">Global Key</option>
+                </select>
+              </div>
+              <div id="cf-init-token-wrap" class="field">
+                <label>Cloudflare API Token</label>
+                <input id="cf-init-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
+              </div>
+              <div id="cf-init-global-wrap" class="row2" style="display:none;">
+                <div class="field"><label>Account Email</label><input id="cf-init-email" class="mono" placeholder="you@example.com"></div>
+                <div class="field"><label>Global API Key</label><input id="cf-init-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
+              </div>
+              <div class="tun-sec" style="margin-bottom:12px;">
+                <div class="tun-sec-title"><span>Auto-Sync (1 min – 1 Day)</span></div>
+                <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="cf-init-autosync" checked><span>Auto-sync Cloudflare?</span></label>
+                <select id="cf-init-interval" class="cf-ctrl-sel"><option value="1">Every 1 Minute</option>
+                  <option value="5">Every 5 Minutes</option>
+                  <option value="15">Every 15 Minutes</option>
+                  <option value="30">Every 30 Minutes</option>
+                  <option value="60" selected>Every 1 Hour</option>
+                  <option value="180">Every 3 Hours</option>
+                  <option value="360">Every 6 Hours</option>
+                  <option value="720">Every 12 Hours</option>
+                  <option value="1440">Every 24 Hours (1 Day)</option></select>
+              </div>
+            </div>
+            <button class="btn btn-sky" id="btn-cf-init-save" onclick="connectInitialProvider('cloudflare')">Connect Cloudflare</button>
           </div>
-          <select id="cf-init-mode" class="cf-ctrl-sel" style="width:auto;" onchange="toggleCFInitMode()">
-            <option value="token">API Token (Recommended)</option>
-            <option value="global">Email + Global API Key</option>
-          </select>
-        </div>
-        <div id="cf-init-token-wrap" class="field">
-          <label>Cloudflare API Token (Zone:Read + DNS:Edit)</label>
-          <input id="cf-init-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
-        </div>
-        <div id="cf-init-global-wrap" class="row2" style="display:none;">
-          <div class="field"><label>Cloudflare Account Email</label><input id="cf-init-email" class="mono" placeholder="you@example.com"></div>
-          <div class="field"><label>Global API Key</label><input id="cf-init-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
-        </div>
-        <div class="tun-sec" style="margin-top:6px;">
-          <div class="tun-sec-title"><span>ArvanCloud (ابر آروان) — Optional</span></div>
-          <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="cf-init-arvan-en"><span>Also sync domains from ArvanCloud</span></label>
-          <div class="field" style="margin:0;">
-            <label>ArvanCloud API Key</label>
-            <input id="cf-init-arvan-key" class="mono" type="password" autocomplete="new-password" placeholder="Apikey xxxxxxxx-xxxx-xxxx-...">
+
+          <div class="card sp dns-prov-bubble prov-arvan">
+            <div>
+              <div class="toolbar" style="margin-bottom:10px;">
+                <span class="cf-prov-tag cf-prov-arvan" style="font-size:.72rem; padding:4px 10px;">ARVANCLOUD (ابر آروان)</span>
+              </div>
+              <div class="field">
+                <label>ArvanCloud API Key</label>
+                <input id="cf-init-arvan-key" class="mono" type="password" autocomplete="new-password" placeholder="Apikey xxxxxxxx-xxxx-xxxx-...">
+              </div>
+              <div class="tun-sec" style="margin-bottom:12px;">
+                <div class="tun-sec-title"><span>Auto-Sync (1 min – 1 Day)</span></div>
+                <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="arvan-init-autosync" checked><span>Auto-sync ArvanCloud?</span></label>
+                <select id="arvan-init-interval" class="cf-ctrl-sel"><option value="1">Every 1 Minute</option>
+                  <option value="5">Every 5 Minutes</option>
+                  <option value="15">Every 15 Minutes</option>
+                  <option value="30">Every 30 Minutes</option>
+                  <option value="60" selected>Every 1 Hour</option>
+                  <option value="180">Every 3 Hours</option>
+                  <option value="360">Every 6 Hours</option>
+                  <option value="720">Every 12 Hours</option>
+                  <option value="1440">Every 24 Hours (1 Day)</option></select>
+              </div>
+            </div>
+            <button class="btn btn-sky" id="btn-arvan-init-save" onclick="connectInitialProvider('arvan')">Connect ArvanCloud</button>
           </div>
-        </div>
-        <div class="tun-sec" style="margin-top:6px;">
-          <div class="tun-sec-title"><span>Automatic Sync Schedule</span></div>
-          <div class="row2" style="align-items:center;">
-            <label class="check" style="margin:0;"><input type="checkbox" id="cf-init-autosync" checked><span>Auto-sync with Cloudflare automatically?</span></label>
-            <select id="cf-init-interval" class="cf-ctrl-sel">
-              <option value="30">Every 30 Minutes</option>
-              <option value="60" selected>Every 1 Hour</option>
-              <option value="180">Every 3 Hours</option>
-              <option value="360">Every 6 Hours</option>
-              <option value="720">Every 12 Hours</option>
-              <option value="1440">Every 24 Hours (1 Day)</option>
-            </select>
-          </div>
-        </div>
-        <div class="flexw" style="justify-content:flex-end; margin-top:12px;">
-          <button class="btn btn-sky" id="btn-cf-init-save" onclick="saveCFInitialSetup()">Connect &amp; Sync Domains</button>
         </div>
       </div>
 
       <!-- Connected Domains Workspace -->
       <div id="cf-workspace" style="display:none;">
-        <!-- Bubble Tabs per Domain + All Domains -->
         <div class="cf-bubbles-bar" id="cf-zone-bubbles"></div>
 
-        <!-- Records Explorer Card -->
         <div class="card sp">
           <div class="toolbar" style="margin-bottom:12px; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1771,22 +1808,23 @@ body.light-mode .eng-pill.active {
     <!-- SETTINGS -->
     <section id="tab-settings" class="page">
       <div id="settings-shell">
-        <div class="toolbar" style="justify-content:center;"><h3 data-i18n="nav_settings">Settings</h3></div>
-        <div class="sub-tabs">
-          <div class="sub-tab active" onclick="switchSubTab('addr', this)" data-i18n="st_tab_addr">Address &amp; Port</div>
-          <div class="sub-tab" onclick="switchSubTab('sec', this)" data-i18n="st_tab_sec">Security &amp; 2FA</div>
-          <div class="sub-tab" onclick="switchSubTab('dl', this)" data-i18n="st_tab_dl">Downloads &amp; Engines</div>
-          <div class="sub-tab" onclick="switchSubTab('def', this)" data-i18n="st_tab_def">Defaults &amp; Ports</div>
-          <div class="sub-tab" onclick="switchSubTab('bak', this)" data-i18n="st_tab_bak">Backup &amp; Restore</div>
-          <div class="sub-tab" id="stab-cf" onclick="switchSubTab('cf', this)">Domains API (CF / Arvan)</div>
-          <div class="sub-tab" id="stab-outbound" onclick="switchSubTab('outbound', this)">Outbound (Xray)</div>
-          <div class="sub-tab" id="stab-telegram" onclick="switchSubTab('telegram', this)">Telegram Bot</div>
-          <div class="sub-tab" id="stab-themes" onclick="switchSubTab('themes', this)" data-i18n="nav_themes">Themes</div>
+        <div class="toolbar" style="justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+          <h3 data-i18n="nav_settings">Settings</h3>
+          <button type="button" class="btn btn-ghost btn-sm" id="stab-themes" onclick="switchSubTab('themes', this)" style="border-radius:999px;">🎨 <span data-i18n="nav_themes">Themes</span></button>
         </div>
 
-        <!-- 1. Address & Port -->
-        <div id="sub-addr" class="sub-pane active">
-          <div class="card">
+        <div class="sub-tabs" style="justify-content:center;">
+          <div class="sub-tab active" id="stab-general" onclick="switchSubTab('general', this)">General &amp; Security</div>
+          <div class="sub-tab" id="stab-profiles" onclick="switchSubTab('profiles', this)">Profiles &amp; Backup</div>
+          <div class="sub-tab" id="stab-system" onclick="switchSubTab('system', this)">System &amp; Cache</div>
+          <div class="sub-tab" id="stab-cf" onclick="switchSubTab('cf', this)">Cloud DNS</div>
+          <div class="sub-tab" id="stab-outbound" onclick="switchSubTab('outbound', this)">Outbound (Xray)</div>
+          <div class="sub-tab" id="stab-telegram" onclick="switchSubTab('telegram', this)">Telegram Bot</div>
+        </div>
+
+        <!-- 1. General & Security (Address/Port + Domain SSL + 2FA + Password) -->
+        <div id="sub-general" class="sub-pane active">
+<div class="card">
             <h4 style="color:var(--accent); margin-bottom:14px;" data-i18n="st_addr_title">Panel Address, Port &amp; Listen Domain</h4>
             <div class="kv" style="margin-bottom:14px;"><span data-i18n="set_path_port">Active web path / port</span><span id="set-path-port">---</span></div>
             <div class="field"><label>Panel Display Name</label><div class="flexw" style="flex-wrap:nowrap;"><input id="set-pname" placeholder="e.g. MControl Master"><button type="button" class="btn btn-ghost" onclick="savePanelNameFromSettings()">Save Name</button></div></div>
@@ -1826,11 +1864,8 @@ body.light-mode .eng-pill.active {
             <div class="field"><label>Manual Private Key (tls.key — PEM)</label><textarea id="tls-key" placeholder="-----BEGIN PRIVATE KEY-----" style="min-height:64px;"></textarea></div>
             <button class="btn btn-ghost btn-sm" onclick="saveCustomTLS()">Save Custom SSL &amp; Restart</button>
           </div>
-        </div>
-
-        <!-- 2. Security & 2FA -->
-        <div id="sub-sec" class="sub-pane">
-          <div class="card">
+<div style="height:14px;"></div>
+<div class="card">
             <h4 style="color:var(--accent); margin-bottom:14px;" data-i18n="st_sec_title">Admin Credentials &amp; 2FA</h4>
             <div class="field"><label data-i18n="lbl_admin_user">Admin username</label><input id="set-uname" placeholder="admin"></div>
             <div class="kv" style="margin-bottom:12px;">
@@ -1852,9 +1887,65 @@ body.light-mode .eng-pill.active {
           </div>
         </div>
 
-        <!-- 3. Downloads & Engines -->
-        <div id="sub-dl" class="sub-pane">
+        <!-- 2. Profiles & Backup (SSH Profiles + Port Profiles + Backup & Restore) -->
+        <div id="sub-profiles" class="sub-pane">
+<div class="card sp">
+            <h4 style="color:var(--accent); margin-bottom:10px;">SSH Credential Profiles (Unlimited)</h4>
+            <p class="hint">Save reusable SSH credential profiles (name, username, AES-256 password, port) and pick them when adding servers.</p>
+            <div class="row2">
+              <div class="field"><label>Profile Name</label><input id="prof-ssh-name" placeholder="e.g. Hetzner Root"></div>
+              <div class="field"><label>SSH Port</label><input id="prof-ssh-port" type="number" value="22"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>SSH Username</label><input id="prof-ssh-user" class="mono" value="root"></div>
+              <div class="field"><label>SSH Password</label><input id="prof-ssh-pass" type="password" placeholder="Encrypted with AES-256" autocomplete="new-password"></div>
+            </div>
+            <div class="flexw"><button class="btn btn-sky btn-sm" id="btn-ssh-prof-save" onclick="saveSSHProfile()">+ Add SSH Profile</button><button class="btn btn-ghost btn-sm" id="btn-ssh-prof-cancel" style="display:none;" onclick="cancelEditSSHProfile()">Cancel</button></div>
+            <div id="ssh-profiles-list" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+
           <div class="card">
+            <h4 style="color:var(--purple); margin-bottom:10px;">Port Profiles (Unlimited)</h4>
+            <p class="hint">Create named port sets (separate ports with space, comma, or newline — e.g. <code>443, 8443 2053</code>).</p>
+            <div class="field"><label>Port Profile Name</label><input id="prof-port-name" placeholder="e.g. Profile 1 - Web TLS"></div>
+            <div class="field"><label>Ports</label><textarea id="prof-port-val" placeholder="443, 8443 2053 2083" style="min-height:64px;" oninput="renderPortPreview()"></textarea></div>
+            <div id="def-ports-preview" class="flexw" style="margin-bottom:12px;"></div>
+            <div class="flexw"><button class="btn btn-sky btn-sm" id="btn-port-prof-save" onclick="savePortProfile()">+ Add Port Profile</button><button class="btn btn-ghost btn-sm" id="btn-port-prof-cancel" style="display:none;" onclick="cancelEditPortProfile()">Cancel</button></div>
+            <div id="port-profiles-list" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
+<div style="height:14px;"></div>
+<div class="card">
+            <div class="toolbar" style="margin-bottom:14px;">
+              <h4 style="color:var(--accent);" data-i18n="backup_title">Backup &amp; restore</h4>
+              <span class="badge b-ok mono">DB + KEY + SSL</span>
+            </div>
+            <div class="warnbox" data-i18n="backup_warn">The backup contains the encryption key and all stored SSH credentials. Keep it private.</div>
+
+            <div class="bak-box">
+              <div class="bak-head">
+                <div>
+                  <div class="bak-title" data-i18n="btn_backup">Download backup (.zip)</div>
+                  <div class="bak-sub">Includes encrypted SQLite database, master key, and SSL certificates.</div>
+                </div>
+                <button class="btn btn-sky" id="btn-backup" data-i18n="btn_backup">Download backup (.zip)</button>
+              </div>
+            </div>
+
+            <div class="bak-box">
+              <div class="field" style="margin-bottom:12px;">
+                <label data-i18n="restore_lbl">Restore (.zip, or legacy .db)</label>
+                <input type="file" id="db-restore-file" accept=".zip,.db,.sqlite,.sqlite3">
+              </div>
+              <div class="flexw" style="justify-content:flex-end;">
+                <button class="btn btn-danger" id="btn-db-restore" data-i18n="btn_restore">Upload &amp; restore</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. System & Cache (Downloads/Engines/Beta + Master Package Cache) -->
+        <div id="sub-system" class="sub-pane">
+<div class="card">
             <h4 style="color:var(--accent); margin-bottom:14px;" data-i18n="st_dl_title">Tunnel Engines &amp; Panel Sources</h4>
             <div class="field"><label data-i18n="set_gh">Tunnel Engines GitHub Base URL</label><input id="set-gh" class="mono"></div>
             <div class="field"><label data-i18n="set_ir">Tunnel Engines Iran Mirror Base URL</label><input id="set-ir" class="mono"></div>
@@ -1899,119 +1990,100 @@ body.light-mode .eng-pill.active {
           </div>
         </div>
 
-        <!-- 4. Unlimited SSH & Port Profiles -->
-        <div id="sub-def" class="sub-pane">
-          <div class="card sp">
-            <h4 style="color:var(--accent); margin-bottom:10px;">SSH Credential Profiles (Unlimited)</h4>
-            <p class="hint">Save reusable SSH credential profiles (name, username, AES-256 password, port) and pick them when adding servers.</p>
-            <div class="row2">
-              <div class="field"><label>Profile Name</label><input id="prof-ssh-name" placeholder="e.g. Hetzner Root"></div>
-              <div class="field"><label>SSH Port</label><input id="prof-ssh-port" type="number" value="22"></div>
-            </div>
-            <div class="row2">
-              <div class="field"><label>SSH Username</label><input id="prof-ssh-user" class="mono" value="root"></div>
-              <div class="field"><label>SSH Password</label><input id="prof-ssh-pass" type="password" placeholder="Encrypted with AES-256" autocomplete="new-password"></div>
-            </div>
-            <div class="flexw"><button class="btn btn-sky btn-sm" id="btn-ssh-prof-save" onclick="saveSSHProfile()">+ Add SSH Profile</button><button class="btn btn-ghost btn-sm" id="btn-ssh-prof-cancel" style="display:none;" onclick="cancelEditSSHProfile()">Cancel</button></div>
-            <div id="ssh-profiles-list" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
-          </div>
-
-          <div class="card">
-            <h4 style="color:var(--purple); margin-bottom:10px;">Port Profiles (Unlimited)</h4>
-            <p class="hint">Create named port sets (separate ports with space, comma, or newline — e.g. <code>443, 8443 2053</code>).</p>
-            <div class="field"><label>Port Profile Name</label><input id="prof-port-name" placeholder="e.g. Profile 1 - Web TLS"></div>
-            <div class="field"><label>Ports</label><textarea id="prof-port-val" placeholder="443, 8443 2053 2083" style="min-height:64px;" oninput="renderPortPreview()"></textarea></div>
-            <div id="def-ports-preview" class="flexw" style="margin-bottom:12px;"></div>
-            <div class="flexw"><button class="btn btn-sky btn-sm" id="btn-port-prof-save" onclick="savePortProfile()">+ Add Port Profile</button><button class="btn btn-ghost btn-sm" id="btn-port-prof-cancel" style="display:none;" onclick="cancelEditPortProfile()">Cancel</button></div>
-            <div id="port-profiles-list" style="margin-top:14px; display:flex; flex-direction:column; gap:8px;"></div>
-          </div>
-        </div>
-
-        <!-- 4. Backup & Restore -->
-        <div id="sub-bak" class="sub-pane">
-          <div class="card">
-            <div class="toolbar" style="margin-bottom:14px;">
-              <h4 style="color:var(--accent);" data-i18n="backup_title">Backup &amp; restore</h4>
-              <span class="badge b-ok mono">DB + KEY + SSL</span>
-            </div>
-            <div class="warnbox" data-i18n="backup_warn">The backup contains the encryption key and all stored SSH credentials. Keep it private.</div>
-
-            <div class="bak-box">
-              <div class="bak-head">
-                <div>
-                  <div class="bak-title" data-i18n="btn_backup">Download backup (.zip)</div>
-                  <div class="bak-sub">Includes encrypted SQLite database, master key, and SSL certificates.</div>
-                </div>
-                <button class="btn btn-sky" id="btn-backup" data-i18n="btn_backup">Download backup (.zip)</button>
-              </div>
-            </div>
-
-            <div class="bak-box">
-              <div class="field" style="margin-bottom:12px;">
-                <label data-i18n="restore_lbl">Restore (.zip, or legacy .db)</label>
-                <input type="file" id="db-restore-file" accept=".zip,.db,.sqlite,.sqlite3">
-              </div>
-              <div class="flexw" style="justify-content:flex-end;">
-                <button class="btn btn-danger" id="btn-db-restore" data-i18n="btn_restore">Upload &amp; restore</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- 6. Themes Studio -->
-                <!-- Cloudflare API Settings -->
+        <!-- 4. Cloud DNS (Cloudflare & ArvanCloud in ONE tab, completely independent bubbles) -->
         <div id="sub-cf" class="sub-pane">
-          <div class="card sp">
-            <div class="toolbar" style="margin-bottom:10px;">
+          <div class="dns-prov-grid">
+            <!-- BUBBLE 1: Cloudflare -->
+            <div class="card sp dns-prov-bubble prov-cf">
               <div>
-                <h4 style="color:var(--accent);">Domains API (Cloudflare &amp; ArvanCloud) &amp; Auto-Sync</h4>
-                <div class="hint" style="margin:2px 0 0;">Manage your Cloudflare credentials and automatic background sync schedule.</div>
-              </div>
-              <select id="cf-auth-mode" class="cf-ctrl-sel" style="width:auto;" onchange="toggleCFAuthMode()">
-                <option value="token">API Token (Recommended)</option>
-                <option value="global">Email + Global API Key</option>
-              </select>
-            </div>
-            <div id="cf-token-wrap" class="field">
-              <label>Cloudflare API Token (Zone:Read + DNS:Edit)</label>
-              <input id="cf-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
-            </div>
-            <div id="cf-global-wrap" class="row2" style="display:none;">
-              <div class="field"><label>Cloudflare Account Email</label><input id="cf-email" class="mono" placeholder="you@example.com"></div>
-              <div class="field"><label>Global API Key</label><input id="cf-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
-            </div>
-            <div class="tun-sec" style="margin-bottom:12px;">
-              <div class="tun-sec-title"><span>ArvanCloud (ابر آروان) DNS API</span></div>
-              <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="cf-arvan-en"><span>Enable ArvanCloud Integration</span></label>
-              <div class="field" style="margin:0;">
-                <label>ArvanCloud API Key</label>
-                <input id="cf-arvan-key" class="mono" type="password" autocomplete="new-password" placeholder="Apikey xxxxxxxx-xxxx-xxxx-...">
-              </div>
-            </div>
-            <div class="row2" style="margin-bottom:12px;">
-              <div class="field" style="margin:0; display:flex; flex-direction:column; gap:8px; justify-content:center;">
-                <label class="check" style="margin:0;"><input type="checkbox" id="cf-en"><span>Enable Cloudflare Integration</span></label>
-                <label class="check" style="margin:0;"><input type="checkbox" id="cf-autosync"><span>Auto-Sync with Cloudflare in background</span></label>
-              </div>
-              <div class="field" style="margin:0;">
-                <label>Auto-Sync Interval (30 min – 1 Day)</label>
-                <select id="cf-sync-int" class="cf-ctrl-sel">
+                <div class="toolbar" style="margin-bottom:10px; gap:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="cf-prov-tag cf-prov-cf" style="font-size:.7rem; padding:4px 9px;">CLOUDFLARE</span>
+                    <span class="badge b-foreign mono" id="cf-st-synced">Not synced</span>
+                  </div>
+                  <select id="cf-auth-mode" class="cf-ctrl-sel" style="width:auto;" onchange="toggleCFAuthMode()">
+                    <option value="token">API Token</option>
+                    <option value="global">Global Key</option>
+                  </select>
+                </div>
+
+                <label class="check" style="margin-bottom:10px;"><input type="checkbox" id="cf-en"><span>Enable Cloudflare DNS</span></label>
+
+                <div id="cf-token-wrap" class="field">
+                  <label>API Token (Zone:Read + DNS:Edit)</label>
+                  <input id="cf-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
+                </div>
+                <div id="cf-global-wrap" class="row2" style="display:none;">
+                  <div class="field"><label>Account Email</label><input id="cf-email" class="mono" placeholder="you@example.com"></div>
+                  <div class="field"><label>Global API Key</label><input id="cf-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
+                </div>
+
+                <div class="tun-sec" style="margin-bottom:12px;">
+                  <div class="tun-sec-title"><span>Cloudflare Auto-Sync (1 min – 1 Day)</span></div>
+                  <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="cf-autosync"><span>Auto-sync Cloudflare automatically</span></label>
+                  <select id="cf-sync-int" class="cf-ctrl-sel">
+                    <option value="1">Every 1 Minute</option>
+                  <option value="5">Every 5 Minutes</option>
+                  <option value="15">Every 15 Minutes</option>
                   <option value="30">Every 30 Minutes</option>
-                  <option value="60">Every 1 Hour</option>
+                  <option value="60" selected>Every 1 Hour</option>
                   <option value="180">Every 3 Hours</option>
                   <option value="360">Every 6 Hours</option>
                   <option value="720">Every 12 Hours</option>
                   <option value="1440">Every 24 Hours (1 Day)</option>
-                </select>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flexw" style="gap:8px;">
+                <button class="btn btn-sky btn-sm" id="btn-cf-save" onclick="saveProviderSettings('cloudflare')">Save Cloudflare</button>
+                <button class="btn btn-warn btn-sm" id="btn-cf-sync-set" onclick="syncDNSProvider('cloudflare', this)">Sync Cloudflare</button>
               </div>
             </div>
-            <div class="flexw" style="gap:8px;">
-              <button class="btn btn-sky" id="btn-cf-save" onclick="saveCloudflareSettings()">Save &amp; Sync Now</button>
-              <button class="btn btn-ghost" onclick="switchTab('domains')">Go to Domains Tab</button>
+
+            <!-- BUBBLE 2: ArvanCloud (ابر آروان) -->
+            <div class="card sp dns-prov-bubble prov-arvan">
+              <div>
+                <div class="toolbar" style="margin-bottom:10px; gap:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="cf-prov-tag cf-prov-arvan" style="font-size:.7rem; padding:4px 9px;">ARVANCLOUD</span>
+                    <span class="badge b-foreign mono" id="arvan-st-synced">Not synced</span>
+                  </div>
+                </div>
+
+                <label class="check" style="margin-bottom:10px;"><input type="checkbox" id="cf-arvan-en"><span>Enable ArvanCloud DNS (ابر آروان)</span></label>
+
+                <div class="field">
+                  <label>ArvanCloud API Key</label>
+                  <input id="cf-arvan-key" class="mono" type="password" autocomplete="new-password" placeholder="Apikey xxxxxxxx-xxxx-xxxx-...">
+                </div>
+
+                <div class="tun-sec" style="margin-bottom:12px;">
+                  <div class="tun-sec-title"><span>ArvanCloud Auto-Sync (1 min – 1 Day)</span></div>
+                  <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="arvan-autosync"><span>Auto-sync ArvanCloud automatically</span></label>
+                  <select id="arvan-sync-int" class="cf-ctrl-sel">
+                    <option value="1">Every 1 Minute</option>
+                  <option value="5">Every 5 Minutes</option>
+                  <option value="15">Every 15 Minutes</option>
+                  <option value="30">Every 30 Minutes</option>
+                  <option value="60" selected>Every 1 Hour</option>
+                  <option value="180">Every 3 Hours</option>
+                  <option value="360">Every 6 Hours</option>
+                  <option value="720">Every 12 Hours</option>
+                  <option value="1440">Every 24 Hours (1 Day)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flexw" style="gap:8px;">
+                <button class="btn btn-sky btn-sm" id="btn-arvan-save" onclick="saveProviderSettings('arvan')">Save ArvanCloud</button>
+                <button class="btn btn-warn btn-sm" id="btn-arvan-sync-set" onclick="syncDNSProvider('arvan', this)">Sync ArvanCloud</button>
+              </div>
             </div>
           </div>
         </div>
 
-                <!-- Outbound (Xray Core) Settings -->
+        <!-- 5. Outbound (Xray Core) -->
         <div id="sub-outbound" class="sub-pane">
 <div class="toolbar">
         <div>
@@ -2101,10 +2173,9 @@ body.light-mode .eng-pill.active {
         </div>
         <div id="ob-nodes-list" style="display:flex; flex-direction:column; gap:6px; max-height:360px; overflow-y:auto;"></div>
       </div>
-    
         </div>
 
-        <!-- Telegram Bot Settings -->
+        <!-- 6. Telegram Bot -->
         <div id="sub-telegram" class="sub-pane">
 <div class="toolbar">
         <div>
@@ -2187,9 +2258,9 @@ body.light-mode .eng-pill.active {
           </div>
         </div>
       </div>
-    
         </div>
 
+        <!-- Theme Studio -->
         <div id="sub-themes" class="sub-pane">
 <div class="toolbar">
         <div>
@@ -4421,8 +4492,8 @@ async function stopMasterOutbound() {
 
 
 let CF_ZONES = [], CF_RECORDS = [], CF_SERVER_DOMAINS = {}, CF_CFG = {};
-let CF_ACTIVE_ZONE = 'ALL'; // 'ALL' or zone.id
-let CF_ALL_VIEW = 'grouped'; // 'grouped' | 'flat'
+let CF_ACTIVE_ZONE = 'ALL';
+let CF_ALL_VIEW = 'grouped';
 
 function toggleCFAuthMode() {
   const m = ($('cf-auth-mode') && $('cf-auth-mode').value) || 'token';
@@ -4451,11 +4522,10 @@ function pickCFZone(zId) {
   renderCFZoneBubbles();
   renderCFRecords();
 }
-
 function fmtIntervalLbl(mins) {
-  if (mins >= 1440) return 'Auto: 24h';
-  if (mins >= 60) return 'Auto: ' + Math.round(mins / 60) + 'h';
-  return 'Auto: ' + mins + 'm';
+  if (mins >= 1440) return '24h';
+  if (mins >= 60) return Math.round(mins / 60) + 'h';
+  return mins + 'm';
 }
 
 async function loadCloudflareStatus(silent) {
@@ -4472,7 +4542,7 @@ async function loadCloudflareStatus(silent) {
   const configured = cfOk || arvOk;
 
   if (!silent) {
-    // Sync Settings -> Cloudflare API inputs
+    // Cloudflare independent fields
     if ($('cf-auth-mode')) $('cf-auth-mode').value = c.auth_mode || 'token';
     if ($('cf-token')) $('cf-token').value = c.api_token || '';
     if ($('cf-email')) $('cf-email').value = c.email || '';
@@ -4480,30 +4550,50 @@ async function loadCloudflareStatus(silent) {
     if ($('cf-en')) $('cf-en').checked = !!c.enabled;
     if ($('cf-autosync')) $('cf-autosync').checked = !!c.auto_sync;
     if ($('cf-sync-int')) $('cf-sync-int').value = String(c.sync_interval_min || 60);
-    if ($('cf-arvan-en')) $('cf-arvan-en').checked = !!c.arvan_enabled;
-    if ($('cf-arvan-key')) $('cf-arvan-key').value = c.arvan_api_key || '';
     toggleCFAuthMode();
 
-    // Show onboarding card ONLY on first-time setup; hide it once configured!
+    // ArvanCloud independent fields
+    if ($('cf-arvan-en')) $('cf-arvan-en').checked = !!c.arvan_enabled;
+    if ($('cf-arvan-key')) $('cf-arvan-key').value = c.arvan_api_key || '';
+    if ($('arvan-autosync')) $('arvan-autosync').checked = !!c.arvan_auto_sync;
+    if ($('arvan-sync-int')) $('arvan-sync-int').value = String(c.arvan_sync_interval_min || 60);
+
+    // Settings independent synced badges
+    if ($('cf-st-synced')) {
+      $('cf-st-synced').textContent = r.cf_synced_at ? ('Synced ' + new Date(r.cf_synced_at * 1000).toLocaleTimeString()) : 'Not synced';
+      $('cf-st-synced').className = 'badge mono ' + (r.cf_synced_at ? 'b-iran' : 'b-foreign');
+    }
+    if ($('arvan-st-synced')) {
+      $('arvan-st-synced').textContent = r.arvan_synced_at ? ('Synced ' + new Date(r.arvan_synced_at * 1000).toLocaleTimeString()) : 'Not synced';
+      $('arvan-st-synced').className = 'badge mono ' + (r.arvan_synced_at ? 'b-iran' : 'b-foreign');
+    }
+
+    // Domains tab workspace & independent buttons/badges
     if ($('cf-setup-card')) $('cf-setup-card').style.display = configured ? 'none' : 'block';
     if ($('cf-workspace')) $('cf-workspace').style.display = configured ? 'block' : 'none';
-    if ($('btn-cf-sync')) $('btn-cf-sync').style.display = configured ? 'inline-flex' : 'none';
     if ($('btn-cf-add')) $('btn-cf-add').style.display = configured ? 'inline-flex' : 'none';
+    if ($('btn-dom-sync-cf')) $('btn-dom-sync-cf').style.display = cfOk ? 'inline-flex' : 'none';
+    if ($('btn-dom-sync-arvan')) $('btn-dom-sync-arvan').style.display = arvOk ? 'inline-flex' : 'none';
 
-    const sb = $('cf-sync-badge');
-    if (sb) {
-      sb.textContent = r.synced_at ? ('SYNCED • ' + new Date(r.synced_at * 1000).toLocaleTimeString()) : 'NOT SYNCED';
-      sb.className = 'badge mono ' + (r.synced_at ? 'b-iran' : 'b-foreign');
+    const cfb = $('cf-dom-badge');
+    if (cfb) {
+      if (cfOk) {
+        const autoTxt = c.auto_sync ? (' • ' + fmtIntervalLbl(c.sync_interval_min || 60)) : '';
+        cfb.textContent = 'CF: ' + (r.cf_synced_at ? new Date(r.cf_synced_at * 1000).toLocaleTimeString() : 'Ready') + autoTxt;
+        cfb.className = 'badge mono ' + (r.cf_synced_at ? 'b-iran' : 'b-foreign');
+        cfb.style.display = 'inline-block';
+      } else cfb.style.display = 'none';
     }
-    const ab = $('cf-auto-badge');
-    if (ab) {
-      if (configured && c.auto_sync) {
-        ab.textContent = fmtIntervalLbl(c.sync_interval_min || 60);
-        ab.style.display = 'inline-block';
-      } else {
-        ab.style.display = 'none';
-      }
+    const arb = $('arvan-dom-badge');
+    if (arb) {
+      if (arvOk) {
+        const autoTxt = c.arvan_auto_sync ? (' • ' + fmtIntervalLbl(c.arvan_sync_interval_min || 60)) : '';
+        arb.textContent = 'ARVAN: ' + (r.arvan_synced_at ? new Date(r.arvan_synced_at * 1000).toLocaleTimeString() : 'Ready') + autoTxt;
+        arb.className = 'badge mono ' + (r.arvan_synced_at ? 'b-ok' : 'b-foreign');
+        arb.style.display = 'inline-block';
+      } else arb.style.display = 'none';
     }
+
     if (CF_ACTIVE_ZONE !== 'ALL' && !CF_ZONES.some(z => z.id === CF_ACTIVE_ZONE)) {
       CF_ACTIVE_ZONE = 'ALL';
     }
@@ -4517,7 +4607,7 @@ async function loadCloudflareStatus(silent) {
 function populateCFZoneSelects() {
   const rz = $('cf-r-zone');
   if (rz) {
-    rz.innerHTML = CF_ZONES.map(z => `<option value="${esc(z.id)}">${esc(z.name)}</option>`).join('');
+    rz.innerHTML = CF_ZONES.map(z => `<option value="${esc(z.id)}">[${z.provider === 'arvan' ? 'ARVAN' : 'CF'}] ${esc(z.name)}</option>`).join('');
   }
 }
 
@@ -4600,16 +4690,18 @@ function renderCFRecords() {
   if (isAll && CF_ALL_VIEW === 'grouped') {
     const byZone = new Map();
     list.forEach(r => {
-      if (!byZone.has(r.zone_id)) byZone.set(r.zone_id, { name: r.zone_name || 'Zone', recs: [] });
+      if (!byZone.has(r.zone_id)) byZone.set(r.zone_id, { name: r.zone_name || 'Zone', prov: r.provider || 'cloudflare', recs: [] });
       byZone.get(r.zone_id).recs.push(r);
     });
     let out = '';
     byZone.forEach((grp, zId) => {
       const mCnt = grp.recs.filter(x => x.server_id).length;
+      const pTag = grp.prov === 'arvan' ? '<span class="cf-prov-tag cf-prov-arvan">ARVAN</span>' : '<span class="cf-prov-tag cf-prov-cf">CF</span>';
       out += `<div class="cf-zone-group">
         <div class="cf-zone-group-head">
           <div style="display:flex; align-items:center; gap:8px;">
-            <strong style="font-size:.9rem; color:var(--accent);">🌐 ${esc(grp.name)}</strong>
+            ${pTag}
+            <strong style="font-size:.9rem; color:var(--accent);">${esc(grp.name)}</strong>
             <span class="badge b-ok mono">${grp.recs.length} subdomains</span>
             ${mCnt ? `<span class="badge b-iran mono">${mCnt} matched</span>` : ''}
           </div>
@@ -4626,57 +4718,76 @@ function renderCFRecords() {
   }
 }
 
-async function saveCFInitialSetup() {
-  const btn = $('btn-cf-init-save'); btn.disabled = true; btn.textContent = 'Connecting & Syncing...';
+async function connectInitialProvider(provider) {
+  const isArvan = provider === 'arvan';
+  const btn = $(isArvan ? 'btn-arvan-init-save' : 'btn-cf-init-save');
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Connecting...'; }
   try {
-    const r = await api('api/cloudflare/save', 'POST', {
-      enabled: !!($('cf-init-token').value.trim() || ($('cf-init-email').value.trim() && $('cf-init-apikey').value.trim())),
+    const payload = isArvan ? {
+      provider: 'arvan',
+      arvan_enabled: true,
+      arvan_api_key: $('cf-init-arvan-key').value.trim(),
+      arvan_auto_sync: $('arvan-init-autosync').checked,
+      arvan_sync_interval_min: parseInt($('arvan-init-interval').value || '60', 10) || 60
+    } : {
+      provider: 'cloudflare',
+      enabled: true,
       auth_mode: $('cf-init-mode').value,
       api_token: $('cf-init-token').value.trim(),
       email: $('cf-init-email').value.trim(),
       api_key: $('cf-init-apikey').value.trim(),
-      arvan_enabled: $('cf-init-arvan-en') ? $('cf-init-arvan-en').checked : false,
-      arvan_api_key: $('cf-init-arvan-key') ? $('cf-init-arvan-key').value.trim() : '',
       auto_sync: $('cf-init-autosync').checked,
       sync_interval_min: parseInt($('cf-init-interval').value || '60', 10) || 60
-    });
+    };
+    const r = await api('api/cloudflare/save', 'POST', payload);
     if (r.ok) {
-      toast(r.message || 'Cloudflare connected & synced!');
+      toast(r.message || 'Connected & synced!');
       loadCloudflareStatus(false);
-    } else toast(r.error || 'Cloudflare connection failed', true);
-  } finally { btn.disabled = false; btn.textContent = 'Connect & Sync Domains'; }
+    } else toast(r.error || 'Connection failed', true);
+  } finally { if (btn) { btn.disabled = false; btn.textContent = origTxt; } }
 }
 
-async function saveCloudflareSettings() {
-  const btn = $('btn-cf-save'); btn.disabled = true; btn.textContent = 'Saving & Syncing...';
+async function saveProviderSettings(provider) {
+  const isArvan = provider === 'arvan';
+  const btn = $(isArvan ? 'btn-arvan-save' : 'btn-cf-save');
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   try {
-    const r = await api('api/cloudflare/save', 'POST', {
+    const payload = isArvan ? {
+      provider: 'arvan',
+      arvan_enabled: $('cf-arvan-en').checked,
+      arvan_api_key: $('cf-arvan-key').value.trim(),
+      arvan_auto_sync: $('arvan-autosync').checked,
+      arvan_sync_interval_min: parseInt($('arvan-sync-int').value || '60', 10) || 60
+    } : {
+      provider: 'cloudflare',
       enabled: $('cf-en').checked,
       auth_mode: $('cf-auth-mode').value,
       api_token: $('cf-token').value.trim(),
       email: $('cf-email').value.trim(),
       api_key: $('cf-apikey').value.trim(),
-      arvan_enabled: $('cf-arvan-en') ? $('cf-arvan-en').checked : false,
-      arvan_api_key: $('cf-arvan-key') ? $('cf-arvan-key').value.trim() : '',
       auto_sync: $('cf-autosync').checked,
       sync_interval_min: parseInt($('cf-sync-int').value || '60', 10) || 60
-    });
+    };
+    const r = await api('api/cloudflare/save', 'POST', payload);
     if (r.ok) {
-      toast(r.message || 'Cloudflare settings saved!');
+      toast(r.message || 'Saved & synced!');
       loadCloudflareStatus(false);
-    } else toast(r.error || 'Cloudflare sync failed', true);
-  } finally { btn.disabled = false; btn.textContent = 'Save & Sync Now'; }
+    } else toast(r.error || 'Save/Sync failed', true);
+  } finally { if (btn) { btn.disabled = false; btn.textContent = origTxt; } }
 }
 
-async function syncCloudflare() {
-  const btn = $('btn-cf-sync'); btn.disabled = true; btn.textContent = 'Syncing...';
+async function syncDNSProvider(provider, btnEl) {
+  const origTxt = btnEl ? btnEl.textContent : '';
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Syncing...'; }
   try {
-    const r = await api('api/cloudflare/sync', 'POST');
+    const r = await api('api/cloudflare/sync', 'POST', { provider: provider || 'all' });
     if (r.ok) {
       toast(r.message || 'Synced!');
       loadCloudflareStatus(false);
     } else toast(r.error || 'Sync failed', true);
-  } finally { btn.disabled = false; btn.textContent = 'Sync Now'; }
+  } finally { if (btnEl) { btnEl.disabled = false; btnEl.textContent = origTxt; } }
 }
 
 function openCFRecordModalById(recId) {
@@ -4685,7 +4796,7 @@ function openCFRecordModalById(recId) {
 }
 
 function openCFRecordModal(rec) {
-  if (!CF_ZONES.length) { toast('Sync your Cloudflare zones first', true); return; }
+  if (!CF_ZONES.length) { toast('Sync your domains first', true); return; }
   populateCFZoneSelects();
   const sp = $('cf-r-srvpick');
   if (sp) {
