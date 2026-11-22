@@ -211,6 +211,13 @@ func (h *Handler) auth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		r.Header.Set("X-MC-User", user)
+		if strings.HasPrefix(user, "viewer:") && r.Method != http.MethodGet && r.URL.Path != "/api/logout" {
+			fail(w, http.StatusForbidden, "read-only viewer account cannot modify resources")
+			return
+		}
+		if r.Method != http.MethodGet && r.URL.Path != "/api/login" && r.URL.Path != "/api/logout" {
+			h.logAudit(user, r.Method, r.URL.Path, "")
+		}
 		next(w, r)
 	}
 }
@@ -402,6 +409,22 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/legacy/pair-manual", h.auth(h.handleLegacyPairManual))
 	mux.HandleFunc("POST /api/legacy/kernel-action", h.auth(h.handleLegacyKernelAction))
 	mux.HandleFunc("DELETE /api/legacy/tunnels/{id}", h.auth(h.handleLegacyDelete))
+	mux.HandleFunc("PUT /api/tunnels/{id}", h.auth(h.handleUpdateTunnel))
+	mux.HandleFunc("GET /api/tunnels/{id}/metrics", h.auth(h.handleTunnelMetrics))
+	mux.HandleFunc("POST /api/servers/{id}/exec", h.auth(h.handleServerExec))
+	mux.HandleFunc("POST /api/fleet/exec", h.auth(h.handleFleetExec))
+	mux.HandleFunc("GET /api/servers/{id}/ports", h.auth(h.handleServerPorts))
+	mux.HandleFunc("POST /api/servers/{id}/firewall", h.auth(h.handleServerFirewall))
+	mux.HandleFunc("GET /api/servers/{id}/services", h.auth(h.handleServerServices))
+	mux.HandleFunc("POST /api/servers/{id}/services", h.auth(h.handleServerServices))
+	mux.HandleFunc("GET /api/scheduler", h.auth(h.handleScheduler))
+	mux.HandleFunc("POST /api/scheduler", h.auth(h.handleScheduler))
+	mux.HandleFunc("DELETE /api/scheduler", h.auth(h.handleScheduler))
+	mux.HandleFunc("GET /api/ops/automation", h.auth(h.handleOpsAutomation))
+	mux.HandleFunc("POST /api/ops/automation", h.auth(h.handleOpsAutomation))
+	mux.HandleFunc("GET /api/audit", h.auth(h.handleAuditList))
+	mux.HandleFunc("GET /api/users/viewer", h.auth(h.handleViewerGet))
+	mux.HandleFunc("POST /api/users/viewer", h.auth(h.handleViewerSave))
 	mux.HandleFunc("GET /api/cache/list", h.auth(h.handleCacheList))
 	mux.HandleFunc("POST /api/cache/upload", h.auth(h.handleCacheUpload))
 	mux.HandleFunc("POST /api/cache/delete", h.auth(h.handleCacheDelete))
@@ -540,6 +563,13 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Username = strings.TrimSpace(req.Username)
 	if !h.store.VerifyUser(req.Username, req.Password) {
+		if h.verifyViewerLogin(req.Username, req.Password) {
+			h.limiter.clear(ip)
+			tok := h.signToken("viewer:" + req.Username)
+			h.logAudit("viewer:"+req.Username, "POST", "/api/login", "viewer login")
+			writeJSON(w, http.StatusOK, map[string]any{"ok": true, "token": tok, "role": "viewer"})
+			return
+		}
 		h.limiter.fail(ip)
 		time.Sleep(400 * time.Millisecond)
 		fail(w, http.StatusUnauthorized, "invalid credentials")

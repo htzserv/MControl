@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%228%22%20y1%3D%228%22%20x2%3D%2256%22%20y2%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2322d3ee%22%2F%3E%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f472b6%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23090f1d%22%2F%3E%3Cpath%20d%3D%22M10%2052V20c0-8.5%2010.5-11.5%2015.5-4.5L32%2027.5l6.5-12C43.5%208.5%2054%2011.5%2054%2020v32%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%227.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
@@ -1799,26 +1801,28 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
   border-radius: 10px; padding: 5px 8px; cursor: pointer;
 }
 
-/* Settings: Clean 2-Row Sub-Tabs & Flattened Straightforward Cards */
+/* Settings: Responsive Flex-Wrap Sub-Tabs (1 line on desktop, wraps cleanly to 2 lines when needed) */
 #tab-settings .sub-tabs {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-items: center !important;
   gap: 8px !important;
-  max-width: 680px !important;
+  width: fit-content !important;
+  max-width: 100% !important;
   margin: 0 auto 18px !important;
   padding: 6px !important;
-  border-radius: 20px !important;
+  border-radius: 22px !important;
 }
 #tab-settings .sub-tab {
+  flex: 0 0 auto !important;
+  width: auto !important;
   text-align: center !important;
   justify-content: center !important;
-  padding: 9px 12px !important;
-  border-radius: 14px !important;
+  padding: 8px 15px !important;
+  border-radius: 999px !important;
   font-size: .8rem !important;
   white-space: nowrap;
-}
-@media (max-width: 600px) {
-  #tab-settings .sub-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
 /* Flatten convoluted nested boxes inside Settings cards so options are direct & clean */
 #tab-settings .sub-pane .tun-sec,
@@ -2193,6 +2197,7 @@ body[data-navx="top"] .ver-bubble {
     </button>
     <div class="util" id="util-bar">
       <div class="util-items" id="util-items">
+        <button class="icon-btn" id="btn-cmd-k" title="Quick Search (Ctrl+K)" onclick="openCmdPalette()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
         <button class="icon-btn" id="btn-theme-quick" data-i18n-title="nav_themes" title="Themes" onclick="openThemesQuick()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 22c-1.5 0-2-1.5-1-2.6.8-.9.4-2.4-1-2.4H8a4 4 0 0 1-4-4"/></svg>
         </button>
@@ -2765,6 +2770,7 @@ body[data-navx="top"] .ver-bubble {
           <div class="sub-tab" id="stab-cf" onclick="switchSubTab('cf', this)">Cloud DNS</div>
           <div class="sub-tab" id="stab-outbound" onclick="switchSubTab('outbound', this)">Outbound (Xray)</div>
           <div class="sub-tab" id="stab-telegram" onclick="switchSubTab('telegram', this)">Telegram Bot</div>
+          <div class="sub-tab" id="stab-ops" onclick="switchSubTab('ops', this)">Automation &amp; Ops</div>
           <div class="sub-tab" id="stab-themes" onclick="switchSubTab('themes', this)" data-i18n="nav_themes">Themes</div>
         </div>
 
@@ -3214,6 +3220,67 @@ body[data-navx="top"] .ver-bubble {
         </div>
 
         <!-- Theme Studio -->
+        
+        <!-- 6. Automation & Ops -->
+        <div id="sub-ops" class="sub-pane">
+          <div class="card">
+            <div class="toolbar" style="margin-bottom:10px;">
+              <div>
+                <h4 style="color:var(--accent);">⏰ Scheduler / Cron</h4>
+                <div class="hint" style="margin:2px 0 0;">Run recurring tasks on Master or any managed server automatically.</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="loadOpsTab()">Refresh</button>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Task Name</label><input id="sc-name" placeholder="Nightly Clean RAM"></div>
+              <div class="field"><label>Target</label><select id="sc-target"></select></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Action</label>
+                <select id="sc-task" onchange="$('sc-cmd-wrap').style.display=this.value==='custom'?'block':'none'">
+                  <option value="clean_ram">Clean RAM Cache</option>
+                  <option value="restart_tunnels">Restart All Tunnels</option>
+                  <option value="reboot">Reboot Server</option>
+                  <option value="custom">Custom Command</option>
+                </select>
+              </div>
+              <div class="field"><label>Interval (Minutes)</label><input id="sc-int" type="number" value="360" min="5"></div>
+            </div>
+            <div class="field" id="sc-cmd-wrap" style="display:none;"><label>Custom Shell Command</label><input id="sc-cmd" class="mono" placeholder="apt update && apt upgrade -y"></div>
+            <button class="btn btn-sky btn-sm" onclick="addSchedJob()">+ Add Scheduled Job</button>
+            <div id="sc-list" style="margin-top:12px; display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <div class="card">
+            <h4 style="color:var(--accent); margin-bottom:10px;">🚨 Smart Threshold Alerts</h4>
+            <label class="check"><input type="checkbox" id="ops-alert-en"><span>Enable Telegram CPU/RAM Threshold Alerts (30-min cooldown)</span></label>
+            <div class="row2">
+              <div class="field"><label>CPU Alert Threshold (%)</label><input id="ops-cpu-th" type="number" value="90" min="50" max="100"></div>
+              <div class="field"><label>RAM Alert Threshold (%)</label><input id="ops-ram-th" type="number" value="90" min="50" max="100"></div>
+            </div>
+            <button class="btn btn-sky btn-sm" onclick="saveOpsAutoCfg()">Save Alert Settings</button>
+          </div>
+
+          <div class="card">
+            <h4 style="color:var(--accent); margin-bottom:10px;">👁 Viewer Account (Read-Only RBAC)</h4>
+            <div class="hint" style="margin-bottom:10px;">Create a read-only account that can view dashboards, servers, and tunnels without modifying anything.</div>
+            <label class="check"><input type="checkbox" id="vw-en"><span>Enable Read-Only Viewer Account</span></label>
+            <div class="row2">
+              <div class="field"><label>Viewer Username</label><input id="vw-user" placeholder="viewer"></div>
+              <div class="field"><label>Viewer Password (leave blank to keep)</label><input id="vw-pass" type="password" placeholder="••••••••"></div>
+            </div>
+            <button class="btn btn-sky btn-sm" onclick="saveViewerAccount()">Save Viewer Account</button>
+          </div>
+
+          <div class="card">
+            <div class="toolbar" style="margin-bottom:10px;">
+              <h4 style="color:var(--accent);">📜 Audit Log</h4>
+              <button class="btn btn-ghost btn-sm" onclick="loadAuditLog()">Refresh</button>
+            </div>
+            <div id="audit-list" class="mono" style="max-height:240px; overflow:auto; display:flex; flex-direction:column; gap:5px; font-size:.73rem;"></div>
+          </div>
+        </div>
+
         <div id="sub-themes" class="sub-pane">
 <div class="toolbar">
         <div>
@@ -7457,6 +7524,328 @@ $('btn-db-restore').onclick = restoreBackup;
 document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('mousedown', e => { if (e.target === m) m.classList.remove('active'); }));
 
 boot();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openCmdPalette();
+  } else if (e.key === 'Escape' && $('cmdk-modal') && $('cmdk-modal').classList.contains('active')) {
+    closeModal('cmdk-modal');
+  }
+});
+
+function openCmdPalette() {
+  if (!token) return;
+  $('cmdk-modal').classList.add('active');
+  $('cmdk-inp').value = '';
+  renderCmdK();
+  setTimeout(() => $('cmdk-inp').focus(), 40);
+}
+
+function renderCmdK() {
+  const q = ($('cmdk-inp').value || '').trim().toLowerCase();
+  const items = [];
+  TABS.forEach(tb => items.push({ grp: 'Tab', label: tb[0].toUpperCase(), fn: () => { switchTab(tb[0]); closeModal('cmdk-modal'); } }));
+  items.push({ grp: 'Action', label: '+ Add Server', fn: () => { closeModal('cmdk-modal'); openSrvModal(0); } });
+  items.push({ grp: 'Action', label: '+ New 2-Sided Tunnel', fn: () => { closeModal('cmdk-modal'); openNewTunnelModal(); } });
+  items.push({ grp: 'Action', label: 'Backup & Restore', fn: () => { closeModal('cmdk-modal'); openBackupModal(); } });
+  items.push({ grp: 'Action', label: 'Panel Update Center', fn: () => { closeModal('cmdk-modal'); openUpdateModal(); } });
+  (SERVERS || []).forEach(s => items.push({ grp: 'Server', label: s.name + ' (' + s.host + ')', fn: () => { closeModal('cmdk-modal'); openWebTerm(s.id); } }));
+  (TUNNELS || []).forEach(t => items.push({ grp: 'Tunnel', label: t.name + ' [' + t.engine + ']', fn: () => { closeModal('cmdk-modal'); openEditTunnelModal(t.id); } }));
+  const filtered = q ? items.filter(x => (x.grp + ' ' + x.label).toLowerCase().includes(q)) : items.slice(0, 12);
+  window._cmdkFns = filtered.map(x => x.fn);
+  $('cmdk-list').innerHTML = filtered.map((x, idx) =>
+    `<div class="cf-rec-row" style="cursor:pointer;" onclick="window._cmdkFns[${idx}]()"><span class="badge b-foreign mono">${esc(x.grp)}</span><strong>${esc(x.label)}</strong></div>`
+  ).join('') || '<div class="hint">No matches.</div>';
+}
+
+function openEditTunnelModal(id) {
+  const t = (TUNNELS || []).find(x => +x.id === +id);
+  if (!t) return;
+  $('te-id').value = t.id;
+  $('te-name').value = t.name || '';
+  $('te-tport').value = t.tunnel_port || '';
+  $('te-tok').value = t.token || '';
+  $('te-ports').value = t.ports || '';
+  $('tun-edit-modal').classList.add('active');
+}
+async function saveEditedTunnel() {
+  const id = $('te-id').value;
+  const btn = $('btn-te-save'); btn.disabled = true; btn.textContent = 'Redeploying...';
+  try {
+    const r = await api('api/tunnels/' + id, 'PUT', {
+      name: $('te-name').value.trim(),
+      tunnel_port: parseInt($('te-tport').value || '0', 10),
+      token: $('te-tok').value.trim(),
+      ports: $('te-ports').value.trim()
+    });
+    if (r.ok) { toast(r.message || 'Updated!'); closeModal('tun-edit-modal'); loadTunnels(); }
+    else toast(r.error || 'Update failed', true);
+  } finally { btn.disabled = false; btn.textContent = 'Save & Redeploy Both Sides'; }
+}
+async function checkTunnelMetrics(id, name) {
+  toast('Probing live metrics for ' + name + '...');
+  const r = await api('api/tunnels/' + id + '/metrics');
+  if (r.ok) {
+    $('tun-term-card').style.display = 'block';
+    $('tun-term-title').textContent = 'Live Metrics — ' + name;
+    $('tun-term').textContent = `Iran Service: ${r.iran_status || '?'}\nForeign Service: ${r.foreign_status || '?'}\nLive Ping: ${r.ping || 'N/A'}\nActive Tunnel Conns: ${r.conns || '0'}`;
+  } else toast(r.error || 'Metrics failed', true);
+}
+
+let termSrvId = 0, fwSrvId = 0, svcSrvId = 0;
+const FLEET_SEL = new Set();
+
+function toggleFleetSel(id, checked) {
+  if (checked) FLEET_SEL.add(id); else FLEET_SEL.delete(id);
+  const bar = $('fleet-bulk-bar');
+  if (bar) bar.classList.toggle('show', FLEET_SEL.size > 0);
+  if ($('fleet-bulk-cnt')) $('fleet-bulk-cnt').textContent = FLEET_SEL.size + ' selected';
+}
+function clearFleetSel() {
+  FLEET_SEL.clear();
+  document.querySelectorAll('.fleet-chk').forEach(c => c.checked = false);
+  toggleFleetSel(0, false);
+}
+function openFleetRunnerModal() {
+  $('fleet-out').textContent = 'Ready for ' + FLEET_SEL.size + ' server(s).';
+  $('fleet-run-modal').classList.add('active');
+}
+async function runFleetCommand() {
+  const cmd = $('fleet-cmd-inp').value.trim();
+  if (!cmd || !FLEET_SEL.size) return;
+  const btn = $('btn-fleet-run'); btn.disabled = true; btn.textContent = 'Running...';
+  $('fleet-out').textContent = 'Executing in parallel...';
+  try {
+    const r = await api('api/fleet/exec', 'POST', { server_ids: Array.from(FLEET_SEL), command: cmd });
+    if (r.ok) {
+      $('fleet-out').textContent = (r.results || []).map(x => `=== ${x.server_name || ('#'+x.server_id)} (${x.ok ? 'OK' : 'ERR'}) ===\n${x.output || x.error || ''}`).join('\n\n');
+    } else $('fleet-out').textContent = r.error || 'Failed';
+  } finally { btn.disabled = false; btn.textContent = 'Execute on Selected'; }
+}
+
+function openWebTerm(id) {
+  termSrvId = id;
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  $('term-title').textContent = 'Terminal — ' + (s ? s.name : id);
+  $('term-out').textContent = 'Connected to ' + (s ? s.host : id) + '. Type a command below.';
+  $('term-inp').value = '';
+  $('term-modal').classList.add('active');
+  setTimeout(() => $('term-inp').focus(), 40);
+}
+async function runWebTermCmd() {
+  const cmd = $('term-inp').value.trim();
+  if (!cmd || !termSrvId) return;
+  $('term-out').textContent += '\n$ ' + cmd + '\n...';
+  $('term-inp').value = '';
+  const r = await api('api/servers/' + termSrvId + '/exec', 'POST', { command: cmd });
+  $('term-out').textContent = $('term-out').textContent.replace(/\n\.\.\.$/, '\n' + (r.output || r.error || '(no output)'));
+  $('term-out').scrollTop = $('term-out').scrollHeight;
+}
+
+function openFwModal(id) {
+  fwSrvId = id;
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  $('fw-title').textContent = 'Ports & Firewall — ' + (s ? s.name : id);
+  $('fw-modal').classList.add('active');
+  refreshFwPorts();
+}
+async function refreshFwPorts() {
+  $('fw-out').textContent = 'Loading listening ports & firewall rules...';
+  const r = await api('api/servers/' + fwSrvId + '/ports');
+  $('fw-out').textContent = r.output || r.error || 'No output.';
+}
+async function applyFwRule(action) {
+  const port = parseInt($('fw-port').value || '0', 10);
+  const proto = $('fw-proto').value || 'tcp';
+  if (!port) { toast('Enter a port number', true); return; }
+  const r = await api('api/servers/' + fwSrvId + '/firewall', 'POST', { port, proto, action });
+  toast(r.output || r.error || 'Done', !r.ok);
+  refreshFwPorts();
+}
+
+function openSvcModal(id) {
+  svcSrvId = id;
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  $('svc-title').textContent = 'Service Monitor — ' + (s ? s.name : id);
+  $('svc-modal').classList.add('active');
+  loadSvcStatuses();
+}
+async function loadSvcStatuses() {
+  const r = await api('api/servers/' + svcSrvId + '/services');
+  if (!r.ok) return;
+  const list = r.statuses || [];
+  $('svc-list-inp').value = list.map(x => x.name).join(', ');
+  $('svc-statuses').innerHTML = list.map(x =>
+    `<div class="cf-rec-row"><div class="cf-rec-main"><span class="dot ${x.status==='active'?'online':'offline'}"></span><strong class="mono">${esc(x.name)}</strong><span class="badge ${x.status==='active'?'b-iran':'b-miss'} mono">${esc(x.status)}</span></div><div class="flexw" style="gap:5px;"><button class="btn btn-sky btn-sm" onclick="actSvc('${esc(x.name)}','restart')">Restart</button><button class="btn btn-warn btn-sm" onclick="actSvc('${esc(x.name)}','stop')">Stop</button></div></div>`
+  ).join('') || '<div class="hint">No services configured.</div>';
+}
+async function saveSvcList() {
+  const arr = $('svc-list-inp').value.split(',').map(x => x.trim()).filter(Boolean);
+  await api('api/servers/' + svcSrvId + '/services', 'POST', { action: 'save', services: arr });
+  loadSvcStatuses();
+}
+async function actSvc(unit, action) {
+  toast(action + ' ' + unit + '...');
+  await api('api/servers/' + svcSrvId + '/services', 'POST', { action, unit });
+  loadSvcStatuses();
+}
+
+async function loadOpsTab() {
+  if ($('sc-target')) {
+    $('sc-target').innerHTML = '<option value="0">Master Panel</option>' + (SERVERS || []).map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)})</option>`).join('');
+  }
+  const rs = await api('api/scheduler');
+  if (rs.ok && $('sc-list')) {
+    $('sc-list').innerHTML = (rs.jobs || []).map(j =>
+      `<div class="cf-rec-row"><div class="cf-rec-main"><strong>${esc(j.name)}</strong><span class="badge b-foreign mono">${esc(j.task)} • every ${j.interval_min}m</span></div><button class="btn btn-danger btn-sm" onclick="delSchedJob(${j.id})">✕</button></div>`
+    ).join('') || '<div class="hint">No scheduled jobs yet.</div>';
+  }
+  const ra = await api('api/ops/automation');
+  if (ra.ok && ra.config) {
+    if ($('ops-alert-en')) $('ops-alert-en').checked = !!ra.config.alert_enabled;
+    if ($('ops-cpu-th')) $('ops-cpu-th').value = ra.config.cpu_threshold || 90;
+    if ($('ops-ram-th')) $('ops-ram-th').value = ra.config.ram_threshold || 90;
+  }
+  const rv = await api('api/users/viewer');
+  if (rv.ok) {
+    if ($('vw-en')) $('vw-en').checked = !!rv.enabled;
+    if ($('vw-user')) $('vw-user').value = rv.username || '';
+  }
+  loadAuditLog();
+}
+async function addSchedJob() {
+  const r = await api('api/scheduler', 'POST', {
+    name: $('sc-name').value.trim(),
+    target_id: parseInt($('sc-target').value || '0', 10),
+    task: $('sc-task').value,
+    command: $('sc-cmd').value.trim(),
+    interval_min: parseInt($('sc-int').value || '360', 10)
+  });
+  if (r.ok) { toast('Scheduled job added!'); loadOpsTab(); }
+}
+async function delSchedJob(id) {
+  await api('api/scheduler?id=' + id, 'DELETE');
+  loadOpsTab();
+}
+async function saveOpsAutoCfg() {
+  const cur = await api('api/ops/automation');
+  const cfg = (cur.ok && cur.config) ? cur.config : {};
+  cfg.alert_enabled = $('ops-alert-en').checked;
+  cfg.cpu_threshold = parseInt($('ops-cpu-th').value || '90', 10);
+  cfg.ram_threshold = parseInt($('ops-ram-th').value || '90', 10);
+  const r = await api('api/ops/automation', 'POST', cfg);
+  toast(r.ok ? 'Alert settings saved!' : (r.error || 'Failed'), !r.ok);
+}
+async function saveViewerAccount() {
+  const r = await api('api/users/viewer', 'POST', {
+    enabled: $('vw-en').checked,
+    username: $('vw-user').value.trim(),
+    password: $('vw-pass').value
+  });
+  toast(r.ok ? 'Viewer account saved!' : (r.error || 'Failed'), !r.ok);
+  if (r.ok) $('vw-pass').value = '';
+}
+async function loadAuditLog() {
+  const r = await api('api/audit');
+  if (r.ok && $('audit-list')) {
+    $('audit-list').innerHTML = (r.logs || []).slice(0, 40).map(l =>
+      `<div class="kv"><span>${new Date(l.time * 1000).toLocaleString()} · <b>${esc(l.user)}</b></span><span>${esc(l.method)} ${esc(l.path)}</span></div>`
+    ).join('') || '<div class="hint">No audit entries yet.</div>';
+  }
+}
+
 </script>
+
+<div class="modal-bg" id="cmdk-modal" style="z-index:1200;">
+  <div class="card modal-box" style="max-width:540px; padding:16px !important;">
+    <input id="cmdk-inp" placeholder="Search servers, tunnels, domains, or commands... (Esc to close)" oninput="renderCmdK()" style="width:100%; margin-bottom:10px;">
+    <div id="cmdk-list" style="max-height:300px; overflow:auto; display:flex; flex-direction:column; gap:6px;"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="tun-edit-modal" style="z-index:1140;">
+  <div class="card modal-box" style="max-width:520px;">
+    <div class="toolbar" style="margin-bottom:12px;">
+      <h3 style="color:var(--accent);">✎ Live Tunnel Editor</h3>
+      <button class="btn btn-danger btn-sm" data-close="tun-edit-modal">Close</button>
+    </div>
+    <input type="hidden" id="te-id">
+    <div class="field"><label>Tunnel Name</label><input id="te-name"></div>
+    <div class="row2">
+      <div class="field"><label>Tunnel Port</label><input id="te-tport" type="number"></div>
+      <div class="field"><label>Token</label><input id="te-tok" class="mono"></div>
+    </div>
+    <div class="field"><label>Forwarded Ports (comma-separated)</label><input id="te-ports" class="mono" placeholder="443,8443,2053"></div>
+    <div class="flexw" style="justify-content:flex-end; margin-top:10px;">
+      <button class="btn btn-sky" id="btn-te-save" onclick="saveEditedTunnel()">Save &amp; Redeploy Both Sides</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="term-modal" style="z-index:1140;">
+  <div class="card modal-box" style="max-width:740px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);" id="term-title">Web Terminal</h3>
+      <button class="btn btn-danger btn-sm" data-close="term-modal">Close</button>
+    </div>
+    <pre class="term" id="term-out" style="height:280px; margin-bottom:10px;">Ready. Type a Linux command below and press Enter.</pre>
+    <div class="flexw" style="gap:8px;">
+      <input id="term-inp" class="mono" style="flex:1;" placeholder="e.g. uptime && free -h" onkeydown="if(event.key==='Enter') runWebTermCmd()">
+      <button class="btn btn-sky" id="btn-term-run" onclick="runWebTermCmd()">Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="fleet-run-modal" style="z-index:1140;">
+  <div class="card modal-box" style="max-width:740px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);">⚡ Bulk Fleet Command Runner</h3>
+      <button class="btn btn-danger btn-sm" data-close="fleet-run-modal">Close</button>
+    </div>
+    <div class="field"><label>Command / Script to run in parallel on selected servers</label><input id="fleet-cmd-inp" class="mono" placeholder="uname -a && uptime"></div>
+    <div class="flexw" style="justify-content:flex-end; margin-bottom:10px;">
+      <button class="btn btn-sky" id="btn-fleet-run" onclick="runFleetCommand()">Execute on Selected</button>
+    </div>
+    <pre class="term" id="fleet-out" style="height:260px;">Output will appear here...</pre>
+  </div>
+</div>
+
+<div class="modal-bg" id="fw-modal" style="z-index:1140;">
+  <div class="card modal-box" style="max-width:660px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);" id="fw-title">Ports &amp; Firewall</h3>
+      <button class="btn btn-danger btn-sm" data-close="fw-modal">Close</button>
+    </div>
+    <div class="row2" style="align-items:end; margin-bottom:10px;">
+      <div class="field" style="margin:0;"><label>Port (1-65535)</label><input id="fw-port" type="number" placeholder="443"></div>
+      <div class="field" style="margin:0;"><label>Protocol</label><select id="fw-proto"><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
+    </div>
+    <div class="flexw" style="gap:8px; margin-bottom:10px;">
+      <button class="btn btn-sky btn-sm" onclick="applyFwRule('allow')">✔ Allow Port</button>
+      <button class="btn btn-danger btn-sm" onclick="applyFwRule('deny')">✖ Block Port</button>
+      <button class="btn btn-ghost btn-sm" onclick="refreshFwPorts()">↻ Refresh</button>
+    </div>
+    <pre class="term" id="fw-out" style="height:240px;">Loading...</pre>
+  </div>
+</div>
+
+<div class="modal-bg" id="svc-modal" style="z-index:1140;">
+  <div class="card modal-box" style="max-width:580px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);" id="svc-title">Service Monitor</h3>
+      <button class="btn btn-danger btn-sm" data-close="svc-modal">Close</button>
+    </div>
+    <div class="flexw" style="gap:8px; margin-bottom:10px;">
+      <input id="svc-list-inp" class="mono" style="flex:1;" placeholder="x-ui, xray, nginx, docker">
+      <button class="btn btn-sky btn-sm" onclick="saveSvcList()">Save List</button>
+    </div>
+    <div id="svc-statuses" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+</div>
+
 </body>
 </html>

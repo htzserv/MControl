@@ -1059,3 +1059,12 @@ func (s *Store) ListBenchmarkRuns(limit int) ([]BenchmarkRun, error) {
 func (s *Store) SetInstalledBetaBuild(build int) error {
 	return s.setSetting("installed_beta_build", strconv.Itoa(build))
 }
+
+func (s *Store) UpdateTunnelFull(t *Tunnel) error {
+	_, err := s.db.Exec(`
+		UPDATE tunnels
+		SET name = ?, transport = ?, tunnel_port = ?, token = ?, ports = ?, lb_mode = ?, vip_targets = ?, status = ?
+		WHERE id = ?`,
+		t.Name, t.Transport, t.TunnelPort, t.Token, t.Ports, t.LBMode, t.VIPTargets, t.Status, t.ID)
+	return err
+}

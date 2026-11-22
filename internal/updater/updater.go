@@ -338,7 +338,12 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 			st.Tag = fmt.Sprintf("%s-beta.%d", st.Version, st.Build)
 		}
 		cmp := version.Compare(st.Version, version.Current)
-		st.Available = (cmp > 0) || (cmp == 0 && st.Build > installedBuild)
+		if installedBuild > 0 {
+			st.Available = (cmp > 0) || (cmp == 0 && st.Build > installedBuild)
+		} else {
+			// Already on a Stable release: only offer Beta if its version is strictly newer than current Stable
+			st.Available = (cmp > 0)
+		}
 		return st
 	}
 	if lastErr == "" {
@@ -415,7 +420,7 @@ func fetchReleaseChangelog(githubURL, mirrorURL, socksProxy, fromVer, toVer stri
 func CheckAll(githubURL, mirrorURL, socksProxy string, betaEnabled bool, installedBetaBuild int) CheckResult {
 	res := CheckResult{
 		CurrentVersion:     version.Current,
-		InstalledBetaBuild: installedBetaBuild,
+		InstalledBetaBuild: func() int { if betaEnabled { return installedBetaBuild }; return 0 }(),
 		ViaOutbound:        socksProxy != "",
 		CheckedAt:          time.Now().Unix(),
 	}
@@ -832,8 +837,12 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 		}
 		client := MakeHTTPClient(5*time.Minute, activeProxy)
 		restart := func() {
-			if betaBuildNum > 0 && onBetaInstalled != nil {
-				onBetaInstalled(betaBuildNum)
+			if onBetaInstalled != nil {
+				if source == "beta" && betaBuildNum > 0 {
+					onBetaInstalled(betaBuildNum)
+				} else if source != "beta" {
+					onBetaInstalled(0)
+				}
 			}
 			finishJob(true, "Update complete! Restarting panel...", "")
 			if onRestart != nil {
