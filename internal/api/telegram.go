@@ -502,7 +502,7 @@ func (h *Handler) handleTGCallback(token string, chatID int64, data string) {
 				roleTag = "IR"
 			}
 			sb.WriteString(fmt.Sprintf("%s <b>[%s] %s</b> — <code>%s</code>\n    CPU: %s | RAM: %s | Ping: %s\n",
-				ico, roleTag, tgEsc(s.Name), tgEsc(s.Host), tgEsc(s.CPU), tgEsc(s.RAM), tgEsc(s.PingMS)))
+				ico, roleTag, tgEsc(s.Name), tgEsc(s.Host), tgEsc(s.CPU), tgEsc(s.RAM), tgEsc(s.PingMs)))
 		}
 		_ = h.tgSendMessage(token, chatID, sb.String(), mainMenuKB())
 
@@ -864,7 +864,7 @@ func (h *Handler) deployTunnelFromTG(token string, chatID int64, wiz *tgWizard, 
 		LBMode:          "none",
 		Status:          "deploying",
 	}
-	id, err := h.store.CreateTunnel(tun)
+	id, err := h.store.AddTunnel(tun)
 	if err != nil {
 		_ = h.tgSendMessage(token, chatID, "❌ DB error: <code>"+tgEsc(err.Error())+"</code>", mainMenuKB())
 		return
