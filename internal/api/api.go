@@ -379,6 +379,10 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/outbound/install", h.auth(h.handleOutboundInstallCore))
 	mux.HandleFunc("POST /api/outbound/sub/fetch", h.auth(h.handleOutboundFetchSub))
 	mux.HandleFunc("POST /api/outbound/realdelay", h.auth(h.handleOutboundRealDelay))
+	mux.HandleFunc("GET /api/telegram/status", h.auth(h.handleTelegramStatus))
+	mux.HandleFunc("POST /api/telegram/save", h.auth(h.handleTelegramSave))
+	mux.HandleFunc("POST /api/telegram/test", h.auth(h.handleTelegramTest))
+	mux.HandleFunc("POST /api/telegram/backup", h.auth(h.handleTelegramBackupNow))
 	mux.HandleFunc("GET /api/tunnels", h.auth(h.handleListTunnels))
 	mux.HandleFunc("POST /api/tunnels", h.auth(h.handleCreateTunnel))
 	mux.HandleFunc("POST /api/tunnels/{id}/action", h.auth(h.handleTunnelAction))
@@ -982,6 +986,7 @@ func (h *Handler) handleUpdateRemote(w http.ResponseWriter, r *http.Request) {
 	}
 	st := h.store.GetSettings()
 	log.Printf("remote update requested from %s by %s", req.Source, r.Header.Get("X-MC-User"))
+	h.maybeSendPreUpdateBackup(req.Source)
 	err := updater.StartRemoteUpdate(req.Source, st.PanelGitHubURL, st.PanelMirrorURL, h.githubSocksProxy(), st.AllowUnverified, func(build int) {
 		_ = h.store.SetInstalledBetaBuild(build)
 	}, func() {

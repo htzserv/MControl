@@ -6,11 +6,26 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-PORT="${1:-2053}"
+PORT="2053"
+CHANNEL="${MCONTROL_CHANNEL:-stable}"
+for arg in "$@"; do
+  case "$arg" in
+    --beta|beta) CHANNEL="beta" ;;
+    --stable|stable) CHANNEL="stable" ;;
+    [0-9]*) PORT="$arg" ;;
+  esac
+done
+
 INSTALL_DIR="/opt/mcontrol"
 DATA_DIR="/var/lib/mcontrol"
 REPO="${MCONTROL_REPO:-htzserv/MControl}"
-RELEASE_BASE="${MCONTROL_RELEASE_BASE:-https://github.com/${REPO}/releases/latest/download}"
+if [ -n "${MCONTROL_RELEASE_BASE:-}" ]; then
+  RELEASE_BASE="$MCONTROL_RELEASE_BASE"
+elif [ "$CHANNEL" = "beta" ]; then
+  RELEASE_BASE="https://github.com/${REPO}/releases/download/beta-latest"
+else
+  RELEASE_BASE="https://github.com/${REPO}/releases/latest/download"
+fi
 
 ARCH_RAW="$(uname -m)"
 case "$ARCH_RAW" in
@@ -48,7 +63,7 @@ elif [ -f "$SCRIPT_DIR/go.mod" ]; then
   CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o mcontrol .
   BIN="$SCRIPT_DIR/mcontrol"
 else
-  echo "[1/3] Downloading pre-built MControl binary (${ARCH}) from GitHub Releases..."
+  echo "[1/3] Downloading pre-built MControl binary (${ARCH}, channel=${CHANNEL}) from GitHub Releases..."
   TMPD="$(mktemp -d)"
   BIN_NAME="mcontrol-linux-${ARCH}"
   curl -fsSL "${RELEASE_BASE}/${BIN_NAME}" -o "${TMPD}/${BIN_NAME}"
@@ -62,7 +77,7 @@ else
   VERSION_TXT="$(curl -fsSL "${RELEASE_BASE}/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "latest")"
 fi
 
-[ -n "$VERSION_TXT" ] || VERSION_TXT="1.2.0"
+[ -n "$VERSION_TXT" ] || VERSION_TXT="1.2.1"
 
 echo "[2/3] Installing binary to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR" "$DATA_DIR"

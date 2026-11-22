@@ -54,6 +54,7 @@ func main() {
 	apiHandler := api.New(store, activePort)
 	apiHandler.Register(innerMux)
 	apiHandler.StartAutoProbe()
+	apiHandler.StartTelegramBot()
 
 	subFS, err := fs.Sub(webFS, "web")
 	if err != nil {

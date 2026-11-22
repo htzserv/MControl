@@ -122,7 +122,7 @@ func dialSOCKS5(ctx context.Context, proxyAddr, network, addr string) (net.Conn,
 	return conn, nil
 }
 
-func makeHTTPClient(timeout time.Duration, socksProxy string) *http.Client {
+func MakeHTTPClient(timeout time.Duration, socksProxy string) *http.Client {
 	if socksProxy == "" {
 		return &http.Client{Timeout: timeout}
 	}
@@ -253,7 +253,7 @@ func fetchRemoteVersion(baseURL, socksProxy string) SourceStatus {
 	if !validBase.MatchString(baseURL) {
 		return SourceStatus{Error: "invalid URL"}
 	}
-	client := makeHTTPClient(8*time.Second, socksProxy)
+	client := MakeHTTPClient(8*time.Second, socksProxy)
 	resp, err := client.Get(baseURL + "/VERSION?t=" + fmt.Sprint(time.Now().Unix()))
 	if err != nil {
 		return SourceStatus{Error: "unreachable"}
@@ -301,7 +301,7 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 		if idx == 0 {
 			proxy = socksProxy
 		}
-		client := makeHTTPClient(8*time.Second, proxy)
+		client := MakeHTTPClient(8*time.Second, proxy)
 		resp, err := client.Get(u + "?t=" + fmt.Sprint(time.Now().Unix()))
 		if err != nil {
 			lastErr = "unreachable"
@@ -744,7 +744,7 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 		if activeProxy != "" {
 			appendLog("[OUTBOUND] Routing download through Master Outbound (" + activeProxy + ")")
 		}
-		client := makeHTTPClient(5*time.Minute, activeProxy)
+		client := MakeHTTPClient(5*time.Minute, activeProxy)
 		restart := func() {
 			if betaBuildNum > 0 && onBetaInstalled != nil {
 				onBetaInstalled(betaBuildNum)

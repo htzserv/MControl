@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.1
+- Added **Native Telegram Bot & Auto-Backuper** (`internal/api/telegram.go` + dedicated **Telegram** tab):
+  - Full inline-keyboard management: live Master/Server stats, Server list, Tunnel control (`Status`, `Restart`, `Stop`, `Logs`, `Delete`), interactive **New Tunnel Wizard**, 1-click **Update / Beta Install**, and **Emergency Tools** (Panel URL, Restart Panel, Reset 2FA).
+  - **On-Demand & Scheduled Auto-Backuper** (every 6/12/24/48 hours) to Admin Chat or a dedicated private Backup Channel, plus **Auto-Backup Before Panel Updates** and **Send-to-Restore** (send a backup `.zip` to the bot and confirm to restore).
+  - **Actionable Smart Alerts** with 15-minute anti-spam cooldown: Server Offline/Recovered, High CPU/RAM/Disk (>90%), Tunnel Down alerts with inline **Restart** & **Logs** buttons, and **Daily Digest** (Iran Time UTC+3:30).
+  - **Auto-Fallback Connectivity**: automatically routes Telegram API through **Master Outbound (`127.0.0.1:10808`)** when enabled, with automatic fallback to direct connection.
+- Added **Direct Rolling Beta Install** support (`--beta` / `MCONTROL_CHANNEL=beta`) to `install.sh` and documented it in `README.md`.
+- Includes all `v1.2.0` beta improvements: dedicated **Outbound** tab with Subscriptions, Xray Core status/version/installer, Observatory Load-Balancing & Auto-Failover, **Real Delay** tester, and crisp Light-Mode modal surfaces.
+
 ## 1.2.0
 - Switched official releases to clean 3-segment SemVer (`v1.2.0`), with intermediate updates delivered through the **Rolling Beta (`beta-latest`)** channel.
 - Consolidates all recent features: MDesign 3-section tunnel builder, 30 curated themes across `Neon` / `Material` / `Studio`, Master Outbound (Xray Core), Rolling Beta Builds system, MSmart Benchmark with instant re-ranking & saved history, and Kernel GRE/VXLAN VIP & smart load balancing.

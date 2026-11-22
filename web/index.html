@@ -1091,7 +1091,7 @@ body.light-mode .eng-pill.active {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.2.0</span>
+            <span class="badge b-ok" id="loc-ver">v1.2.1</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -1271,6 +1271,91 @@ body.light-mode .eng-pill.active {
           <button class="btn btn-sky btn-sm" onclick="addManualOutboundNode()">+ Add Node</button>
         </div>
         <div id="ob-nodes-list" style="display:flex; flex-direction:column; gap:6px; max-height:360px; overflow-y:auto;"></div>
+      </div>
+    </section>
+
+    <!-- TELEGRAM BOT & AUTO-BACKUPER -->
+    <section id="tab-telegram" class="page">
+      <div class="toolbar">
+        <div>
+          <h3>Telegram Bot &amp; Auto-Backuper</h3>
+          <div class="hint" style="margin:2px 0 0;">Manage servers &amp; tunnels with inline keyboards, schedule encrypted backups, and receive actionable alerts.</div>
+        </div>
+        <div class="flexw" style="gap:8px;">
+          <span class="badge b-foreign mono" id="tg-badge">DISCONNECTED</span>
+          <span class="badge b-iran mono" id="tg-ob-badge" style="display:none;">via Outbound</span>
+          <button class="btn btn-ghost btn-sm" onclick="loadTelegramStatus()">Refresh</button>
+        </div>
+      </div>
+
+      <!-- 1. Bot Connection & Access -->
+      <div class="card sp" style="margin-bottom:14px;">
+        <h4 style="color:var(--accent); margin-bottom:10px;">1. Bot Credentials &amp; Admin Whitelist</h4>
+        <div class="field">
+          <label>Bot Token (from @BotFather)</label>
+          <input id="tg-token" class="mono" type="password" autocomplete="new-password" placeholder="123456789:AAH...">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Admin Chat IDs (comma-separated)</label>
+            <input id="tg-admins" class="mono" placeholder="e.g. 123456789, 987654321">
+          </div>
+          <div class="field">
+            <label>Backup Channel / Group ID (optional)</label>
+            <input id="tg-bak-chat" class="mono" placeholder="Leave blank to send to Admin">
+          </div>
+        </div>
+        <label class="check" style="margin-bottom:12px;"><input type="checkbox" id="tg-en"><span>Enable Native Telegram Bot</span></label>
+        <div class="hint" id="tg-err-box" style="color:var(--red); display:none; margin-bottom:10px;"></div>
+        <div class="flexw" style="gap:8px;">
+          <button class="btn btn-sky" id="btn-tg-save" onclick="saveTelegramSettings()">Save &amp; Connect Bot</button>
+          <button class="btn btn-warn" id="btn-tg-test" onclick="testTelegramBot()">Send Test Message</button>
+        </div>
+      </div>
+
+      <!-- 2. Auto-Backuper -->
+      <div class="card sp" style="margin-bottom:14px;">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h4 style="color:var(--accent);">2. Auto-Backuper &amp; Restore</h4>
+          <span class="badge b-ok mono" id="tg-last-bak">Last Backup: Never</span>
+        </div>
+        <div class="row2" style="margin-bottom:10px;">
+          <div class="field" style="margin:0;">
+            <label>Scheduled Auto-Backup Interval</label>
+            <select id="tg-bak-hrs">
+              <option value="0">Off (Manual Only)</option>
+              <option value="6">Every 6 Hours</option>
+              <option value="12">Every 12 Hours</option>
+              <option value="24">Every 24 Hours (Daily)</option>
+              <option value="48">Every 48 Hours</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0; display:flex; align-items:flex-end;">
+            <label class="check" style="margin:0 0 9px;"><input type="checkbox" id="tg-bak-upd" checked><span>Auto-backup before Panel Updates</span></label>
+          </div>
+        </div>
+        <div class="flexw" style="gap:8px; align-items:center;">
+          <button class="btn btn-sky btn-sm" id="btn-tg-bak-now" onclick="sendTelegramBackupNow()">📦 Send Backup Now</button>
+          <span class="hint" style="margin:0;">Tip: Send any MControl backup <code>.zip</code> directly to the bot to trigger 1-click Restore.</span>
+        </div>
+      </div>
+
+      <!-- 3. Smart Alerts & Daily Digest -->
+      <div class="card sp">
+        <h4 style="color:var(--accent); margin-bottom:10px;">3. Smart Alerts &amp; Daily Summary</h4>
+        <div class="flexw" style="gap:14px; margin-bottom:12px;">
+          <label class="check" style="margin:0;"><input type="checkbox" id="tg-al-srv" checked><span>Server Offline / Recovered &amp; High Resource (&gt;90%)</span></label>
+          <label class="check" style="margin:0;"><input type="checkbox" id="tg-al-tun" checked><span>Tunnel Down Alerts (with Restart &amp; Logs buttons)</span></label>
+        </div>
+        <div class="row2">
+          <div class="field" style="margin:0; display:flex; align-items:center;">
+            <label class="check" style="margin:0;"><input type="checkbox" id="tg-digest"><span>Send Daily Summary Digest (Iran Time UTC+3:30)</span></label>
+          </div>
+          <div class="field" style="margin:0;">
+            <label>Daily Digest Hour (IRST 0–23)</label>
+            <input id="tg-digest-hr" type="number" min="0" max="23" value="0">
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1934,7 +2019,7 @@ en: {
   setup_done: 'Setup complete! Restarting panel...', setup_url: 'Your permanent MControl URL:', t_random: 'Random',
   login_sub: 'MDesign central control plane', http_warn: 'Plain HTTP: your password is sent unencrypted. Enable HTTPS (tls.crt / tls.key) or use a reverse proxy.',
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
-  nav_overview: 'Overview', nav_servers: 'Servers', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
+  nav_overview: 'Overview', nav_servers: 'Servers', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
   load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
@@ -1988,7 +2073,7 @@ fa: {
   setup_done: 'راه‌اندازی کامل شد! در حال راه‌اندازی مجدد پنل...', setup_url: 'آدرس دائمی پنل شما:', t_random: 'تصادفی',
   login_sub: 'پنل مرکزی کنترل MDesign', http_warn: 'اتصال HTTP ساده است و رمز شما بدون رمزگذاری ارسال می‌شود. HTTPS (فایل‌های tls.crt و tls.key) یا ریورس‌پروکسی را فعال کنید.',
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
-  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
+  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
   load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
@@ -2096,6 +2181,7 @@ T('emerald', 'Emerald Desk', 'Studio', 'rail deck round solid sans cozy grid til
 /* ═══════════════ icons ═══════════════ */
 const IC = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
   server: '<rect x="2" y="3" width="20" height="7" rx="1.5"/><rect x="2" y="14" width="20" height="7" rx="1.5"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/>',
   term: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
@@ -2108,7 +2194,7 @@ const IC = {
   key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['outbound', 'nav_outbound', 'route'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['outbound', 'nav_outbound', 'route'], ['telegram', 'nav_telegram', 'send'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -2394,6 +2480,7 @@ function switchTab(name) {
   if (name === 'overview') { pollLocalStats(); }
   if (name === 'tunnels') { loadTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'outbound') { loadMasterOutbound(); }
+  if (name === 'telegram') { loadTelegramStatus(); }
   if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
@@ -3390,6 +3477,78 @@ async function testMasterOutbound() {
 async function stopMasterOutbound() {
   const r = await api('api/outbound/stop', 'POST');
   if (r.ok) { toast('Master Outbound stopped.'); loadMasterOutbound(); }
+}
+
+
+async function loadTelegramStatus() {
+  const r = await api('api/telegram/status');
+  if (!r.ok) return;
+  const c = r.config || {};
+  if ($('tg-token')) $('tg-token').value = c.bot_token || '';
+  if ($('tg-admins')) $('tg-admins').value = c.admin_ids || '';
+  if ($('tg-bak-chat')) $('tg-bak-chat').value = c.backup_chat_id || '';
+  if ($('tg-en')) $('tg-en').checked = !!c.enabled;
+  if ($('tg-bak-hrs')) $('tg-bak-hrs').value = String(c.auto_backup_hours || 0);
+  if ($('tg-bak-upd')) $('tg-bak-upd').checked = c.backup_before_update !== false;
+  if ($('tg-al-srv')) $('tg-al-srv').checked = c.alert_servers !== false;
+  if ($('tg-al-tun')) $('tg-al-tun').checked = c.alert_tunnels !== false;
+  if ($('tg-digest')) $('tg-digest').checked = !!c.daily_digest;
+  if ($('tg-digest-hr')) $('tg-digest-hr').value = String(c.digest_hour || 0);
+
+  const b = $('tg-badge');
+  if (b) {
+    b.textContent = r.connected ? ('CONNECTED (@' + (r.bot_username || 'bot') + ')') : (c.enabled ? 'CONNECTING / ERROR' : 'DISCONNECTED');
+    b.className = 'badge mono ' + (r.connected ? 'b-iran' : 'b-foreign');
+  }
+  const ob = $('tg-ob-badge');
+  if (ob) ob.style.display = r.via_outbound ? 'inline-block' : 'none';
+  const errBox = $('tg-err-box');
+  if (errBox) {
+    errBox.textContent = r.last_error || '';
+    errBox.style.display = r.last_error ? 'block' : 'none';
+  }
+  const lb = $('tg-last-bak');
+  if (lb) {
+    lb.textContent = r.last_backup_at ? ('Last Backup: ' + new Date(r.last_backup_at * 1000).toLocaleString()) : 'Last Backup: Never';
+  }
+}
+
+async function saveTelegramSettings() {
+  const btn = $('btn-tg-save'); btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const r = await api('api/telegram/save', 'POST', {
+      enabled: $('tg-en').checked,
+      bot_token: $('tg-token').value.trim(),
+      admin_ids: $('tg-admins').value.trim(),
+      backup_chat_id: $('tg-bak-chat').value.trim(),
+      auto_backup_hours: parseInt($('tg-bak-hrs').value || '0', 10),
+      backup_before_update: $('tg-bak-upd').checked,
+      alert_servers: $('tg-al-srv').checked,
+      alert_tunnels: $('tg-al-tun').checked,
+      daily_digest: $('tg-digest').checked,
+      digest_hour: parseInt($('tg-digest-hr').value || '0', 10) || 0
+    });
+    if (r.ok) { toast(r.message || 'Telegram Bot saved!'); loadTelegramStatus(); }
+    else { toast(r.error || 'Failed to save Telegram settings', true); loadTelegramStatus(); }
+  } finally { btn.disabled = false; btn.textContent = 'Save & Connect Bot'; }
+}
+
+async function testTelegramBot() {
+  const btn = $('btn-tg-test'); btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const r = await api('api/telegram/test', 'POST');
+    if (r.ok) toast(r.message || 'Test message sent!');
+    else toast(r.error || 'Test failed', true);
+  } finally { btn.disabled = false; btn.textContent = 'Send Test Message'; }
+}
+
+async function sendTelegramBackupNow() {
+  const btn = $('btn-tg-bak-now'); btn.disabled = true; btn.textContent = 'Sending Backup...';
+  try {
+    const r = await api('api/telegram/backup', 'POST');
+    if (r.ok) { toast(r.message || 'Backup sent!'); loadTelegramStatus(); }
+    else toast(r.error || 'Backup failed', true);
+  } finally { btn.disabled = false; btn.textContent = '📦 Send Backup Now'; }
 }
 
 async function loadMasterCache() {

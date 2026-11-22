@@ -99,6 +99,15 @@ func (h *Handler) saveOutboundCfg(cfg outboundConfig) {
 	}
 }
 
+
+func (h *Handler) telegramSocksProxy() string {
+	cfg := h.loadOutboundCfg()
+	if cfg.Enabled && cfg.UseTelegram && isOutboundActive() {
+		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	return ""
+}
+
 func (h *Handler) githubSocksProxy() string {
 	cfg := h.loadOutboundCfg()
 	if cfg.Enabled && cfg.UseGitHub && isOutboundActive() {
