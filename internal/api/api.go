@@ -353,6 +353,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/local/logs", h.auth(h.handleLocalLogs))
 	mux.HandleFunc("POST /api/local/speedtest", h.auth(h.handleLocalSpeedtest))
 	mux.HandleFunc("POST /api/local/tweak", h.auth(h.handleLocalTweak))
+	mux.HandleFunc("POST /api/local/clean-cache", h.auth(h.handleLocalCleanCache))
+	mux.HandleFunc("POST /api/local/restart", h.auth(h.handleLocalRestart))
 	mux.HandleFunc("GET /api/backup/db", h.auth(h.handleBackupDB))
 	mux.HandleFunc("POST /api/backup/restore", h.auth(h.handleRestoreDB))
 	mux.HandleFunc("GET /api/servers", h.auth(h.handleListServers))
@@ -2095,5 +2097,19 @@ fi
 	go func() {
 		time.Sleep(1500 * time.Millisecond)
 		os.Exit(0)
+	}()
+}
+
+func (h *Handler) handleLocalCleanCache(w http.ResponseWriter, r *http.Request) {
+	cmd := exec.Command("sh", "-c", "sync; echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true; rm -rf /tmp/mcontrol-tmp-* 2>/dev/null || true")
+	_ = cmd.Run()
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Master RAM & temp cache cleaned!"})
+}
+
+func (h *Handler) handleLocalRestart(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Restarting MControl panel..."})
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		_ = exec.Command("systemctl", "restart", "mcontrol.service").Run()
 	}()
 }

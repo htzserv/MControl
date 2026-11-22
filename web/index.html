@@ -1929,6 +1929,39 @@ body[data-navx="top"] .ver-bubble {
   box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--purple) 45%, transparent);
 }
 
+
+/* ═══ MASTER TOOLBOX CARD (2x2 Quick Actions Grid) ═══ */
+.tb-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin: auto 0; padding: 10px 0 6px;
+}
+.tb-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 8px; border-radius: 13px; cursor: pointer;
+  font-family: inherit; font-size: .75rem; font-weight: 800;
+  border: 1.3px solid var(--border); background: var(--row); color: var(--text);
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.tb-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.tb-btn:hover { transform: translateY(-1.5px); }
+.tb-btn.tb-sky { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 36%, var(--border)); background: color-mix(in srgb, var(--accent) 10%, var(--row)); }
+.tb-btn.tb-sky:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 18%, var(--row)); }
+.tb-btn.tb-warn { color: var(--yellow); border-color: color-mix(in srgb, var(--yellow) 36%, var(--border)); background: color-mix(in srgb, var(--yellow) 10%, var(--row)); }
+.tb-btn.tb-warn:hover { border-color: var(--yellow); background: color-mix(in srgb, var(--yellow) 18%, var(--row)); }
+.tb-btn.tb-green { color: var(--green); border-color: color-mix(in srgb, var(--green) 36%, var(--border)); background: color-mix(in srgb, var(--green) 10%, var(--row)); }
+.tb-btn.tb-green:hover { border-color: var(--green); background: color-mix(in srgb, var(--green) 18%, var(--row)); }
+.tb-btn.tb-purple { color: var(--purple); border-color: color-mix(in srgb, var(--purple) 36%, var(--border)); background: color-mix(in srgb, var(--purple) 10%, var(--row)); }
+.tb-btn.tb-purple:hover { border-color: var(--purple); background: color-mix(in srgb, var(--purple) 18%, var(--row)); }
+.tb-restart-link {
+  background: transparent; border: none; padding: 0; cursor: pointer;
+  font-family: var(--ff-m); font-size: .7rem; font-weight: 800; color: var(--red);
+  transition: opacity .15s ease;
+}
+.tb-restart-link:hover { opacity: .8; text-decoration: underline; }
+@media (max-width: 1080px) {
+  .bak-bubble-lbl { display: none; }
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -2076,10 +2109,14 @@ body[data-navx="top"] .ver-bubble {
       </svg>
       <span class="bt">MControl</span>
     </div>
-    <nav class="nav" id="nav"></nav>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
       <span class="mono" id="nav-ver-lbl">v1.2.2</span>
+    </button>
+    <nav class="nav" id="nav"></nav>
+    <button type="button" class="ver-bubble bak-bubble" id="nav-bak-bubble" onclick="openBackupModal()" title="Backup &amp; Restore">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;color:var(--purple);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span class="bak-bubble-lbl" data-i18n="btn_bak_short">Backup</span>
     </button>
     <div class="util" id="util-bar">
       <div class="util-items" id="util-items">
@@ -2147,9 +2184,6 @@ body[data-navx="top"] .ver-bubble {
             <span class="badge b-foreign mono" id="loc-ipv6" style="cursor:pointer;">IPv6: ---</span>
             <span class="badge b-miss mono" id="loc-disk-pill" title="Master Disk Usage">Disk: ---</span>
             <span class="badge b-ok mono" id="loc-speed" style="display:none;"></span>
-            <button class="btn btn-sky btn-sm" id="btn-loc-speed" onclick="runLocalSpeedtest()">Speedtest</button>
-            <button class="btn btn-warn btn-sm" onclick="openMasterTweakModal()">Tweak</button>
-            <button class="btn btn-ghost btn-sm" id="btn-logs" data-i18n="btn_logs">Live logs</button>
           </div>
         </div>
       </div>
@@ -2210,31 +2244,6 @@ body[data-navx="top"] .ver-bubble {
           <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-ram-mb">---</span></div>
         </div>
 
-        <!-- Card 3: Backup & Restore -->
-        <div class="card metric-card mc-backup">
-          <div class="mc-top">
-            <div>
-              <div class="mc-lbl" data-i18n="backup_title">Backup &amp; Restore</div>
-              <div class="mc-top-meta mono" style="display:block;">AES-256 Snapshot</div>
-            </div>
-            <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--purple) 16%, transparent); color:var(--purple);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </span>
-          </div>
-          <div class="mc-bak-pills">
-            <button type="button" class="mc-bak-btn primary" onclick="downloadBackup()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span data-i18n="btn_bak_short">Backup</span>
-            </button>
-            <input type="file" id="ov-restore-file" accept=".zip,.db,.sqlite,.sqlite3" style="display:none;" onchange="restoreBackupFromOverview()">
-            <button type="button" class="mc-bak-btn restore" id="btn-ov-restore" onclick="$('ov-restore-file').click()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              <span data-i18n="btn_rst_short">Restore</span>
-            </button>
-          </div>
-          <div class="mc-foot"><span>DB + Key + SSL</span><span class="mono" style="color:var(--purple);">.zip / .db</span></div>
-        </div>
-
         <!-- Card 4: Network -->
         <div class="card metric-card mc-net">
           <div class="mc-top">
@@ -2262,6 +2271,41 @@ body[data-navx="top"] .ver-bubble {
           </div>
           <canvas id="spark-net" width="240" height="52" class="mc-spark" style="margin-top:8px;"></canvas>
           <div class="mc-foot"><span data-i18n="total_traffic">Total traffic</span><span class="mono" id="loc-net-tot">---</span></div>
+        </div>
+
+        <!-- Card 4: Master Toolbox -->
+        <div class="card metric-card mc-toolbox">
+          <div class="mc-top">
+            <div>
+              <div class="mc-lbl" data-i18n="toolbox_title">Toolbox</div>
+              <div class="mc-top-meta mono" style="display:block;">Master Controls</div>
+            </div>
+            <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </span>
+          </div>
+          <div class="tb-grid">
+            <button type="button" class="tb-btn tb-sky" id="btn-loc-speed" onclick="runLocalSpeedtest()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>Speedtest</span>
+            </button>
+            <button type="button" class="tb-btn tb-warn" onclick="openMasterTweakModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span>Tweak</span>
+            </button>
+            <button type="button" class="tb-btn tb-green" id="btn-tb-cache" onclick="cleanMasterCacheNow()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              <span>Clean RAM</span>
+            </button>
+            <button type="button" class="tb-btn tb-purple" onclick="openMSmartModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span>MSmart</span>
+            </button>
+          </div>
+          <div class="mc-foot">
+            <span>Master Service</span>
+            <button type="button" class="tb-restart-link" onclick="restartMasterPanelNow()">↻ Restart Panel</button>
+          </div>
         </div>
       </div>
 
@@ -2550,6 +2594,33 @@ body[data-navx="top"] .ver-bubble {
       </div>
     </div>
 
+    
+    <!-- QUICK BACKUP & RESTORE MODAL (Opened from Floating Backup Bubble) -->
+    <div class="modal-bg" id="backup-modal" style="z-index:1130;">
+      <div class="card modal-box" style="max-width:440px;">
+        <div class="toolbar" style="margin-bottom:12px;">
+          <div>
+            <h3 style="color:var(--accent);" data-i18n="backup_title">Backup &amp; Restore</h3>
+            <div class="hint" style="margin:2px 0 0;">Encrypted AES-256 snapshot (DB + Master Key + SSL).</div>
+          </div>
+          <button class="btn btn-danger btn-sm" data-close="backup-modal" data-i18n="btn_close">Close</button>
+        </div>
+        <div class="mc-bak-pills" style="padding:8px 0 12px;">
+          <button type="button" class="mc-bak-btn primary" onclick="downloadBackup()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-i18n="btn_bak_short">Backup</span>
+            <span class="hint" style="margin:0; font-size:.66rem;">Download .zip</span>
+          </button>
+          <input type="file" id="ov-restore-file" accept=".zip,.db,.sqlite,.sqlite3" style="display:none;" onchange="restoreBackupFromOverview()">
+          <button type="button" class="mc-bak-btn restore" id="btn-ov-restore" onclick="$('ov-restore-file').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span data-i18n="btn_rst_short">Restore</span>
+            <span class="hint" style="margin:0; font-size:.66rem;">Pick .zip / .db</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- UPDATE & VERSION MODAL (Opened from Floating Version Bubble) -->
     <div class="modal-bg" id="update-modal" style="z-index:1130;">
       <div class="card modal-box" style="max-width:660px;">
@@ -2730,6 +2801,16 @@ body[data-navx="top"] .ver-bubble {
             </div>
             <button class="btn btn-sky btn-sm" id="btn-cache-up" onclick="uploadMasterCache()">Upload to Master Cache</button>
             <div id="master-cache-list" style="margin-top:14px; display:flex; flex-direction:column; gap:7px;"></div>
+          </div>
+        
+          <div class="card">
+            <div class="toolbar" style="margin:0;">
+              <div>
+                <h4 style="color:var(--accent);" data-i18n="btn_logs">Live logs</h4>
+                <div class="hint" style="margin:2px 0 0;">View real-time MControl backend service logs for diagnostics.</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="btn-logs" data-i18n="btn_logs">Live logs</button>
+            </div>
           </div>
         </div>
 
@@ -3603,7 +3684,7 @@ en: {
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
   nav_overview: 'Overview', nav_servers: 'Servers', nav_domains: 'Domains', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
-  load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', net_dl_ul: 'Download / Upload', btn_bak_short: 'Backup', btn_rst_short: 'Restore', uptime_lbl: 'Uptime',
+  load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', net_dl_ul: 'Download / Upload', btn_bak_short: 'Backup', btn_rst_short: 'Restore', toolbox_title: 'Toolbox', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
   fleet_radar: 'Fleet hardware radar', btn_refresh: 'Refresh all (SSH)', btn_add_srv: '+ Add server',
   core_title: 'Node Service & Command Control', core_note: 'Manage tunnel services or run diagnostics on any connected node via Peer Agent v2 or SSH.',
@@ -3657,7 +3738,7 @@ fa: {
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
   nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_domains: 'دامنه‌ها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
-  load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', net_dl_ul: 'دانلود / آپلود', btn_bak_short: 'بکاپ', btn_rst_short: 'ریستور', uptime_lbl: 'آپتایم',
+  load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', net_dl_ul: 'دانلود / آپلود', btn_bak_short: 'بکاپ', btn_rst_short: 'ریستور', toolbox_title: 'ابزارهای مستر', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
   fleet_radar: 'رادار سخت‌افزاری سرورها', btn_refresh: 'بروزرسانی همه (SSH)', btn_add_srv: '+ افزودن سرور',
   core_title: 'کنترل سرویس‌ها و دستورات نود', core_note: 'سرویس‌های تانل و دستورات عیب‌یابی را روی هر سرور از طریق Peer Agent یا SSH مدیریت کنید.',
@@ -6190,6 +6271,32 @@ function showUpdateProgress(pct, stage, logs, state) {
   if (logs) { const term = $('upd-term'); term.textContent = Array.isArray(logs) ? logs.join('\n') : logs; term.scrollTop = term.scrollHeight; }
 }
 
+
+
+function openBackupModal() {
+  $('backup-modal').classList.add('active');
+}
+
+async function cleanMasterCacheNow() {
+  const btn = $('btn-tb-cache');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api('api/local/clean-cache', 'POST');
+    if (r.ok) {
+      toast(r.message || 'Master cache cleaned!');
+      pollLocalStats();
+    } else toast(r.error || 'Failed to clean cache', true);
+  } finally { if (btn) btn.disabled = false; }
+}
+
+async function restartMasterPanelNow() {
+  if (!confirm('Restart MControl panel service? The page will reload in a few seconds.')) return;
+  const r = await api('api/local/restart', 'POST');
+  if (r.ok) {
+    toast(r.message || 'Restarting panel...');
+    setTimeout(() => location.reload(), 3200);
+  } else toast(r.error || 'Restart failed', true);
+}
 
 function openUpdateModal() {
   if ($('upd-beta-toggle') && SETTINGS) {
