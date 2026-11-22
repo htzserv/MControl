@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2365dcff%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23bda5ff%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%230a1121%22%2F%3E%3Cpath%20d%3D%22M14%2048V24c0-6%207-9%2011-4l7%209%207-9c4-5%2011-2%2011%204v24%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%226.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M22%2048V30c0-3%204-5%206-2l4%205%204-5c2-3%206-1%206%202v18%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%223.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.78%22%2F%3E%3C%2Fsvg%3E">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -928,6 +929,47 @@ body.light-mode .eng-pill.active {
 .ob-node-name { font-weight: 700; font-size: .82rem; unicode-bidi: isolate; }
 .ob-node-addr { font-family: var(--ff-m); font-size: .72rem; color: var(--muted); unicode-bidi: isolate; direction: ltr; }
 
+
+/* Model 3 Neon Ribbon M — Animated Login & Brand Logo */
+@keyframes mcRibbonDraw {
+  0% { stroke-dashoffset: 220; opacity: .2; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes mcNeonPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 55%, transparent)) drop-shadow(0 0 12px color-mix(in srgb, var(--accent2) 40%, transparent)); }
+  50% { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 90%, transparent)) drop-shadow(0 0 22px color-mix(in srgb, var(--accent2) 68%, transparent)); }
+}
+.login-emblem {
+  width: 78px !important; height: 78px !important; border-radius: 22px !important;
+  box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 26%, transparent), inset 0 0 14px color-mix(in srgb, var(--accent2) 18%, transparent);
+}
+.mc-logo-anim { width: 52px !important; height: 52px !important; animation: mcNeonPulse 3.2s ease-in-out infinite; }
+.mc-logo-anim .rb-main { stroke-dasharray: 220; stroke-dashoffset: 220; animation: mcRibbonDraw 1.5s cubic-bezier(.22,1,.36,1) forwards; }
+.mc-logo-anim .rb-sub  { stroke-dasharray: 220; stroke-dashoffset: 220; animation: mcRibbonDraw 1.8s cubic-bezier(.22,1,.36,1) .2s forwards; }
+.brand .mc-brand-svg { width: 28px; height: 28px; flex-shrink: 0; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 45%, transparent)); }
+
+/* Cloudflare Domains UI */
+.cf-rec-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; border-radius: 12px; background: var(--row); border: 1px solid var(--border);
+}
+.cf-rec-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; flex-wrap: wrap; }
+.cf-proxy-btn {
+  padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: var(--ff-m);
+}
+.cf-proxy-btn.on {
+  background: color-mix(in srgb, #f97316 18%, var(--surface));
+  border-color: #f97316; color: #f97316;
+}
+.srv-dom-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px;
+  font-family: var(--ff-m); font-size: .68rem; font-weight: 600; cursor: pointer;
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent); color: var(--accent);
+}
+.srv-dom-chip:hover { filter: brightness(1.12); }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -971,7 +1013,16 @@ body.light-mode .eng-pill.active {
   <div class="login-shell">
     <div class="card login-card" style="text-align:center;">
       <div class="login-emblem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12M3 7l9 5 9-5"/></svg>
+        <svg class="mc-logo-anim" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="mcLoginGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="var(--accent)"/>
+              <stop offset="100%" stop-color="var(--accent2)"/>
+            </linearGradient>
+          </defs>
+          <path class="rb-main" d="M13 49V23c0-6.5 7.5-9.5 11.5-4.2L32 28.5l7.5-9.7C43.5 13.5 51 16.5 51 23v26" stroke="url(#mcLoginGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path class="rb-sub" d="M21 49V30c0-3.2 4-5.2 6.2-2.2L32 34l4.8-6.2C39 24.8 43 26.8 43 30v19" stroke="url(#mcLoginGrad)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity=".82"/>
+        </svg>
       </div>
       <h2 class="login-title">MControl</h2>
       <p class="hint" style="margin-bottom:18px;" data-i18n="login_sub">MDesign central control plane</p>
@@ -1029,7 +1080,16 @@ body.light-mode .eng-pill.active {
   </button>
   <div id="chrome">
     <div class="brand">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M12 22V12M3 7l9 5 9-5"/></svg>
+      <svg class="mc-brand-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="mcBrandGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="var(--accent)"/>
+            <stop offset="100%" stop-color="var(--accent2)"/>
+          </linearGradient>
+        </defs>
+        <path d="M13 49V23c0-6.5 7.5-9.5 11.5-4.2L32 28.5l7.5-9.7C43.5 13.5 51 16.5 51 23v26" stroke="url(#mcBrandGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 49V30c0-3.2 4-5.2 6.2-2.2L32 34l4.8-6.2C39 24.8 43 26.8 43 30v19" stroke="url(#mcBrandGrad)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" opacity=".82"/>
+      </svg>
       <span class="bt">MControl</span>
     </div>
     <nav class="nav" id="nav"></nav>
@@ -1305,7 +1365,7 @@ body.light-mode .eng-pill.active {
             <input id="tg-bak-chat" class="mono" placeholder="Leave blank to send to Admin">
           </div>
         </div>
-        <label class="check" style="margin-bottom:12px;"><input type="checkbox" id="tg-en"><span>Enable Native Telegram Bot</span></label>
+        <label class="check" style="margin-bottom:12px;"><input type="checkbox" id="tg-en"><span>Enable Telegram Bot</span></label>
         <div class="hint" id="tg-err-box" style="color:var(--red); display:none; margin-bottom:10px;"></div>
         <div class="flexw" style="gap:8px;">
           <button class="btn btn-sky" id="btn-tg-save" onclick="saveTelegramSettings()">Save &amp; Connect Bot</button>
@@ -1358,6 +1418,95 @@ body.light-mode .eng-pill.active {
         </div>
       </div>
     </section>
+
+    <!-- CLOUDFLARE DOMAINS MANAGER -->
+    <section id="tab-domains" class="page">
+      <div class="toolbar">
+        <div>
+          <h3>Cloudflare Domains &amp; DNS</h3>
+          <div class="hint" style="margin:2px 0 0;">Manage all Cloudflare zones &amp; DNS records and automatically match them to your MControl servers.</div>
+        </div>
+        <div class="flexw" style="gap:8px;">
+          <span class="badge b-foreign mono" id="cf-sync-badge">NOT SYNCED</span>
+          <button class="btn btn-sky btn-sm" id="btn-cf-sync" onclick="syncCloudflare()">Sync Now</button>
+          <button class="btn btn-warn btn-sm" onclick="openCFRecordModal(null)">+ Add DNS Record</button>
+        </div>
+      </div>
+
+      <!-- 1. Cloudflare API Credentials -->
+      <div class="card sp" style="margin-bottom:14px;">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h4 style="color:var(--accent);">1. Cloudflare API Connection</h4>
+          <select id="cf-auth-mode" style="width:auto; padding:5px 10px; font-size:.78rem;" onchange="toggleCFAuthMode()">
+            <option value="token">API Token (Recommended)</option>
+            <option value="global">Email + Global API Key</option>
+          </select>
+        </div>
+        <div id="cf-token-wrap" class="field">
+          <label>Cloudflare API Token (Zone:Read + DNS:Edit)</label>
+          <input id="cf-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
+        </div>
+        <div id="cf-global-wrap" class="row2" style="display:none;">
+          <div class="field"><label>Cloudflare Account Email</label><input id="cf-email" class="mono" placeholder="you@example.com"></div>
+          <div class="field"><label>Global API Key</label><input id="cf-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
+        </div>
+        <div class="flexw" style="gap:14px; align-items:center;">
+          <label class="check" style="margin:0;"><input type="checkbox" id="cf-en"><span>Enable Cloudflare Integration</span></label>
+          <button class="btn btn-sky btn-sm" id="btn-cf-save" onclick="saveCloudflareSettings()">Save &amp; Sync Zones</button>
+        </div>
+      </div>
+
+      <!-- 2. DNS Records Explorer -->
+      <div class="card sp">
+        <div class="toolbar" style="margin-bottom:10px; gap:8px; flex-wrap:wrap;">
+          <h4 style="color:var(--accent);">2. DNS Records <span class="badge b-ok mono" id="cf-rec-cnt">0</span></h4>
+          <div class="flexw" style="gap:8px; flex:1; justify-content:flex-end;">
+            <select id="cf-zone-filter" style="width:auto; min-width:150px; padding:6px 10px; font-size:.78rem;" onchange="renderCFRecords()">
+              <option value="">All Zones</option>
+            </select>
+            <input id="cf-search" style="max-width:220px; padding:6px 10px; font-size:.78rem;" placeholder="Search domain or IP..." oninput="renderCFRecords()">
+            <label class="check" style="margin:0; font-size:.78rem;"><input type="checkbox" id="cf-matched-only" onchange="renderCFRecords()"><span>Matched Servers Only</span></label>
+          </div>
+        </div>
+        <div id="cf-records-list" style="display:flex; flex-direction:column; gap:7px; max-height:460px; overflow-y:auto;"></div>
+      </div>
+    </section>
+
+    <!-- CLOUDFLARE DNS RECORD MODAL -->
+    <div class="modal-bg" id="cf-rec-modal">
+      <div class="card modal-box" style="max-width:480px;">
+        <div class="toolbar" style="margin-bottom:12px;">
+          <h3 style="color:var(--accent);" id="cf-rec-title">+ Add DNS Record</h3>
+          <button class="btn btn-danger btn-sm" data-close="cf-rec-modal">Close</button>
+        </div>
+        <input type="hidden" id="cf-r-id">
+        <div class="row2">
+          <div class="field"><label>Zone (Domain)</label><select id="cf-r-zone"></select></div>
+          <div class="field"><label>Type</label>
+            <select id="cf-r-type">
+              <option value="A">A (IPv4)</option>
+              <option value="AAAA">AAAA (IPv6)</option>
+              <option value="CNAME">CNAME</option>
+              <option value="TXT">TXT</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Record Name (e.g. ir1.example.com or @)</label><input id="cf-r-name" class="mono" placeholder="sub.yourdomain.com"></div>
+        <div class="field">
+          <label>Quick-Fill IP from Managed Server (Optional)</label>
+          <select id="cf-r-srvpick" onchange="fillCFRecordFromServer()"><option value="">— Manual IP / Target —</option></select>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Content (IP or Target)</label><input id="cf-r-content" class="mono" placeholder="1.2.3.4"></div>
+          <div class="field"><label>TTL (1 = Auto)</label><input id="cf-r-ttl" type="number" value="1"></div>
+        </div>
+        <label class="check" style="margin-bottom:14px;"><input type="checkbox" id="cf-r-proxied"><span>Proxied through Cloudflare (Orange Cloud)</span></label>
+        <div class="flexw" style="justify-content:flex-end;">
+          <button class="btn btn-ghost" data-close="cf-rec-modal">Cancel</button>
+          <button class="btn btn-sky" id="btn-cf-r-save" onclick="saveCFRecord()">Save Record</button>
+        </div>
+      </div>
+    </div>
 
     <!-- UPDATE -->
     <section id="tab-update" class="page">
@@ -2056,7 +2205,7 @@ en: {
   setup_done: 'Setup complete! Restarting panel...', setup_url: 'Your permanent MControl URL:', t_random: 'Random',
   login_sub: 'MDesign central control plane', http_warn: 'Plain HTTP: your password is sent unencrypted. Enable HTTPS (tls.crt / tls.key) or use a reverse proxy.',
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
-  nav_overview: 'Overview', nav_servers: 'Servers', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
+  nav_overview: 'Overview', nav_servers: 'Servers', nav_domains: 'Domains', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
   load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
@@ -2110,7 +2259,7 @@ fa: {
   setup_done: 'راه‌اندازی کامل شد! در حال راه‌اندازی مجدد پنل...', setup_url: 'آدرس دائمی پنل شما:', t_random: 'تصادفی',
   login_sub: 'پنل مرکزی کنترل MDesign', http_warn: 'اتصال HTTP ساده است و رمز شما بدون رمزگذاری ارسال می‌شود. HTTPS (فایل‌های tls.crt و tls.key) یا ریورس‌پروکسی را فعال کنید.',
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
-  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
+  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_domains: 'دامنه‌ها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
   load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
@@ -2218,6 +2367,7 @@ T('emerald', 'Emerald Desk', 'Studio', 'rail deck round solid sans cozy grid til
 /* ═══════════════ icons ═══════════════ */
 const IC = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
   server: '<rect x="2" y="3" width="20" height="7" rx="1.5"/><rect x="2" y="14" width="20" height="7" rx="1.5"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/>',
@@ -2231,7 +2381,7 @@ const IC = {
   key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['outbound', 'nav_outbound', 'route'], ['telegram', 'nav_telegram', 'send'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['domains', 'nav_domains', 'globe'], ['tunnels', 'nav_tunnels', 'term'], ['outbound', 'nav_outbound', 'route'], ['telegram', 'nav_telegram', 'send'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -2516,6 +2666,7 @@ function switchTab(name) {
   if (name === 'update') checkUpdates(false);
   if (name === 'overview') { pollLocalStats(); }
   if (name === 'tunnels') { loadTunnels(); loadProfiles(); pollMSmartStatus(); }
+  if (name === 'domains') { loadCloudflareStatus(); }
   if (name === 'outbound') { loadMasterOutbound(); }
   if (name === 'telegram') { loadTelegramStatus(); }
   if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
@@ -2572,6 +2723,7 @@ function renderServerCard(s) {
           <div class="srv-mini-lbl">IPv4 &amp; IPv6 (Click to Copy)</div>
           <div class="ip-copy-line" data-copy-ip="${esc(s.ipv4 || s.host)}" data-copy-lbl="IPv4"><span style="color:var(--muted);">IPv4</span><span style="color:var(--accent);">${esc(s.ipv4 || s.host)}</span></div>
           <div class="ip-copy-line" data-copy-ip="${esc(s.ipv6 || 'N/A')}" data-copy-lbl="IPv6"><span style="color:var(--muted);">IPv6</span><span style="color:var(--purple); max-width:155px; overflow:hidden; text-overflow:ellipsis;">${esc(s.ipv6 || 'N/A')}</span></div>
+          ${(CF_SERVER_DOMAINS[id] && CF_SERVER_DOMAINS[id].length) ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${CF_SERVER_DOMAINS[id].map(d => `<span class="srv-dom-chip" data-copy-ip="${esc(d)}" data-copy-lbl="Domain" title="Cloudflare Domain (Click to copy)">🌐 ${esc(d)}</span>`).join('')}</div>` : ''}
         </div>
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">Network Speed &amp; Uptime</div>
@@ -2617,6 +2769,7 @@ async function loadServers() {
   if (!res.ok) return;
   SERVERS = res.servers || [];
   renderServers();
+  loadCloudflareStatus(true);
   if (curTab === 'tunnels') fillCoreSelect();
 }
 function act(name, id) {
@@ -3586,6 +3739,200 @@ async function stopMasterOutbound() {
   if (r.ok) { toast('Master Outbound stopped.'); loadMasterOutbound(); }
 }
 
+
+
+let CF_ZONES = [], CF_RECORDS = [], CF_SERVER_DOMAINS = {};
+
+function toggleCFAuthMode() {
+  const m = ($('cf-auth-mode') && $('cf-auth-mode').value) || 'token';
+  if ($('cf-token-wrap')) $('cf-token-wrap').style.display = m === 'token' ? 'block' : 'none';
+  if ($('cf-global-wrap')) $('cf-global-wrap').style.display = m === 'global' ? 'grid' : 'none';
+}
+
+async function loadCloudflareStatus(silent) {
+  const r = await api('api/cloudflare/status');
+  if (!r.ok) return;
+  const c = r.config || {};
+  CF_ZONES = r.zones || [];
+  CF_RECORDS = r.records || [];
+  CF_SERVER_DOMAINS = r.server_domains || {};
+
+  if (!silent) {
+    if ($('cf-auth-mode')) $('cf-auth-mode').value = c.auth_mode || 'token';
+    if ($('cf-token')) $('cf-token').value = c.api_token || '';
+    if ($('cf-email')) $('cf-email').value = c.email || '';
+    if ($('cf-apikey')) $('cf-apikey').value = c.api_key || '';
+    if ($('cf-en')) $('cf-en').checked = !!c.enabled;
+    toggleCFAuthMode();
+    const sb = $('cf-sync-badge');
+    if (sb) {
+      sb.textContent = r.synced_at ? ('SYNCED • ' + new Date(r.synced_at * 1000).toLocaleTimeString()) : 'NOT SYNCED';
+      sb.className = 'badge mono ' + (r.synced_at ? 'b-iran' : 'b-foreign');
+    }
+    populateCFZoneSelects();
+    renderCFRecords();
+  }
+  if (Object.keys(CF_SERVER_DOMAINS).length > 0) renderServers();
+}
+
+function populateCFZoneSelects() {
+  const zf = $('cf-zone-filter');
+  if (zf) {
+    const prev = zf.value;
+    zf.innerHTML = '<option value="">All Zones (' + CF_ZONES.length + ')</option>' +
+      CF_ZONES.map(z => `<option value="${esc(z.id)}">${esc(z.name)}</option>`).join('');
+    zf.value = prev;
+  }
+  const rz = $('cf-r-zone');
+  if (rz) {
+    rz.innerHTML = CF_ZONES.map(z => `<option value="${esc(z.id)}">${esc(z.name)}</option>`).join('');
+  }
+}
+
+function renderCFRecords() {
+  const box = $('cf-records-list');
+  if (!box) return;
+  const zf = ($('cf-zone-filter') && $('cf-zone-filter').value) || '';
+  const q = (($('cf-search') && $('cf-search').value) || '').trim().toLowerCase();
+  const mOnly = !!($('cf-matched-only') && $('cf-matched-only').checked);
+
+  const list = CF_RECORDS.filter(r => {
+    if (zf && r.zone_id !== zf) return false;
+    if (mOnly && !r.server_id) return false;
+    if (q && !(r.name.toLowerCase().includes(q) || r.content.toLowerCase().includes(q) || (r.server_name || '').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if ($('cf-rec-cnt')) $('cf-rec-cnt').textContent = list.length + ' / ' + CF_RECORDS.length;
+
+  box.innerHTML = list.length ? list.map(r => {
+    const srvTag = r.server_id
+      ? `<span class="badge ${r.server_role === 'iran' ? 'b-iran' : 'b-ok'} mono">[${r.server_role === 'iran' ? 'IR' : 'EX'}] ${esc(r.server_name)}</span>`
+      : '';
+    const canProxy = (r.type === 'A' || r.type === 'AAAA' || r.type === 'CNAME');
+    return `<div class="cf-rec-row">
+      <div class="cf-rec-main">
+        <span class="badge b-foreign mono">${esc(r.type)}</span>
+        <strong class="mono" style="font-size:.82rem;">${esc(r.name)}</strong>
+        <span class="mono" style="font-size:.76rem; color:var(--muted);">➔ ${esc(r.content)}</span>
+        ${srvTag}
+      </div>
+      <div class="flexw" style="gap:6px; flex-shrink:0;">
+        ${canProxy ? `<button class="cf-proxy-btn ${r.proxied ? 'on' : ''}" onclick="toggleCFProxy('${esc(r.zone_id)}','${esc(r.id)}')">${r.proxied ? '☁ Proxied' : 'DNS Only'}</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openCFRecordModalById('${esc(r.id)}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCFRecord('${esc(r.zone_id)}','${esc(r.id)}','${esc(r.name)}')">✕</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="hint" style="margin:0;">No DNS records found. Enter your Cloudflare API Token above and click Save &amp; Sync Zones.</div>';
+}
+
+async function saveCloudflareSettings() {
+  const btn = $('btn-cf-save'); btn.disabled = true; btn.textContent = 'Syncing...';
+  try {
+    const r = await api('api/cloudflare/save', 'POST', {
+      enabled: $('cf-en').checked,
+      auth_mode: $('cf-auth-mode').value,
+      api_token: $('cf-token').value.trim(),
+      email: $('cf-email').value.trim(),
+      api_key: $('cf-apikey').value.trim()
+    });
+    if (r.ok) {
+      toast(r.message || 'Cloudflare synced!');
+      loadCloudflareStatus(false);
+    } else toast(r.error || 'Cloudflare sync failed', true);
+  } finally { btn.disabled = false; btn.textContent = 'Save & Sync Zones'; }
+}
+
+async function syncCloudflare() {
+  const btn = $('btn-cf-sync'); btn.disabled = true; btn.textContent = 'Syncing...';
+  try {
+    const r = await api('api/cloudflare/sync', 'POST');
+    if (r.ok) {
+      toast(r.message || 'Synced!');
+      loadCloudflareStatus(false);
+    } else toast(r.error || 'Sync failed', true);
+  } finally { btn.disabled = false; btn.textContent = 'Sync Now'; }
+}
+
+function openCFRecordModalById(recId) {
+  const rec = CF_RECORDS.find(x => x.id === recId) || null;
+  openCFRecordModal(rec);
+}
+
+function openCFRecordModal(rec) {
+  if (!CF_ZONES.length) { toast('Sync your Cloudflare zones first', true); return; }
+  populateCFZoneSelects();
+  const sp = $('cf-r-srvpick');
+  if (sp) {
+    sp.innerHTML = '<option value="">— Manual IP / Target —</option>' + SERVERS.map(s => {
+      const tag = s.role === 'iran' ? 'IR' : 'EX';
+      const v4 = s.ipv4 || s.host || '';
+      const v6 = (s.ipv6 && s.ipv6 !== 'N/A') ? s.ipv6 : '';
+      let opts = `<option value="A|${esc(v4)}">[${tag}] ${esc(s.name)} — IPv4 (${esc(v4)})</option>`;
+      if (v6) opts += `<option value="AAAA|${esc(v6)}">[${tag}] ${esc(s.name)} — IPv6 (${esc(v6)})</option>`;
+      return opts;
+    }).join('');
+  }
+  $('cf-rec-title').textContent = rec ? 'Edit DNS Record' : '+ Add DNS Record';
+  $('cf-r-id').value = rec ? rec.id : '';
+  $('cf-r-zone').value = rec ? rec.zone_id : (CF_ZONES[0] ? CF_ZONES[0].id : '');
+  $('cf-r-zone').disabled = !!rec;
+  $('cf-r-type').value = rec ? rec.type : 'A';
+  $('cf-r-name').value = rec ? rec.name : '';
+  $('cf-r-content').value = rec ? rec.content : '';
+  $('cf-r-ttl').value = rec ? (rec.ttl || 1) : 1;
+  $('cf-r-proxied').checked = rec ? !!rec.proxied : false;
+  $('cf-rec-modal').classList.add('active');
+}
+
+function fillCFRecordFromServer() {
+  const v = ($('cf-r-srvpick') && $('cf-r-srvpick').value) || '';
+  if (!v) return;
+  const parts = v.split('|');
+  if (parts.length === 2) {
+    $('cf-r-type').value = parts[0];
+    $('cf-r-content').value = parts[1];
+  }
+}
+
+async function saveCFRecord() {
+  const btn = $('btn-cf-r-save'); btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const recId = $('cf-r-id').value.trim();
+    const payload = {
+      zone_id: $('cf-r-zone').value,
+      record_id: recId,
+      type: $('cf-r-type').value,
+      name: $('cf-r-name').value.trim(),
+      content: $('cf-r-content').value.trim(),
+      ttl: parseInt($('cf-r-ttl').value || '1', 10) || 1,
+      proxied: $('cf-r-proxied').checked
+    };
+    const r = await api('api/cloudflare/record', recId ? 'PUT' : 'POST', payload);
+    if (r.ok) {
+      toast(r.message || 'Saved!');
+      closeModal('cf-rec-modal');
+      loadCloudflareStatus(false);
+    } else toast(r.error || 'Failed to save record', true);
+  } finally { btn.disabled = false; btn.textContent = 'Save Record'; }
+}
+
+async function toggleCFProxy(zoneId, recId) {
+  const rec = CF_RECORDS.find(x => x.id === recId);
+  if (!rec) return;
+  const r = await api('api/cloudflare/record', 'PUT', {
+    zone_id: zoneId, record_id: recId, type: rec.type, name: rec.name,
+    content: rec.content, ttl: rec.ttl || 1, proxied: !rec.proxied
+  });
+  if (r.ok) { toast('Proxy toggled!'); loadCloudflareStatus(false); }
+  else toast(r.error || 'Toggle failed', true);
+}
+
+async function deleteCFRecord(zoneId, recId, name) {
+  if (!confirm('Delete DNS record ' + name + '?')) return;
+  const r = await api('api/cloudflare/record', 'DELETE', { zone_id: zoneId, record_id: recId });
+  if (r.ok) { toast('Record deleted'); loadCloudflareStatus(false); }
+  else toast(r.error || 'Delete failed', true);
+}
 
 async function loadTelegramStatus() {
   const r = await api('api/telegram/status');

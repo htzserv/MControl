@@ -1,6 +1,12 @@
 # Changelog
 
 ## 1.2.2
+- Added **Cloudflare Domains Manager** (`internal/api/cloudflare.go` + dedicated **Domains** tab):
+  - Manage all Cloudflare Zones & DNS records (`A`, `AAAA`, `CNAME`, `TXT`, etc.) directly from MControl with Create, Edit, Delete, and 1-click Proxied (CDN) toggle.
+  - **Automatic Server-to-Domain IP Matching:** Automatically matches every Cloudflare `A`/`AAAA` record against your managed servers' IPv4/IPv6 addresses, displaying matched server badges in the Domains tab and matched domain badges directly on every Server card.
+  - Automatic routing through **Master Outbound (`127.0.0.1:10808`)** with direct fallback.
+- Added **MControl Model 3 Neon Ribbon `M`** vector branding across the **Favicon**, **Header/Sidebar**, and **Animated Login Page** logo.
+- Simplified Telegram toggle label to `Enable Telegram Bot`.
 - Added **MTunnel → MControl migration** (`internal/api/migrate.go`, `internal/db/legacy.go`):
   - When a server is added, the panel scans it (read-only) for an old MTunnel installation and opens the **Migrate from MTunnel** window; the same window is available later from the new **MTunnel** button on every server card.
   - Import: every MTunnel config file (backhaul `.meta/.toml`, rathole `meta.conf/config.toml`, paqet `.meta/.yaml`, GRE/VXLAN `.conf`, MPorter, Smart) is saved **verbatim** as an AES-GCM encrypted snapshot, and each tunnel side is staged in the database. The exact snapshot can be downloaded as JSON.
