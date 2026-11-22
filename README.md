@@ -1,39 +1,66 @@
-# MControl — Central Server & Tunnel Management Panel (MDesign)
+# MControl — Central Server, Tunnel & DNS Management Panel (MDesign)
 
-**MControl** is a standalone, single-binary Go management panel for multi-node infrastructure (Iran & Foreign servers), engineered with the **MDesign** theme engine (30 curated themes across `Neon`, `Material`, and `Studio`), **Peer Agent v2**, **Master Outbound (Xray Core)**, and a **Native Telegram Bot & Auto-Backuper**.
+[![Release](https://img.shields.io/github/v/release/htzserv/MControl?style=flat-square&color=6366f1)](https://github.com/htzserv/MControl/releases)
+[![Architecture](https://img.shields.io/badge/architecture-Go%20Single%20Binary-22d3ee?style=flat-square)](#)
 
-## Quick Install (Stable Release)
+[🇮🇷 نسخه فارسی (Persian README)](README.fa.md)
 
+**MControl** is a standalone, single-binary Go management panel for multi-node infrastructure (Iran & Foreign servers). Engineered with the modular **MDesign** theme engine, it unifies **2-Sided Tunnel Orchestration**, **MTunnel Pro Migration**, **Cloudflare & ArvanCloud DNS Management**, **Master Outbound (Xray Core)**, **Peer Agent v2 (TLS)**, and a **Native Telegram Bot & Auto-Backuper** into a single lightweight binary with an embedded UI and SQLite database.
+
+---
+
+## Quick Install
+
+### Stable Release
 ```bash
 curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash
 ```
 
-Custom port (default `2053`):
+With custom port (default `2053`):
 ```bash
 curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash -s -- 2053
 ```
 
-## Quick Install (Rolling Beta Channel)
-
-Install directly from the latest `beta-latest` rolling pre-release build:
+### Rolling Beta Channel
 ```bash
 curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash -s -- --beta
 ```
 
-Rolling Beta with custom port:
-```bash
-curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash -s -- 2053 --beta
-```
+---
 
-## Key Features
-- **Single Static Binary + Embedded UI + SQLite:** Zero runtime dependencies on the Master server.
-- **Unified Tunnel Orchestrator & MSmart Benchmark:** Deploy and manage `Backhaul`, `Rathole`, `Paqet`, `GRE` (`4-to-4`, `6-to-4`, `6-to-6`), and `VXLAN` tunnels with Kernel VIP load balancing (`Round-Robin`, `Random`, `Lowest Ping`, `Lightest Load`, `Least Traffic`), 1-click in-tunnel Speedtest, visual 8-Ping tester, and saved benchmark history.
-- **Master Outbound (Xray Core):** Isolated local SOCKS5 (`127.0.0.1:10808`) strictly for the Master Panel (GitHub updates, Telegram bot, Foreign control) with Subscription sync, Xray Observatory Load-Balancing + Auto-Failover, and Real Delay testing.
-- **Native Telegram Bot & Auto-Backuper:** Full inline-keyboard tunnel wizard & management, scheduled Auto-Backuper (6/12/24/48h) to Admin or Backup Channel, Pre-Update auto-backups, Send-to-Restore `.zip` backups, actionable outage alerts (with Restart/Logs buttons), Daily Digest, and Emergency panel tools.
-- **Peer Agent v2 (TLS) & Setup Studio:** Pair nodes via 1-click Peer Code and install OS prerequisites & tunnel engines from **GitHub**, **Iran Mirror**, or **Direct from Master**.
-- **MDesign Theme Engine:** 30 curated high-contrast themes (`Neon`, `Material`, `Studio`) with 8-axis live Theme Studio.
-- **CLI Manager:** Run `mcontrol` on the Master server for service control, port/web-path updates, emergency 2FA/HTTPS reset, and logs.
+## Core Features
 
-## Automatic Releases & Rolling Beta (GitHub Actions)
-- **Official Release:** Bump `VERSION` (e.g., `1.2.1`) and push to `main` — GitHub Actions builds static `amd64`/`arm64` binaries + `.sha256` checksums and publishes an official Release.
-- **Rolling Beta:** Push changes to `main` without changing `VERSION` — GitHub Actions automatically updates the `beta-latest` rolling pre-release without cluttering official releases.
+### 1. Unified 2-Sided Tunnel Orchestrator & Auto-Watchdog
+- **Supported Engines:** `Backhaul`, `Rathole`, `Paqet` (native YAML + automatic `raw NOTRACK` / `mangle RST DROP` iptables rules), `GRE` (`4-to-4`, `6-to-4`, `6-to-6`), and `VXLAN`.
+- **Stability First:** NAT-friendly keepalives & heartbeats, `StartLimitIntervalSec=0` systemd units, `rp_filter=0` + bidirectional `TCPMSS` clamping, and a built-in **45-second Tunnel Watchdog** that auto-heals dropped services on both nodes.
+- **Kernel VIP Load Balancing:** `Round-Robin`, `Random`, `Lowest Ping`, `Lightest Load`, and `Least Traffic`.
+- **MSmart Benchmark & 8-Ping Tester:** Compare all protocols between any two nodes in one click, run in-tunnel Speedtests, and review saved benchmark history.
+
+### 2. MTunnel → MControl Pro Migrator
+- **Zero-Data-Loss Pipeline:** Automatically detects legacy MTunnel installations when adding a server, saves an AES-GCM encrypted verbatim snapshot (`.json`), installs & verifies MControl engines, and pairs both sides automatically or manually.
+- **Live Kernel Tunnel Control:** Preserves existing MTunnel `GRE` / `VXLAN` tunnels (`mgre.service` / `mxlan.service`) without downtime and provides live **`Status / Restart / Stop / Logs`** controls directly in the **Tunnels** tab.
+
+### 3. Dual-Provider Cloud DNS Manager (Cloudflare & ArvanCloud)
+- Manage **Cloudflare** and **ArvanCloud** zones side-by-side with independent auto-sync schedules.
+- **Auto Server IP Matching:** Automatically links `A`/`AAAA` records to your managed servers.
+- **Instant Parallel Bulk Actions:** Select multiple records with checkboxes for parallel bulk **Proxy ON/OFF** and **Bulk Delete**.
+
+### 4. Master Outbound (Xray Core)
+- Runs an isolated local SOCKS5 proxy (`127.0.0.1:10808`) strictly for the Master Panel (GitHub updates, Telegram bot, Cloud DNS, and Foreign node SSH/probing).
+- Supports Subscription sync, Xray Observatory Load-Balancing, Auto-Failover, and Real Delay testing.
+
+### 5. Native Telegram Bot & Auto-Backuper
+- Full inline-keyboard tunnel creation & control, scheduled Auto-Backuper (6/12/24/48h), Pre-Update backups, Send-to-Restore `.zip` backups, actionable outage alerts (with Restart/Logs buttons), and Daily Digest.
+
+### 6. Modular MDesign Theme Engine
+- **11 Independent Customization Axes** in Theme Studio: Navigation (`Dock`, `Floating Sidebar`, `Sidebar`, `Icon Rail`, `Bottom`), Card Surface (`Glass`, `Prism Bubbles`, `Liquid Glass`, `Neumorphic`, `Brutalist`, etc.), Master Cards (`Unified` vs `Separate Bubbles`), Metric Graphs (`Wave Sparkline`, `Circular Ring`, `Classic Line`), Checkboxes (`Rounded`, `Square`, `Circle`, `Neon Glow`, `Material`, `Mini Switch`), Fonts, Density, and Background effects.
+- **Master Toolbox & Symmetric Top Bar:** Floating **Version/Update** bubble (with Rolling Beta toggle & Offline ZIP installer), floating **Backup/Restore** bubble, and an Overview **Toolbox** card (`Speedtest`, `Tweak`, `Clean RAM`, `MSmart`, `Restart Panel`).
+
+---
+
+## CLI Manager
+Run `mcontrol` on the Master server for service control, port/web-path updates, emergency 2FA/HTTPS reset, and live logs.
+
+## Automatic Releases (GitHub Actions)
+- **Official Release:** Bump `VERSION` (e.g., `1.2.3`) and push to `main` — GitHub Actions compiles static `amd64`/`arm64` binaries + `.sha256` checksums and publishes an official Release.
+- **Rolling Beta:** Push to `main` without changing `VERSION` to automatically refresh the `beta-latest` pre-release.

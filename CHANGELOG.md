@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.2.3
+
+### Tunnel Engine Stability & Hardening
+- **NAT-Friendly Keepalives & Heartbeats:** Tuned Backhaul (`keepalive_period = 20`, `heartbeat = 10`, `retry_interval = 1`, `dial_timeout = 10`, `aggressive_pool = true`, full `mux` buffers) and Rathole (`heartbeat_interval = 15`, `heartbeat_timeout = 40`, `keepalive_secs = 15`, `keepalive_interval = 5`, `nodelay = true`) to eliminate periodic silent drops behind ISP NAT/firewalls.
+- **Systemd Anti-Lock & Auto-Watchdog:** Added `StartLimitIntervalSec=0` and `RestartSec=1` across all `mcontrol-tun-*` services, plus a built-in background **Tunnel Watchdog** (`StartTunnelWatchdog`) that checks active tunnels every 45 seconds on both Iran and Foreign nodes and auto-restarts dropped units.
+- **Kernel GRE / VXLAN Hardening:** Added `rp_filter=0`, `ip_forward`, bidirectional `FORWARD ACCEPT`, and `TCPMSS --clamp-mss-to-pmtu` rules to prevent packet fragmentation and asymmetric routing drops.
+- **Native Paqet YAML Engine:** Rewrote Paqet deployment to use real `paqet run -c <file.yaml>` configs with automatic interface/IP/gateway MAC detection and automatic `iptables` `raw NOTRACK` + `mangle RST DROP` rule management and cleanup.
+- **Security Fix:** Closed command-injection risk in tunnel creation by enforcing strict regex validation (`^[A-Za-z0-9._-]{1,64}$`) on tunnel names and tokens.
+
+### MTunnel → MControl Pro Migrator
+- **End-to-End Safe Migration Pipeline:** Automatic read-only scan on server add, AES-GCM encrypted verbatim snapshot (downloadable as `.json`), static engine bundle install & verification, clean MTunnel removal, and automatic/manual tunnel pairing.
+- **Zero-Downtime Kernel Preservation:** Automatically detects existing MTunnel `GRE` / `VXLAN` tunnels, keeps `mgre.service` / `mxlan.service` running untouched, and exposes live **`Status / Restart / Stop / Logs`** controls directly inside the MControl **Tunnels** tab.
+- **Pro Pairing & Accuracy:** Fixed Paqet `ROLE=1` (Foreign/Server) vs `ROLE=2` (Iran/Client) mapping, preserved Rathole `UDP_PORTS`, added `PEER_SETUP_ID` matching, and added a **Manual Pair** UI for GRE-layered or custom-IP tunnels.
+
+### Multi-Provider Cloud DNS Manager (Cloudflare + ArvanCloud)
+- **Dual-Provider Architecture:** Independent sync schedules, centered status bubbles, and full CRUD (`A`, `AAAA`, `CNAME`, `TXT`) for both **Cloudflare** and **ArvanCloud**.
+- **Automatic Server-to-Domain Matching:** Matches DNS records against managed servers' IPv4/IPv6 addresses and displays domain badges on server cards.
+- **Instant Parallel Bulk Actions:** Added checkbox selection + `Select All` with parallel backend endpoints (`POST /api/cloudflare/bulk-delete` and `POST /api/cloudflare/bulk-proxy`) for instant bulk Proxy ON/OFF and deletion.
+
+### MDesign UI/UX & Theme Engine Overhaul
+- **11-Axis Modular Theme Engine:** Expanded Theme Studio with `Floating Sidebar` navigation, `Prism Bubbles` card surface, `Master Cards` (`Unified` vs `Separate Bubbles`), `Metric Graph` (`Wave Sparkline`, `Circular Ring`, `Classic Line`), and `Checkboxes` (`Rounded`, `Square`, `Circle`, `Neon Glow`, `Material`, `Mini Switch`).
+- **Symmetric Top Bar:** Replaced the dedicated Update tab with symmetric floating bubbles flanking the main nav: **Version / Update Bubble** (left, with Rolling Beta toggle, Changelog, and Offline ZIP upload) and **Backup / Restore Bubble** (right, instant `.zip` download & 1-click file-picker restore). Reordered main tabs to `Overview`, `Servers`, `Tunnels`, `Domains`, `Settings`.
+- **Overview Master Toolbox:** Replaced the Disk card with a **Toolbox** card (`Speedtest`, `Tweak`, `Clean RAM`, `MSmart`, `Restart Panel`), moved Disk % to the master strip, renamed RX/TX to **Download / Upload**, and moved `Live Logs` to Settings.
+- **Paginated Wizards:**
+  - **Add Server Wizard:** Vertically centered 2-to-3 step paginated modal (`Name/IP/Route` → `SSH Credentials` → conditional `MTunnel Migrator`) with automatic GeoIP role detection.
+  - **New 2-Sided Tunnel Wizard:** Taller 3-step modal with a **3-Bubble Route Selector** (Country Flag, Server Name, IP + Flag behind IP).
+- **Clean Settings Layout:** 2-row 3×2 sub-tabs (with dedicated `Themes` tab) and wider uniform-width single-column cards.
+- **Modernized Login Logo:** Clean single-ribbon `M` vector logo with slow opposing left-to-right and right-to-left rainbow gradient streams.
+
 ## 1.2.2
 - **MTunnel → MControl Pro Migrator & Engine Hardening:**
   - Fixed **Paqet** both in native tunnel creation (`tunnels.go`) and MTunnel migration (`migrate.go`): uses real `paqet run -c <file.yaml>` configs, corrects MTunnel `ROLE=1` (Foreign/Server) vs `ROLE=2` (Iran/Client) mapping, automatically restores and cleans `iptables` `raw NOTRACK` and `mangle RST DROP` rules.

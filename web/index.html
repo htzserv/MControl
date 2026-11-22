@@ -2027,6 +2027,14 @@ body[data-navx="top"] .ver-bubble {
   box-shadow: 0 1px 4px rgba(0, 0, 0, .28);
 }
 
+
+/* Vertically Center Add Server Wizard Step Panes */
+#srv-modal .tun-step-pane.active {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -2176,7 +2184,7 @@ body[data-navx="top"] .ver-bubble {
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.2.2</span>
+      <span class="mono" id="nav-ver-lbl">v1.2.3</span>
     </button>
     <nav class="nav" id="nav"></nav>
     <button type="button" class="ver-bubble bak-bubble" id="nav-bak-bubble" onclick="openBackupModal()" title="Backup &amp; Restore">
@@ -2242,7 +2250,7 @@ body[data-navx="top"] .ver-bubble {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.2.2</span>
+            <span class="badge b-ok" id="loc-ver">v1.2.3</span>
           </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -4015,7 +4023,7 @@ const IC = {
   key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['domains', 'nav_domains', 'globe'], ['tunnels', 'nav_tunnels', 'term'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['domains', 'nav_domains', 'globe'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
