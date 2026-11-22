@@ -3243,61 +3243,116 @@ body[data-navx="top"] .ver-bubble {
   </div></main>
 </div>
 
-<!-- ADD / EDIT SERVER -->
+<!-- ADD / EDIT SERVER (MDesign Paginated Wizard + Conditional Step 3 Migrator) -->
 <div class="modal-bg" id="srv-modal">
-  <div class="card modal-box">
-    <h3 style="color:var(--accent); margin-bottom:14px;" id="srv-modal-title">+ Add server</h3>
-    <div class="field"><label data-i18n="lbl_srv_name">Server name</label><input id="s-name" placeholder="Hetzner-DE-01"></div>
-    <div class="field"><label data-i18n="lbl_srv_role">Role</label>
-      <input type="hidden" id="s-role" value="iran">
-      <div class="role-picker" id="role-picker">
-        <div class="role-opt active" data-pick-role="iran" onclick="pickRole('iran')">
-          <svg class="flag-svg" viewBox="0 0 30 20"><rect width="30" height="6.67" fill="#239f40"/><rect y="6.67" width="30" height="6.67" fill="#fff"/><rect y="13.33" width="30" height="6.67" fill="#da0000"/><circle cx="15" cy="10" r="2.2" fill="#da0000"/></svg>
-          <span>Iran Server</span>
+  <div class="tun-wiz-shell" style="max-width:580px;">
+    <!-- Floating Summary Bubble (auto-appears on Steps 2 & 3) -->
+    <div id="srv-float-dock" class="tun-float-dock"></div>
+
+    <div class="card modal-box" style="max-width:580px; width:100%; min-height:475px; padding:24px 26px !important; display:flex; flex-direction:column; justify-content:space-between;">
+      <div class="toolbar" style="margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
+          <h3 style="color:var(--accent);" id="srv-modal-title">+ Add server</h3>
+          <span class="tun-step-badge" id="srv-step-lbl">Step 1 / 2 • Server &amp; Route</span>
         </div>
-        <div class="role-opt" data-pick-role="foreign" onclick="pickRole('foreign')">
-          <svg class="svg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <span>Foreign Server</span>
+        <button class="btn btn-danger btn-sm" data-close="srv-modal" data-i18n="btn_close">Close</button>
+      </div>
+
+      <!-- Hidden auto-role field (auto-detected via GeoIP on new server, preserved on edit) -->
+      <input type="hidden" id="s-role" value="auto">
+
+      <!-- PAGE 1: Server Name + IP/Host + Connection Route -->
+      <div class="tun-step-pane active" id="srv-step-1" style="flex:1; min-height:295px;">
+        <div class="field" style="margin-bottom:12px;">
+          <label data-i18n="lbl_srv_name">Server name</label>
+          <input id="s-name" placeholder="Hetzner-DE-01" oninput="updateSrvFloatDock()">
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label data-i18n="lbl_host">IP address / host</label>
+          <input id="s-host" class="mono" placeholder="5.75.203.70" oninput="updateSrvFloatDock()">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Connection Route from Master</label>
+          <input type="hidden" id="s-outbound" value="0">
+          <div class="role-picker" id="srv-route-picker">
+            <div class="role-opt active" data-route="0" onclick="pickSrvRoute(false)">Direct Connection</div>
+            <div class="role-opt" data-route="1" onclick="pickSrvRoute(true)">Via Master Outbound (Xray)</div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="field"><label data-i18n="lbl_host">IP address / host</label><input id="s-host" class="mono" placeholder="5.75.203.70"></div>
-    <div class="field">
-      <label>Connection Route from Master</label>
-      <input type="hidden" id="s-outbound" value="0">
-      <div class="role-picker" id="srv-route-picker">
-        <div class="role-opt active" data-route="0" onclick="pickSrvRoute(false)">Direct Connection</div>
-        <div class="role-opt" data-route="1" onclick="pickSrvRoute(true)">Via Master Outbound (Xray)</div>
+
+      <!-- PAGE 2: SSH Credentials & Authentication -->
+      <div class="tun-step-pane" id="srv-step-2" style="flex:1; min-height:295px;">
+        <div class="field" id="s-cred-mode-wrap" style="margin-bottom:10px;">
+          <label>Credentials Source</label>
+          <div class="role-picker" id="cred-mode-picker">
+            <div class="role-opt active" data-cred-mode="custom" onclick="pickCredMode('custom')">Custom</div>
+            <div class="role-opt" data-cred-mode="saved" onclick="pickCredMode('saved')">Saved Profile</div>
+          </div>
+        </div>
+        <div class="field" id="s-prof-wrap" style="display:none;">
+          <label>Select Saved SSH Profile</label>
+          <select id="s-prof-sel"></select>
+        </div>
+        <div id="s-custom-fields">
+          <div class="row2">
+            <div class="field"><label data-i18n="lbl_ssh_port">SSH port</label><input id="s-port" type="number" value="22"></div>
+            <div class="field"><label data-i18n="lbl_ssh_user">SSH user</label><input id="s-user" value="root" class="mono"></div>
+          </div>
+          <div class="field"><label data-i18n="lbl_auth">Authentication</label>
+            <select id="s-auth"><option value="password" data-i18n="auth_pass">Password</option><option value="key" data-i18n="auth_key">SSH private key</option></select>
+          </div>
+          <div class="field" id="s-pass-wrap"><label data-i18n="lbl_ssh_pass">SSH password</label><input id="s-pass" type="password" autocomplete="new-password"></div>
+          <div class="field" id="s-key-wrap" style="display:none;"><label data-i18n="lbl_ssh_key">Private key (PEM / OpenSSH, no passphrase)</label><textarea id="s-key" spellcheck="false" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>
+        </div>
+        <div class="hint" id="s-keep" style="display:none;" data-i18n="ph_keep_secret">Leave the secret empty to keep the stored one.</div>
+        <div id="srv-test-res" class="hint mono" style="display:none; margin-bottom:4px;"></div>
       </div>
-    </div>
-    <div class="field" id="s-cred-mode-wrap">
-      <label>Credentials Source</label>
-      <div class="role-picker" id="cred-mode-picker">
-        <div class="role-opt active" data-cred-mode="custom" onclick="pickCredMode('custom')">Custom</div>
-        <div class="role-opt" data-cred-mode="saved" onclick="pickCredMode('saved')">Saved Profile</div>
+
+      <!-- PAGE 3 (Conditional): MTunnel Migrator — only activates if MTunnel is detected on this server! -->
+      <div class="tun-step-pane" id="srv-step-3" style="flex:1; min-height:295px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
+          <span class="badge b-iran mono">MTUNNEL DETECTED</span>
+          <span class="hint" id="sw-mig-meta" style="margin:0; font-size:.73rem;">Scanning MTunnel...</span>
+        </div>
+        <div id="sw-mig-list" class="mono" style="font-size:.76rem; max-height:130px; overflow:auto; margin-bottom:8px;"></div>
+        <div id="sw-mig-unsup" class="hint" style="display:none; color:var(--yellow); margin-bottom:8px;"></div>
+        <div class="field" style="margin-bottom:8px;">
+          <label>Download Source (for engines)</label>
+          <div class="src-picker" id="sw-mig-src-picker">
+            <div class="role-opt active" data-sw-src="github" onclick="pickSrvMigSource('github')">GitHub</div>
+            <div class="role-opt" data-sw-src="mirror" onclick="pickSrvMigSource('mirror')">Iran Mirror</div>
+            <div class="role-opt" data-sw-src="master" onclick="pickSrvMigSource('master')">Direct from Master</div>
+          </div>
+        </div>
+        <label class="check" style="margin-bottom:6px; font-size:.78rem;">
+          <input type="checkbox" id="sw-mig-wipe" checked>
+          <span>Remove MTunnel after import (GRE/VXLAN stay running)</span>
+        </label>
+        <label class="check" id="sw-mig-ack-wrap" style="display:none; margin-bottom:6px; font-size:.78rem;">
+          <input type="checkbox" id="sw-mig-ack">
+          <span>I understand unsupported items stay in the snapshot only</span>
+        </label>
+        <pre class="term" id="sw-mig-out" style="height:105px; margin:4px 0 0;">Ready to import &amp; migrate.</pre>
       </div>
-    </div>
-    <div class="field" id="s-prof-wrap" style="display:none;">
-      <label>Select Saved SSH Profile</label>
-      <select id="s-prof-sel"></select>
-    </div>
-    <div id="s-custom-fields">
-      <div class="row2">
-        <div class="field"><label data-i18n="lbl_ssh_port">SSH port</label><input id="s-port" type="number" value="22"></div>
-        <div class="field"><label data-i18n="lbl_ssh_user">SSH user</label><input id="s-user" value="root" class="mono"></div>
+
+      <!-- Bottom Wizard Navigation + Dot Pagination -->
+      <div class="tun-wiz-footer">
+        <button type="button" class="btn btn-ghost" id="btn-srv-prev" onclick="srvWizPrev()">Cancel</button>
+
+        <div class="tun-dots" id="srv-wiz-dots" aria-label="Server Steps">
+          <button type="button" class="tun-dot active" data-sstep="1" title="Step 1: Name & IP" onclick="setSrvStep(1)"></button>
+          <button type="button" class="tun-dot" data-sstep="2" title="Step 2: Credentials" onclick="setSrvStep(2)"></button>
+          <button type="button" class="tun-dot" id="srv-dot-3" data-sstep="3" title="Step 3: MTunnel Migrator" style="display:none;" onclick="if(srvMigServerId) setSrvStep(3)"></button>
+        </div>
+
+        <div class="flexw" style="gap:6px;">
+          <button type="button" class="btn btn-warn" id="btn-test-srv" style="display:none;" data-i18n="btn_test">Test</button>
+          <button type="button" class="btn btn-sky" id="btn-srv-next" onclick="srvWizNext()">Next ➔</button>
+          <button type="button" class="btn btn-sky" id="btn-save-srv" style="display:none;" data-i18n="btn_connect_save">Connect &amp; save</button>
+          <button type="button" class="btn btn-sky" id="btn-sw-mig-run" style="display:none;" onclick="runSrvWizardMigrate()">Import &amp; Migrate</button>
+        </div>
       </div>
-      <div class="field"><label data-i18n="lbl_auth">Authentication</label>
-        <select id="s-auth"><option value="password" data-i18n="auth_pass">Password</option><option value="key" data-i18n="auth_key">SSH private key</option></select>
-      </div>
-      <div class="field" id="s-pass-wrap"><label data-i18n="lbl_ssh_pass">SSH password</label><input id="s-pass" type="password" autocomplete="new-password"></div>
-      <div class="field" id="s-key-wrap" style="display:none;"><label data-i18n="lbl_ssh_key">Private key (PEM / OpenSSH, no passphrase)</label><textarea id="s-key" spellcheck="false" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>
-    </div>
-    <div class="hint" id="s-keep" style="display:none;" data-i18n="ph_keep_secret">Leave the secret empty to keep the stored one.</div>
-    <div id="srv-test-res" class="hint mono" style="display:none; margin-bottom:10px; padding:8px 10px; border-radius:8px; background:var(--row);"></div>
-    <div class="flexw" style="justify-content:flex-end;">
-      <button class="btn btn-ghost" data-close="srv-modal" data-i18n="btn_cancel">Cancel</button>
-      <button class="btn btn-warn" id="btn-test-srv" type="button" onclick="testServerModal()">Test</button>
-      <button class="btn btn-sky" id="btn-save-srv" data-i18n="btn_save">Save</button>
     </div>
   </div>
 </div>
@@ -4381,7 +4436,7 @@ function toggleAuth() {
 
 function pickSrvRoute(useOb) {
   if ($('s-outbound')) $('s-outbound').value = useOb ? '1' : '0';
-  document.querySelectorAll('#srv-route-picker .role-opt').forEach(el => el.classList.toggle('active', (el.dataset.route === '1') === !!useOb));
+  document.querySelectorAll('#srv-route-picker .role-opt').forEach(el => el.classList.toggle('active', (el.dataset.route === '1') === !!useOb)); if (typeof updateSrvFloatDock === 'function') updateSrvFloatDock();
 }
 function pickRole(r) {
   $('s-role').value = r;
@@ -4413,29 +4468,176 @@ async function testServerModal() {
   } finally { btn.disabled = false; btn.textContent = 'Test'; }
 }
 
+let srvWizStep = 1, srvMigServerId = 0, srvMigSource = 'github', srvMigNeedsAck = false;
+
+function pickSrvMigSource(src) {
+  srvMigSource = src;
+  document.querySelectorAll('#sw-mig-src-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.swSrc === src));
+}
+
+function updateSrvFloatDock() {
+  const dock = $('srv-float-dock');
+  if (!dock) return;
+  if (srvWizStep <= 1) {
+    dock.classList.remove('show');
+    dock.innerHTML = '';
+    return;
+  }
+  const name = ($('s-name') && $('s-name').value.trim()) || 'New Server';
+  const host = ($('s-host') && $('s-host').value.trim()) || '---';
+  const viaOb = $('s-outbound') && $('s-outbound').value === '1';
+  dock.innerHTML = `
+    <span class="tun-fchip" onclick="if(!srvMigServerId) setSrvStep(1)">
+      <span class="fc-k">Server</span>
+      <span class="fc-v">${esc(name)}</span>
+    </span>
+    <span class="tun-fchip" onclick="if(!srvMigServerId) setSrvStep(1)">
+      <span class="fc-k">Host</span>
+      <span class="fc-v">${esc(host)}</span>
+    </span>
+    <span class="tun-fchip" onclick="if(!srvMigServerId) setSrvStep(1)">
+      <span class="fc-k">Route</span>
+      <span class="fc-v">${viaOb ? 'Via Outbound' : 'Direct'}</span>
+    </span>`;
+  dock.classList.add('show');
+}
+
+function setSrvStep(n) {
+  const maxStep = srvMigServerId ? 3 : 2;
+  srvWizStep = Math.max(1, Math.min(maxStep, n));
+  for (let i = 1; i <= 3; i++) {
+    const pane = $('srv-step-' + i);
+    if (pane) pane.classList.toggle('active', i === srvWizStep);
+  }
+  const dot3 = $('srv-dot-3');
+  if (dot3) dot3.style.display = srvMigServerId ? 'inline-block' : 'none';
+  document.querySelectorAll('#srv-wiz-dots .tun-dot').forEach(d => {
+    const st = +d.dataset.sstep;
+    d.classList.toggle('active', st === srvWizStep);
+    d.classList.toggle('done', st < srvWizStep);
+  });
+  const stepNames = [
+    '',
+    'Step 1 / ' + maxStep + ' • Server & Route',
+    'Step 2 / ' + maxStep + ' • SSH Credentials',
+    'Step 3 / 3 • MTunnel Migrator'
+  ];
+  if ($('srv-step-lbl')) $('srv-step-lbl').textContent = stepNames[srvWizStep] || '';
+  if ($('btn-srv-prev')) {
+    $('btn-srv-prev').textContent = srvWizStep === 1 ? 'Cancel' : (srvWizStep === 3 ? 'Skip / Done' : '← Back');
+  }
+  if ($('btn-srv-next')) $('btn-srv-next').style.display = srvWizStep === 1 ? 'inline-flex' : 'none';
+  if ($('btn-test-srv')) $('btn-test-srv').style.display = srvWizStep === 2 ? 'inline-flex' : 'none';
+  if ($('btn-save-srv')) $('btn-save-srv').style.display = srvWizStep === 2 ? 'inline-flex' : 'none';
+  if ($('btn-sw-mig-run')) $('btn-sw-mig-run').style.display = srvWizStep === 3 ? 'inline-flex' : 'none';
+  updateSrvFloatDock();
+}
+
+function srvWizPrev() {
+  if (srvWizStep === 1 || srvWizStep === 3) {
+    closeModal('srv-modal');
+    return;
+  }
+  setSrvStep(srvWizStep - 1);
+}
+
+function srvWizNext() {
+  if (srvWizStep === 1) {
+    const host = ($('s-host') && $('s-host').value.trim()) || '';
+    if (!host) { toast('Enter server IP address or host first', true); return; }
+  }
+  setSrvStep(srvWizStep + 1);
+}
+
 function openSrvModal(id) {
   editId = id;
+  srvMigServerId = 0;
+  srvMigNeedsAck = false;
   const s = id ? SERVERS.find(x => +x.id === id) : null;
   $('srv-modal-title').textContent = s ? t('modal_edit') : t('modal_add');
   $('btn-save-srv').textContent = s ? t('btn_save') : t('btn_connect_save');
-  $('s-name').value = s ? s.name : ''; pickRole(s ? s.role : 'iran'); pickSrvRoute(s ? !!s.use_outbound : false); $('srv-test-res').style.display = 'none';
-  $('s-host').value = s ? s.host : ''; $('s-port').value = s ? s.port : (SETTINGS.default_ssh_port || 22); $('s-user').value = s ? s.username : (SETTINGS.default_ssh_user || 'root');
+  $('s-name').value = s ? s.name : '';
+  if ($('s-role')) $('s-role').value = s ? (s.role || 'foreign') : 'auto';
+  pickSrvRoute(s ? !!s.use_outbound : false);
+  $('srv-test-res').style.display = 'none';
+  $('s-host').value = s ? s.host : '';
+  $('s-port').value = s ? s.port : (SETTINGS.default_ssh_port || 22);
+  $('s-user').value = s ? s.username : (SETTINGS.default_ssh_user || 'root');
   $('s-auth').value = s ? (s.auth_type || 'password') : 'password';
-  $('s-pass').value = s ? '' : (SETTINGS.default_ssh_pass || ''); $('s-key').value = '';
+  $('s-pass').value = s ? '' : (SETTINGS.default_ssh_pass || '');
+  $('s-key').value = '';
   $('s-keep').style.display = s ? 'block' : 'none';
   $('s-cred-mode-wrap').style.display = 'block';
   pickCredMode('custom');
   renderSSHProfiles();
   toggleAuth();
+  setSrvStep(1);
   $('srv-modal').classList.add('active');
 }
+
+async function enterSrvWizardMigrator(serverId) {
+  srvMigServerId = serverId;
+  srvMigNeedsAck = false;
+  if ($('sw-mig-ack')) $('sw-mig-ack').checked = false;
+  if ($('sw-mig-out')) $('sw-mig-out').textContent = 'Scanning MTunnel configs...';
+  setSrvStep(3);
+  const r = await api('api/servers/' + serverId + '/legacy/scan');
+  if (!r.ok || !r.found) {
+    if ($('sw-mig-meta')) $('sw-mig-meta').textContent = r.error || 'No MTunnel files found.';
+    return;
+  }
+  if ($('sw-mig-meta')) $('sw-mig-meta').textContent = r.tunnels.length + ' tunnel side(s) ready to import.';
+  if ($('sw-mig-list')) {
+    $('sw-mig-list').innerHTML = r.tunnels.map(x =>
+      '<div class="kv"><span>' + esc(x.name) + ' <b>[' + esc(x.engine) + ']</b> ' + esc(x.side) + '</span>' +
+      '<span>port ' + esc(x.tunnel_port || '-') + ' · ' + esc(x.status) + '</span></div>'
+    ).join('') || '<div class="hint">MTunnel installation detected.</div>';
+  }
+  srvMigNeedsAck = (r.unsupported || []).length > 0;
+  if ($('sw-mig-unsup')) {
+    $('sw-mig-unsup').style.display = srvMigNeedsAck ? 'block' : 'none';
+    $('sw-mig-unsup').textContent = srvMigNeedsAck ? ('Not auto-migrated: ' + r.unsupported.join('; ')) : '';
+  }
+  if ($('sw-mig-ack-wrap')) $('sw-mig-ack-wrap').style.display = srvMigNeedsAck ? 'flex' : 'none';
+  if ($('sw-mig-out')) $('sw-mig-out').textContent = 'Ready. Click Import & Migrate to proceed.';
+}
+
+async function runSrvWizardMigrate() {
+  if (!srvMigServerId) return;
+  const wipe = $('sw-mig-wipe') && $('sw-mig-wipe').checked;
+  if (wipe && srvMigNeedsAck && !$('sw-mig-ack').checked) {
+    toast('Tick the confirmation checkbox first', true);
+    return;
+  }
+  const btn = $('btn-sw-mig-run'), orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Migrating...';
+  $('sw-mig-out').textContent = 'Importing snapshot → installing engines' + (wipe ? ' → removing MTunnel → pairing...' : '...');
+  try {
+    const r = await api('api/servers/' + srvMigServerId + '/legacy/migrate', 'POST', {
+      wipe: !!wipe,
+      ack_unmigrated: !!($('sw-mig-ack') && $('sw-mig-ack').checked),
+      source: srvMigSource
+    });
+    $('sw-mig-out').textContent = (r.log || []).join('\n') + (r.error ? '\n\nERROR: ' + r.error : '');
+    if (r.ok) {
+      toast('MTunnel migration completed!');
+      loadServers();
+      if (typeof loadTunnels === 'function') loadTunnels();
+      if (typeof loadLegacyTunnels === 'function') loadLegacyTunnels();
+      if ($('btn-srv-prev')) $('btn-srv-prev').textContent = 'Done';
+    } else toast(r.error || 'Migration failed', true);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
 async function saveServer() {
   const btn = $('btn-save-srv'), label = btn.textContent;
   btn.disabled = true; btn.textContent = t('connecting');
   try {
     const auth = $('s-auth').value;
     const payload = {
-      name: $('s-name').value, role: $('s-role').value, host: $('s-host').value,
+      name: $('s-name').value, role: $('s-role') ? $('s-role').value : 'auto', host: $('s-host').value,
       port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
       auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
       ssh_profile_id: (credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0,
@@ -4445,16 +4647,14 @@ async function saveServer() {
     if (res.ok) {
       const wasNew = !editId;
       toast(editId ? t('toast_saved') : t('toast_added'));
-      closeModal('srv-modal');
       await loadServers();
       if (res.probe_error) toast(res.probe_error, true);
-      if (wasNew && res.id) {
-        if (res.legacy && res.legacy.found) {
-          toast('Old MTunnel installation detected on this server.');
-          setTimeout(() => openLegacyModal(res.id), 250);
-        } else {
-          setTimeout(() => openSetupModal(res.id), 250);
-        }
+      if (wasNew && res.id && res.legacy && res.legacy.found) {
+        toast('MTunnel detected! Step 3 (Migrator) unlocked.');
+        enterSrvWizardMigrator(res.id);
+      } else {
+        closeModal('srv-modal');
+        if (wasNew && res.id) setTimeout(() => openSetupModal(res.id), 250);
       }
     } else toast(res.error || 'Failed', true);
   } finally { btn.disabled = false; btn.textContent = label; }

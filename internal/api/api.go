@@ -605,8 +605,8 @@ func (req *serverReq) normalize() string {
 	if !validUserRe.MatchString(req.Username) {
 		return "invalid SSH username"
 	}
-	if req.Role != "iran" && req.Role != "foreign" {
-		req.Role = "foreign"
+	if req.Role != "iran" && req.Role != "foreign" && req.Role != "auto" && req.Role != "" {
+		req.Role = "auto"
 	}
 	if req.AuthType != "key" {
 		req.AuthType = "password"
@@ -656,6 +656,13 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	g := geo.Lookup(req.Host)
+	if req.Role == "" || req.Role == "auto" {
+		if strings.EqualFold(g.CountryCode, "IR") {
+			req.Role = "iran"
+		} else {
+			req.Role = "foreign"
+		}
+	}
 	pingMs := sshclient.MeasurePingFromMaster(req.Host, req.Port)
 	reqProxy := ""
 	if req.UseOutbound && isOutboundActive() {
