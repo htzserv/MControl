@@ -378,6 +378,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/tunnels/{id}/speedtest", h.auth(h.handleTunnelSpeedtest))
 	mux.HandleFunc("DELETE /api/tunnels/{id}", h.auth(h.handleDeleteTunnel))
 	mux.HandleFunc("POST /api/tunnels/linktest", h.auth(h.handleLinkTest))
+	mux.HandleFunc("POST /api/tunnels/ping8", h.auth(h.handleTunnelPing8))
 	mux.HandleFunc("POST /api/tunnels/benchmark", h.auth(h.handleBenchmarkStart))
 	mux.HandleFunc("GET /api/tunnels/benchmark/status", h.auth(h.handleBenchmarkStatus))
 	mux.HandleFunc("GET /api/tunnels/benchmark/history", h.auth(h.handleBenchmarkHistory))
@@ -660,6 +661,14 @@ func (h *Handler) handleUpdateServer(w http.ResponseWriter, r *http.Request) {
 	var req serverReq
 	if !readJSON(w, r, &req) {
 		return
+	}
+	if req.SSHProfileID > 0 {
+		if prof, err := h.store.GetSSHProfileWithSecret(req.SSHProfileID); err == nil {
+			req.Username = prof.Username
+			req.Port = prof.Port
+			req.AuthType = "password"
+			req.Secret = prof.Password
+		}
 	}
 	if msg := req.normalize(); msg != "" {
 		fail(w, http.StatusBadRequest, msg)

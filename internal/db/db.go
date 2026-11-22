@@ -284,6 +284,8 @@ func (s *Store) migrate() error {
 		"ALTER TABLE servers ADD COLUMN ping_ms TEXT DEFAULT '---'",
 		"ALTER TABLE servers ADD COLUMN last_speed TEXT DEFAULT ''",
 		"ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1",
+		"ALTER TABLE tunnels ADD COLUMN vip_targets TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE tunnels ADD COLUMN lb_mode TEXT NOT NULL DEFAULT 'none'",
 	} {
 		_, _ = s.db.Exec(stmt)
 	}

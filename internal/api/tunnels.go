@@ -4,6 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"regexp"
+	"strconv"
 	"log"
 	"net/http"
 	"strings"
@@ -41,6 +44,8 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		Ports           string `json:"ports"`
 		Forwarder       string `json:"forwarder"`
 		IPMode          string `json:"ip_mode"` // v4 | v6 | 6to4 | 6to6
+		IranIPVer       string `json:"iran_ip_ver"`
+		ForeignIPVer    string `json:"foreign_ip_ver"`
 		Subnet          string `json:"subnet"`
 		VIPTargets      string `json:"vip_targets"`
 		LBMode          string `json:"lb_mode"` // none | roundrobin | random
@@ -73,6 +78,13 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Transport == "" {
 		req.Transport = "tcp"
+	}
+	if req.Engine == "backhaul" || req.Engine == "rathole" || req.Engine == "paqet" {
+		if req.IranIPVer == "v6" {
+			req.IPMode = "v6"
+		} else if req.IPMode != "v6" {
+			req.IPMode = "v4"
+		}
 	}
 	if req.IPMode == "v6" || req.IPMode == "6to4" || req.IPMode == "6to6" {
 		if !strings.Contains(req.Transport, "@") {
@@ -721,4 +733,88 @@ print(f'Throughput (4 streams): {mbps:.1f} Mbps')
 
 	res := h.runOnServer(iranSrv, cliCmd, 22*time.Second)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "output": res.Output})
+}
+
+var pingSeqRe = regexp.MustCompile(`icmp_seq=(\d+).*?time=([0-9]+(?:\.[0-9]+)?)`)
+
+func (h *Handler) handleTunnelPing8(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IranServerID    int64  `json:"iran_server_id"`
+		ForeignServerID int64  `json:"foreign_server_id"`
+		IranIPVer       string `json:"iran_ip_ver"`
+		ForeignIPVer    string `json:"foreign_ip_ver"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	iranSrv, err := h.store.GetServerWithSecret(req.IranServerID)
+	if err != nil {
+		fail(w, http.StatusNotFound, "Iran server not found")
+		return
+	}
+	forSrv, err := h.store.GetServerWithSecret(req.ForeignServerID)
+	if err != nil {
+		fail(w, http.StatusNotFound, "Foreign server not found")
+		return
+	}
+
+	useV6 := req.ForeignIPVer == "v6"
+	target := forSrv.Host
+	if useV6 {
+		if forSrv.IPv6 != "" && forSrv.IPv6 != "N/A" {
+			target = forSrv.IPv6
+		} else {
+			// Try detecting IPv6 on foreign node
+			r6 := h.runOnServer(forSrv, `sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1 || true; ip -6 route get 2606:4700:4700::1111 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}'`, 8*time.Second)
+			if s := strings.TrimSpace(r6.Output); s != "" && strings.Contains(s, ":") {
+				target = s
+			} else {
+				fail(w, http.StatusBadRequest, "Foreign server does not have a global IPv6 address")
+				return
+			}
+		}
+	}
+
+	pingFlag := "-4"
+	prepV6 := ""
+	if useV6 || strings.Contains(target, ":") {
+		pingFlag = "-6"
+		prepV6 = "sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1 || true; "
+	}
+	cmd := fmt.Sprintf(`%sping %s -c 8 -i 0.25 -W 2 %s 2>&1 || true`, prepV6, pingFlag, sshclient.ShQuote(target))
+	res := h.runOnServer(iranSrv, cmd, 22*time.Second)
+
+	samples := make([]float64, 8)
+	for i := range samples {
+		samples[i] = -1 // -1 means lost/timeout
+	}
+	var sum float64
+	received := 0
+	for _, line := range strings.Split(res.Output, "\n") {
+		if m := pingSeqRe.FindStringSubmatch(line); len(m) == 3 {
+			seq, _ := strconv.Atoi(m[1])
+			ms, _ := strconv.ParseFloat(m[2], 64)
+			if seq >= 1 && seq <= 8 {
+				samples[seq-1] = math.Round(ms*10) / 10
+				sum += ms
+				received++
+			}
+		}
+	}
+	avgMs := 0.0
+	if received > 0 {
+		avgMs = math.Round((sum/float64(received))*10) / 10
+	}
+	lossPct := math.Round((float64(8-received)/8.0)*1000) / 10
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":       true,
+		"target":   target,
+		"ip_ver":   map[bool]string{true: "IPv6", false: "IPv4"}[useV6],
+		"samples":  samples,
+		"received": received,
+		"sent":     8,
+		"avg_ms":   avgMs,
+		"loss_pct": lossPct,
+	})
 }

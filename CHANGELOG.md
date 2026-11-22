@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.9.2
+- Fixed `SQL logic error: table tunnels has no column named vip_targets` by properly registering `ALTER TABLE tunnels` migrations in `internal/db/db.go` so existing databases upgrade seamlessly and tunnel listing/creation work immediately.
+- Enabled **Saved SSH Profiles** inside the **Edit Server** modal (both frontend & backend `handleUpdateServer`).
+- Redesigned **IP Selection** in `+ New Tunnel`:
+  - Removed GRE IP modes from non-kernel tunnels (`Backhaul`, `Rathole`, `Paqet`).
+  - Added independent **Iran IP (`IPv4`/`IPv6`)** and **Foreign IP (`IPv4`/`IPv6`)** selectors directly under each server, allowing mixed combinations (e.g. Iran IPv6 ⇄ Foreign IPv4).
+- Added a custom **MDesign Visual 8-Ping Tester** (`POST /api/tunnels/ping8`) directly inside the tunnel creation modal—no terminal box—showing 8 live animated ping bars/pills, **Average Ping (ms)**, and **Packet Loss (%)**.
+
 ## 1.1.9.1
 - Switched release versioning to 4-segment format (`v1.1.9.1`).
 - Added instant client-side re-scoring and re-ranking in **MSmart Benchmark**: switching between **Balanced**, **Max Speed**, and **Low Ping** immediately reorders and updates scores for both current and saved benchmark results without needing to re-run the test.

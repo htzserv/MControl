@@ -827,6 +827,29 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
 .ms-cat-opts .check { margin: 0; font-size: .78rem; gap: 6px; }
 @media (max-width: 620px) { .ms-cat-grid { grid-template-columns: 1fr; } }
 
+
+/* MDesign Visual 8-Ping Live Tester */
+.ping8-card {
+  margin: 0 0 12px; padding: 12px 14px; border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--row));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+.ping8-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.ping8-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; margin-bottom: 10px; }
+.ping8-cell {
+  border-radius: 10px; padding: 7px 4px; text-align: center;
+  background: var(--surface); border: 1px solid var(--border);
+  font-family: var(--ff-m); font-size: .7rem; font-weight: 700;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.ping8-cell.wait { opacity: .45; }
+.ping8-cell.good { border-color: var(--green); color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--surface)); }
+.ping8-cell.warn { border-color: var(--yellow); color: var(--yellow); background: color-mix(in srgb, var(--yellow) 12%, var(--surface)); }
+.ping8-cell.bad  { border-color: var(--red); color: var(--red); background: color-mix(in srgb, var(--red) 12%, var(--surface)); }
+.ping8-cell .p8-seq { display: block; font-size: .6rem; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+.ping8-sum { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .76rem; }
+@media (max-width: 540px) { .ping8-grid { grid-template-columns: repeat(4, 1fr); } }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -990,7 +1013,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.1.9.1</span>
+            <span class="badge b-ok" id="loc-ver">v1.1.9.2</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -1414,15 +1437,40 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
       </div>
     </div>
     <div class="row2">
-      <div class="field"><label>Iran Server (Entry)</label><select id="t-iran" onchange="onTunnelServersChange()"></select></div>
-      <div class="field"><label>Foreign Server (Exit)</label><select id="t-foreign" onchange="onTunnelServersChange()"></select></div>
-    </div>
-    <div id="t-check-proto-wrap" style="display:none; margin:-2px 0 12px; padding:10px 12px; border-radius:12px; background:color-mix(in srgb, var(--accent) 10%, var(--row)); border:1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-      <div style="font-size:.78rem; color:var(--text);">
-        <strong style="color:var(--accent);">Protocol Check Ready</strong>
-        <div style="font-size:.72rem; color:var(--muted);">Test all protocols between these 2 servers &amp; pick the best one.</div>
+      <div class="field">
+        <label>Iran Server (Entry)</label>
+        <select id="t-iran" onchange="onTunnelServersChange()"></select>
+        <select id="t-iran-ipver" style="margin-top:6px; font-size:.78rem; padding:7px 10px;">
+          <option value="v4">IPv4</option>
+          <option value="v6">IPv6</option>
+        </select>
       </div>
-      <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">⚡ Check Protocols</button>
+      <div class="field">
+        <label>Foreign Server (Exit)</label>
+        <select id="t-foreign" onchange="onTunnelServersChange()"></select>
+        <select id="t-for-ipver" style="margin-top:6px; font-size:.78rem; padding:7px 10px;">
+          <option value="v4">IPv4</option>
+          <option value="v6">IPv6</option>
+        </select>
+      </div>
+    </div>
+    <div id="t-check-proto-wrap" style="display:none; margin:-2px 0 12px; padding:10px 12px; border-radius:12px; background:color-mix(in srgb, var(--accent) 10%, var(--row)); border:1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+      <div style="font-size:.78rem; color:var(--text);">
+        <strong style="color:var(--accent);">Link &amp; Protocol Tools</strong>
+        <div style="font-size:.72rem; color:var(--muted);">Run 8x visual ping or benchmark all protocols.</div>
+      </div>
+      <div class="flexw" style="gap:6px;">
+        <button type="button" class="btn btn-sky btn-sm" id="btn-ping8" onclick="runTunnelPing8()">📡 Ping Test (8x)</button>
+        <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">⚡ Check Protocols</button>
+      </div>
+    </div>
+    <div id="t-ping8-card" class="ping8-card" style="display:none;">
+      <div class="ping8-head">
+        <strong style="font-size:.8rem; color:var(--accent);" id="p8-title">Live 8-Ping Test</strong>
+        <span class="mono" style="font-size:.72rem; color:var(--muted);" id="p8-target"></span>
+      </div>
+      <div class="ping8-grid" id="p8-grid"></div>
+      <div class="ping8-sum" id="p8-sum"></div>
     </div>
     <div class="row2">
       <div class="field" id="t-trans-wrap"><label>Transport</label>
@@ -1438,12 +1486,12 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
       </div>
       <div class="field"><label>Tunnel Control Port</label><input id="t-port" type="number" value="3080"></div>
     </div>
-    <div class="field"><label>IP Version / Mode</label>
+    <div class="field" id="t-ipmode-wrap" style="display:none;"><label>Kernel Tunnel IP Mode</label>
       <select id="t-ipmode">
-        <option value="v4">IPv4 (4-to-4)</option>
-        <option value="v6">IPv6 (Auto-enable &amp; use IPv6)</option>
+        <option value="v4">GRE 4-to-4 (IPv4 over IPv4)</option>
         <option value="6to4">GRE 6-to-4 (IPv4 over IPv6)</option>
         <option value="6to6">GRE 6-to-6 (IPv6 over IPv6)</option>
+        <option value="v6">IPv6</option>
       </select>
     </div>
     <div style="display:none;">
@@ -2301,7 +2349,7 @@ async function testServerModal() {
     name: $('s-name').value || 'test', role: $('s-role').value, host: $('s-host').value,
     port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
     auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
-    ssh_profile_id: (!editId && credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0
+    ssh_profile_id: (credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0
   };
   btn.disabled = true; btn.textContent = 'Testing...';
   box.style.display = 'block'; box.style.color = 'var(--muted)'; box.textContent = 'Connecting via SSH & measuring ping...';
@@ -2329,7 +2377,7 @@ function openSrvModal(id) {
   $('s-auth').value = s ? (s.auth_type || 'password') : 'password';
   $('s-pass').value = s ? '' : (SETTINGS.default_ssh_pass || ''); $('s-key').value = '';
   $('s-keep').style.display = s ? 'block' : 'none';
-  $('s-cred-mode-wrap').style.display = s ? 'none' : 'block';
+  $('s-cred-mode-wrap').style.display = 'block';
   pickCredMode('custom');
   renderSSHProfiles();
   toggleAuth();
@@ -2344,7 +2392,7 @@ async function saveServer() {
       name: $('s-name').value, role: $('s-role').value, host: $('s-host').value,
       port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
       auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
-      ssh_profile_id: (!editId && credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0
+      ssh_profile_id: (credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0
     };
     const res = editId ? await api('api/servers/' + editId, 'PUT', payload) : await api('api/servers', 'POST', payload);
     if (res.ok) {
@@ -2474,8 +2522,13 @@ function populateServerSelects(iranId, forId) {
 
 function onTunnelEngineChange() {
   const eng = $('t-engine').value;
+  const isKernel = (eng === 'gre' || eng === 'ip6gre' || eng === 'vxlan');
   $('t-trans-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
-  const vw = $('t-vip-wrap'); if (vw) vw.style.display = (eng === 'gre' || eng === 'ip6gre' || eng === 'vxlan') ? 'block' : 'none';
+  const vw = $('t-vip-wrap'); if (vw) vw.style.display = isKernel ? 'block' : 'none';
+  const ipw = $('t-ipmode-wrap'); if (ipw) ipw.style.display = isKernel ? 'block' : 'none';
+  const irIp = $('t-iran-ipver'), frIp = $('t-for-ipver');
+  if (irIp) irIp.style.display = isKernel ? 'none' : 'block';
+  if (frIp) frIp.style.display = isKernel ? 'none' : 'block';
 }
 
 function applyPortProfileToTunnel() {
@@ -2485,12 +2538,76 @@ function applyPortProfileToTunnel() {
 
 let msFromTunnelModal = false;
 
+function updatePerServerIPOptions(selSrvId, selIpId) {
+  const sid = parseInt(($(selSrvId) && $(selSrvId).value) || '0', 10);
+  const ipSel = $(selIpId);
+  if (!ipSel) return;
+  const s = SERVERS.find(x => +x.id === sid);
+  const v4 = s ? (s.ipv4 || s.host || 'N/A') : 'N/A';
+  const v6 = (s && s.ipv6 && s.ipv6 !== 'N/A') ? s.ipv6 : 'Auto / Detect';
+  const prev = ipSel.value || 'v4';
+  ipSel.innerHTML = `<option value="v4">IPv4 — ${esc(v4)}</option><option value="v6">IPv6 — ${esc(v6)}</option>`;
+  ipSel.value = prev;
+}
+
 function onTunnelServersChange() {
+  updatePerServerIPOptions('t-iran', 't-iran-ipver');
+  updatePerServerIPOptions('t-foreign', 't-for-ipver');
   const wrap = $('t-check-proto-wrap');
   if (!wrap) return;
   const ir = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
   const fr = parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
   wrap.style.display = (ir > 0 && fr > 0 && ir !== fr) ? 'flex' : 'none';
+  if ($('t-ping8-card')) $('t-ping8-card').style.display = 'none';
+}
+
+async function runTunnelPing8() {
+  const btn = $('btn-ping8'), card = $('t-ping8-card'), grid = $('p8-grid'), sum = $('p8-sum');
+  const ir = parseInt($('t-iran').value || '0', 10);
+  const fr = parseInt($('t-foreign').value || '0', 10);
+  const irVer = $('t-iran-ipver') ? $('t-iran-ipver').value : 'v4';
+  const frVer = $('t-for-ipver') ? $('t-for-ipver').value : 'v4';
+  if (!ir || !fr || ir === fr) { toast('Select two distinct servers first', true); return; }
+  btn.disabled = true; btn.textContent = 'Pinging...';
+  card.style.display = 'block';
+  $('p8-title').textContent = 'Running 8-Ping Test...';
+  $('p8-target').textContent = irVer.toUpperCase() + ' ➔ ' + frVer.toUpperCase();
+  grid.innerHTML = Array.from({ length: 8 }, (_, i) => `<div class="ping8-cell wait" id="p8-c-${i}"><span class="p8-seq">#${i+1}</span>...</div>`).join('');
+  sum.innerHTML = '<span style="color:var(--muted);">Sending 8 ICMP packets...</span>';
+  try {
+    const r = await api('api/tunnels/ping8', 'POST', {
+      iran_server_id: ir, foreign_server_id: fr, iran_ip_ver: irVer, foreign_ip_ver: frVer
+    });
+    if (!r.ok) {
+      $('p8-title').textContent = 'Ping Test Failed';
+      sum.innerHTML = `<span style="color:var(--red);">${esc(r.error || 'Error')}</span>`;
+      return;
+    }
+    $('p8-title').textContent = '8-Ping Result (' + esc(r.ip_ver) + ')';
+    $('p8-target').textContent = r.target || '';
+    const samples = r.samples || [];
+    for (let i = 0; i < 8; i++) {
+      await new Promise(res => setTimeout(res, 95));
+      const ms = samples[i];
+      const cell = $('p8-c-' + i);
+      if (!cell) continue;
+      if (ms < 0) {
+        cell.className = 'ping8-cell bad';
+        cell.innerHTML = `<span class="p8-seq">#${i+1}</span>LOST`;
+      } else {
+        cell.className = 'ping8-cell ' + (ms < 85 ? 'good' : (ms < 180 ? 'warn' : 'bad'));
+        cell.innerHTML = `<span class="p8-seq">#${i+1}</span>${ms}ms`;
+      }
+    }
+    const lossCls = r.loss_pct === 0 ? 'b-iran' : (r.loss_pct >= 50 ? 'b-miss' : 'b-foreign');
+    const avgTxt = r.received > 0 ? (r.avg_ms + ' ms') : 'N/A';
+    sum.innerHTML = `
+      <span class="badge b-ok mono">Avg Ping: ${esc(avgTxt)}</span>
+      <span class="badge ${lossCls} mono">Loss: ${r.loss_pct}% (${r.received}/8)</span>
+    `;
+  } finally {
+    btn.disabled = false; btn.textContent = '📡 Ping Test (8x)';
+  }
 }
 
 function openProtoCheckerFromTunnel() {
@@ -2534,6 +2651,8 @@ async function deployTunnel() {
       token: $('t-token').value.trim(),
       ports: $('t-ports').value.trim(),
       ip_mode: $('t-ipmode') ? $('t-ipmode').value : 'v4',
+      iran_ip_ver: $('t-iran-ipver') ? $('t-iran-ipver').value : 'v4',
+      foreign_ip_ver: $('t-for-ipver') ? $('t-for-ipver').value : 'v4',
       subnet: $('t-subnet') ? $('t-subnet').value.trim() : '',
       vip_targets: $('t-viptargets') ? $('t-viptargets').value.trim() : '',
       lb_mode: $('t-lbmode') ? $('t-lbmode').value : 'none'
