@@ -27,10 +27,17 @@ type AuditEntry struct {
 
 var auditMu sync.Mutex
 
+func (h *Handler) getSettingDef(key, defVal string) string {
+	if v := h.getSettingDef(key); v != "" {
+		return v
+	}
+	return defVal
+}
+
 func (h *Handler) logAudit(user, method, path, detail string) {
 	auditMu.Lock()
 	defer auditMu.Unlock()
-	raw := h.store.GetSetting("audit_log_json", "[]")
+	raw := h.getSettingDef("audit_log_json", "[]")
 	var list []AuditEntry
 	_ = json.Unmarshal([]byte(raw), &list)
 	list = append([]AuditEntry{{
@@ -49,7 +56,7 @@ func (h *Handler) logAudit(user, method, path, detail string) {
 }
 
 func (h *Handler) handleAuditList(w http.ResponseWriter, r *http.Request) {
-	raw := h.store.GetSetting("audit_log_json", "[]")
+	raw := h.getSettingDef("audit_log_json", "[]")
 	var list []AuditEntry
 	_ = json.Unmarshal([]byte(raw), &list)
 	if list == nil {
@@ -65,7 +72,7 @@ type viewerConfig struct {
 }
 
 func (h *Handler) loadViewerCfg() viewerConfig {
-	enc := h.store.GetSetting("viewer_auth_enc", "")
+	enc := h.getSettingDef("viewer_auth_enc", "")
 	if enc == "" {
 		return viewerConfig{}
 	}
@@ -123,6 +130,22 @@ func (h *Handler) handleViewerSave(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Viewer account updated."})
 }
 
+func parseOpsPorts(csv string) []int {
+	seen := map[int]bool{}
+	var out []int
+	for _, part := range strings.Split(csv, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		if n, err := strconv.Atoi(part); err == nil && n >= 1 && n <= 65535 && !seen[n] {
+			seen[n] = true
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
 func (h *Handler) handleUpdateTunnel(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -174,7 +197,7 @@ func (h *Handler) handleUpdateTunnel(w http.ResponseWriter, r *http.Request) {
 	tun.VIPTargets = strings.TrimSpace(req.VIPTargets)
 	tun.Status = "deploying"
 
-	ports := parsePortsList(tun.Ports)
+	ports := parseOpsPorts(tun.Ports)
 	if len(ports) == 0 {
 		ports = []int{443}
 	}
@@ -453,7 +476,7 @@ func (h *Handler) handleServerServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	raw := h.store.GetSetting(key, `["x-ui","xray","nginx"]`)
+	raw := h.getSettingDef(key, `["x-ui","xray","nginx"]`)
 	var units []string
 	_ = json.Unmarshal([]byte(raw), &units)
 	if len(units) == 0 {
@@ -516,7 +539,7 @@ type OpsAutomationCfg struct {
 var opsMu sync.Mutex
 
 func (h *Handler) loadSchedJobs() []SchedJob {
-	raw := h.store.GetSetting("sched_jobs_json", "[]")
+	raw := h.getSettingDef("sched_jobs_json", "[]")
 	var list []SchedJob
 	_ = json.Unmarshal([]byte(raw), &list)
 	if list == nil {
@@ -569,7 +592,7 @@ func (h *Handler) handleScheduler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) loadOpsAuto() OpsAutomationCfg {
-	raw := h.store.GetSetting("ops_auto_json", "")
+	raw := h.getSettingDef("ops_auto_json", "")
 	cfg := OpsAutomationCfg{CPUThreshold: 90, RAMThreshold: 90, FailoverRules: []FailoverRule{}}
 	if raw != "" {
 		_ = json.Unmarshal([]byte(raw), &cfg)
@@ -608,10 +631,15 @@ func (h *Handler) handleOpsAutomation(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) sendOpsAlert(msg string) {
 	tg := h.loadTelegramCfg()
-	if !tg.Enabled || tg.BotToken == "" || tg.AdminChatID == "" {
+	if !tg.Enabled || strings.TrimSpace(tg.BotToken) == "" || strings.TrimSpace(tg.AdminIDs) == "" {
 		return
 	}
-	_, _ = h.tgSendMessage(tg, tg.AdminChatID, msg, nil)
+	for _, rawID := range strings.Split(tg.AdminIDs, ",") {
+		cid, err := strconv.ParseInt(strings.TrimSpace(rawID), 10, 64)
+		if err == nil && cid != 0 {
+			_ = h.tgSendMessage(tg.BotToken, cid, msg, nil)
+		}
+	}
 }
 
 func (h *Handler) switchDNSRecordIP(zoneID, recID, recType, recName, newIP string) error {

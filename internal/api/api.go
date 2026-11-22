@@ -564,10 +564,10 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	req.Username = strings.TrimSpace(req.Username)
 	if !h.store.VerifyUser(req.Username, req.Password) {
 		if h.verifyViewerLogin(req.Username, req.Password) {
-			h.limiter.clear(ip)
-			tok := h.signToken("viewer:" + req.Username)
+			h.limiter.ok(ip)
+			tok := h.makeToken("viewer:" + req.Username)
 			h.logAudit("viewer:"+req.Username, "POST", "/api/login", "viewer login")
-			writeJSON(w, http.StatusOK, map[string]any{"ok": true, "token": tok, "role": "viewer"})
+			writeJSON(w, http.StatusOK, map[string]any{"ok": true, "token": tok, "role": "viewer", "expires_in": int(tokenTTL.Seconds())})
 			return
 		}
 		h.limiter.fail(ip)
