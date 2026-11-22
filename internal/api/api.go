@@ -961,7 +961,7 @@ func (h *Handler) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	st := h.store.GetSettings()
-	res := updater.CheckAll(st.PanelGitHubURL, st.PanelMirrorURL)
+	res := updater.CheckAll(st.PanelGitHubURL, st.PanelMirrorURL, st.BetaBuilds, st.InstalledBetaBuild)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "check": res})
 }
 
@@ -974,12 +974,14 @@ func (h *Handler) handleUpdateRemote(w http.ResponseWriter, r *http.Request) {
 		Source string `json:"source"` // "github" or "mirror"
 	}
 	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req)
-	if req.Source != "mirror" {
+	if req.Source != "mirror" && req.Source != "beta" {
 		req.Source = "github"
 	}
 	st := h.store.GetSettings()
 	log.Printf("remote update requested from %s by %s", req.Source, r.Header.Get("X-MC-User"))
-	err := updater.StartRemoteUpdate(req.Source, st.PanelGitHubURL, st.PanelMirrorURL, st.AllowUnverified, func() {
+	err := updater.StartRemoteUpdate(req.Source, st.PanelGitHubURL, st.PanelMirrorURL, st.AllowUnverified, func(build int) {
+		_ = h.store.SetInstalledBetaBuild(build)
+	}, func() {
 		time.Sleep(1500 * time.Millisecond)
 		os.Exit(0)
 	})

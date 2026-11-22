@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0
+- Switched official releases to clean 3-segment SemVer (`v1.2.0`), with intermediate updates delivered through the **Rolling Beta (`beta-latest`)** channel.
+- Consolidates all recent features: MDesign 3-section tunnel builder, 30 curated themes across `Neon` / `Material` / `Studio`, Master Outbound (Xray Core), Rolling Beta Builds system, MSmart Benchmark with instant re-ranking & saved history, and Kernel GRE/VXLAN VIP & smart load balancing.
+
+## 1.1.9.5
+- Imported the new curated **3-family Theme System** (`Neon`, `Material`, `Studio`) with family-specific CSS finishes, WCAG-safe accent contrast (`lum > 0.179`), accessible `<button>` theme cards, and live login swatch updates.
+- Added 6 new high-contrast curated themes (30 themes total): **Aurora Mint**, **Crimson Grid** (`Neon`), **Material Espresso**, **Material Cobalt** (`Material`), **Obsidian Mono**, and **Emerald Desk** (`Studio`).
+- Preserved all `v1.1.9.4` Rolling Beta Builds and `v1.1.9.3` Master Outbound (Xray) features.
+
+## 1.1.9.4
+- Added **Rolling Beta Builds System**:
+  - Updated `.github/workflows/release.yml` so pushing commits to `main` without bumping `VERSION` automatically builds and updates a rolling `beta-latest` pre-release (`beta-meta.json` + static binaries) without cluttering official releases; bumping `VERSION` publishes an official release + updates `beta-latest`.
+  - Added **Enable Beta Builds (Rolling Pre-Releases)** toggle in **Settings**.
+  - Added automatic beta build detection (`CheckAll`), **Rolling Beta** status row & **Install Beta Build** button in the Update Center, and `BETA` badge support on the top-left round Update button.
+
 ## 1.1.9.3
 - Redesigned **+ New 2-Sided Tunnel** modal with clean **MDesign** 3-section layout (works crisply in all light & dark themes):
   - Removed mismatched OS emojis (`🌍` / `🇮🇷`) in favor of clean `IR •` / `EX •` tags.

@@ -7,6 +7,16 @@ on:
       - "README.md"
       - "CHANGELOG.md"
   workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release channel (auto = official if VERSION is new, else rolling beta-latest)"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - release
+          - beta
 
 permissions:
   contents: write
@@ -23,13 +33,30 @@ jobs:
         with:
           go-version: "1.23"
 
-      - name: Read VERSION
+      - name: Determine Release vs Rolling Beta
         id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_CHANNEL: ${{ github.event.inputs.channel || 'auto' }}
         run: |
           V=$(tr -d '[:space:]' < VERSION)
+          TAG="v${V}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_NUM="${{ github.run_number }}"
+          MODE="$DISPATCH_CHANNEL"
+          if [ "$MODE" = "auto" ]; then
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              MODE="beta"
+            else
+              MODE="release"
+            fi
+          fi
           echo "version=${V}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${V}" >> "$GITHUB_OUTPUT"
-          echo "Building MControl v${V}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "build_num=${BUILD_NUM}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Building MControl v${V} (mode=${MODE}, build=#${BUILD_NUM}, commit=${SHORT_SHA})"
 
       - name: Tidy & Verify Go code
         run: |
@@ -43,11 +70,17 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o dist/mcontrol-linux-arm64 .
           cp VERSION dist/VERSION
           cp mcontrol-cli.sh dist/mcontrol-cli.sh
+          printf '{"version":"%s","build":%s,"commit":"%s","tag":"%s-beta.%s","built_at":%s}\n' \
+            "${{ steps.ver.outputs.version }}" \
+            "${{ steps.ver.outputs.build_num }}" \
+            "${{ steps.ver.outputs.short_sha }}" \
+            "${{ steps.ver.outputs.version }}" \
+            "${{ steps.ver.outputs.build_num }}" \
+            "$(date +%s)" > dist/beta-meta.json
 
       - name: Package release ZIPs & SHA-256 checksums
         run: |
           cd dist
-          # Default amd64 ZIP (MControl-latest.zip) for 1-click panel updates
           mkdir -p pkg_amd64 pkg_arm64
           cp mcontrol-linux-amd64 pkg_amd64/mcontrol-linux-amd64
           cp mcontrol-cli.sh pkg_amd64/mcontrol-cli.sh
@@ -67,7 +100,8 @@ jobs:
           done
           ls -lh
 
-      - name: Create / Update GitHub Release
+      - name: Publish Official GitHub Release
+        if: steps.ver.outputs.mode == 'release'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
@@ -76,6 +110,30 @@ jobs:
           generate_release_notes: true
           files: |
             dist/VERSION
+            dist/mcontrol-cli.sh
+            dist/MControl-latest.zip
+            dist/MControl-latest.zip.sha256
+            dist/MControl-linux-amd64.zip
+            dist/MControl-linux-amd64.zip.sha256
+            dist/MControl-linux-arm64.zip
+            dist/MControl-linux-arm64.zip.sha256
+            dist/mcontrol-linux-amd64
+            dist/mcontrol-linux-amd64.sha256
+            dist/mcontrol-linux-arm64
+            dist/mcontrol-linux-arm64.sha256
+
+      - name: Update Rolling Beta Pre-Release (beta-latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta-latest
+          name: MControl Rolling Beta (${{ steps.ver.outputs.version }}-beta.${{ steps.ver.outputs.build_num }})
+          prerelease: true
+          make_latest: false
+          body: |
+            Rolling Beta Build **#${{ steps.ver.outputs.build_num }}** (`${{ steps.ver.outputs.short_sha }}`) based on `v${{ steps.ver.outputs.version }}`.
+          files: |
+            dist/VERSION
+            dist/beta-meta.json
             dist/mcontrol-cli.sh
             dist/MControl-latest.zip
             dist/MControl-latest.zip.sha256

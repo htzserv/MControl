@@ -882,6 +882,16 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
 .tun-adv[open] summary { color: var(--accent); margin-bottom: 10px; }
 @media (max-width: 560px) { .eng-pills { grid-template-columns: repeat(3, 1fr); } }
 
+
+/* Theme family finishes */
+body[data-family="Neon"] { --accent-glow: color-mix(in srgb, var(--accent) 22%, transparent); }
+body[data-family="Neon"][data-bg="aurora"] { background-image: radial-gradient(ellipse at 12% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 48%), radial-gradient(ellipse at 92% 4%, color-mix(in srgb, var(--accent2) 8%, transparent), transparent 46%); }
+body[data-family="Material"][data-card="flat"] .card { background: color-mix(in srgb, var(--surface) 96%, var(--accent)); border-color: var(--border); }
+body[data-family="Material"] .nav-item.active { border-radius: 24px; border-color: transparent; }
+body:is([data-family="Material"], [data-family="Studio"]) { --accent-glow: transparent; }
+.tcard { text-align: start; color: var(--text); font: inherit; min-width: 0; }
+.tcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.tg { grid-template-columns: repeat(auto-fill, minmax(min(100%, 224px), 1fr)); }
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1045,7 +1055,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.1.9.3</span>
+            <span class="badge b-ok" id="loc-ver">v1.2.0</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -1143,11 +1153,13 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
         <div class="kv"><span data-i18n="upd_installed">Installed version</span><span id="upd-cur">---</span></div>
         <div class="kv"><span data-i18n="upd_github">Official GitHub</span><span id="upd-gh">---</span></div>
         <div class="kv"><span data-i18n="upd_mirror">Iran mirror</span><span id="upd-ir">---</span></div>
+        <div class="kv" id="upd-beta-row" style="display:none;"><span>Rolling Beta Channel</span><span id="upd-beta">---</span></div>
         <div class="hint" style="margin-top:10px;" data-i18n="upd_checksum_note">Remote updates require a .sha256 file next to the package and are rejected if the hash does not match.</div>
         <div class="flexw">
           <button class="btn btn-ghost" id="btn-upd-check" data-i18n="btn_check_updates">Check for updates</button>
           <button class="btn btn-sky" data-upd="github" data-i18n="btn_upd_github">Update from GitHub</button>
           <button class="btn btn-sky" data-upd="mirror" data-i18n="btn_upd_mirror">Update from Iran mirror</button>
+          <button class="btn btn-warn" id="btn-upd-beta" data-upd="beta" style="display:none;">Install Beta Build</button>
         </div>
         <hr>
         <h4 style="margin-bottom:6px;" data-i18n="upd_zip_title">Offline ZIP update</h4>
@@ -1256,6 +1268,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
               <div class="field"><label data-i18n="set_service">Core systemd service name</label><input id="set-svc" class="mono" placeholder="mcontrol-agent"></div>
               <div class="field"><label data-i18n="set_probe">Auto-probe every N minutes (0 = off)</label><input id="set-probe" type="number" min="0" max="1440" value="0"></div>
             </div>
+            <label class="check"><input type="checkbox" id="set-beta"><span>Enable Beta Builds (Rolling GitHub Actions Pre-Releases)</span></label>
             <label class="check"><input type="checkbox" id="set-unv"><span data-i18n="set_unverified">Allow updates without a .sha256 file (not recommended)</span></label>
             <button class="btn btn-sky" id="btn-save-settings" data-i18n="btn_save_settings">Save settings</button>
           </div>
@@ -1862,7 +1875,7 @@ en: {
   logs_title: 'MControl service logs', btn_reload: 'Refresh', btn_close: 'Close', logs_loading: 'Fetching logs...', logs_fail: 'Failed to fetch logs.', no_logs: 'No logs available.',
   err_network: 'Network error', session_expired: 'Session expired, please sign in again.', copied: '{l} copied: {v}', copy_failed: 'Copy failed',
   g_Glass: 'Glass', g_Material: 'Material', 'g_Dark Pro': 'Dark Pro', g_Terminal: 'Terminal', g_Retro: 'Retro', g_Neon: 'Neon', g_Bold: 'Bold', g_Pastel: 'Pastel',
-  'g_Light & Soft': 'Light & Soft', g_Editorial: 'Editorial', g_Nature: 'Nature', g_all: 'All', g_Soft: 'Soft'
+  'g_Light & Soft': 'Light & Soft', g_Editorial: 'Editorial', g_Nature: 'Nature', g_Studio: 'Studio', g_all: 'All', g_Soft: 'Soft'
 },
 fa: {
   setup_title: 'راه‌اندازی اولیه MControl', setup_sub: 'نام کاربری، رمز عبور، مسیر مخفی وب و پورت پنل را تنظیم کنید',
@@ -1916,7 +1929,7 @@ fa: {
   logs_title: 'لاگ سرویس MControl', btn_reload: 'بروزرسانی', btn_close: 'بستن', logs_loading: 'در حال دریافت لاگ...', logs_fail: 'دریافت لاگ ناموفق بود.', no_logs: 'لاگی موجود نیست.',
   err_network: 'خطای شبکه', session_expired: 'نشست منقضی شد؛ دوباره وارد شوید.', copied: '{l} کپی شد: {v}', copy_failed: 'کپی ناموفق بود',
   g_Glass: 'شیشه‌ای', g_Material: 'متریال', 'g_Dark Pro': 'تیره حرفه‌ای', g_Terminal: 'ترمینال', g_Retro: 'رترو', g_Neon: 'نئون', g_Bold: 'جسورانه', g_Pastel: 'پاستلی',
-  'g_Light & Soft': 'روشن و نرم', g_Editorial: 'نشریه‌ای', g_Nature: 'طبیعت', g_all: 'همه', g_Soft: 'نرم'
+  'g_Light & Soft': 'روشن و نرم', g_Editorial: 'نشریه‌ای', g_Nature: 'طبیعت', g_Studio: 'استودیو', g_all: 'همه', g_Soft: 'نرم'
 }
 };
 const OPT = {
@@ -1945,51 +1958,36 @@ function T(id, n, g, s, d, l) {
   const a = s.split(' ');
   TH.push({ id, n, g, nav: a[0], card: a[1], btn: a[2], bg: a[3], font: a[4], den: a[5], srv: a[6], stat: a[7], r: +a[8], bw: +a[9], d: d.split(' '), l: l.split(' ') });
 }
-T('mdesign', 'MDesign Neon', 'Glass', 'dock glass pill aurora sans cozy grid tiles 18 1', '#030712 #0f172a #f8fafc #94a3b8 #38bdf8 #c084fc #38bdf83d', '#f0f6ff #ffffff #0f172a #64748b #0284c7 #9333ea #0ea5e947');
-T('ios', 'iOS Liquid', 'Glass', 'float-b liquid pill mesh round cozy grid tiles 26 1', '#070b14 #1b2540 #ffffff #a6b3cc #0a84ff #bf5af2 #ffffff38', '#e9eff8 #ffffff #1c1c1e #636366 #007aff #af52de #ffffffd9');
-T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 28 1', '#111318 #1d2026 #e2e2e9 #9aa0ae #a8c7fa #d0bcff #2f333d', '#f3f6fc #ffffff #1a1c1e #5c6270 #0b57d0 #6750a4 #dce2ee');
-T('fluent', 'Windows Fluent', 'Material', 'side paper round solid sans cozy grid tiles 8 1', '#1c1c1c #2b2b2b #ffffff #a6a6a6 #60cdff #b4a0ff #ffffff17', '#f3f3f3 #ffffff #1a1a1a #606060 #0067c0 #744da9 #00000014');
-T('terminal', 'Cyber Terminal', 'Terminal', 'top hud square scan mono compact list tiles 2 1', '#050805 #0a140b #dcfce7 #86efac #22c55e #eab308 #22c55e60', '#f4f7f4 #ffffff #052e16 #166534 #15803d #a16207 #15803d80');
-T('brutal', 'Neo Brutalist', 'Bold', 'top brutal square solid display cozy grid tiles 4 3', '#111111 #1e1e1e #fff7d6 #c9c2a0 #ffe14d #ff6b6b #fff7d6', '#fff4c2 #ffffff #111111 #444444 #ff5a36 #2563eb #111111');
-T('neu', 'Soft Neumorph', 'Soft', 'rail neu round solid round cozy grid tiles 22 1', '#23262e #23262e #e6e9f0 #9aa1b2 #7c9cff #ff8fb1 #00000000', '#e4e8f0 #e4e8f0 #2d3340 #6b7385 #4c6fff #ff5c8a #00000000');
-T('paper', 'Paper Notes', 'Light & Soft', 'side paper round solid sans roomy grid tiles 10 1', '#191919 #202020 #ebebeb #9b9b9b #529cca #9d68d3 #ffffff17', '#ffffff #ffffff #37352f #787774 #2383e2 #9065b0 #37352f1a');
-T('nord', 'Nord', 'Dark Pro', 'side flat round solid sans cozy grid tiles 10 1', '#2e3440 #3b4252 #eceff4 #a3adbf #88c0d0 #b48ead #4c566a', '#eceff4 #ffffff #2e3440 #5b667a #5e81ac #b48ead #d8dee9');
-T('dracula', 'Dracula', 'Dark Pro', 'top outline round dots sans cozy grid tiles 10 1', '#282a36 #343746 #f8f8f2 #9aa3c7 #bd93f9 #ff79c6 #6272a4', '#f8f8f2 #ffffff #282a36 #6272a4 #7c4dff #d6409f #bd93f966');
-T('solar', 'Solarized', 'Dark Pro', 'side paper round solid serif cozy grid tiles 6 1', '#002b36 #073642 #eee8d5 #93a1a1 #268bd2 #d33682 #586e75', '#fdf6e3 #eee8d5 #073642 #586e75 #268bd2 #d33682 #93a1a1');
-T('gruvbox', 'Gruvbox', 'Retro', 'top outline square noise mono compact table tiles 2 1', '#282828 #3c3836 #ebdbb2 #a89984 #fabd2f #fb4934 #665c54', '#fbf1c7 #ebdbb2 #3c3836 #7c6f64 #b57614 #9d0006 #a89984');
-T('monokai', 'Monokai Pro', 'Dark Pro', 'rail hud round solid mono cozy grid tiles 6 1', '#2d2a2e #403e41 #fcfcfa #939293 #ffd866 #ff6188 #5b595c', '#faf4f2 #ffffff #29242a #726e70 #cc7a00 #e14775 #d3cdcc');
-T('synth', 'Synthwave 84', 'Neon', 'dock glass pill horizon display cozy grid tiles 14 1', '#12062b #241046 #fdf2ff #b9a3d9 #ff2bd6 #00e5ff #ff2bd666', '#fbeaff #ffffff #2a0a4a #7a5a9a #d6009f #0097c4 #d6009f55');
-T('matrix', 'Matrix CRT', 'Terminal', 'top hud square scan mono compact table ribbon 0 1', '#000a00 #031403 #9dffb0 #3fae5a #00ff41 #b6ff00 #00ff4166', '#eaffee #ffffff #012b0a #2f7a43 #008f23 #4f7d00 #008f2380');
-T('amber', 'Amber Terminal', 'Terminal', 'side hud square scan mono cozy list tiles 0 1', '#140c00 #211400 #ffd9a0 #c08a3e #ffb000 #ff6a00 #ffb00066', '#fff6e5 #ffffff #3b2500 #8a5a10 #cc7a00 #c2410c #cc7a0080');
-T('blueprint', 'Blueprint', 'Retro', 'top outline square grid mono cozy table ribbon 0 1', '#0b3a6b #0e4a86 #e6f1ff #9cc3ef #ffffff #ffd86b #ffffff80', '#e8f1fb #ffffff #0b3a6b #4a6f99 #0b5cad #c27a00 #0b5cad66');
-T('win95', 'Retro 95', 'Retro', 'top bevel square solid sans compact grid tiles 0 1', '#202020 #3b3b3b #f2f2f2 #b8b8b8 #5aa0ff #ff7a7a #8a8a8a', '#008080 #c0c0c0 #000000 #404040 #000080 #800000 #808080');
-T('aqua', 'Aqua Glass', 'Glass', 'top glass pill stripes sans cozy grid tiles 12 1', '#16202b #223144 #f1f6fb #9fb2c7 #3aa0ff #7ad0ff #7ad0ff40', '#e8eef5 #ffffff #1b2733 #5f7388 #1a82f7 #2fb4ff #1a82f740');
-T('sunset', 'Sunset Drive', 'Glass', 'dock glass pill diag round cozy grid tiles 20 1', '#1c0f1f #2e1830 #fff1ea #d4a9a0 #ff7a59 #ffc857 #ff7a5955', '#fff0e6 #ffffff #3a1d24 #9a6a62 #e8552f #d99100 #e8552f55');
-T('ocean', 'Deep Ocean', 'Nature', 'side-r glass round aurora sans cozy grid tiles 16 1', '#04141f #0a2a3d #e6f6ff #8fb7cc #22d3ee #3b82f6 #22d3ee44', '#e6f6ff #ffffff #05283a #4d7a91 #0891b2 #2563eb #0891b255');
-T('forest', 'Forest', 'Nature', 'side flat round noise sans cozy grid tiles 14 1', '#0f1a14 #172a20 #e4f2e8 #8fb09b #5fd38d #e3c565 #2a4637', '#eef5ee #ffffff #14281c #587a65 #1f9d55 #b8860b #cfe0d3');
-T('sakura', 'Sakura', 'Pastel', 'bottom paper pill dots round cozy grid tiles 22 1', '#2a1722 #3a2230 #ffe9f1 #d6a8bb #ff8fb8 #b9a2ff #ff8fb840', '#fff0f5 #ffffff #4a2335 #a86b86 #e84a86 #8b6bff #f3b6cc');
-T('violet', 'Royal Violet', 'Dark Pro', 'rail deck round aurora sans cozy grid tiles 14 1', '#0e0a1f #1a1433 #f1ecff #a99fd0 #a78bfa #f472b6 #a78bfa40', '#f4f0ff #ffffff #231a4a #6b5fa0 #7c3aed #db2777 #7c3aed40');
-T('crimson', 'Crimson Ops', 'Terminal', 'top hud slant stripes display compact list tiles 2 1', '#0c0506 #1a0a0c #ffe8e8 #c79090 #ff2a3d #ffb300 #ff2a3d66', '#fff0f0 #ffffff #3a0a10 #9a5a60 #d4001a #b87500 #d4001a66');
-T('mono', 'Mono Minimal', 'Light & Soft', 'side outline square solid sans cozy grid tiles 0 1', '#0a0a0a #0a0a0a #f5f5f5 #8a8a8a #ffffff #a3a3a3 #3a3a3a', '#ffffff #ffffff #0a0a0a #737373 #0a0a0a #525252 #d4d4d4');
-T('news', 'Newspaper', 'Editorial', 'top paper square noise serif roomy table ribbon 0 1', '#1b1a17 #24221e #f0ead8 #a8a08a #e8c872 #c96a50 #4a463c', '#f4efe1 #fbf8ef #1e1b14 #6b6452 #8a2c0d #1f5f8b #1e1b14');
-T('tokyo', 'Tokyo Night', 'Dark Pro', 'side flat round solid sans cozy grid tiles 10 1', '#1a1b26 #24283b #c0caf5 #7982a9 #7aa2f7 #bb9af7 #3b4261', '#d5d6db #e9e9ed #343b58 #6c6e75 #34548a #5a4a78 #b9bac2');
-T('catppuccin', 'Catppuccin', 'Pastel', 'dock flat pill dots round cozy grid tiles 18 1', '#1e1e2e #313244 #cdd6f4 #a6adc8 #cba6f7 #f5c2e7 #45475a', '#eff1f5 #ffffff #4c4f69 #6c6f85 #8839ef #ea76cb #ccd0da');
-T('cyberyellow', 'Cyber Yellow', 'Bold', 'top hud slant stripes display cozy grid tiles 0 1', '#0a0a0a #161616 #fff9c4 #b5ae6a #fcee0a #00f0ff #fcee0a66', '#fffbd1 #ffffff #1a1a00 #7a7400 #b8a800 #008ea0 #b8a80080');
-T('vapor', 'Vaporwave', 'Neon', 'float-b glass pill diag round cozy grid tiles 24 1', '#1a1040 #2b1a66 #ffe9ff #c0a8f0 #ff71ce #01cdfe #ff71ce55', '#fdeaff #ffffff #3a1a66 #8a6ab5 #e0409f #0097c4 #e0409f55');
-T('hacker', 'Hacker Green', 'Terminal', 'side outline square grid mono cozy table tiles 0 1', '#020a04 #07150a #b8ffcb #4ba264 #39ff14 #00ffa2 #39ff1455', '#effff3 #ffffff #04230d #3d8a54 #138a00 #00805a #138a0070');
-T('candy', 'Candy Pop', 'Bold', 'bottom brutal pill dots round cozy grid tiles 20 3', '#2a1b4d #3b2870 #fff4fb #cdb8f0 #ff7ac6 #5ef2d6 #1a0f33', '#fff0fa #ffffff #2a1b4d #8a6bb5 #ff4fae #12c7a6 #2a1b4d');
-T('coffee', 'Coffee House', 'Editorial', 'side paper round noise serif roomy grid tiles 12 1', '#1f1611 #2b1f18 #f0e2d0 #b59b83 #d99a5b #a3b18a #4a382c', '#f6ece0 #fffaf3 #3b2a1e #8a6f58 #a8571d #5f7a45 #dfcbb4');
-T('arctic', 'Arctic', 'Light & Soft', 'rail glass round mesh sans cozy grid tiles 20 1', '#0d1b2a #1b2f45 #eaf4ff #9db8d3 #7dd3fc #a5b4fc #7dd3fc40', '#eef6ff #ffffff #0f2a44 #5c7c9b #0ea5e9 #6366f1 #bfdbfe');
-T('lava', 'Lava', 'Neon', 'top glass round aurora sans cozy grid tiles 14 1', '#140505 #2a0e0a #fff0e8 #d2a190 #ff5a1f #ffb020 #ff5a1f55', '#fff1ea #ffffff #3a1308 #a8654d #e03a00 #c78100 #e03a0055');
-T('mint', 'Fresh Mint', 'Pastel', 'bottom flat pill solid round cozy grid tiles 24 1', '#0e1a17 #17302a #e6fff6 #8fc7b5 #4ade80 #2dd4bf #24493f', '#ecfdf5 #ffffff #064e3b #4d8a77 #059669 #0d9488 #bfe8d6');
-T('slate', 'Slate Pro', 'Dark Pro', 'side flat round solid sans compact table ribbon 6 1', '#0f172a #1e293b #f1f5f9 #94a3b8 #38bdf8 #a78bfa #334155', '#f1f5f9 #ffffff #0f172a #64748b #0284c7 #7c3aed #cbd5e1');
-T('holo', 'Holographic', 'Glass', 'dock liquid pill mesh round cozy grid tiles 28 1', '#0b0b1a #1a1a33 #f4f4ff #aaaad0 #7df9ff #ff9bf5 #ffffff30', '#f2f4ff #ffffff #1a1a33 #6a6a99 #4d7cff #d65cff #ffffffcc');
-T('pixel', 'Pixel Arcade', 'Bold', 'top brutal square stars mono compact grid tiles 0 3', '#0a0a23 #14143c #ffffff #a8a8e0 #ffd700 #ff4d6d #ffffff', '#f0f0ff #ffffff #0a0a23 #5a5a99 #b8860b #d6264f #0a0a23');
-T('sand', 'Sand Dune', 'Nature', 'dock paper pill diag serif cozy grid tiles 16 1', '#201a12 #2e261a #f4e8d2 #b8a888 #e0a458 #c1666b #4d4230', '#f7efe0 #fffaf0 #3a2f1e #8a7a5a #c47f17 #b0485c #e3d5b8');
-T('clinic', 'Clean Clinic', 'Light & Soft', 'top deck round solid sans cozy grid tiles 8 1', '#0b1620 #12222f #e8f3fa #8aa6ba #2dd4bf #60a5fa #1d3344', '#f4f9fc #ffffff #0b2a3a #5b7a8c #0d9488 #2563eb #d3e3ee');
-T('gold', 'Midnight Gold', 'Editorial', 'rail deck pill dots serif cozy grid tiles 12 1', '#0c0c10 #17171f #f3ecd8 #a39a80 #e6b800 #c084fc #2d2d3a', '#faf6ea #ffffff #1b1700 #7a6f45 #a07800 #7e3ff2 #e4dcc0');
-T('toxic', 'Toxic Lab', 'Neon', 'float-b hud slant grid display cozy grid tiles 6 1', '#0a0f05 #141f0a #efffd6 #9bb86a #b6ff00 #00e0a4 #b6ff0066', '#f4ffe0 #ffffff #1b2a00 #5f7a1a #6a9900 #00967a #6a990080');
-T('ruby', 'Ruby Glass', 'Glass', 'side-r liquid pill mesh round cozy grid tiles 22 1', '#1a0710 #2e0f1e #ffeaf1 #d6a0b4 #ff4d7e #ffb86b #ffffff30', '#fff0f4 #ffffff #3a0f20 #a86a80 #e0245e #d98a2b #ffffffcc');
+T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#0a1121 #142033 #ecedef #adb1b8 #65dcff #bda5ff #284f66', '#edf4fa #fbfdfe #0b111e #515661 #005a79 #644291 #b2ceda');
+T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#171222 #251d35 #eeedef #b3b0b8 #d9a0ff #ff99bf #523e68', '#f7f2fa #fdfcfe #16121f #5a5762 #663188 #95395b #d3c2de');
+T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#091915 #132a25 #eceeee #acb4b3 #5af4c3 #98cdfa #255c4c', '#edf7f3 #fbfdfc #0a1714 #505c59 #00634c #245980 #b2d2c9');
+T('ember', 'Ember Line', 'Neon', 'side outline round solid sans cozy list tiles 10 1', '#191311 #2c201b #eeeded #b5b1af #ffa775 #e9cd91 #614232', '#fbf4ee #fefdfb #171211 #5c5756 #893a18 #725319 #dec6b8');
+T('pulse', 'Blue Pulse', 'Neon', 'top deck round solid sans compact table tiles 8 1', '#0d1425 #192640 #edeef0 #aeb3bc #93b4ff #72e5e2 #384a70', '#eff4ff #fbfdff #0e1321 #535864 #284c99 #006369 #bdcae6');
+T('orchid', 'Night Orchid', 'Neon', 'dock glass pill aurora sans cozy grid tiles 18 1', '#1a101e #2c1b30 #eeedee #b5afb7 #ff9ddd #c7b1ff #613c5b', '#faf1f8 #fefcfd #18101b #5c555f #88336d #5c4290 #dec2d5');
+T('limewire', 'Lime Signal', 'Neon', 'rail flat round solid mono compact list ribbon 6 1', '#12190e #212b1b #edeeed #b1b5af #cef780 #83d6bd #4c5e34', '#f4f7ec #fdfdfb #12170e #575c54 #526719 #216557 #ccd3b7');
+T('ocean', 'Deep Ocean', 'Neon', 'side glass round aurora sans cozy grid tiles 14 1', '#091922 #132a38 #eceeef #acb4b9 #68e3ed #87b9ff #285865', '#eef6f8 #fbfdfd #0a171f #505c62 #006575 #305b95 #b2d2d7');
+T('aurora', 'Aurora Mint', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#08141c #102330 #edf3f7 #9fb5c2 #5ef2d6 #a78bfa #23545e', '#edf8f6 #fbfefe #0a1b24 #4c626d #00685c #5b3fa3 #b0d6cf');
+T('crimson', 'Crimson Grid', 'Neon', 'top deck round solid sans compact table tiles 10 1', '#180d11 #28161c #f3ecee #bca6ad #ff7a90 #fbbf24 #5e2f3d', '#fdf1f3 #fffcfd #240e14 #6b4e56 #a31c39 #8f5b00 #e3bec7');
+T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#151520 #232432 #ededef #b2b2b7 #cbbcff #a8c8ff #4d4a65', '#f4f1fa #fdfcfe #14141d #595961 #5d4494 #385c88 #cec6e0');
+T('iris', 'Material Iris', 'Material', 'rail flat pill solid sans cozy grid tiles 20 1', '#17141c #29232f #eeedee #b4b2b6 #eab4ed #b9c4ff #59475e', '#f8f1f8 #fdfcfd #16131a #5a585e #77427c #465986 #d8c5d9');
+T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#111a1a #1e2a2b #edeeee #b0b4b5 #8cd8ce #b1cbd9 #3a5654', '#eef6f4 #fbfdfd #111818 #565c5c #21685e #425f70 #bbd2ce');
+T('clay', 'Material Clay', 'Material', 'top paper pill solid sans roomy grid tiles 18 1', '#1c1614 #302522 #eeeeed #b7b3b2 #ecb29d #e4c48c #5f4841', '#faf2ed #fefcfb #1a1513 #5e5a58 #884730 #74591d #dec7be');
+T('birch', 'Material Birch', 'Material', 'side flat round solid sans cozy grid tiles 16 1', '#171a13 #272d21 #eeeeed #b3b6b1 #c3d5a1 #a0cfbe #4e5741', '#f3f6ed #fcfdfb #161812 #5a5c57 #52672e #376956 #cbd2bd');
+T('denim', 'Material Denim', 'Material', 'rail flat round solid sans compact table ribbon 12 1', '#141923 #222b38 #edeeef #b2b5b9 #abc8f4 #c4bfdf #445267', '#f0f4fa #fcfdfe #131720 #585c63 #365b85 #5d5278 #c2cedd');
+T('sakura', 'Material Sakura', 'Material', 'bottom flat pill solid round cozy grid tiles 20 1', '#20161b #31232a #efedee #b7b2b4 #f1b3c8 #cdbecf #614752', '#fbf2f4 #fefcfd #1d1519 #615a5d #883f60 #69506a #dec5cf');
+T('saffron', 'Material Saffron', 'Material', 'top paper round solid sans cozy list tiles 14 1', '#1c1912 #2f2a1e #eeeeed #b6b4b0 #e6c680 #b8cda2 #5d5136', '#f9f5e9 #fefdfa #1a1712 #5e5c57 #765918 #4e663d #d8ceb5');
+T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#181310 #29211c #f2ece6 #b8ada4 #e8b882 #a3c9a8 #57463a', '#f8f3ee #fefcfa #1c1612 #635850 #874e1d #3e6b48 #dccbb9');
+T('cobaltm', 'Material Cobalt', 'Material', 'bottom flat pill solid sans cozy grid tiles 20 1', '#101624 #1c263b #edf1f8 #a9b4c7 #8cb8ff #c6b4ff #3c4d6e', '#eef3fc #fbfdff #111828 #525d73 #23519e #5a4699 #c0cde6');
+T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#101621 #202935 #edeeef #b1b4b8 #a6c8ef #b7bdcd #425164', '#f0f3f7 #fcfcfd #10151e #555a61 #395775 #545e70 #c2ccd6');
+T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#101824 #1e2c40 #edeef0 #b0b5bc #9bcfff #c6bcf3 #3d5570', '#eef4fa #fbfdfe #101720 #555b64 #245c96 #644d8a #bccee1');
+T('fluent', 'Windows Fluent', 'Studio', 'side paper round solid sans cozy grid tiles 8 1', '#171a1e #252a30 #eeeeee #b3b4b7 #88cafa #b7c6d5 #3e5262', '#f2f4f6 #fcfdfd #16181b #5a5c5f #00598d #4a6075 #b6cddc');
+T('paper', 'Paper Notes', 'Studio', 'side paper round solid sans roomy list tiles 10 1', '#1c1a16 #2c2923 #eeeeed #b5b4b2 #e7c499 #b6c7a3 #5b5040', '#f6f2e9 #fdfcfa #1a1815 #5e5c5a #794f2d #4d6442 #d7c9ba');
+T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#101716 #1d2927 #edeeee #b0b4b3 #93d7b5 #c0caba #3a544a', '#f1f5f3 #fcfdfc #101615 #555a5a #34634b #596450 #c2d0c9');
+T('nord', 'Nord', 'Studio', 'side flat round solid sans cozy grid tiles 10 1', '#252d39 #333e4c #eff0f1 #b8bbc0 #a2cddb #cbbad2 #4f6270', '#edf1f5 #fbfcfd #212832 #646a72 #396378 #705573 #c0ced6');
+T('ink', 'Ink Ledger', 'Studio', 'top paper square solid sans compact table ribbon 4 1', '#151619 #24262a #edeeee #b2b3b4 #c1c8d7 #e3bf99 #4b4e55', '#f6f5f2 #fdfdfc #141517 #595a5c #404c61 #765637 #c8cbce');
+T('cobalt', 'Cobalt Desk', 'Studio', 'rail deck round solid sans cozy list tiles 10 1', '#101826 #202c40 #edeef0 #b1b5bc #a5bcff #c9d5e4 #415070', '#f1f4f9 #fcfdfe #101722 #555b65 #344f98 #435971 #c2cbe1');
+T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#0d0e11 #181a1f #f0f2f5 #9fa6b2 #d1d9e6 #8ea4c8 #343942', '#f4f5f7 #ffffff #111318 #5c6370 #2c3e55 #4d627d #cfd5de');
+T('emerald', 'Emerald Desk', 'Studio', 'rail deck round solid sans cozy grid tiles 12 1', '#0d1714 #182722 #edf4f1 #a2b5ae #6ee7b7 #d6c39a #2e4f44', '#eff6f3 #fbfdfc #0e1c17 #4e635b #156e4e #755e2e #bed4cb');
 
 /* ═══════════════ icons ═══════════════ */
 const IC = {
@@ -2014,6 +2012,7 @@ let SETTINGS = {};
 let curTab = 'overview';
 let editId = 0, installTargetId = 0, updAvail = false;
 let themeId = ls.get('mc_theme', 'mdesign');
+if (!TH.some(th => th.id === themeId)) themeId = 'mdesign';
 let mode = ls.get('mc_mode', 'dark');
 let custom = {};
 try { custom = JSON.parse(ls.get('mc_custom', '{}')) || {}; } catch (e) { custom = {}; }
@@ -2117,16 +2116,17 @@ function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
   set('--bg', p[0]); set('--surface', p[1]); set('--text', p[2]); set('--muted', p[3]); set('--accent', p[4]); set('--accent2', p[5]); set('--border', p[6]);
-  set('--on-accent', lum(p[4]) > 0.5 ? '#0b0b0b' : '#ffffff');
+  set('--on-accent', lum(p[4]) > 0.179 ? '#000000' : '#ffffff');
   set('--green', dark ? '#34d399' : '#059669'); set('--red', dark ? '#f87171' : '#dc2626');
   set('--yellow', dark ? '#fbbf24' : '#b45309'); set('--purple', dark ? '#c084fc' : '#9333ea'); set('--pink', dark ? '#f472b6' : '#db2777');
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
-  b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
+  b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
   b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.navx = navxFor(e);
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_custom', JSON.stringify(custom));
+  if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
   const mb = $('btn-mode'); if (mb) mb.innerHTML = svg(dark ? 'moon' : 'sun');
   document.querySelectorAll('[data-mode]').forEach(c => c.classList.toggle('on', c.dataset.mode === mode));
 }
@@ -2149,7 +2149,7 @@ function toggleLoginThemeDrawer() {
 function renderLoginSwatches() {
   const box = $('login-swatches');
   if (!box) return;
-  const picks = ['mdesign', 'ios', 'm3', 'fluent', 'terminal', 'synth', 'tokyo', 'catppuccin', 'crimson'];
+  const picks = ['mdesign', 'aurora', 'ios', 'm3', 'fluent', 'ion', 'synth', 'obsidian', 'emerald'];
   box.innerHTML = picks.map(id => {
     const th = TH.find(x => x.id === id);
     if (!th) return '';
@@ -2239,11 +2239,11 @@ function renderThemes() {
   const gs = ['all'].concat(Array.from(new Set(TH.map(x => x.g))));
   $('theme-groups').innerHTML = gs.map(g => `<button class="chip${g === groupFilter ? ' on' : ''}" data-grp="${esc(g)}">${esc(t('g_' + g))}</button>`).join('');
   const q = themeQuery.trim().toLowerCase();
-  const list = TH.filter(x => (groupFilter === 'all' || x.g === groupFilter) && (!q || (x.n + ' ' + x.g + ' ' + x.nav + ' ' + x.card).toLowerCase().includes(q)));
+  const list = TH.filter(x => (groupFilter === 'all' || x.g === groupFilter) && (!q || (x.n + ' ' + t('g_' + x.g) + ' ' + x.g + ' ' + x.nav + ' ' + x.card).toLowerCase().includes(q)));
   $('theme-count').textContent = list.length + ' / ' + TH.length + ' ' + t('themes_n');
-  grid.innerHTML = list.map(x => `<div class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
+  grid.innerHTML = list.map(x => `<button type="button" aria-pressed="${x.id === themeId}" class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
     <div class="tmeta"><strong>${esc(x.n)}</strong>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
-    <div class="ttags"><span class="tag">${esc(x.nav)}</span><span class="tag">${esc(x.card)}</span><span class="tag">${esc(x.font)}</span></div></div>`).join('');
+    <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
 }
 function renderStudio() {
   const box = $('studio'); if (!box) return;
@@ -3249,13 +3249,32 @@ async function checkUpdates(notify) {
     };
     if ($('upd-gh')) $('upd-gh').innerHTML = fmt(c.github);
     if ($('upd-ir')) $('upd-ir').innerHTML = fmt(c.mirror);
+    const bRow = $('upd-beta-row'), bBtn = $('btn-upd-beta'), bEl = $('upd-beta');
+    if (c.beta && c.beta.enabled) {
+      if (bRow) bRow.style.display = 'flex';
+      if (bBtn) bBtn.style.display = 'inline-flex';
+      if (bEl) {
+        if (c.beta.error) bEl.innerHTML = `<span style="color:var(--red);">${esc(c.beta.error)}</span>`;
+        else if (c.beta.available) bEl.innerHTML = `<span style="color:var(--yellow);">v${esc(c.beta.tag)} (${t('upd_new')})</span>`;
+        else bEl.innerHTML = `<span style="color:var(--green);">v${esc(c.beta.tag || c.current_version)} (${t('upd_uptodate')})</span>`;
+      }
+    } else {
+      if (bRow) bRow.style.display = 'none';
+      if (bBtn) bBtn.style.display = 'none';
+    }
     updAvail = !!c.update_available; renderNav();
-    const latestVer = (c.github && c.github.available && c.github.version) || (c.mirror && c.mirror.available && c.mirror.version) || '';
+    const isBetaNew = !!(c.beta && c.beta.enabled && c.beta.available);
+    const latestVer = (c.github && c.github.available && c.github.version)
+      || (c.mirror && c.mirror.available && c.mirror.version)
+      || (isBetaNew ? ('BETA #' + c.beta.build) : '');
     const topBtn = $('top-upd-btn');
     if (topBtn) {
       topBtn.classList.toggle('show', updAvail);
       const vEl = $('top-upd-ver');
-      if (vEl) { vEl.textContent = latestVer ? ('v' + latestVer) : ''; vEl.style.display = latestVer ? 'inline-block' : 'none'; }
+      if (vEl) {
+        vEl.textContent = latestVer ? (latestVer.startsWith('BETA') ? latestVer : ('v' + latestVer)) : '';
+        vEl.style.display = latestVer ? 'inline-block' : 'none';
+      }
       const tEl = $('top-upd-txt');
       if (tEl) tEl.textContent = t('upd_btn_new');
     }
@@ -3567,6 +3586,7 @@ async function loadSettings() {
   $('set-pgh').value = s.panel_github_url || ''; $('set-pir').value = s.panel_mirror_url || '';
   $('set-svc').value = s.service_name || 'mcontrol-agent'; $('set-probe').value = s.probe_interval || 0;
   $('set-unv').checked = !!s.allow_unverified;
+  if ($('set-beta')) $('set-beta').checked = !!s.beta_builds;
   $('set-path-port').textContent = '/' + (s.web_path || '') + '/ : ' + (s.panel_port || '');
   $('set-wpath').value = s.web_path || '';
   $('set-port').value = s.panel_port || '2053';
@@ -3586,7 +3606,8 @@ async function saveSettings() {
     github_repo_url: $('set-gh').value, iran_mirror_url: $('set-ir').value,
     panel_github_url: $('set-pgh').value, panel_mirror_url: $('set-pir').value,
     service_name: $('set-svc').value, probe_interval: parseInt($('set-probe').value || '0', 10) || 0,
-    allow_unverified: $('set-unv').checked
+    allow_unverified: $('set-unv').checked,
+    beta_builds: $('set-beta') ? $('set-beta').checked : false
   };
   const r = await api('api/settings', 'POST', body);
   if (r.ok) { toast(t('settings_saved')); loadSettings(); } else toast(r.error || 'Failed', true);

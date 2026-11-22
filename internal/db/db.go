@@ -114,7 +114,9 @@ type Settings struct {
 	PanelPort       string `json:"panel_port"`
 	ServiceName     string `json:"service_name"`
 	ProbeInterval   int    `json:"probe_interval"`   // minutes, 0 = manual only
-	AllowUnverified bool   `json:"allow_unverified"` // allow updates without a .sha256 file
+	AllowUnverified    bool   `json:"allow_unverified"` // allow updates without a .sha256 file
+	BetaBuilds         bool   `json:"beta_builds"`
+	InstalledBetaBuild int    `json:"installed_beta_build"`
 	Username        string `json:"username"`
 	TwoFAEnabled    bool   `json:"twofa_enabled"`
 	TwoFASecret     string `json:"twofa_secret,omitempty"`
@@ -694,6 +696,14 @@ func (s *Store) setSetting(key, value string) error {
 	return err
 }
 
+func (s *Store) GetSetting(key string) string {
+	return s.getSetting(key)
+}
+
+func (s *Store) SetSetting(key, value string) error {
+	return s.setSetting(key, value)
+}
+
 func (s *Store) GetSettings() Settings {
 	st := Settings{
 		GitHubRepoURL:   s.getSetting("github_repo_url"),
@@ -704,8 +714,10 @@ func (s *Store) GetSettings() Settings {
 		PanelPort:       s.getSetting("panel_port"),
 		ServiceName:     s.getSetting("service_name"),
 		AllowUnverified: s.getSetting("allow_unverified") == "1",
+		BetaBuilds:      s.getSetting("beta_builds") == "1",
 	}
 	st.ProbeInterval, _ = strconv.Atoi(s.getSetting("probe_interval"))
+	st.InstalledBetaBuild, _ = strconv.Atoi(s.getSetting("installed_beta_build"))
 	if st.ServiceName == "" {
 		st.ServiceName = "mcontrol-agent"
 	}
@@ -760,7 +772,14 @@ func (s *Store) SaveSettings(st Settings) error {
 	if st.AllowUnverified {
 		unv = "1"
 	}
-	return s.setSetting("allow_unverified", unv)
+	if err := s.setSetting("allow_unverified", unv); err != nil {
+		return err
+	}
+	bb := "0"
+	if st.BetaBuilds {
+		bb = "1"
+	}
+	return s.setSetting("beta_builds", bb)
 }
 
 func (s *Store) SetServerPeerMode(id int64, peerCode string, agentPort int) error {
@@ -1019,4 +1038,8 @@ func (s *Store) ListBenchmarkRuns(limit int) ([]BenchmarkRun, error) {
 		list = []BenchmarkRun{}
 	}
 	return list, nil
+}
+
+func (s *Store) SetInstalledBetaBuild(build int) error {
+	return s.setSetting("installed_beta_build", strconv.Itoa(build))
 }

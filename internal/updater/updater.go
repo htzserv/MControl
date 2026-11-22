@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -50,11 +51,22 @@ type SourceStatus struct {
 	Error     string `json:"error,omitempty"`
 }
 
+type BetaStatus struct {
+	Enabled   bool   `json:"enabled"`
+	Tag       string `json:"tag"`
+	Version   string `json:"version"`
+	Build     int    `json:"build"`
+	Commit    string `json:"commit"`
+	Available bool   `json:"available"`
+	Error     string `json:"error,omitempty"`
+}
+
 type CheckResult struct {
 	CurrentVersion  string       `json:"current_version"`
 	UpdateAvailable bool         `json:"update_available"`
 	GitHub          SourceStatus `json:"github"`
 	Mirror          SourceStatus `json:"mirror"`
+	Beta            BetaStatus   `json:"beta"`
 	CheckedAt       int64        `json:"checked_at"`
 }
 
@@ -173,7 +185,66 @@ func fetchRemoteVersion(baseURL string) SourceStatus {
 	}
 }
 
-func CheckAll(githubURL, mirrorURL string) CheckResult {
+
+func releaseDownloadRoot(baseURL string) string {
+	u := normalizeReleaseURL(baseURL)
+	u = strings.TrimSuffix(u, "/latest/download")
+	return u
+}
+
+func fetchBetaStatus(githubURL, mirrorURL string, installedBuild int) BetaStatus {
+	st := BetaStatus{Enabled: true}
+	var candidates []string
+	if ghRoot := releaseDownloadRoot(githubURL); ghRoot != "" && validBase.MatchString(ghRoot) {
+		candidates = append(candidates, ghRoot+"/download/beta-latest/beta-meta.json")
+	}
+	if ir := strings.TrimRight(strings.TrimSpace(mirrorURL), "/"); ir != "" && validBase.MatchString(ir) {
+		candidates = append(candidates, ir+"/beta-latest/beta-meta.json")
+	}
+	client := &http.Client{Timeout: 6 * time.Second}
+	var lastErr string
+	for _, u := range candidates {
+		resp, err := client.Get(u + "?t=" + fmt.Sprint(time.Now().Unix()))
+		if err != nil {
+			lastErr = "unreachable"
+			continue
+		}
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			lastErr = fmt.Sprintf("HTTP %d", resp.StatusCode)
+			continue
+		}
+		var meta struct {
+			Version string `json:"version"`
+			Build   int    `json:"build"`
+			Commit  string `json:"commit"`
+			Tag     string `json:"tag"`
+		}
+		decErr := json.NewDecoder(io.LimitReader(resp.Body, 4096)).Decode(&meta)
+		resp.Body.Close()
+		if decErr != nil || meta.Build <= 0 {
+			lastErr = "invalid beta-meta.json"
+			continue
+		}
+		st.Version = strings.TrimPrefix(strings.ToLower(strings.TrimSpace(meta.Version)), "v")
+		st.Build = meta.Build
+		st.Commit = meta.Commit
+		st.Tag = meta.Tag
+		if st.Tag == "" {
+			st.Tag = fmt.Sprintf("%s-beta.%d", st.Version, st.Build)
+		}
+		cmp := version.Compare(st.Version, version.Current)
+		st.Available = (cmp > 0) || (cmp == 0 && st.Build > installedBuild)
+		return st
+	}
+	if lastErr == "" {
+		lastErr = "no beta source configured"
+	}
+	st.Error = lastErr
+	return st
+}
+
+func CheckAll(githubURL, mirrorURL string, betaEnabled bool, installedBetaBuild int) CheckResult {
 	res := CheckResult{
 		CurrentVersion: version.Current,
 		CheckedAt:      time.Now().Unix(),
@@ -188,8 +259,15 @@ func CheckAll(githubURL, mirrorURL string) CheckResult {
 		defer wg.Done()
 		res.Mirror = fetchRemoteVersion(mirrorURL)
 	}()
+	if betaEnabled {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res.Beta = fetchBetaStatus(githubURL, mirrorURL, installedBetaBuild)
+		}()
+	}
 	wg.Wait()
-	res.UpdateAvailable = res.GitHub.Available || res.Mirror.Available
+	res.UpdateAvailable = res.GitHub.Available || res.Mirror.Available || (betaEnabled && res.Beta.Available)
 	return res
 }
 
@@ -533,14 +611,22 @@ func StartZipUpdate(zipPath string, onRestart func()) error {
 }
 
 // StartRemoteUpdate downloads and installs the latest package from the chosen source, verifying its SHA-256.
-func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool, onRestart func()) error {
+func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool, onBetaInstalled func(int), onRestart func()) error {
 	if !resetJob("Starting remote update from " + source + "...") {
 		return errors.New("an update is already in progress")
 	}
 	go func() {
 		baseURL := normalizeReleaseURL(githubURL)
+		betaBuildNum := 0
 		if source == "mirror" {
 			baseURL = strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
+		} else if source == "beta" {
+			bs := fetchBetaStatus(githubURL, mirrorURL, 0)
+			betaBuildNum = bs.Build
+			ghRoot := releaseDownloadRoot(githubURL)
+			if ghRoot != "" {
+				baseURL = ghRoot + "/download/beta-latest"
+			}
 		}
 		if baseURL == "" {
 			finishJob(false, "Update failed", "update source URL is empty")
@@ -553,6 +639,9 @@ func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool
 
 		client := &http.Client{Timeout: 5 * time.Minute}
 		restart := func() {
+			if betaBuildNum > 0 && onBetaInstalled != nil {
+				onBetaInstalled(betaBuildNum)
+			}
 			finishJob(true, "Update complete! Restarting panel...", "")
 			if onRestart != nil {
 				onRestart()
@@ -573,7 +662,7 @@ func StartRemoteUpdate(source, githubURL, mirrorURL string, allowUnverified bool
 				finishJob(false, "Update failed", err.Error())
 				return
 			}
-			if err := applyZipInternal(zipPath, true); err != nil {
+			if err := applyZipInternal(zipPath, source != "beta"); err != nil {
 				finishJob(false, "Update failed", err.Error())
 				return
 			}
