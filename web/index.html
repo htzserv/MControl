@@ -1835,6 +1835,100 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
   margin-bottom: 10px !important;
 }
 
+
+/* ═══ FLOATING VERSION BUBBLE NEXT TO MAIN NAV ═══ */
+body[data-navx="dock"] #chrome, body[data-navx="float-b"] #chrome { gap: 10px !important; }
+.ver-bubble {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 0 15px; height: 46px; border-radius: 999px;
+  background: var(--card); color: var(--text);
+  border: var(--bw, 1px) solid var(--border);
+  backdrop-filter: blur(var(--blur, 18px)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur, 18px)) saturate(140%);
+  box-shadow: 0 12px 30px var(--shadow);
+  font-size: .78rem; font-weight: 800; cursor: pointer;
+  transition: transform .18s ease, border-color .2s ease, box-shadow .2s ease;
+  white-space: nowrap; flex-shrink: 0;
+}
+.ver-bubble:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+.ver-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--green) 70%, transparent);
+  flex-shrink: 0;
+}
+/* When an update is available: border & glow turn vivid accent/amber */
+.ver-bubble.has-upd {
+  border: 1.8px solid var(--yellow) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--yellow) 16%, var(--card)), color-mix(in srgb, var(--accent) 14%, var(--card))) !important;
+  box-shadow: 0 10px 28px -6px var(--shadow), 0 0 18px color-mix(in srgb, var(--yellow) 42%, transparent) !important;
+  color: var(--yellow);
+}
+.ver-bubble.has-upd .ver-dot {
+  background: var(--yellow);
+  box-shadow: 0 0 10px var(--yellow);
+  animation: verPulse 1.6s ease-in-out infinite;
+}
+@keyframes verPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.38); opacity: .65; }
+}
+body[data-navx="side"] .ver-bubble,
+body[data-navx="side-r"] .ver-bubble,
+body[data-navx="side-float"] .ver-bubble {
+  height: 38px; width: 100%; border-radius: 14px;
+  box-shadow: none; background: var(--row);
+}
+body[data-navx="rail"] .ver-bubble {
+  height: 36px; padding: 0 6px; font-size: .64rem; border-radius: 12px;
+}
+body[data-navx="top"] .ver-bubble {
+  height: 36px; padding: 0 12px; box-shadow: none;
+}
+@media (max-width: 860px) {
+  .ver-bubble { height: 34px; padding: 0 10px; font-size: .68rem; }
+}
+
+/* ═══ CLEAN BACKUP & RESTORE CARD BUTTONS IN OVERVIEW ═══ */
+.mc-bak-pills {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin: auto 0; padding: 12px 0 8px;
+}
+.mc-bak-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 14px 8px; border-radius: 16px; cursor: pointer;
+  font-family: inherit; font-size: .8rem; font-weight: 800;
+  border: 1.5px solid var(--border); background: var(--row); color: var(--text);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.mc-bak-btn svg { width: 20px; height: 20px; }
+.mc-bak-btn.primary {
+  background: color-mix(in srgb, var(--accent) 14%, var(--row));
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  color: var(--accent);
+}
+.mc-bak-btn.primary:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--accent) 22%, var(--row));
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.mc-bak-btn.restore {
+  background: color-mix(in srgb, var(--purple) 14%, var(--row));
+  border-color: color-mix(in srgb, var(--purple) 42%, var(--border));
+  color: var(--purple);
+}
+.mc-bak-btn.restore:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--purple) 22%, var(--row));
+  border-color: var(--purple);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--purple) 45%, transparent);
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1967,14 +2061,7 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
 
 <!-- ═════════ APP SHELL ═════════ -->
 <div id="app" style="display:none;">
-  <button id="top-upd-btn" class="top-upd-btn" onclick="openQuickUpdateModal()" title="Update Available">
-    <span class="top-upd-ico">
-      <span class="top-upd-ping"></span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
-    </span>
-    <span id="top-upd-txt" class="top-upd-lbl">Update</span>
-    <span id="top-upd-ver" class="top-upd-badge" style="display:none;"></span>
-  </button>
+
   <div id="chrome">
     <div class="brand">
       <svg class="mc-brand-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1990,6 +2077,10 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
       <span class="bt">MControl</span>
     </div>
     <nav class="nav" id="nav"></nav>
+    <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
+      <span class="ver-dot" id="nav-ver-dot"></span>
+      <span class="mono" id="nav-ver-lbl">v1.2.2</span>
+    </button>
     <div class="util" id="util-bar">
       <div class="util-items" id="util-items">
         <button class="icon-btn" id="btn-theme-quick" data-i18n-title="nav_themes" title="Themes" onclick="openThemesQuick()">
@@ -2119,25 +2210,29 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
           <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-ram-mb">---</span></div>
         </div>
 
-        <!-- Card 3: Quick Backup & Restore -->
+        <!-- Card 3: Backup & Restore -->
         <div class="card metric-card mc-backup">
           <div class="mc-top">
             <div>
               <div class="mc-lbl" data-i18n="backup_title">Backup &amp; Restore</div>
-              <div style="font-size:.98rem; font-weight:800; color:var(--purple); margin-top:2px;">Panel Snapshot</div>
+              <div class="mc-top-meta mono" style="display:block;">AES-256 Snapshot</div>
             </div>
             <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--purple) 16%, transparent); color:var(--purple);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </span>
           </div>
-          <div class="mc-bak-actions">
-            <button type="button" class="btn btn-sky btn-sm" style="width:100%; justify-content:center;" onclick="downloadBackup()">⬇ Download Backup (.zip)</button>
-            <div class="mc-bak-row">
-              <input type="file" id="ov-restore-file" class="mc-bak-file" accept=".zip,.db,.sqlite,.sqlite3" title="Pick .zip or .db backup">
-              <button type="button" class="btn btn-danger btn-sm" id="btn-ov-restore" onclick="restoreBackupFromOverview()">Restore</button>
-            </div>
+          <div class="mc-bak-pills">
+            <button type="button" class="mc-bak-btn primary" onclick="downloadBackup()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span data-i18n="btn_bak_short">Backup</span>
+            </button>
+            <input type="file" id="ov-restore-file" accept=".zip,.db,.sqlite,.sqlite3" style="display:none;" onchange="restoreBackupFromOverview()">
+            <button type="button" class="mc-bak-btn restore" id="btn-ov-restore" onclick="$('ov-restore-file').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span data-i18n="btn_rst_short">Restore</span>
+            </button>
           </div>
-          <div class="mc-foot"><span>DB + Key + SSL</span><span class="mono" style="color:var(--purple);">AES-256</span></div>
+          <div class="mc-foot"><span>DB + Key + SSL</span><span class="mono" style="color:var(--purple);">.zip / .db</span></div>
         </div>
 
         <!-- Card 4: Network -->
@@ -2162,7 +2257,7 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
             </svg>
             <div class="mc-ring-center">
               <span class="mc-ring-pct" id="ring-net-txt" style="color:var(--green); font-size:.82rem;">0 / 0</span>
-              <span class="mc-ring-sub">RX / TX %</span>
+              <span class="mc-ring-sub" data-i18n="net_dl_ul">Download / Upload</span>
             </div>
           </div>
           <canvas id="spark-net" width="240" height="52" class="mc-spark" style="margin-top:8px;"></canvas>
@@ -2455,38 +2550,63 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
       </div>
     </div>
 
-    <!-- UPDATE -->
-    <section id="tab-update" class="page">
-      <div class="card sp" style="max-width:760px;">
-        <h3 style="color:var(--accent); margin-bottom:14px;" data-i18n="upd_title">Panel update center</h3>
+    <!-- UPDATE & VERSION MODAL (Opened from Floating Version Bubble) -->
+    <div class="modal-bg" id="update-modal" style="z-index:1130;">
+      <div class="card modal-box" style="max-width:660px;">
+        <div class="toolbar" style="margin-bottom:12px;">
+          <div>
+            <h3 style="color:var(--accent);" data-i18n="upd_title">Panel Update Center</h3>
+            <div class="hint" style="margin:2px 0 0;">Check official releases, rolling beta builds, or install an offline ZIP package.</div>
+          </div>
+          <button class="btn btn-danger btn-sm" data-close="update-modal" data-i18n="btn_close">Close</button>
+        </div>
+
         <div class="kv"><span data-i18n="upd_installed">Installed version</span><span id="upd-cur">---</span></div>
         <div class="kv"><span data-i18n="upd_github">Official GitHub</span><span id="upd-gh">---</span></div>
         <div class="kv"><span data-i18n="upd_mirror">Iran mirror</span><span id="upd-ir">---</span></div>
         <div class="kv" id="upd-beta-row" style="display:none;"><span>Rolling Beta Channel</span><span id="upd-beta">---</span></div>
-        <div class="tun-sec" id="upd-cl-card" style="display:none; margin-top:12px;">
-          <div class="tun-sec-title"><span id="upd-cl-title">What's New</span></div>
-          <pre id="upd-cl-body" style="margin:0; white-space:pre-wrap; font-family:var(--ff-m); font-size:.74rem; line-height:1.55; max-height:200px; overflow-y:auto; color:var(--text);"></pre>
+
+        <!-- Beta Builds Toggle directly inside Update Modal -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; margin:10px 0; border-radius:14px; background:var(--row); border:1px solid var(--border);">
+          <label class="check" style="margin:0; font-weight:700;">
+            <input type="checkbox" id="upd-beta-toggle" onchange="toggleBetaFromUpdateModal(this.checked)">
+            <span>Enable Rolling Beta Builds (test latest commits before official release)</span>
+          </label>
         </div>
-        <div class="hint" style="margin-top:10px;" data-i18n="upd_checksum_note">Remote updates require a .sha256 file next to the package and are rejected if the hash does not match.</div>
-        <div class="flexw">
+
+        <div class="tun-sec" id="upd-cl-card" style="display:none; margin-top:10px;">
+          <div class="tun-sec-title"><span id="upd-cl-title">What's New</span></div>
+          <pre id="upd-cl-body" style="margin:0; white-space:pre-wrap; font-family:var(--ff-m); font-size:.74rem; line-height:1.55; max-height:180px; overflow-y:auto; color:var(--text);"></pre>
+        </div>
+
+        <div class="hint" style="margin-top:8px;" data-i18n="upd_checksum_note">Remote updates require a .sha256 file next to the package and are rejected if the hash does not match.</div>
+        <div class="flexw" style="gap:8px; margin-top:10px;">
           <button class="btn btn-check-box" id="btn-upd-check" data-i18n="btn_check_updates">Check for updates</button>
           <button class="btn btn-sky" data-upd="github" data-i18n="btn_upd_github">Update from GitHub</button>
           <button class="btn btn-sky" data-upd="mirror" data-i18n="btn_upd_mirror">Update from Iran mirror</button>
-          
         </div>
-        <hr>
-        <h4 style="margin-bottom:6px;" data-i18n="upd_zip_title">Offline ZIP update</h4>
-        <p class="hint" data-i18n="upd_zip_desc">Upload a MControl release ZIP (source with go.mod, or a pre-built binary). Only upload packages you trust.</p>
-        <div class="field"><input type="file" id="upd-zip-file" accept=".zip"></div>
-        <button class="btn btn-warn" id="btn-zip-upd" data-i18n="btn_upload_zip">Upload &amp; install ZIP</button>
+
+        <hr style="margin:14px 0;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div>
+            <h4 style="margin-bottom:3px;" data-i18n="upd_zip_title">Offline ZIP update</h4>
+            <p class="hint" style="margin:0;" data-i18n="upd_zip_desc">Upload a MControl release ZIP (source with go.mod, or a pre-built binary).</p>
+          </div>
+          <div class="flexw" style="gap:8px;">
+            <input type="file" id="upd-zip-file" accept=".zip" style="display:none;" onchange="onOfflineZipPicked()">
+            <button type="button" class="btn btn-warn btn-sm" id="btn-zip-upd" onclick="$('upd-zip-file').click()" data-i18n="btn_upload_zip">Upload &amp; install ZIP</button>
+          </div>
+        </div>
+
+        <div id="upd-progress-box" style="display:none; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+          <div class="toolbar" style="margin-bottom:8px;"><h4 id="upd-stage">---</h4><span class="badge b-ok" id="upd-state-lbl">RUNNING</span></div>
+          <div class="flexw" style="justify-content:space-between;"><span class="hint" style="margin:0;" data-i18n="upd_progress">Progress</span><span class="mono" id="upd-pct">0%</span></div>
+          <div class="bar-wrap"><div class="bar-fill" id="upd-bar" style="width:0%; background:var(--accent);"></div></div>
+          <pre class="term" id="upd-term" style="height:180px; margin-top:10px;"></pre>
+        </div>
       </div>
-      <div class="card" id="upd-progress-box" style="display:none; max-width:760px;">
-        <div class="toolbar" style="margin-bottom:10px;"><h4 id="upd-stage">---</h4><span class="badge b-ok" id="upd-state-lbl">RUNNING</span></div>
-        <div class="flexw" style="justify-content:space-between;"><span class="hint" style="margin:0;" data-i18n="upd_progress">Progress</span><span class="mono" id="upd-pct">0%</span></div>
-        <div class="bar-wrap"><div class="bar-fill" id="upd-bar" style="width:0%; background:var(--accent);"></div></div>
-        <pre class="term" id="upd-term" style="height:240px; margin-top:12px;"></pre>
-      </div>
-    </section>
+    </div>
 
     <!-- SETTINGS -->
     <section id="tab-settings" class="page">
@@ -3483,7 +3603,7 @@ en: {
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
   nav_overview: 'Overview', nav_servers: 'Servers', nav_domains: 'Domains', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
-  load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', uptime_lbl: 'Uptime',
+  load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', net_dl_ul: 'Download / Upload', btn_bak_short: 'Backup', btn_rst_short: 'Restore', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
   fleet_radar: 'Fleet hardware radar', btn_refresh: 'Refresh all (SSH)', btn_add_srv: '+ Add server',
   core_title: 'Node Service & Command Control', core_note: 'Manage tunnel services or run diagnostics on any connected node via Peer Agent v2 or SSH.',
@@ -3537,7 +3657,7 @@ fa: {
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
   nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_domains: 'دامنه‌ها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
-  load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', uptime_lbl: 'آپتایم',
+  load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', net_dl_ul: 'دانلود / آپلود', btn_bak_short: 'بکاپ', btn_rst_short: 'ریستور', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
   fleet_radar: 'رادار سخت‌افزاری سرورها', btn_refresh: 'بروزرسانی همه (SSH)', btn_add_srv: '+ افزودن سرور',
   core_title: 'کنترل سرویس‌ها و دستورات نود', core_note: 'سرویس‌های تانل و دستورات عیب‌یابی را روی هر سرور از طریق Peer Agent یا SSH مدیریت کنید.',
@@ -3673,7 +3793,7 @@ const IC = {
   key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['domains', 'nav_domains', 'globe'], ['tunnels', 'nav_tunnels', 'term'], ['update', 'nav_update', 'refresh'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['domains', 'nav_domains', 'globe'], ['tunnels', 'nav_tunnels', 'term'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -5995,6 +6115,14 @@ async function checkUpdates(notify) {
     const curLbl = 'v' + c.current_version + (c.installed_beta_build > 0 ? (' • Beta #' + c.installed_beta_build) : '');
     if ($('upd-cur')) $('upd-cur').innerHTML = esc(curLbl) + (c.via_outbound ? ' <span class="badge b-iran mono" style="margin-inline-start:6px;">via Outbound</span>' : '');
     if ($('loc-ver')) $('loc-ver').textContent = curLbl;
+    const vb = $('nav-ver-bubble'), vLbl = $('nav-ver-lbl');
+    if (vb && vLbl) {
+      const shortLbl = 'v' + c.current_version + (c.installed_beta_build > 0 ? (' • B' + c.installed_beta_build) : '');
+      vLbl.textContent = c.update_available ? (shortLbl + ' ⬆') : shortLbl;
+      vb.classList.toggle('has-upd', !!c.update_available);
+      vb.title = c.update_available ? 'Update Available — Click to open Update Center' : ('MControl ' + curLbl);
+    }
+    if ($('upd-beta-toggle') && c.beta) $('upd-beta-toggle').checked = !!c.beta.enabled;
     const fmt = s => {
       if (s.error) return `<span style="color:var(--red);">${esc(s.error)}</span>`;
       if (s.available) return `<span style="color:var(--yellow);">v${esc(s.version)} (${t('upd_new')})</span>`;
@@ -6060,6 +6188,38 @@ function showUpdateProgress(pct, stage, logs, state) {
   $('upd-pct').textContent = pct + '%'; $('upd-bar').style.width = Math.min(100, pct) + '%';
   $('upd-stage').textContent = stage; $('upd-state-lbl').textContent = state || 'RUNNING';
   if (logs) { const term = $('upd-term'); term.textContent = Array.isArray(logs) ? logs.join('\n') : logs; term.scrollTop = term.scrollHeight; }
+}
+
+
+function openUpdateModal() {
+  if ($('upd-beta-toggle') && SETTINGS) {
+    $('upd-beta-toggle').checked = !!SETTINGS.beta_builds;
+  }
+  $('update-modal').classList.add('active');
+  checkUpdates(false);
+}
+
+async function toggleBetaFromUpdateModal(enabled) {
+  if ($('set-beta')) $('set-beta').checked = !!enabled;
+  SETTINGS.beta_builds = !!enabled;
+  const r = await api('api/settings', 'POST', Object.assign({}, SETTINGS, { beta_builds: !!enabled }));
+  if (r.ok) {
+    toast(enabled ? 'Rolling Beta Builds enabled' : 'Rolling Beta Builds disabled');
+    checkUpdates(false);
+  } else {
+    toast(r.error || 'Failed to update Beta setting', true);
+  }
+}
+
+function onOfflineZipPicked() {
+  const inp = $('upd-zip-file');
+  if (!inp || !inp.files || !inp.files[0]) return;
+  const f = inp.files[0];
+  if (!confirm('Install offline update package "' + f.name + '"?')) {
+    inp.value = '';
+    return;
+  }
+  uploadZipUpdate();
 }
 
 function openQuickUpdateModal() {
@@ -6501,7 +6661,7 @@ async function downloadBackup() {
 async function restoreBackupFromOverview() {
   const inp = $('ov-restore-file');
   if (!inp || !inp.files || !inp.files[0]) { toast(t('restore_pick'), true); return; }
-  if (!confirm(t('confirm_restore'))) return;
+  if (!confirm(t('confirm_restore'))) { inp.value = ''; return; }
   const btn = $('btn-ov-restore'), label = btn.textContent;
   btn.disabled = true; btn.textContent = '...';
   try {
@@ -6636,7 +6796,7 @@ async function pollLocalStats() {
   setT('loc-disk', (s.disk_percent || 0).toFixed(1) + '%'); $('bar-disk').style.width = Math.min(100, s.disk_percent || 0) + '%';
   setT('loc-disk-gb', (s.disk_used_gb || 0).toFixed(1) + ' / ' + (s.disk_total_gb || 0).toFixed(1) + ' GB');
   setT('loc-disk-pill', 'Disk: ' + Math.round(s.disk_percent || 0) + '%');
-  setT('loc-rx-spd', '↓ ' + fmtBytes(s.net_rx_speed) + '/s'); setT('loc-tx-spd', '↑ ' + fmtBytes(s.net_tx_speed) + '/s');
+  setT('loc-rx-spd', (lang === 'fa' ? 'دانلود: ' : '↓ ') + fmtBytes(s.net_rx_speed) + '/s'); setT('loc-tx-spd', (lang === 'fa' ? 'آپلود: ' : '↑ ') + fmtBytes(s.net_tx_speed) + '/s');
   setT('loc-net-tot', '↓' + fmtBytes(s.net_rx_total) + ' / ↑' + fmtBytes(s.net_tx_total));
   const oc = $('orb-cpu'); if (oc) oc.textContent = Math.round(s.cpu_percent || 0) + '%';
   const ocb = $('orb-cpu-bar'); if (ocb) ocb.style.width = Math.min(100, s.cpu_percent || 0) + '%';
