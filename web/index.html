@@ -850,6 +850,38 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
 .ping8-sum { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .76rem; }
 @media (max-width: 540px) { .ping8-grid { grid-template-columns: repeat(4, 1fr); } }
 
+
+/* MDesign 3-Section Tunnel Builder */
+.eng-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+.eng-pill {
+  padding: 9px 6px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--row); color: var(--muted); font-family: inherit;
+  font-size: .76rem; font-weight: 700; cursor: pointer; text-align: center;
+  transition: all .16s ease;
+}
+.eng-pill:hover { border-color: var(--accent); color: var(--text); }
+.eng-pill.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--accent); color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.tun-sec {
+  background: var(--row); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; margin-bottom: 12px;
+}
+.tun-sec-title {
+  font-size: .7rem; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 9px; display: flex; align-items: center; justify-content: space-between;
+}
+.tun-adv summary {
+  cursor: pointer; font-size: .76rem; font-weight: 700; color: var(--muted);
+  list-style: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 0;
+}
+.tun-adv summary::-webkit-details-marker { display: none; }
+.tun-adv[open] summary { color: var(--accent); margin-bottom: 10px; }
+@media (max-width: 560px) { .eng-pills { grid-template-columns: repeat(3, 1fr); } }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1013,7 +1045,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.1.9.2</span>
+            <span class="badge b-ok" id="loc-ver">v1.1.9.3</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -1228,7 +1260,33 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
             <button class="btn btn-sky" id="btn-save-settings" data-i18n="btn_save_settings">Save settings</button>
           </div>
 
-          <div class="card" style="margin-top:16px;">
+                    <div class="card sp" style="margin-top:14px;">
+            <div class="toolbar" style="margin-bottom:8px;">
+              <div>
+                <h4 style="color:var(--accent);">Master Outbound (Xray Core)</h4>
+                <div class="hint" style="margin:2px 0 0;">Isolated local SOCKS5 (127.0.0.1:10808) strictly for the Master Panel (GitHub updates, Telegram bot, Foreign control) — completely separate from user tunnels.</div>
+              </div>
+              <span class="badge b-foreign mono" id="ob-badge">STOPPED</span>
+            </div>
+            <div class="field">
+              <label>Outbound URI (VLESS / VMess / Trojan / SOCKS5)</label>
+              <input id="ob-link" class="mono" placeholder="vless://... or trojan://... or vmess://... or socks5://...">
+            </div>
+            <div class="flexw" style="gap:14px; margin-bottom:12px;">
+              <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Master Outbound</span></label>
+              <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
+              <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
+              <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes Control</span></label>
+            </div>
+            <div class="flexw" style="gap:8px;">
+              <button class="btn btn-sky btn-sm" id="btn-ob-save" onclick="saveMasterOutbound()">Save &amp; Start</button>
+              <button class="btn btn-warn btn-sm" id="btn-ob-test" onclick="testMasterOutbound()">Test Outbound</button>
+              <button class="btn btn-danger btn-sm" onclick="stopMasterOutbound()">Stop</button>
+            </div>
+            <pre class="term" id="ob-out" style="height:82px; margin-top:10px; display:none;"></pre>
+          </div>
+
+<div class="card" style="margin-top:16px;">
             <div class="toolbar" style="margin-bottom:10px;">
               <h4 style="color:var(--green);">Master Local Package Cache (Direct Distribution)</h4>
               <button class="btn btn-ghost btn-sm" onclick="loadMasterCache()">Refresh</button>
@@ -1416,54 +1474,59 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
   </div>
 </div>
 
-<!-- NEW TUNNEL MODAL -->
+<!-- NEW TUNNEL MODAL (MDesign 3-Section) -->
 <div class="modal-bg" id="tun-modal">
-  <div class="card modal-box" style="max-width:580px;">
+  <div class="card modal-box" style="max-width:600px;">
     <div class="toolbar" style="margin-bottom:12px;">
       <h3 style="color:var(--accent);">+ New 2-Sided Tunnel</h3>
       <button class="btn btn-danger btn-sm" data-close="tun-modal">Close</button>
     </div>
-    <div class="row2">
-      <div class="field"><label>Tunnel Name</label><input id="t-name" placeholder="e.g. IR1-to-DE1"></div>
-      <div class="field"><label>Engine</label>
-        <select id="t-engine" onchange="onTunnelEngineChange()">
-          <option value="backhaul">Backhaul (Anti-DPI / Multi-Transport)</option>
-          <option value="rathole">Rathole (Lightweight Reverse)</option>
-          <option value="paqet">Paqet (Raw Packet)</option>
-          <option value="gre">GRE (Kernel Layer-3 + iptables)</option>
-          <option value="ip6gre">IP6GRE (Kernel IPv6 + iptables)</option>
-          <option value="vxlan">VXLAN (Kernel Layer-2 + iptables)</option>
-        </select>
+
+    <div class="field" style="margin-bottom:10px;">
+      <label>Tunnel Name</label>
+      <input id="t-name" placeholder="e.g. IR1-to-DE1">
+    </div>
+
+    <div class="tun-sec-title" style="margin-bottom:6px;"><span>1. Engine</span></div>
+    <input type="hidden" id="t-engine" value="backhaul">
+    <div class="eng-pills" id="t-eng-pills">
+      <button type="button" class="eng-pill active" data-eng="backhaul" onclick="pickTunnelEngine('backhaul')">Backhaul</button>
+      <button type="button" class="eng-pill" data-eng="rathole" onclick="pickTunnelEngine('rathole')">Rathole</button>
+      <button type="button" class="eng-pill" data-eng="paqet" onclick="pickTunnelEngine('paqet')">Paqet</button>
+      <button type="button" class="eng-pill" data-eng="gre" onclick="pickTunnelEngine('gre')">GRE</button>
+      <button type="button" class="eng-pill" data-eng="vxlan" onclick="pickTunnelEngine('vxlan')">VXLAN</button>
+    </div>
+
+    <div class="tun-sec">
+      <div class="tun-sec-title"><span>2. Route (Entry ⇄ Exit)</span></div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;">
+          <label>Entry Server (Iran)</label>
+          <select id="t-iran" onchange="onTunnelServersChange()"></select>
+          <select id="t-iran-ipver" style="margin-top:6px; font-size:.76rem; padding:6px 10px;">
+            <option value="v4">IPv4</option>
+            <option value="v6">IPv6</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Exit Server (Foreign)</label>
+          <select id="t-foreign" onchange="onTunnelServersChange()"></select>
+          <select id="t-for-ipver" style="margin-top:6px; font-size:.76rem; padding:6px 10px;">
+            <option value="v4">IPv4</option>
+            <option value="v6">IPv6</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="t-check-proto-wrap" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:.74rem; color:var(--muted);">Verify link quality or compare protocols:</span>
+        <div class="flexw" style="gap:6px;">
+          <button type="button" class="btn btn-sky btn-sm" id="btn-ping8" onclick="runTunnelPing8()">Ping Test (8x)</button>
+          <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">Check Protocols</button>
+        </div>
       </div>
     </div>
-    <div class="row2">
-      <div class="field">
-        <label>Iran Server (Entry)</label>
-        <select id="t-iran" onchange="onTunnelServersChange()"></select>
-        <select id="t-iran-ipver" style="margin-top:6px; font-size:.78rem; padding:7px 10px;">
-          <option value="v4">IPv4</option>
-          <option value="v6">IPv6</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Foreign Server (Exit)</label>
-        <select id="t-foreign" onchange="onTunnelServersChange()"></select>
-        <select id="t-for-ipver" style="margin-top:6px; font-size:.78rem; padding:7px 10px;">
-          <option value="v4">IPv4</option>
-          <option value="v6">IPv6</option>
-        </select>
-      </div>
-    </div>
-    <div id="t-check-proto-wrap" style="display:none; margin:-2px 0 12px; padding:10px 12px; border-radius:12px; background:color-mix(in srgb, var(--accent) 10%, var(--row)); border:1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-      <div style="font-size:.78rem; color:var(--text);">
-        <strong style="color:var(--accent);">Link &amp; Protocol Tools</strong>
-        <div style="font-size:.72rem; color:var(--muted);">Run 8x visual ping or benchmark all protocols.</div>
-      </div>
-      <div class="flexw" style="gap:6px;">
-        <button type="button" class="btn btn-sky btn-sm" id="btn-ping8" onclick="runTunnelPing8()">📡 Ping Test (8x)</button>
-        <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">⚡ Check Protocols</button>
-      </div>
-    </div>
+
     <div id="t-ping8-card" class="ping8-card" style="display:none;">
       <div class="ping8-head">
         <strong style="font-size:.8rem; color:var(--accent);" id="p8-title">Live 8-Ping Test</strong>
@@ -1472,56 +1535,65 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
       <div class="ping8-grid" id="p8-grid"></div>
       <div class="ping8-sum" id="p8-sum"></div>
     </div>
-    <div class="row2">
-      <div class="field" id="t-trans-wrap"><label>Transport</label>
-        <select id="t-trans">
-          <option value="tcp">TCP</option>
-          <option value="tcpmux">TCPMUX</option>
-          <option value="tcp+tls">TCP + TLS</option>
-          <option value="ws">WebSocket (WS)</option>
-          <option value="wss">WebSocket Secure (WSS)</option>
-          <option value="kcp">KCP (UDP)</option>
-          <option value="udp">UDP</option>
-        </select>
-      </div>
-      <div class="field"><label>Tunnel Control Port</label><input id="t-port" type="number" value="3080"></div>
-    </div>
-    <div class="field" id="t-ipmode-wrap" style="display:none;"><label>Kernel Tunnel IP Mode</label>
-      <select id="t-ipmode">
-        <option value="v4">GRE 4-to-4 (IPv4 over IPv4)</option>
-        <option value="6to4">GRE 6-to-4 (IPv4 over IPv6)</option>
-        <option value="6to6">GRE 6-to-6 (IPv6 over IPv6)</option>
-        <option value="v6">IPv6</option>
-      </select>
-    </div>
-    <div style="display:none;">
-    </div>
-    <div class="field"><label>Secret Token (leave blank for random)</label><input id="t-token" class="mono" placeholder="Auto-generated secure token"></div>
-    <div id="t-vip-wrap" style="display:none; background:var(--row); border:1px solid var(--border); border-radius:12px; padding:11px 13px; margin-bottom:12px;">
-      <div style="font-size:.74rem; font-weight:800; color:var(--accent); text-transform:uppercase; margin-bottom:8px;">Kernel Tunnel VIP &amp; Load Balancing (GRE / VXLAN)</div>
+
+    <div class="tun-sec">
+      <div class="tun-sec-title"><span>3. Transport &amp; Forward Ports</span></div>
       <div class="row2">
-        <div class="field" style="margin-bottom:8px;"><label>Tunnel VIP Subnet (optional)</label><input id="t-subnet" class="mono" placeholder="Auto (e.g. 10.10.50)"></div>
-        <div class="field" style="margin-bottom:8px;"><label>Load-Balance Mode</label>
-          <select id="t-lbmode">
-            <option value="none">Off (Single VIP Peer)</option>
-            <option value="roundrobin">Round-Robin (iptables nth)</option>
-            <option value="random">Random (iptables random)</option>
-            <option value="lowest_ping">Lowest Ping (Best RTT)</option>
-            <option value="lightest">Lightest Load (Least Connections)</option>
-            <option value="least_traffic">Least Traffic (Lowest Bandwidth)</option>
+        <div class="field" id="t-trans-wrap" style="margin-bottom:10px;"><label>Transport</label>
+          <select id="t-trans">
+            <option value="tcp">TCP</option>
+            <option value="tcpmux">TCPMUX</option>
+            <option value="tcp+tls">TCP + TLS</option>
+            <option value="ws">WebSocket (WS)</option>
+            <option value="wss">WebSocket Secure (WSS)</option>
+            <option value="kcp">KCP (UDP)</option>
+            <option value="udp">UDP</option>
           </select>
         </div>
+        <div class="field" id="t-ipmode-wrap" style="display:none; margin-bottom:10px;"><label>Kernel IP Mode</label>
+          <select id="t-ipmode">
+            <option value="v4">GRE 4-to-4 (IPv4 over IPv4)</option>
+            <option value="6to4">GRE 6-to-4 (IPv4 over IPv6)</option>
+            <option value="6to6">GRE 6-to-6 (IPv6 over IPv6)</option>
+            <option value="v6">IPv6</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:10px;"><label>Tunnel Port</label><input id="t-port" type="number" value="3080"></div>
       </div>
-      <div class="field" style="margin:0;"><label>VIP Targets for Load Balancing (comma-separated, optional)</label><input id="t-viptargets" class="mono" placeholder="e.g. 10.10.50.2, 10.10.51.2"></div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0;">
+          <label>Saved Port Profile</label>
+          <select id="t-port-prof" onchange="applyPortProfileToTunnel()"><option value="">— Custom Ports —</option></select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Forward Ports</label>
+          <input id="t-ports" class="mono" placeholder="443, 8443, 2053">
+        </div>
+      </div>
     </div>
-    <div class="field">
-      <label>Forward Ports — Pick Saved Profile or Enter Custom</label>
-      <select id="t-port-prof" style="margin-bottom:8px;" onchange="applyPortProfileToTunnel()">
-        <option value="">— Custom Ports —</option>
-      </select>
-      <input id="t-ports" class="mono" placeholder="443, 8443, 2053, 2083">
-    </div>
-    <div class="flexw" style="justify-content:flex-end; margin-top:14px;">
+
+    <details class="tun-sec tun-adv" id="t-adv-box">
+      <summary><span>Advanced Options (Secret Token &amp; Kernel VIP / Load Balancing)</span><span>▾</span></summary>
+      <div class="field" style="margin-bottom:10px;"><label>Secret Token (blank = auto-generated)</label><input id="t-token" class="mono" placeholder="Auto-generated secure token"></div>
+      <div id="t-vip-wrap" style="display:none;">
+        <div class="row2">
+          <div class="field" style="margin-bottom:8px;"><label>Tunnel VIP Subnet</label><input id="t-subnet" class="mono" placeholder="Auto (e.g. 10.10.50)"></div>
+          <div class="field" style="margin-bottom:8px;"><label>Load-Balance Mode</label>
+            <select id="t-lbmode">
+              <option value="none">Off (Single VIP Peer)</option>
+              <option value="roundrobin">Round-Robin (iptables nth)</option>
+              <option value="random">Random (iptables random)</option>
+              <option value="lowest_ping">Lowest Ping (Best RTT)</option>
+              <option value="lightest">Lightest Load (Least Connections)</option>
+              <option value="least_traffic">Least Traffic (Lowest Bandwidth)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;"><label>VIP Targets (comma-separated)</label><input id="t-viptargets" class="mono" placeholder="e.g. 10.10.50.2, 10.10.51.2"></div>
+      </div>
+    </details>
+
+    <div class="flexw" style="justify-content:flex-end; margin-top:12px;">
       <button class="btn btn-ghost" data-close="tun-modal">Cancel</button>
       <button class="btn btn-sky" id="btn-tun-deploy" onclick="deployTunnel()">Deploy to Both Servers</button>
     </div>
@@ -2216,7 +2288,7 @@ function switchTab(name) {
   if (name === 'update') checkUpdates(false);
   if (name === 'overview') { pollLocalStats(); }
   if (name === 'tunnels') { loadTunnels(); loadProfiles(); pollMSmartStatus(); }
-  if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
+  if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadMasterOutbound(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
 }
@@ -2509,8 +2581,8 @@ async function loadTunnels() {
 
 function populateServerSelects(iranId, forId) {
   const irOpts = SERVERS.map(s => {
-    const ico = s.role === 'iran' ? '🇮🇷' : '🌍';
-    return `<option value="${s.id}">${ico} ${esc(s.name)} (${esc(s.host)})</option>`;
+    const tag = s.role === 'iran' ? 'IR' : 'EX';
+    return `<option value="${s.id}">[${tag}] ${esc(s.name)} — ${esc(s.host)}</option>`;
   }).join('');
   if ($(iranId)) $(iranId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
   if ($(forId)) $(forId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
@@ -2518,6 +2590,13 @@ function populateServerSelects(iranId, forId) {
   const firstFor = SERVERS.find(s => s.role === 'foreign');
   if (firstIran && $(iranId)) $(iranId).value = firstIran.id;
   if (firstFor && $(forId)) $(forId).value = firstFor.id;
+}
+
+function pickTunnelEngine(eng) {
+  if (eng === 'ip6gre') eng = 'gre';
+  $('t-engine').value = eng;
+  document.querySelectorAll('#t-eng-pills .eng-pill').forEach(b => b.classList.toggle('active', b.dataset.eng === eng));
+  onTunnelEngineChange();
 }
 
 function onTunnelEngineChange() {
@@ -2858,8 +2937,7 @@ function deployWinner(engine, transport, ipMode, iranId, forId) {
     openNewTunnelModal();
     $('t-name').value = 'MSmart-' + engine.toUpperCase();
   }
-  $('t-engine').value = engine;
-  onTunnelEngineChange();
+  pickTunnelEngine(engine);
   if (engine === 'backhaul') $('t-trans').value = transport;
   if ($('t-ipmode')) $('t-ipmode').value = ipMode || 'v4';
   if (iranId) $('t-iran').value = String(iranId);
@@ -2958,6 +3036,53 @@ async function runSetupAction(action, engine) {
   out.scrollTop = out.scrollHeight;
   refreshSetupStatus();
   setTimeout(loadServers, 1500);
+}
+
+
+async function loadMasterOutbound() {
+  const r = await api('api/outbound/status');
+  if (!r.ok) return;
+  const c = r.config || {};
+  if ($('ob-link')) $('ob-link').value = c.link || '';
+  if ($('ob-en')) $('ob-en').checked = !!c.enabled;
+  if ($('ob-gh')) $('ob-gh').checked = c.use_github !== false;
+  if ($('ob-tg')) $('ob-tg').checked = c.use_telegram !== false;
+  if ($('ob-fr')) $('ob-fr').checked = !!c.use_foreign;
+  const b = $('ob-badge');
+  if (b) {
+    b.textContent = r.running ? 'ACTIVE (127.0.0.1:10808)' : 'STOPPED';
+    b.className = 'badge mono ' + (r.running ? 'b-iran' : 'b-foreign');
+  }
+}
+
+async function saveMasterOutbound() {
+  const btn = $('btn-ob-save'); btn.disabled = true; btn.textContent = 'Applying...';
+  try {
+    const r = await api('api/outbound/save', 'POST', {
+      enabled: $('ob-en').checked,
+      link: $('ob-link').value.trim(),
+      use_github: $('ob-gh').checked,
+      use_telegram: $('ob-tg').checked,
+      use_foreign: $('ob-fr').checked
+    });
+    if (r.ok) { toast(r.message || 'Master Outbound saved'); loadMasterOutbound(); }
+    else toast(r.error || 'Failed to save outbound', true);
+  } finally { btn.disabled = false; btn.textContent = 'Save & Start'; }
+}
+
+async function testMasterOutbound() {
+  const btn = $('btn-ob-test'), out = $('ob-out');
+  btn.disabled = true; btn.textContent = 'Testing...';
+  out.style.display = 'block'; out.textContent = 'Testing GitHub & Telegram connectivity through 127.0.0.1:10808...';
+  try {
+    const r = await api('api/outbound/test', 'POST');
+    out.textContent = r.ok ? (r.output || 'OK') : (r.error || 'Test failed');
+  } finally { btn.disabled = false; btn.textContent = 'Test Outbound'; }
+}
+
+async function stopMasterOutbound() {
+  const r = await api('api/outbound/stop', 'POST');
+  if (r.ok) { toast('Master Outbound stopped.'); loadMasterOutbound(); }
 }
 
 async function loadMasterCache() {

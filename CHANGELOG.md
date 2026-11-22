@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.9.3
+- Redesigned **+ New 2-Sided Tunnel** modal with clean **MDesign** 3-section layout (works crisply in all light & dark themes):
+  - Removed mismatched OS emojis (`🌍` / `🇮🇷`) in favor of clean `IR •` / `EX •` tags.
+  - Added segmented **Engine Pills** (`Backhaul`, `Rathole`, `Paqet`, `GRE`, `VXLAN`), side-by-side **Route** cards with per-server `IPv4/IPv6` selectors, and collapsible **Advanced / Token / VIP** drawer.
+- Added **Master Outbound (Xray)** module (`internal/api/outbound.go` + Settings card):
+  - Paste any `vless://`, `vmess://`, `trojan://`, `ss://`, or `socks://` URI to run an isolated local Xray SOCKS5 outbound strictly on `127.0.0.1:10808` (`mcontrol-outbound.service`) for the Master Panel only—completely separate from user tunnels.
+  - Selective routing toggles for **GitHub & Updates**, **Telegram Bot**, and **Foreign Nodes Control**, plus 1-click **Test Outbound** latency check.
+
 ## 1.1.9.2
 - Fixed `SQL logic error: table tunnels has no column named vip_targets` by properly registering `ALTER TABLE tunnels` migrations in `internal/db/db.go` so existing databases upgrade seamlessly and tunnel listing/creation work immediately.
 - Enabled **Saved SSH Profiles** inside the **Edit Server** modal (both frontend & backend `handleUpdateServer`).
