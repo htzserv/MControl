@@ -369,6 +369,11 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/tweak", h.auth(h.handleServerTweak))
 	mux.HandleFunc("GET /api/servers/{id}/setup/status", h.auth(h.handleServerSetupStatus))
 	mux.HandleFunc("POST /api/servers/{id}/setup/run", h.auth(h.handleServerSetupRun))
+	mux.HandleFunc("GET /api/servers/{id}/legacy/scan", h.auth(h.handleLegacyScan))
+	mux.HandleFunc("GET /api/servers/{id}/legacy/snapshot", h.auth(h.handleLegacySnapshot))
+	mux.HandleFunc("POST /api/servers/{id}/legacy/migrate", h.auth(h.handleLegacyMigrate))
+	mux.HandleFunc("GET /api/legacy/tunnels", h.auth(h.handleLegacyList))
+	mux.HandleFunc("POST /api/legacy/pair", h.auth(h.handleLegacyPair))
 	mux.HandleFunc("GET /api/cache/list", h.auth(h.handleCacheList))
 	mux.HandleFunc("POST /api/cache/upload", h.auth(h.handleCacheUpload))
 	mux.HandleFunc("POST /api/cache/delete", h.auth(h.handleCacheDelete))
@@ -655,8 +660,15 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	srv.ID = id
+	// Detect an old MTunnel installation so the panel can offer to import + remove it.
+	var legacy map[string]any
+	if p.Online {
+		full := *srv
+		full.Password = req.Secret
+		legacy = h.legacySummary(&full)
+	}
 	srv.Password = ""
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "server": srv, "probe_error": p.Error})
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "server": srv, "probe_error": p.Error, "legacy": legacy})
 }
 
 func (h *Handler) handleUpdateServer(w http.ResponseWriter, r *http.Request) {

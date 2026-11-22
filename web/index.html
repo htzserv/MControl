@@ -1091,7 +1091,7 @@ body.light-mode .eng-pill.active {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.2.1</span>
+            <span class="badge b-ok" id="loc-ver">v1.2.2</span>
                       </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -1955,6 +1955,43 @@ body.light-mode .eng-pill.active {
   </div>
 </div>
 
+<!-- MTUNNEL MIGRATION MODAL -->
+<div class="modal-bg" id="legacy-modal">
+  <div class="card modal-box" style="max-width:680px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <div>
+        <h3 style="color:var(--accent);" id="legacy-title">Migrate from MTunnel</h3>
+        <div class="hint" id="legacy-meta" style="margin:2px 0 0; font-size:.73rem;">Scanning...</div>
+      </div>
+      <div class="flexw">
+        <button class="btn btn-ghost btn-sm" onclick="legacyScan()">Rescan</button>
+        <button class="btn btn-danger btn-sm" data-close="legacy-modal" data-i18n="btn_close">Close</button>
+      </div>
+    </div>
+    <div id="legacy-list" class="mono" style="font-size:.78rem; max-height:190px; overflow:auto; margin-bottom:10px;"></div>
+    <div id="legacy-unsup" class="hint" style="display:none; color:var(--warn,#e0a800); margin-bottom:10px;"></div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Download Source (for engines)</label>
+      <div class="src-picker" id="legacy-src-picker">
+        <div class="role-opt active" data-legacy-src="github" onclick="pickLegacySource('github')">GitHub</div>
+        <div class="role-opt" data-legacy-src="mirror" onclick="pickLegacySource('mirror')">Iran Mirror</div>
+        <div class="role-opt" data-legacy-src="master" onclick="pickLegacySource('master')">Direct from Master</div>
+      </div>
+    </div>
+    <label class="hint" style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+      <input type="checkbox" id="legacy-wipe" checked> Remove MTunnel completely after the import (engines are installed first and verified)
+    </label>
+    <label class="hint" id="legacy-ack-wrap" style="display:none; gap:8px; align-items:center; margin-bottom:8px;">
+      <input type="checkbox" id="legacy-ack"> I understand the items listed above are NOT re-created automatically (a full copy stays in the snapshot)
+    </label>
+    <div class="flexw" style="margin-bottom:10px;">
+      <button class="btn btn-sky" id="btn-legacy-run" onclick="legacyRun()">Import data &amp; migrate</button>
+      <a class="btn btn-ghost" id="legacy-dl" href="#" style="display:none;" onclick="return legacyDownload(event)">Download exact snapshot (.json)</a>
+    </div>
+    <pre class="term" id="legacy-out" style="height:170px;">Ready.</pre>
+  </div>
+</div>
+
 <!-- SERVER TWEAK STUDIO MODAL -->
 <div class="modal-bg" id="tweak-modal">
   <div class="card modal-box" style="max-width:560px;">
@@ -2554,6 +2591,7 @@ function renderServerCard(s) {
       </div>
       <div class="card-actions" style="margin-top:4px;">
         <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
+        <button class="btn btn-ghost btn-sm" data-act="legacy" data-id="${id}">MTunnel</button>
         <button class="btn btn-warn btn-sm" data-act="tweak" data-id="${id}">Tweak</button>
         <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
         <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
@@ -2592,6 +2630,7 @@ function act(name, id) {
   else if (name === 'pair') pairServer(id);
   else if (name === 'speedtest') runServerSpeedtest(id);
   else if (name === 'setup') openSetupModal(id);
+  else if (name === 'legacy') openLegacyModal(id);
   else if (name === 'tweak') openTweakModal(id);
   else if (name === 'upd-agent') updatePeerAgent(id);
   else if (name === 'unpair') unpairServer(id);
@@ -2667,7 +2706,12 @@ async function saveServer() {
       await loadServers();
       if (res.probe_error) toast(res.probe_error, true);
       if (wasNew && res.id) {
-        setTimeout(() => openSetupModal(res.id), 250);
+        if (res.legacy && res.legacy.found) {
+          toast('Old MTunnel installation detected on this server.');
+          setTimeout(() => openLegacyModal(res.id), 250);
+        } else {
+          setTimeout(() => openSetupModal(res.id), 250);
+        }
       }
     } else toast(res.error || 'Failed', true);
   } finally { btn.disabled = false; btn.textContent = label; }
@@ -3158,6 +3202,69 @@ async function runLinkTest() {
   } finally {
     btn.disabled = false; btn.textContent = 'Run Ping & iperf3 Test';
   }
+}
+
+
+/* ═══════════════ MTunnel → MControl migration ═══════════════ */
+let legacyTargetId = 0, legacySource = 'github', legacyNeedsAck = false;
+function pickLegacySource(src) {
+  legacySource = src;
+  document.querySelectorAll('#legacy-src-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.legacySrc === src));
+}
+function openLegacyModal(id) {
+  legacyTargetId = id;
+  const s = SERVERS.find(x => +x.id === id);
+  $('legacy-title').textContent = 'Migrate from MTunnel — ' + (s ? s.name : id);
+  $('legacy-out').textContent = 'Ready.';
+  $('legacy-ack').checked = false;
+  $('legacy-modal').classList.add('active');
+  legacyScan();
+}
+async function legacyScan() {
+  $('legacy-meta').textContent = 'Scanning the server (read-only)...';
+  $('legacy-list').innerHTML = '';
+  const r = await api('api/servers/' + legacyTargetId + '/legacy/scan');
+  if (!r.ok) { $('legacy-meta').textContent = r.error || 'Scan failed'; return; }
+  if (!r.found) {
+    $('legacy-meta').textContent = 'No MTunnel installation found on this server.';
+    $('legacy-unsup').style.display = 'none'; $('legacy-ack-wrap').style.display = 'none';
+    legacyNeedsAck = false;
+    return;
+  }
+  $('legacy-meta').textContent = 'MTunnel found: ' + r.tunnels.length + ' tunnel side(s). Nothing is changed until you press Import.';
+  $('legacy-list').innerHTML = r.tunnels.map(x =>
+    '<div class="kv"><span>' + esc(x.name) + ' <b>[' + esc(x.engine) + ']</b> ' + esc(x.side) + ' side</span>' +
+    '<span>link ' + esc(x.tunnel_port || '-') + ' · ports ' + esc(x.ports || '-') + ' · ' + esc(x.transport || '-') + ' · ' + esc(x.status) +
+    (x.token ? ' · token ' + esc(x.token) : '') + '</span></div>').join('') || '<div class="hint">No tunnel files found (only MTunnel itself).</div>';
+  legacyNeedsAck = (r.unsupported || []).length > 0;
+  $('legacy-unsup').style.display = legacyNeedsAck ? 'block' : 'none';
+  $('legacy-unsup').textContent = legacyNeedsAck ? 'Not re-created automatically: ' + r.unsupported.join('; ') : '';
+  $('legacy-ack-wrap').style.display = legacyNeedsAck ? 'flex' : 'none';
+}
+async function legacyRun() {
+  const wipe = $('legacy-wipe').checked;
+  if (wipe && legacyNeedsAck && !$('legacy-ack').checked) { toast('Tick the confirmation for the items that are not re-created automatically.', true); return; }
+  if (wipe && !confirm('Import everything, install the engines, then REMOVE MTunnel from this server?\nRunning MTunnel tunnels on it stop until their other side is also in MControl.')) return;
+  const btn = $('btn-legacy-run'), label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Working...';
+  $('legacy-out').textContent = 'Working: scan → exact snapshot → install engines → verify' + (wipe ? ' → remove MTunnel → re-create tunnels' : '') + ' ...';
+  try {
+    const r = await api('api/servers/' + legacyTargetId + '/legacy/migrate', 'POST', { wipe: wipe, ack_unmigrated: $('legacy-ack').checked, source: legacySource });
+    $('legacy-out').textContent = (r.log || []).join('\n') + (r.error ? '\n\nERROR: ' + r.error : '') + (r.output ? '\n\n' + r.output : '');
+    if (r.snapshot_id) $('legacy-dl').style.display = 'inline-flex';
+    if (r.ok) { toast(wipe ? 'Migration finished' : 'Import finished'); loadServers(); if (typeof loadTunnels === 'function') loadTunnels(); }
+    else toast(r.error || 'Migration failed', true);
+  } finally { btn.disabled = false; btn.textContent = label; }
+}
+async function legacyDownload(ev) {
+  ev.preventDefault();
+  const r = await fetch('api/servers/' + legacyTargetId + '/legacy/snapshot', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
+  if (!r.ok) { toast('No snapshot saved yet', true); return false; }
+  const blob = await r.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'mtunnel-snapshot-server' + legacyTargetId + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  return false;
 }
 
 let setupTargetId = 0, setupSource = 'github';

@@ -572,12 +572,12 @@ func (h *Handler) handleDeleteTunnel(w http.ResponseWriter, r *http.Request) {
 	ifName := fmt.Sprintf("mctun%d", id)
 	tag := fmt.Sprintf("mc_tun_%d", id)
 	cleanCmd := fmt.Sprintf(`systemctl disable --now %s.service 2>/dev/null || true
-rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh
+rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh /etc/mcontrol/tunnels/%s.yaml
 ip link del %s 2>/dev/null || true
 ip tunnel del %s 2>/dev/null || true
 iptables-save -t nat | grep -v "%s" | iptables-restore -T nat 2>/dev/null || true
 systemctl daemon-reload
-echo "Cleaned."`, unit, unit, unit, unit, ifName, ifName, tag)
+echo "Cleaned."`, unit, unit, unit, unit, unit, ifName, ifName, tag)
 
 	var wg sync.WaitGroup
 	if iranSrv != nil {

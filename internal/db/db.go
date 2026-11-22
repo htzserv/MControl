@@ -173,6 +173,10 @@ func Open(dataDir string) (*Store, error) {
 		sqlDB.Close()
 		return nil, err
 	}
+	if err := s.migrateLegacy(); err != nil {
+		sqlDB.Close()
+		return nil, err
+	}
 	_ = os.Chmod(dbPath, 0600)
 	return s, nil
 }

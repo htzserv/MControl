@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.2
+- Added **MTunnel → MControl migration** (`internal/api/migrate.go`, `internal/db/legacy.go`):
+  - When a server is added, the panel scans it (read-only) for an old MTunnel installation and opens the **Migrate from MTunnel** window; the same window is available later from the new **MTunnel** button on every server card.
+  - Import: every MTunnel config file (backhaul `.meta/.toml`, rathole `meta.conf/config.toml`, paqet `.meta/.yaml`, GRE/VXLAN `.conf`, MPorter, Smart) is saved **verbatim** as an AES-GCM encrypted snapshot, and each tunnel side is staged in the database. The exact snapshot can be downloaded as JSON.
+  - Order is enforced: snapshot saved → static bundle installed → engines verified → only then MTunnel is removed. Any failure before the wipe leaves MTunnel untouched.
+  - The wipe removes MTunnel services, units, cron lines, iptables rules, configs and launchers but never the engines (`bh`, `rathole`, `paqet`, ...) that MControl just installed.
+  - When both sides of a Backhaul / Rathole / Paqet tunnel are known (matched by engine + link port + token/key), the tunnel is re-created under MControl with the **original config files** (same ports, token, transport, TLS settings) so MControl start/stop/logs/delete work on it.
+  - GRE / VXLAN, MPorter rules and Smart settings are saved but not re-created automatically; removing MTunnel while they exist requires an explicit confirmation.
+- Fixed: after adding a server the panel never opened the Setup window because the API did not return a top-level `id`.
+- Fixed: deleting a tunnel left its `.yaml` config behind on the servers.
+
 ## 1.2.1
 - Added **Native Telegram Bot & Auto-Backuper** (`internal/api/telegram.go` + dedicated **Telegram** tab):
   - Full inline-keyboard management: live Master/Server stats, Server list, Tunnel control (`Status`, `Restart`, `Stop`, `Logs`, `Delete`), interactive **New Tunnel Wizard**, 1-click **Update / Beta Install**, and **Emergency Tools** (Panel URL, Restart Panel, Reset 2FA).
