@@ -742,7 +742,7 @@ func (h *Handler) handleUpdateServer(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	endpointChanged := req.Host != old.Host || req.Port != old.Port
-	if err := h.store.UpdateServer(id, req.Name, req.Role, req.Host, req.Port, req.Username, req.AuthType, req.Secret, endpointChanged); err != nil {
+	if err := h.store.UpdateServer(id, req.Name, req.Role, req.Host, req.Port, req.Username, req.AuthType, req.Secret, endpointChanged, req.UseOutbound); err != nil {
 		fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}

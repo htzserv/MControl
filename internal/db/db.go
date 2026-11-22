@@ -518,7 +518,7 @@ func (s *Store) AddServer(srv *Server) (int64, error) {
 		srv.Name, srv.Role, srv.Host, srv.Port, srv.Username, encSecret, srv.AuthType, srv.HostKey, srv.LastError,
 		srv.Country, srv.CountryCode, srv.Datacenter, installedInt, srv.CoreVersion,
 		srv.Status, srv.CPU, srv.RAM, srv.Uptime,
-		srv.IPv4, srv.IPv6, srv.NetRx, srv.NetTx, srv.InstalledTools, srv.PingMs, now,
+		srv.IPv4, srv.IPv6, srv.NetRx, srv.NetTx, srv.InstalledTools, srv.PingMs, useOBInt, now,
 	)
 	if err != nil {
 		return 0, err
