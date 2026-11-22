@@ -62,6 +62,10 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "tunnel name is required")
 		return
 	}
+	if !safeLegacyName.MatchString(req.Name) {
+		fail(w, http.StatusBadRequest, "tunnel name must be 1-64 chars: letters, numbers, dot, underscore, hyphen only")
+		return
+	}
 	if req.IranServerID <= 0 || req.ForeignServerID <= 0 || req.IranServerID == req.ForeignServerID {
 		fail(w, http.StatusBadRequest, "select two distinct servers (Iran & Foreign)")
 		return
@@ -77,6 +81,9 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Token == "" {
 		req.Token = randTunnelToken()
+	} else if !safeLegacyName.MatchString(req.Token) {
+		fail(w, http.StatusBadRequest, "tunnel token must contain only letters, numbers, dot, underscore, hyphen")
+		return
 	}
 	if req.Transport == "" {
 		req.Transport = "tcp"
@@ -395,49 +402,143 @@ systemctl is-active %s.service || true
 		return makeRH(iranToml), makeRH(forToml)
 
 	case "paqet":
-		var fwdFlags []string
+		// Real Paqet uses YAML configs + `paqet run -c <file.yaml>` + raw NOTRACK & mangle RST DROP rules.
+		// Foreign (Exit) runs role: "server" on TunnelPort; Iran (Entry) runs role: "client" with forward entries.
+		tag := fmt.Sprintf("mc_tun_%d", t.ID)
+		yamlPath := fmt.Sprintf("%s/%s.yaml", cfgDir, unit)
+
+		var fwdYaml strings.Builder
+		var iranIpt strings.Builder
 		for _, p := range ports {
-			fwdFlags = append(fwdFlags, fmt.Sprintf("-f 0.0.0.0:%d=127.0.0.1:%d", p, p))
+			fwdYaml.WriteString(fmt.Sprintf("  - listen: \"0.0.0.0:%d\"\n    target: \"127.0.0.1:%d\"\n    protocol: \"tcp\"\n", p, p))
+			iranIpt.WriteString(fmt.Sprintf(`iptables -w 5 -t raw -C PREROUTING -p tcp --dport %d -j NOTRACK -m comment --comment %s 2>/dev/null || iptables -w 5 -t raw -A PREROUTING -p tcp --dport %d -j NOTRACK -m comment --comment %s 2>/dev/null || true
+iptables -w 5 -t raw -C OUTPUT -p tcp --sport %d -j NOTRACK -m comment --comment %s 2>/dev/null || iptables -w 5 -t raw -A OUTPUT -p tcp --sport %d -j NOTRACK -m comment --comment %s 2>/dev/null || true
+iptables -w 5 -t mangle -C OUTPUT -p tcp --sport %d --tcp-flags RST RST -j DROP -m comment --comment %s 2>/dev/null || iptables -w 5 -t mangle -A OUTPUT -p tcp --sport %d --tcp-flags RST RST -j DROP -m comment --comment %s 2>/dev/null || true
+`, p, tag, p, tag, p, tag, p, tag, p, tag, p, tag))
 		}
-		iranCmd := fmt.Sprintf(`set -e
-BIN=$(command -v paqet 2>/dev/null || true)
-[ -n "$BIN" ] || { echo "Paqet binary not installed! Run Setup -> Install Static Bundle first." >&2; exit 1; }
-cat <<EOF > /etc/systemd/system/%s.service
-[Unit]
-Description=MControl Paqet Server %d (%s)
-After=network-online.target
 
-[Service]
-Type=simple
-ExecStart=$BIN server -l 0.0.0.0:%d -k %s %s
-Restart=always
-RestartSec=2
-
-[Install]
-WantedBy=multi-user.target
-EOF
-systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && (systemctl is-active %s.service || true)
-`, unit, t.ID, t.Name, t.TunnelPort, t.Token, strings.Join(fwdFlags, " "), unit, unit, unit)
+		// Target address for Iran client to reach Foreign server (handles Direct IP or Over GRE/VXLAN)
+		paqetServerHost := forAddr
+		if (ipMode == "gre" || ipMode == "vxlan") && t.Subnet != "" {
+			paqetServerHost = t.Subnet + ".2"
+		}
 
 		forCmd := fmt.Sprintf(`set -e
 BIN=$(command -v paqet 2>/dev/null || true)
 [ -n "$BIN" ] || { echo "Paqet binary not installed! Run Setup -> Install Static Bundle first." >&2; exit 1; }
+mkdir -p %s
+IFACE=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev"){print $(i+1);exit}}')
+LIP=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1);exit}}')
+GW=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="via"){print $(i+1);exit}}')
+[ -n "$GW" ] && ping -c 1 -W 1 "$GW" >/dev/null 2>&1 || true
+MAC=$(ip neigh show "$GW" dev "$IFACE" 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="lladdr"){print $(i+1);exit}}')
+[ -n "$MAC" ] || MAC=$(ip neigh show dev "$IFACE" 2>/dev/null | awk '/lladdr/{print $5; exit}')
+[ -n "$IFACE" ] && [ -n "$LIP" ] && [ -n "$MAC" ] || { echo "Could not detect network interface/IP/gateway MAC for Paqet" >&2; exit 1; }
+cat <<EOF > %s
+role: "server"
+log:
+  level: "info"
+listen:
+  addr: ":%d"
+network:
+  interface: "${IFACE}"
+  ipv4:
+    addr: "${LIP}:%d"
+    router_mac: "${MAC}"
+  tcp:
+    local_flag: ["PA"]
+transport:
+  protocol: "kcp"
+  conn: 4
+  kcp:
+    key: "%s"
+    mode: "fast"
+    block: "aes-128-gcm"
+    mtu: 1350
+EOF
+chmod 600 %s
+iptables -w 5 -t raw -C PREROUTING -p tcp --dport %d -j NOTRACK -m comment --comment %s 2>/dev/null || iptables -w 5 -t raw -A PREROUTING -p tcp --dport %d -j NOTRACK -m comment --comment %s 2>/dev/null || true
+iptables -w 5 -t raw -C OUTPUT -p tcp --sport %d -j NOTRACK -m comment --comment %s 2>/dev/null || iptables -w 5 -t raw -A OUTPUT -p tcp --sport %d -j NOTRACK -m comment --comment %s 2>/dev/null || true
+iptables -w 5 -t mangle -C OUTPUT -p tcp --sport %d --tcp-flags RST RST -j DROP -m comment --comment %s 2>/dev/null || iptables -w 5 -t mangle -A OUTPUT -p tcp --sport %d --tcp-flags RST RST -j DROP -m comment --comment %s 2>/dev/null || true
 cat <<EOF > /etc/systemd/system/%s.service
 [Unit]
-Description=MControl Paqet Client %d (%s)
+Description=MControl Paqet Server %d (%s)
+Wants=network-online.target
 After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=$BIN client -r %s -k %s
+User=root
+ExecStart=$BIN run -c %s
 Restart=always
-RestartSec=2
+RestartSec=3
+LimitNOFILE=1048576
 
 [Install]
 WantedBy=multi-user.target
 EOF
 systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && (systemctl is-active %s.service || true)
-`, unit, t.ID, t.Name, formatHostPort(iranAddr, t.TunnelPort), t.Token, unit, unit, unit)
+`, cfgDir, yamlPath, t.TunnelPort, t.TunnelPort, t.Token, yamlPath,
+			t.TunnelPort, tag, t.TunnelPort, tag, t.TunnelPort, tag, t.TunnelPort, tag, t.TunnelPort, tag, t.TunnelPort, tag,
+			unit, t.ID, t.Name, yamlPath, unit, unit, unit)
+
+		iranCmd := fmt.Sprintf(`set -e
+BIN=$(command -v paqet 2>/dev/null || true)
+[ -n "$BIN" ] || { echo "Paqet binary not installed! Run Setup -> Install Static Bundle first." >&2; exit 1; }
+mkdir -p %s
+IFACE=$(ip -4 route get %s 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="dev"){print $(i+1);exit}}')
+LIP=$(ip -4 route get %s 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1);exit}}')
+GW=$(ip -4 route get %s 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="via"){print $(i+1);exit}}')
+[ -n "$GW" ] && ping -c 1 -W 1 "$GW" >/dev/null 2>&1 || true
+MAC=$(ip neigh show "$GW" dev "$IFACE" 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="lladdr"){print $(i+1);exit}}')
+[ -n "$MAC" ] || MAC=$(ip neigh show dev "$IFACE" 2>/dev/null | awk '/lladdr/{print $5; exit}')
+[ -n "$IFACE" ] && [ -n "$LIP" ] && [ -n "$MAC" ] || { echo "Could not detect network interface/IP/gateway MAC for Paqet client" >&2; exit 1; }
+cat <<EOF > %s
+role: "client"
+log:
+  level: "info"
+forward:
+%snetwork:
+  interface: "${IFACE}"
+  ipv4:
+    addr: "${LIP}:0"
+    router_mac: "${MAC}"
+  tcp:
+    local_flag: ["PA"]
+    remote_flag: ["PA"]
+server:
+  addr: "%s"
+transport:
+  protocol: "kcp"
+  conn: 4
+  kcp:
+    key: "%s"
+    mode: "fast"
+    block: "aes-128-gcm"
+    mtu: 1350
+EOF
+chmod 600 %s
+%scat <<EOF > /etc/systemd/system/%s.service
+[Unit]
+Description=MControl Paqet Client %d (%s)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=$BIN run -c %s
+Restart=always
+RestartSec=3
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.service && sleep 1 && (systemctl is-active %s.service || true)
+`, cfgDir, sshclient.ShQuote(paqetServerHost), sshclient.ShQuote(paqetServerHost), sshclient.ShQuote(paqetServerHost),
+			yamlPath, fwdYaml.String(), formatHostPort(paqetServerHost, t.TunnelPort), t.Token, yamlPath, iranIpt.String(),
+			unit, t.ID, t.Name, yamlPath, unit, unit, unit)
 		return iranCmd, forCmd
 
 	default:
@@ -547,7 +648,7 @@ ip tunnel del %s 2>/dev/null || true
 %s
 ip addr add %s dev %s
 ip link set %s mtu 1420 up
-iptables-save -t nat | grep -v "%s" | iptables-restore -T nat 2>/dev/null || true
+for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "%s" | iptables-restore -T "$tbl" 2>/dev/null || true; done
 %s
 EOF
 chmod 755 %s/%s.sh
@@ -649,7 +750,7 @@ func (h *Handler) handleDeleteTunnel(w http.ResponseWriter, r *http.Request) {
 rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh /etc/mcontrol/tunnels/%s.yaml
 ip link del %s 2>/dev/null || true
 ip tunnel del %s 2>/dev/null || true
-iptables-save -t nat | grep -v "%s" | iptables-restore -T nat 2>/dev/null || true
+for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "%s" | iptables-restore -T "$tbl" 2>/dev/null || true; done
 systemctl daemon-reload
 echo "Cleaned."`, unit, unit, unit, unit, unit, ifName, ifName, tag)
 

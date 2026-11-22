@@ -397,6 +397,9 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/legacy/migrate", h.auth(h.handleLegacyMigrate))
 	mux.HandleFunc("GET /api/legacy/tunnels", h.auth(h.handleLegacyList))
 	mux.HandleFunc("POST /api/legacy/pair", h.auth(h.handleLegacyPair))
+	mux.HandleFunc("POST /api/legacy/pair-manual", h.auth(h.handleLegacyPairManual))
+	mux.HandleFunc("POST /api/legacy/kernel-action", h.auth(h.handleLegacyKernelAction))
+	mux.HandleFunc("DELETE /api/legacy/tunnels/{id}", h.auth(h.handleLegacyDelete))
 	mux.HandleFunc("GET /api/cache/list", h.auth(h.handleCacheList))
 	mux.HandleFunc("POST /api/cache/upload", h.auth(h.handleCacheUpload))
 	mux.HandleFunc("POST /api/cache/delete", h.auth(h.handleCacheDelete))
@@ -701,6 +704,7 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 	if p.Online {
 		full := *srv
 		full.Password = req.Secret
+		full.UseOutbound = req.UseOutbound
 		legacy = h.legacySummary(&full)
 	}
 	srv.Password = ""

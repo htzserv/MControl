@@ -822,11 +822,11 @@ func (h *Handler) deleteTunnelInternal(id int64) string {
 	ifName := fmt.Sprintf("mctun%d", id)
 	tag := fmt.Sprintf("mc_tun_%d", id)
 	cleanCmd := fmt.Sprintf(`systemctl disable --now %s.service 2>/dev/null || true
-rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh
+rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh /etc/mcontrol/tunnels/%s.yaml
 ip link del %s 2>/dev/null || true
 ip tunnel del %s 2>/dev/null || true
-iptables-save -t nat | grep -v "%s" | iptables-restore -T nat 2>/dev/null || true
-systemctl daemon-reload`, unit, unit, unit, unit, ifName, ifName, tag)
+for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "%s" | iptables-restore -T "$tbl" 2>/dev/null || true; done
+systemctl daemon-reload`, unit, unit, unit, unit, unit, ifName, ifName, tag)
 	if iranSrv != nil {
 		_ = h.runOnServer(iranSrv, cleanCmd, 15*time.Second)
 	}

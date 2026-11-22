@@ -1,6 +1,11 @@
 # Changelog
 
 ## 1.2.2
+- **MTunnel → MControl Pro Migrator & Engine Hardening:**
+  - Fixed **Paqet** both in native tunnel creation (`tunnels.go`) and MTunnel migration (`migrate.go`): uses real `paqet run -c <file.yaml>` configs, corrects MTunnel `ROLE=1` (Foreign/Server) vs `ROLE=2` (Iran/Client) mapping, automatically restores and cleans `iptables` `raw NOTRACK` and `mangle RST DROP` rules.
+  - Closed command-injection risk in `handleCreateTunnel` by strictly validating tunnel names & tokens (`^[A-Za-z0-9._-]{1,64}$`).
+  - Added **MTunnel Migrator & Kept Kernel Tunnels Hub** inside the **Tunnels** tab with live **`Status / Restart / Stop / Logs`** control on kept `mgre.service` / `mxlan.service` kernel tunnels, plus **Auto-Pair** and **Manual Pair** (supporting `PEER_SETUP_ID`, GRE-layered, and custom-IP tunnels).
+  - Cleaned stray `iptables -t mangle -S` log noise in `legacyWipeScript`, preserved Rathole `UDP_PORTS`, and updated `migrate_test.go` so `go test ./...` passes cleanly.
 - Added **Cloudflare Domains Manager** (`internal/api/cloudflare.go` + dedicated **Domains** tab):
   - Manage all Cloudflare Zones & DNS records (`A`, `AAAA`, `CNAME`, `TXT`, etc.) directly from MControl with Create, Edit, Delete, and 1-click Proxied (CDN) toggle.
   - **Automatic Server-to-Domain IP Matching:** Automatically matches every Cloudflare `A`/`AAAA` record against your managed servers' IPv4/IPv6 addresses, displaying matched server badges in the Domains tab and matched domain badges directly on every Server card.
@@ -13,7 +18,7 @@
   - Order is enforced: snapshot saved → static bundle installed → engines verified → only then MTunnel is removed. Any failure before the wipe leaves MTunnel untouched.
   - The wipe removes MTunnel services, units, cron lines, iptables rules, configs and launchers but never the engines (`bh`, `rathole`, `paqet`, ...) that MControl just installed.
   - When both sides of a Backhaul / Rathole / Paqet tunnel are known (matched by engine + link port + token/key), the tunnel is re-created under MControl with the **original config files** (same ports, token, transport, TLS settings) so MControl start/stop/logs/delete work on it.
-  - GRE / VXLAN, MPorter rules and Smart settings are saved but not re-created automatically; removing MTunnel while they exist requires an explicit confirmation.
+  - GRE / VXLAN: all their data is saved verbatim in the snapshot, and the kernel part (`/etc/mgre`, `mgre`/`mxlan`, their services) is left running untouched so those tunnels never drop; everything else of MTunnel is removed. MPorter rules and Smart settings are saved but not re-created automatically and need an explicit confirmation before MTunnel is removed.
 - Fixed: after adding a server the panel never opened the Setup window because the API did not return a top-level `id`.
 - Fixed: deleting a tunnel left its `.yaml` config behind on the servers.
 

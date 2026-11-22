@@ -2132,6 +2132,34 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
         <button class="btn btn-sky" onclick="openNewTunnelModal()">+ Create First Tunnel</button>
       </div>
 
+            <!-- MTUNNEL MIGRATOR HUB (Pending Sides, Manual Pairing & Live GRE/VXLAN Kernel Control) -->
+      <div class="card sp" id="legacy-hub-card" style="display:none; margin-top:14px;">
+        <div class="toolbar" style="margin-bottom:10px; gap:8px; flex-wrap:wrap;">
+          <div>
+            <h4 style="color:var(--accent);">🔄 MTunnel Migrator &amp; Kept Kernel Tunnels</h4>
+            <div class="hint" style="margin:2px 0 0;">Manage kept GRE/VXLAN kernel tunnels (mgre/mxlan) and auto-pair or manually pair staged MTunnel sides.</div>
+          </div>
+          <div class="flexw" style="gap:6px;">
+            <button type="button" class="btn btn-sky btn-sm" id="btn-leg-autopair" onclick="legacyAutoPairNow()">🔗 Auto-Pair Pending</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadLegacyTunnels()">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Manual Pair Box (shown when >= 2 pending sides exist) -->
+        <div id="leg-manual-pair" class="tun-sec" style="display:none; margin-bottom:12px;">
+          <div class="tun-sec-title"><span>Manual Pair (for GRE-layered or custom-IP tunnels)</span></div>
+          <div class="row2" style="align-items:end;">
+            <div class="field" style="margin:0;"><label>Entry (Iran) Staged Side</label><select id="leg-mp-iran" class="cf-ctrl-sel"></select></div>
+            <div class="field" style="margin:0;"><label>Exit (Foreign) Staged Side</label><select id="leg-mp-for" class="cf-ctrl-sel"></select></div>
+          </div>
+          <div class="flexw" style="justify-content:flex-end; margin-top:8px;">
+            <button type="button" class="btn btn-warn btn-sm" id="btn-leg-mp" onclick="legacyManualPairNow()">⚡ Pair &amp; Deploy Both Sides</button>
+          </div>
+        </div>
+
+        <div id="legacy-hub-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
       <div class="card" id="tun-term-card" style="display:none; margin-top:14px;">
         <div class="toolbar" style="margin-bottom:10px;">
           <h4 id="tun-term-title" style="color:var(--accent);">Tunnel Output</h4>
@@ -3848,7 +3876,7 @@ function switchTab(name) {
   if (name === 'tunnels') fillCoreSelect();
   if (name === 'update') checkUpdates(false);
   if (name === 'overview') { pollLocalStats(); }
-  if (name === 'tunnels') { loadTunnels(); loadProfiles(); pollMSmartStatus(); }
+  if (name === 'tunnels') { loadTunnels(); loadLegacyTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'domains') { loadCloudflareStatus(); }
   if (name === 'outbound') { loadMasterOutbound(); }
   if (name === 'telegram') { loadTelegramStatus(); }
@@ -4741,10 +4769,112 @@ async function legacyRun() {
     const r = await api('api/servers/' + legacyTargetId + '/legacy/migrate', 'POST', { wipe: wipe, ack_unmigrated: $('legacy-ack').checked, source: legacySource });
     $('legacy-out').textContent = (r.log || []).join('\n') + (r.error ? '\n\nERROR: ' + r.error : '') + (r.output ? '\n\n' + r.output : '');
     if (r.snapshot_id) $('legacy-dl').style.display = 'inline-flex';
-    if (r.ok) { toast(wipe ? 'Migration finished' : 'Import finished'); loadServers(); if (typeof loadTunnels === 'function') loadTunnels(); }
+    if (r.ok) { toast(wipe ? 'Migration finished' : 'Import finished'); loadServers(); if (typeof loadTunnels === 'function') loadTunnels(); if (typeof loadLegacyTunnels === 'function') loadLegacyTunnels(); }
     else toast(r.error || 'Migration failed', true);
   } finally { btn.disabled = false; btn.textContent = label; }
 }
+
+let LEGACY_TUNNELS = [];
+async function loadLegacyTunnels() {
+  const r = await api('api/legacy/tunnels');
+  if (!r.ok) return;
+  LEGACY_TUNNELS = r.tunnels || [];
+  const card = $('legacy-hub-card');
+  const box = $('legacy-hub-list');
+  if (!card || !box) return;
+  const activeItems = LEGACY_TUNNELS.filter(x => x.status !== 'migrated');
+  if (!activeItems.length) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  // Populate Manual Pair selects if pending sides exist
+  const pendIr = activeItems.filter(x => x.status === 'pending' && x.side === 'iran');
+  const pendFr = activeItems.filter(x => x.status === 'pending' && x.side === 'foreign');
+  const mpBox = $('leg-manual-pair');
+  if (mpBox) {
+    if (pendIr.length && pendFr.length) {
+      mpBox.style.display = 'block';
+      $('leg-mp-iran').innerHTML = pendIr.map(x => `<option value="${x.id}">[${esc(x.engine.toUpperCase())}] ${esc(x.name)} @ ${esc(x.server_name || ('#' + x.server_id))} (port ${x.tunnel_port})</option>`).join('');
+      $('leg-mp-for').innerHTML = pendFr.map(x => `<option value="${x.id}">[${esc(x.engine.toUpperCase())}] ${esc(x.name)} @ ${esc(x.server_name || ('#' + x.server_id))} (port ${x.tunnel_port})</option>`).join('');
+    } else {
+      mpBox.style.display = 'none';
+    }
+  }
+
+  box.innerHTML = activeItems.map(x => {
+    const isKern = (x.engine === 'gre' || x.engine === 'vxlan');
+    const stBadge = x.status === 'kernel_kept'
+      ? '<span class="badge b-iran mono">KERNEL ACTIVE</span>'
+      : (x.status === 'pending' ? '<span class="badge b-ok mono">WAITING PEER</span>' : '<span class="badge b-miss mono">' + esc(x.status.toUpperCase()) + '</span>');
+    const actions = isKern ? `
+      <button class="btn btn-ghost btn-sm" onclick="legacyKernelAct(${x.id},'status','${esc(x.name)}')">Status</button>
+      <button class="btn btn-sky btn-sm" onclick="legacyKernelAct(${x.id},'restart','${esc(x.name)}')">Restart</button>
+      <button class="btn btn-warn btn-sm" onclick="legacyKernelAct(${x.id},'stop','${esc(x.name)}')">Stop</button>
+      <button class="btn btn-ghost btn-sm" onclick="legacyKernelAct(${x.id},'logs','${esc(x.name)}')">Logs</button>
+      <button class="btn btn-danger btn-sm" onclick="legacyDeleteRec(${x.id})" title="Remove record from panel">✕</button>` : `
+      <button class="btn btn-danger btn-sm" onclick="legacyDeleteRec(${x.id})" title="Dismiss staged record">✕</button>`;
+
+    return `<div class="cf-rec-row">
+      <div class="cf-rec-main">
+        <span class="badge b-foreign mono">${esc(x.engine.toUpperCase())}</span>
+        <strong class="mono" style="font-size:.83rem;">${esc(x.name)}</strong>
+        <span class="badge ${x.side === 'iran' ? 'b-iran' : 'b-ok'} mono">${esc(x.side.toUpperCase())} • ${esc(x.server_name || ('Server #' + x.server_id))}</span>
+        ${stBadge}
+        <span class="mono" style="font-size:.73rem; color:var(--muted);">${x.tunnel_port ? ('link:' + x.tunnel_port + ' · ') : ''}${x.ports ? ('ports:' + esc(x.ports) + ' · ') : ''}${esc(x.note || x.transport || '')}</span>
+      </div>
+      <div class="flexw" style="gap:5px; flex-shrink:0;">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+async function legacyAutoPairNow() {
+  const btn = $('btn-leg-autopair');
+  if (btn) { btn.disabled = true; btn.textContent = 'Pairing...'; }
+  try {
+    const r = await api('api/legacy/pair', 'POST');
+    $('tun-term-card').style.display = 'block';
+    $('tun-term-title').textContent = 'MTunnel Auto-Pair Result';
+    $('tun-term').textContent = (r.log || [r.error || 'Done.']).join('\n');
+    loadTunnels();
+    loadLegacyTunnels();
+    toast(r.ok ? 'Auto-Pair finished' : (r.error || 'Auto-Pair failed'), !r.ok);
+  } finally { if (btn) { btn.disabled = false; btn.textContent = '🔗 Auto-Pair Pending'; } }
+}
+
+async function legacyManualPairNow() {
+  const irId = parseInt($('leg-mp-iran').value || '0', 10);
+  const frId = parseInt($('leg-mp-for').value || '0', 10);
+  const btn = $('btn-leg-mp');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deploying...'; }
+  try {
+    const r = await api('api/legacy/pair-manual', 'POST', { iran_legacy_id: irId, foreign_legacy_id: frId });
+    $('tun-term-card').style.display = 'block';
+    $('tun-term-title').textContent = 'MTunnel Manual Pair Result';
+    $('tun-term').textContent = (r.log || [r.error || 'Done.']).join('\n');
+    loadTunnels();
+    loadLegacyTunnels();
+    toast(r.ok ? 'Paired & deployed!' : (r.error || 'Manual pair failed'), !r.ok);
+  } finally { if (btn) { btn.disabled = false; btn.textContent = '⚡ Pair & Deploy Both Sides'; } }
+}
+
+async function legacyKernelAct(legacyId, action, name) {
+  toast('Running ' + action + ' on ' + name + '...');
+  const r = await api('api/legacy/kernel-action', 'POST', { legacy_id: legacyId, action });
+  $('tun-term-card').style.display = 'block';
+  $('tun-term-title').textContent = 'Kernel Tunnel (' + name + ') — ' + action.toUpperCase();
+  $('tun-term').textContent = r.output || r.error || 'No output.';
+  if (!r.ok && r.error) toast(r.error, true);
+}
+
+async function legacyDeleteRec(id) {
+  if (!confirm('Remove this staged/legacy record from the panel? (Does not touch running kernel services)')) return;
+  const r = await api('api/legacy/tunnels/' + id, 'DELETE');
+  if (r.ok) { toast('Record removed'); loadLegacyTunnels(); }
+  else toast(r.error || 'Failed', true);
+}
+
 async function legacyDownload(ev) {
   ev.preventDefault();
   const r = await fetch('api/servers/' + legacyTargetId + '/legacy/snapshot', { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });

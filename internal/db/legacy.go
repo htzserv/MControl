@@ -160,3 +160,26 @@ func (s *Store) SetLegacyTunnelState(id int64, status, note string, matchedTunne
 		status, note, matchedTunnelID, id)
 	return err
 }
+
+func (s *Store) GetLegacyTunnel(id int64) (*LegacyTunnel, error) {
+	var t LegacyTunnel
+	var tokEnc, cfgEnc string
+	err := s.db.QueryRow("SELECT id, server_id, side, engine, name, transport, tunnel_port, token_enc, ports, peer_host, pair_key, config_enc, status, note, matched_tunnel_id, created_at FROM legacy_tunnels WHERE id = ?", id).Scan(
+		&t.ID, &t.ServerID, &t.Side, &t.Engine, &t.Name, &t.Transport, &t.TunnelPort, &tokEnc, &t.Ports, &t.PeerHost, &t.PairKey, &cfgEnc, &t.Status, &t.Note, &t.MatchedTunnelID, &t.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if tokEnc != "" {
+		t.Token, _ = s.Decrypt(tokEnc)
+	}
+	if cfgEnc != "" {
+		t.Config, _ = s.Decrypt(cfgEnc)
+	}
+	return &t, nil
+}
+
+func (s *Store) DeleteLegacyTunnel(id int64) error {
+	_, err := s.db.Exec("DELETE FROM legacy_tunnels WHERE id = ?", id)
+	return err
+}
