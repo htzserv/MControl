@@ -344,12 +344,17 @@ func (h *Handler) fetchArvanData(cfg cfConfig) ([]cfZone, []cfDNSRecord, error) 
 		return nil, nil, err
 	}
 	if code < 200 || code >= 300 {
-		return nil, nil, fmt.Errorf("ArvanCloud: HTTP %d", code)
+		snippet := strings.TrimSpace(string(rawD))
+		if len(snippet) > 160 {
+			snippet = snippet[:160]
+		}
+		return nil, nil, fmt.Errorf("ArvanCloud HTTP %d: %s", code, snippet)
 	}
 	var dResp struct {
 		Data []struct {
 			ID     string `json:"id"`
 			Domain string `json:"domain"`
+			Name   string `json:"name"`
 			Status string `json:"status"`
 		} `json:"data"`
 	}
@@ -358,6 +363,9 @@ func (h *Handler) fetchArvanData(cfg cfConfig) ([]cfZone, []cfDNSRecord, error) 
 	var zones []cfZone
 	var recs []cfDNSRecord
 	for _, d := range dResp.Data {
+		if d.Domain == "" {
+			d.Domain = d.Name
+		}
 		if d.Domain == "" {
 			continue
 		}
@@ -661,17 +669,39 @@ func (h *Handler) handleCFSync(w http.ResponseWriter, r *http.Request) {
 		prov = "all"
 	}
 	cfg := h.loadCFConfig()
+	if prov == "arvan" && (!cfg.ArvanEnabled || strings.TrimSpace(cfg.ArvanAPIKey) == "") {
+		fail(w, http.StatusBadRequest, "Enable ArvanCloud and save your ArvanCloud API Key first.")
+		return
+	}
+	if prov == "cloudflare" && !cfg.Enabled {
+		fail(w, http.StatusBadRequest, "Enable Cloudflare and save your API Token first.")
+		return
+	}
 	cache, err := h.syncDNSProvider(cfg, prov)
 	if err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
+	zCnt, rCnt := len(cache.Zones), len(matched)
 	lbl := "All DNS providers"
-	if prov == "cloudflare" {
-		lbl = "Cloudflare"
-	} else if prov == "arvan" {
-		lbl = "ArvanCloud"
+	if prov == "cloudflare" || prov == "arvan" {
+		zCnt, rCnt = 0, 0
+		for _, z := range cache.Zones {
+			if z.Provider == prov {
+				zCnt++
+			}
+		}
+		for _, rec := range matched {
+			if rec.Provider == prov {
+				rCnt++
+			}
+		}
+		if prov == "cloudflare" {
+			lbl = "Cloudflare"
+		} else {
+			lbl = "ArvanCloud"
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":              true,
@@ -681,7 +711,7 @@ func (h *Handler) handleCFSync(w http.ResponseWriter, r *http.Request) {
 		"zones":           cache.Zones,
 		"records":         matched,
 		"server_domains":  srvDomains,
-		"message":         fmt.Sprintf("%s synced! (%d domains, %d records)", lbl, len(cache.Zones), len(matched)),
+		"message":         fmt.Sprintf("%s synced! (%d domains, %d records)", lbl, zCnt, rCnt),
 	})
 }
 
