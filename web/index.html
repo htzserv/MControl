@@ -1079,42 +1079,101 @@ body.light-mode .eng-pill.active {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface)) !important;
 }
 
-/* Redesigned Top-Left Quick Update Button — Larger, Accent-Inspired, Closer to Center, Label Below */
+/* Standalone Floating Quick Update Button — Right Side Below Menu, Text Outside Box */
 .top-upd-btn {
-  position: fixed !important; top: 68px !important;
-  right: 16px !important; left: auto !important;
-  z-index: 1005 !important;
-  display: none; flex-direction: column !important; align-items: center !important; justify-content: center !important;
-  gap: 2px !important; width: auto !important; height: auto !important;
-  min-width: 78px !important; padding: 9px 14px 8px !important;
-  border-radius: 20px !important;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 26%, var(--surface)), color-mix(in srgb, var(--accent2) 22%, var(--surface))) !important;
-  border: 1.8px solid color-mix(in srgb, var(--accent) 72%, var(--accent2)) !important;
-  color: var(--text) !important;
-  box-shadow: 0 12px 30px -8px var(--shadow), 0 0 24px color-mix(in srgb, var(--accent) 32%, transparent) !important;
-  backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+  position: fixed !important;
+  top: 88px !important;
+  right: 26px !important;
+  left: auto !important;
+  z-index: 980 !important;
+  display: none;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .18s ease;
 }
 .top-upd-btn.show { display: inline-flex !important; }
-.top-upd-btn:hover { transform: translateY(-2px) scale(1.04) !important; filter: brightness(1.08); }
-.top-upd-ico {
-  width: 30px; height: 30px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--accent); color: var(--on-accent);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 45%, transparent);
+.top-upd-btn:hover { transform: translateY(-2px) !important; }
+.top-upd-btn:hover .top-upd-ico {
+  transform: scale(1.06);
+  box-shadow: 0 14px 32px -6px color-mix(in srgb, var(--accent) 55%, var(--shadow)), 0 0 24px color-mix(in srgb, var(--accent) 42%, transparent);
 }
-.top-upd-ico svg { width: 17px !important; height: 17px !important; color: var(--on-accent) !important; }
+.top-upd-ico {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 68%, var(--accent2)));
+  color: var(--on-accent);
+  border: 1.5px solid color-mix(in srgb, #ffffff 35%, var(--accent));
+  box-shadow: 0 10px 26px -6px color-mix(in srgb, var(--accent) 48%, var(--shadow)), 0 0 18px color-mix(in srgb, var(--accent) 30%, transparent);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.top-upd-ico svg {
+  width: 24px !important;
+  height: 24px !important;
+  color: var(--on-accent) !important;
+}
+.top-upd-ico .top-upd-ping {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--green);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 10px var(--green);
+}
 .top-upd-lbl {
-  font-size: .72rem; font-weight: 800; letter-spacing: .2px; color: var(--accent); line-height: 1.15; margin-top: 2px;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: var(--text);
+  line-height: 1.15;
+  text-shadow: 0 1px 8px var(--bg), 0 0 2px var(--bg);
 }
 .top-upd-badge {
-  position: static !important; transform: none !important;
-  font-family: var(--ff-m); font-size: .62rem; font-weight: 800; line-height: 1;
-  padding: 2px 7px; border-radius: 999px; margin-top: 1px;
-  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
-  color: var(--text); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  position: static !important;
+  transform: none !important;
+  font-family: var(--ff-m);
+  font-size: .64rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--accent);
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  text-shadow: 0 1px 8px var(--bg), 0 0 2px var(--bg);
 }
 @media (max-width: 640px) {
-  .top-upd-btn { top: auto !important; bottom: 84px !important; right: 14px !important; left: auto !important; min-width: 66px !important; padding: 7px 11px !important; }
+  .top-upd-btn {
+    top: auto !important;
+    bottom: 84px !important;
+    right: 18px !important;
+    left: auto !important;
+  }
+  .top-upd-ico {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
 }
 
 /* Centered, Borderless, Theme-Adaptive Domain Bubbles */
@@ -1642,6 +1701,58 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
   display: flex !important; flex-direction: column !important; gap: 14px !important;
 }
 
+
+/* ═══ MODULAR METRIC GRAPH AXIS: body[data-gauge="ring"] (Circular Donut Gauge) ═══ */
+.mc-ring-wrap {
+  display: none; position: relative; width: 88px; height: 88px; margin: 6px auto 2px;
+  align-items: center; justify-content: center;
+}
+.mc-ring-svg { width: 88px; height: 88px; transform: rotate(-90deg); overflow: visible; }
+.mc-ring-bg {
+  fill: none; stroke: color-mix(in srgb, var(--muted) 20%, transparent); stroke-width: 8;
+}
+.mc-ring-fg {
+  fill: none; stroke-width: 8; stroke-linecap: round;
+  stroke-dasharray: 213.63; stroke-dashoffset: 213.63;
+  transition: stroke-dashoffset .45s cubic-bezier(.22, 1, .36, 1);
+  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 32%, transparent));
+}
+.mc-ring-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; pointer-events: none;
+}
+.mc-ring-pct { font-family: var(--ff-m); font-size: .86rem; font-weight: 900; line-height: 1.1; }
+.mc-ring-sub { font-size: .56rem; font-weight: 800; letter-spacing: .5px; color: var(--muted); margin-top: 1px; }
+
+body[data-gauge="ring"] .mc-ring-wrap { display: flex; }
+body[data-gauge="ring"] .mc-bar-wrap,
+body[data-gauge="ring"] .mc-spark { display: none !important; }
+body[data-gauge="ring"] .mc-val { font-size: 1.15rem; }
+
+/* ═══ SETTINGS WIDTH & UNIFORM CARD ALIGNMENT FIX ═══ */
+#tab-settings #settings-shell {
+  width: 100%;
+  max-width: 960px !important;
+  margin: 0 auto !important;
+}
+#tab-settings #settings-shell .sub-pane:not(#sub-themes) {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+#tab-settings #settings-shell .sub-pane.active:not(#sub-themes) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+}
+#tab-settings #settings-shell .sub-pane:not(#sub-themes) .card {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1763,8 +1874,10 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
 <!-- ═════════ APP SHELL ═════════ -->
 <div id="app" style="display:none;">
   <button id="top-upd-btn" class="top-upd-btn" onclick="openQuickUpdateModal()" title="Update Available">
-    <span class="top-upd-ping"></span>
-    <span class="top-upd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></span>
+    <span class="top-upd-ico">
+      <span class="top-upd-ping"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+    </span>
     <span id="top-upd-txt" class="top-upd-lbl">Update</span>
     <span id="top-upd-ver" class="top-upd-badge" style="display:none;"></span>
   </button>
@@ -1857,7 +1970,7 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
         </div>
       </div>
 
-      <!-- 4 Separate Floating Metric Cards with Smooth Rounded Area Sparklines -->
+      <!-- 4 Separate Floating Metric Cards (Supports Wave Sparkline, Circular Ring & Classic Line) -->
       <div class="local-grid" style="margin-bottom:18px;">
         <!-- Card 1: CPU -->
         <div class="card metric-card mc-cpu">
@@ -1870,7 +1983,17 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
             </span>
           </div>
-          <div class="bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-cpu" style="width:0%; background:var(--accent);"></div></div>
+          <div class="mc-ring-wrap">
+            <svg class="mc-ring-svg" viewBox="0 0 84 84">
+              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
+              <circle class="mc-ring-fg" id="ring-cpu" cx="42" cy="42" r="34" style="stroke:var(--accent);"/>
+            </svg>
+            <div class="mc-ring-center">
+              <span class="mc-ring-pct" id="ring-cpu-txt" style="color:var(--accent);">0%</span>
+              <span class="mc-ring-sub">USED</span>
+            </div>
+          </div>
+          <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-cpu" style="width:0%; background:var(--accent);"></div></div>
           <canvas id="spark-cpu" width="240" height="44" class="mc-spark"></canvas>
           <div class="mc-foot"><span data-i18n="load_avg">Load avg</span><span class="mono" id="loc-load">---</span></div>
         </div>
@@ -1886,7 +2009,17 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3"/><rect x="2" y="6" width="20" height="10" rx="2"/><path d="M6 10h2M11 10h2M16 10h2"/></svg>
             </span>
           </div>
-          <div class="bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-ram" style="width:0%; background:var(--accent2);"></div></div>
+          <div class="mc-ring-wrap">
+            <svg class="mc-ring-svg" viewBox="0 0 84 84">
+              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
+              <circle class="mc-ring-fg" id="ring-ram" cx="42" cy="42" r="34" style="stroke:var(--accent2);"/>
+            </svg>
+            <div class="mc-ring-center">
+              <span class="mc-ring-pct" id="ring-ram-txt" style="color:var(--accent2);">0%</span>
+              <span class="mc-ring-sub">USED</span>
+            </div>
+          </div>
+          <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-ram" style="width:0%; background:var(--accent2);"></div></div>
           <canvas id="spark-ram" width="240" height="44" class="mc-spark"></canvas>
           <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-ram-mb">---</span></div>
         </div>
@@ -1902,7 +2035,17 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
             </span>
           </div>
-          <div class="bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-disk" style="width:0%; background:var(--purple);"></div></div>
+          <div class="mc-ring-wrap">
+            <svg class="mc-ring-svg" viewBox="0 0 84 84">
+              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
+              <circle class="mc-ring-fg" id="ring-disk" cx="42" cy="42" r="34" style="stroke:var(--purple);"/>
+            </svg>
+            <div class="mc-ring-center">
+              <span class="mc-ring-pct" id="ring-disk-txt" style="color:var(--purple);">0%</span>
+              <span class="mc-ring-sub">USED</span>
+            </div>
+          </div>
+          <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-disk" style="width:0%; background:var(--purple);"></div></div>
           <canvas id="spark-disk" width="240" height="44" class="mc-spark"></canvas>
           <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-disk-gb">---</span></div>
         </div>
@@ -1920,6 +2063,17 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
             <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--green) 16%, transparent); color:var(--green);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </span>
+          </div>
+          <div class="mc-ring-wrap">
+            <svg class="mc-ring-svg" viewBox="0 0 84 84">
+              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
+              <circle class="mc-ring-fg" id="ring-net-rx" cx="42" cy="42" r="34" style="stroke:var(--green);"/>
+              <circle class="mc-ring-fg" id="ring-net-tx" cx="42" cy="42" r="34" style="stroke:var(--yellow);"/>
+            </svg>
+            <div class="mc-ring-center">
+              <span class="mc-ring-pct" id="ring-net-txt" style="color:var(--green); font-size:.66rem;">RX/TX</span>
+              <span class="mc-ring-sub">RATIO</span>
+            </div>
           </div>
           <canvas id="spark-net" width="240" height="52" class="mc-spark" style="margin-top:8px;"></canvas>
           <div class="mc-foot"><span data-i18n="total_traffic">Total traffic</span><span class="mono" id="loc-net-tot">---</span></div>
@@ -3321,6 +3475,7 @@ const OPT = {
   srv: { grid: ['Cards', 'کارت‌ها'], list: ['List', 'لیست'], table: ['Table', 'جدول'] },
   stat: { tiles: ['Tiles', 'کاشی'], ribbon: ['Ribbon', 'نوار'] },
   chart: { unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
+  gauge: { wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
   chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] }
 };
 let lang = ls.get('mc_lang', '') || ((navigator.language || '').toLowerCase().startsWith('fa') ? 'fa' : 'en');
@@ -3338,8 +3493,9 @@ const TH = [];
 function T(id, n, g, s, d, l) {
   const a = s.split(' ');
   const chartMode = a[10] || (a[1] === 'prism' ? 'bubbles' : 'unified');
-  const chkMode = a[11] || (g === 'Neon' ? 'neon' : (g === 'Material' ? 'material' : (a[2] === 'square' ? 'square' : (a[1] === 'prism' ? 'circle' : 'round'))));
-  TH.push({ id, n, g, nav: a[0], card: a[1], btn: a[2], bg: a[3], font: a[4], den: a[5], srv: a[6], stat: a[7], chart: chartMode, chk: chkMode, r: +a[8], bw: +a[9], d: d.split(' '), l: l.split(' ') });
+  const gaugeMode = a[11] || (a[1] === 'prism' ? 'wave' : 'line');
+  const chkMode = a[12] || (g === 'Neon' ? 'neon' : (g === 'Material' ? 'material' : (a[2] === 'square' ? 'square' : (a[1] === 'prism' ? 'circle' : 'round'))));
+  TH.push({ id, n, g, nav: a[0], card: a[1], btn: a[2], bg: a[3], font: a[4], den: a[5], srv: a[6], stat: a[7], chart: chartMode, gauge: gaugeMode, chk: chkMode, r: +a[8], bw: +a[9], d: d.split(' '), l: l.split(' ') });
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
@@ -3348,6 +3504,7 @@ T('prism-azure', 'Prism Azure', 'Prism', 'side-float prism pill aurora sans cozy
 T('prism-mint', 'Prism Mint', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1', '#091a17 #112924 #eefaf7 #97b5ae #10b981 #38bdf8 #1f473e', '#eefbf6 #ffffff #0c1f1a #527067 #059669 #0284c7 #d5f0e6');
 T('prism-rose', 'Prism Rose', 'Prism', 'side-float prism pill aurora sans cozy grid tiles 22 1', '#1a0e1d #28162d #fbf1f8 #b89eb8 #ec4899 #8b5cf6 #492852', '#fdf2f8 #ffffff #1f1124 #6f5b75 #db2777 #7c3aed #f4d8e8');
 T('prism-sunset', 'Prism Sunset', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1', '#1b1214 #291c1f #fcf3f0 #baa5a2 #f97316 #a855f7 #4d3238', '#fff5f0 #ffffff #211512 #73605a #ea580c #7c3aed #f5dfd4');
+T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#0f1021 #181a30 #f1f3f9 #a3a9c2 #8b5cf6 #38bdf8 #2b2f52', '#f3f5fc #ffffff #14182b #64708a #6d28d9 #2563eb #e2e8f7');
 T('prism-aurora', 'Prism Aurora', 'Prism', 'side-float prism pill aurora sans cozy grid tiles 22 1', '#0e1324 #171e36 #f2f4fb #a0a9c4 #6366f1 #10b981 #293257', '#f4f6fe #ffffff #13182e #5f6982 #4f46e5 #059669 #e0e5f8');
 
 T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#0a1121 #142033 #ecedef #adb1b8 #65dcff #bda5ff #284f66', '#edf4fa #fbfdfe #0b111e #515661 #005a79 #644291 #b2ceda');
@@ -3486,7 +3643,7 @@ function flagSVG(cc) {
 }
 
 /* ═══════════════ theme engine ═══════════════ */
-const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'chk'];
+const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk'];
 function lum(hex) {
   let h = String(hex || '').replace('#', '');
   if (h.length === 3) h = h.split('').map(c => c + c).join('');
@@ -3517,7 +3674,7 @@ function applyTheme() {
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
   b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
-  b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.chk = e.chk || 'round'; b.dataset.navx = navxFor(e);
+  b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.navx = navxFor(e);
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_custom', JSON.stringify(custom));
@@ -3643,7 +3800,7 @@ function renderThemes() {
 function renderStudio() {
   const box = $('studio'); if (!box) return;
   const e = effective();
-  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', chk: 'studio_chk' };
+  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk' };
   let h = DIMS.map(k => `<div class="field"><label>${t(labels[k])}</label><select data-dim="${k}"><option value="">${esc(t('theme_default'))}: ${esc(optLabel(k, curTheme()[k]))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></div>`).join('');
   h += `<div class="field"><label>${t('studio_accent')}</label><input type="color" data-dim="accent" value="${esc(/^#[0-9a-f]{6}$/i.test(e.pal[4]) ? e.pal[4] : '#38bdf8')}"></div>`;
   h += `<div class="field"><label>${t('studio_radius')}: <span id="rad-val">${e.r}</span>px</label><input type="range" min="0" max="36" data-dim="r" value="${e.r}"></div>`;
@@ -5097,18 +5254,23 @@ async function bulkSetCFProxy(proxied) {
   const btn = $(proxied ? 'btn-cf-bulk-prox-on' : 'btn-cf-bulk-prox-off');
   const orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
-  let okCnt = 0;
   try {
-    for (const rec of targets) {
-      const r = await api('api/cloudflare/record', 'PUT', {
-        zone_id: rec.zone_id, record_id: rec.id, type: rec.type, name: rec.name,
-        content: rec.content, ttl: rec.ttl || 1, proxied: !!proxied
-      });
-      if (r.ok) okCnt++;
-    }
-    toast(`Updated proxy on ${okCnt} / ${targets.length} records`);
-    clearCFSelection();
-    loadCloudflareStatus(false);
+    const r = await api('api/cloudflare/bulk-proxy', 'POST', {
+      proxied: !!proxied,
+      items: targets.map(rec => ({
+        zone_id: rec.zone_id, record_id: rec.id, type: rec.type,
+        name: rec.name, content: rec.content, ttl: rec.ttl || 1
+      }))
+    });
+    if (r.ok) {
+      CF_RECORDS = r.records || CF_RECORDS;
+      CF_ZONES = r.zones || CF_ZONES;
+      CF_SERVER_DOMAINS = r.server_domains || CF_SERVER_DOMAINS;
+      clearCFSelection();
+      renderCFZoneBubbles();
+      renderCFRecords();
+      toast(r.message || `Updated proxy on ${r.updated || targets.length} records`);
+    } else toast(r.error || 'Bulk proxy update failed', true);
   } finally { if (btn) { btn.disabled = false; btn.textContent = orig; } }
 }
 
@@ -5120,15 +5282,19 @@ async function bulkDeleteCFRecords() {
   const btn = $('btn-cf-bulk-del');
   const orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
-  let okCnt = 0;
   try {
-    for (const rec of targets) {
-      const r = await api('api/cloudflare/record', 'DELETE', { zone_id: rec.zone_id, record_id: rec.id });
-      if (r.ok) okCnt++;
-    }
-    toast(`Deleted ${okCnt} / ${targets.length} DNS records`);
-    clearCFSelection();
-    loadCloudflareStatus(false);
+    const r = await api('api/cloudflare/bulk-delete', 'POST', {
+      items: targets.map(rec => ({ zone_id: rec.zone_id, record_id: rec.id }))
+    });
+    if (r.ok) {
+      CF_RECORDS = r.records || CF_RECORDS;
+      CF_ZONES = r.zones || CF_ZONES;
+      CF_SERVER_DOMAINS = r.server_domains || CF_SERVER_DOMAINS;
+      clearCFSelection();
+      renderCFZoneBubbles();
+      renderCFRecords();
+      toast(r.message || `Deleted ${r.deleted || targets.length} DNS records`);
+    } else toast(r.error || 'Bulk delete failed', true);
   } finally { if (btn) { btn.disabled = false; btn.textContent = orig; } }
 }
 
@@ -5368,9 +5534,16 @@ async function toggleCFProxy(zoneId, recId) {
 
 async function deleteCFRecord(zoneId, recId, name) {
   if (!confirm('Delete DNS record ' + name + '?')) return;
-  const r = await api('api/cloudflare/record', 'DELETE', { zone_id: zoneId, record_id: recId });
-  if (r.ok) { toast('Record deleted'); loadCloudflareStatus(false); }
-  else toast(r.error || 'Delete failed', true);
+  const r = await api('api/cloudflare/bulk-delete', 'POST', { items: [{ zone_id: zoneId, record_id: recId }] });
+  if (r.ok) {
+    CF_RECORDS = r.records || CF_RECORDS.filter(x => x.id !== recId);
+    CF_ZONES = r.zones || CF_ZONES;
+    CF_SERVER_DOMAINS = r.server_domains || CF_SERVER_DOMAINS;
+    CF_SELECTED_IDS.delete(recId);
+    renderCFZoneBubbles();
+    renderCFRecords();
+    toast('Record deleted');
+  } else toast(r.error || 'Delete failed', true);
 }
 
 async function loadTelegramStatus() {
@@ -6170,7 +6343,7 @@ function drawSpark(id, series) {
       }
     };
 
-    const isBubbleChart = document.body.dataset.chart === 'bubbles';
+    const isBubbleChart = (document.body.dataset.gauge === 'wave') || (!document.body.dataset.gauge && document.body.dataset.chart === 'bubbles');
     if (isBubbleChart) {
       // Soft translucent gradient fill under the rounded wave
       ctx.save();
@@ -6234,6 +6407,27 @@ async function pollLocalStats() {
   const orb = $('orb-ram-bar'); if (orb) orb.style.width = Math.min(100, s.ram_percent || 0) + '%';
   const orx = $('orb-rx'); if (orx) orx.textContent = '↓ ' + fmtBytes(s.net_rx_speed || 0) + '/s';
   const otx = $('orb-tx'); if (otx) otx.textContent = '↑ ' + fmtBytes(s.net_tx_speed || 0) + '/s';
+  const setRing = (id, pct, offsetPct) => {
+    const el = $(id); if (!el) return;
+    const C = 213.63;
+    const clamped = Math.max(0, Math.min(100, pct || 0));
+    el.style.strokeDasharray = C.toFixed(2);
+    el.style.strokeDashoffset = (C * (1 - clamped / 100)).toFixed(2);
+    if (offsetPct) el.style.transform = `rotate(${(offsetPct / 100) * 360}deg)`;
+    if (offsetPct) el.style.transformOrigin = '42px 42px';
+  };
+  setRing('ring-cpu', s.cpu_percent || 0);
+  setRing('ring-ram', s.ram_percent || 0);
+  setRing('ring-disk', s.disk_percent || 0);
+  setT('ring-cpu-txt', Math.round(s.cpu_percent || 0) + '%');
+  setT('ring-ram-txt', Math.round(s.ram_percent || 0) + '%');
+  setT('ring-disk-txt', Math.round(s.disk_percent || 0) + '%');
+  const rxS = s.net_rx_speed || 0, txS = s.net_tx_speed || 0, totS = rxS + txS;
+  const rxPct = totS > 0 ? (rxS / totS) * 100 : 50;
+  const txPct = totS > 0 ? (txS / totS) * 100 : 50;
+  setRing('ring-net-rx', rxPct, 0);
+  setRing('ring-net-tx', txPct, rxPct);
+  setT('ring-net-txt', totS > 0 ? (Math.round(rxPct) + '/' + Math.round(txPct)) : 'IDLE');
   cpuHist.push(s.cpu_percent || 0); cpuHist.shift();
   ramHist.push(s.ram_percent || 0); ramHist.shift();
   diskHist.push(s.disk_percent || 0); diskHist.shift();

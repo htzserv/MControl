@@ -417,6 +417,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/cloudflare/record", h.auth(h.handleCFCreateRecord))
 	mux.HandleFunc("PUT /api/cloudflare/record", h.auth(h.handleCFUpdateRecord))
 	mux.HandleFunc("DELETE /api/cloudflare/record", h.auth(h.handleCFDeleteRecord))
+	mux.HandleFunc("POST /api/cloudflare/bulk-delete", h.auth(h.handleCFBulkDelete))
+	mux.HandleFunc("POST /api/cloudflare/bulk-proxy", h.auth(h.handleCFBulkProxy))
 	mux.HandleFunc("GET /api/tunnels", h.auth(h.handleListTunnels))
 	mux.HandleFunc("POST /api/tunnels", h.auth(h.handleCreateTunnel))
 	mux.HandleFunc("POST /api/tunnels/{id}/action", h.auth(h.handleTunnelAction))

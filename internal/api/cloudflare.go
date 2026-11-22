@@ -715,6 +715,36 @@ func (h *Handler) handleCFSync(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+
+func (h *Handler) removeCachedRecords(ids map[string]bool) {
+	dnsSyncMu.Lock()
+	defer dnsSyncMu.Unlock()
+	cur := h.loadCFCache()
+	var kept []cfDNSRecord
+	for _, r := range cur.Records {
+		if !ids[r.ID] {
+			kept = append(kept, r)
+		}
+	}
+	if kept == nil {
+		kept = []cfDNSRecord{}
+	}
+	cur.Records = kept
+	h.saveCFCache(cur)
+}
+
+func (h *Handler) updateCachedRecordsProxy(ids map[string]bool, proxied bool) {
+	dnsSyncMu.Lock()
+	defer dnsSyncMu.Unlock()
+	cur := h.loadCFCache()
+	for i := range cur.Records {
+		if ids[cur.Records[i].ID] {
+			cur.Records[i].Proxied = proxied
+		}
+	}
+	h.saveCFCache(cur)
+}
+
 func (h *Handler) handleCFCreateRecord(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ZoneID  string `json:"zone_id"`
@@ -899,7 +929,9 @@ func (h *Handler) handleCFDeleteRecord(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cache, _ := h.syncDNSProvider(cfg, prov)
+	_ = prov
+	h.removeCachedRecords(map[string]bool{req.RecordID: true})
+	cache := h.loadCFCache()
 	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":             true,
@@ -907,6 +939,195 @@ func (h *Handler) handleCFDeleteRecord(w http.ResponseWriter, r *http.Request) {
 		"records":        matched,
 		"server_domains": srvDomains,
 		"message":        "DNS record deleted.",
+	})
+}
+
+func (h *Handler) handleCFBulkDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Items []struct {
+			ZoneID   string `json:"zone_id"`
+			RecordID string `json:"record_id"`
+		} `json:"items"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if len(req.Items) == 0 {
+		fail(w, http.StatusBadRequest, "no records selected")
+		return
+	}
+	cfg := h.loadCFConfig()
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 8)
+	deletedIDs := map[string]bool{}
+	okCnt, failCnt := 0, 0
+	var lastErr string
+
+	for _, it := range req.Items {
+		if it.ZoneID == "" || it.RecordID == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(zID, rID string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			var err error
+			if strings.HasPrefix(zID, "arvan:") {
+				domain := strings.TrimPrefix(zID, "arvan:")
+				u := fmt.Sprintf("https://napi.arvancloud.ir/cdn/4.0/domains/%s/dns-records/%s", url.PathEscape(domain), url.PathEscape(rID))
+				raw, code, rErr := h.arvanHTTPDo("DELETE", u, cfg.ArvanAPIKey, nil)
+				if rErr != nil {
+					err = rErr
+				} else if code < 200 || code >= 300 {
+					err = fmt.Errorf("ArvanCloud HTTP %d: %s", code, string(raw))
+				}
+			} else {
+				u := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", url.PathEscape(zID), url.PathEscape(rID))
+				raw, rErr := h.cfHTTPDo("DELETE", u, cfg, nil)
+				if rErr != nil {
+					err = rErr
+				} else if ok, msg := parseCFError(raw); !ok {
+					err = fmt.Errorf("%s", msg)
+				}
+			}
+
+			mu.Lock()
+			if err == nil {
+				okCnt++
+				deletedIDs[rID] = true
+			} else {
+				failCnt++
+				lastErr = err.Error()
+			}
+			mu.Unlock()
+		}(it.ZoneID, it.RecordID)
+	}
+	wg.Wait()
+
+	if len(deletedIDs) > 0 {
+		h.removeCachedRecords(deletedIDs)
+	}
+	cache := h.loadCFCache()
+	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
+	if okCnt == 0 && lastErr != "" {
+		fail(w, http.StatusBadGateway, lastErr)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":             true,
+		"deleted":        okCnt,
+		"failed":         failCnt,
+		"zones":          cache.Zones,
+		"records":        matched,
+		"server_domains": srvDomains,
+		"message":        fmt.Sprintf("Deleted %d DNS records%s.", okCnt, func() string { if failCnt > 0 { return fmt.Sprintf(" (%d failed)", failCnt) }; return "" }()),
+	})
+}
+
+func (h *Handler) handleCFBulkProxy(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Proxied bool `json:"proxied"`
+		Items   []struct {
+			ZoneID   string `json:"zone_id"`
+			RecordID string `json:"record_id"`
+			Type     string `json:"type"`
+			Name     string `json:"name"`
+			Content  string `json:"content"`
+			TTL      int    `json:"ttl"`
+		} `json:"items"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if len(req.Items) == 0 {
+		fail(w, http.StatusBadRequest, "no records selected")
+		return
+	}
+	cfg := h.loadCFConfig()
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 8)
+	updatedIDs := map[string]bool{}
+	okCnt, failCnt := 0, 0
+	var lastErr string
+
+	for _, it := range req.Items {
+		if it.ZoneID == "" || it.RecordID == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(zoneID, recID, rType, rName, rContent string, rTTL int) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			var err error
+			if strings.HasPrefix(zoneID, "arvan:") {
+				domain := strings.TrimPrefix(zoneID, "arvan:")
+				sub := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(rName), domain), ".")
+				if sub == "" {
+					sub = "@"
+				}
+				u := fmt.Sprintf("https://napi.arvancloud.ir/cdn/4.0/domains/%s/dns-records/%s", url.PathEscape(domain), url.PathEscape(recID))
+				raw, code, rErr := h.arvanHTTPDo("PUT", u, cfg.ArvanAPIKey, buildArvanPayload(rType, sub, strings.TrimSpace(rContent), rTTL, req.Proxied))
+				if rErr != nil {
+					err = rErr
+				} else if code < 200 || code >= 300 {
+					err = fmt.Errorf("ArvanCloud HTTP %d: %s", code, string(raw))
+				}
+			} else {
+				ttl := rTTL
+				if ttl <= 0 {
+					ttl = 1
+				}
+				u := fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", url.PathEscape(zoneID), url.PathEscape(recID))
+				raw, rErr := h.cfHTTPDo("PUT", u, cfg, map[string]any{
+					"type":    strings.ToUpper(strings.TrimSpace(rType)),
+					"name":    strings.TrimSpace(rName),
+					"content": strings.TrimSpace(rContent),
+					"ttl":     ttl,
+					"proxied": req.Proxied,
+				})
+				if rErr != nil {
+					err = rErr
+				} else if ok, msg := parseCFError(raw); !ok {
+					err = fmt.Errorf("%s", msg)
+				}
+			}
+
+			mu.Lock()
+			if err == nil {
+				okCnt++
+				updatedIDs[recID] = true
+			} else {
+				failCnt++
+				lastErr = err.Error()
+			}
+			mu.Unlock()
+		}(it.ZoneID, it.RecordID, it.Type, it.Name, it.Content, it.TTL)
+	}
+	wg.Wait()
+
+	if len(updatedIDs) > 0 {
+		h.updateCachedRecordsProxy(updatedIDs, req.Proxied)
+	}
+	cache := h.loadCFCache()
+	matched, srvDomains := h.matchRecordsWithServers(cache.Records)
+	if okCnt == 0 && lastErr != "" {
+		fail(w, http.StatusBadGateway, lastErr)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":             true,
+		"updated":        okCnt,
+		"failed":         failCnt,
+		"zones":          cache.Zones,
+		"records":        matched,
+		"server_domains": srvDomains,
+		"message":        fmt.Sprintf("Updated proxy on %d DNS records.", okCnt),
 	})
 }
 
