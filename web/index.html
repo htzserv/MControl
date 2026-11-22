@@ -1962,6 +1962,71 @@ body[data-navx="top"] .ver-bubble {
   .bak-bubble-lbl { display: none; }
 }
 
+
+/* ═══ 3-BUBBLE ROUTE SELECTOR IN + NEW 2-SIDED TUNNEL (Flag / Server Name / Flag + IP) ═══ */
+.tun-route-col {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.tun-route-lbl {
+  font-size: .76rem; font-weight: 700; color: var(--muted); margin-bottom: 2px;
+}
+.tun-rb {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 13px; border-radius: 999px;
+  background: var(--surface);
+  border: 1.3px solid var(--border);
+  box-shadow: 0 4px 14px -8px var(--shadow);
+  transition: border-color .16s ease, box-shadow .16s ease;
+  min-height: 40px;
+}
+.tun-rb:focus-within, .tun-rb:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+.tun-rb.rb-flag {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  justify-content: space-between;
+}
+.tun-rb-flag-left {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0;
+}
+.tun-rb-country {
+  font-size: .8rem; font-weight: 800; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tun-rb-cc {
+  font-family: var(--ff-m); font-size: .68rem; font-weight: 800;
+  padding: 2px 7px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--row));
+  color: var(--accent); flex-shrink: 0;
+}
+.tun-rb.rb-sel {
+  padding: 0 12px !important;
+}
+.tun-rb.rb-sel select {
+  width: 100%; border: none !important; background: transparent !important;
+  box-shadow: none !important; padding: 9px 2px !important; margin: 0 !important;
+  font-size: .82rem !important; font-weight: 700; color: var(--text);
+  outline: none !important; cursor: pointer;
+}
+.tun-rb.rb-ip {
+  padding: 0 12px !important;
+  background: color-mix(in srgb, var(--row) 80%, var(--surface));
+}
+.tun-rb.rb-ip select {
+  flex: 1; min-width: 0; border: none !important; background: transparent !important;
+  box-shadow: none !important; padding: 9px 2px !important; margin: 0 !important;
+  font-family: var(--ff-m); font-size: .76rem !important; color: var(--text);
+  outline: none !important; cursor: pointer;
+}
+.tun-rb-ip-flag {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+}
+.tun-rb .flag-svg {
+  width: 22px; height: 15px; border-radius: 3px; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .28);
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3275,21 +3340,42 @@ body[data-navx="top"] .ver-bubble {
         <div class="tun-sec" style="margin-bottom:0;">
           <div class="tun-sec-title"><span>Route (Entry ⇄ Exit)</span></div>
           <div class="row2">
-            <div class="field" style="margin-bottom:0;">
-              <label>Entry Server (Iran)</label>
-              <select id="t-iran" onchange="onTunnelServersChange()"></select>
-              <select id="t-iran-ipver" style="margin-top:6px; font-size:.76rem; padding:6px 10px;" onchange="updateTunFloatDock()">
-                <option value="v4">IPv4</option>
-                <option value="v6">IPv6</option>
-              </select>
+            <!-- Entry Server (3 Stacked Bubbles: 1. Flag, 2. Server Name, 3. IP + Flag) -->
+            <div class="tun-route-col">
+              <div class="tun-route-lbl">Entry Server (Iran)</div>
+              <div class="tun-rb rb-flag" id="t-iran-flag-b">
+                <span class="tun-rb-flag-left"><span class="dot"></span><span class="tun-rb-country">—</span></span>
+                <span class="tun-rb-cc">—</span>
+              </div>
+              <div class="tun-rb rb-sel">
+                <select id="t-iran" onchange="onTunnelServersChange()"></select>
+              </div>
+              <div class="tun-rb rb-ip">
+                <select id="t-iran-ipver" onchange="updateTunFloatDock()">
+                  <option value="v4">IPv4</option>
+                  <option value="v6">IPv6</option>
+                </select>
+                <span class="tun-rb-ip-flag" id="t-iran-ip-flag"></span>
+              </div>
             </div>
-            <div class="field" style="margin-bottom:0;">
-              <label>Exit Server (Foreign)</label>
-              <select id="t-foreign" onchange="onTunnelServersChange()"></select>
-              <select id="t-for-ipver" style="margin-top:6px; font-size:.76rem; padding:6px 10px;" onchange="updateTunFloatDock()">
-                <option value="v4">IPv4</option>
-                <option value="v6">IPv6</option>
-              </select>
+
+            <!-- Exit Server (3 Stacked Bubbles: 1. Flag, 2. Server Name, 3. IP + Flag) -->
+            <div class="tun-route-col">
+              <div class="tun-route-lbl">Exit Server (Foreign)</div>
+              <div class="tun-rb rb-flag" id="t-for-flag-b">
+                <span class="tun-rb-flag-left"><span class="dot"></span><span class="tun-rb-country">—</span></span>
+                <span class="tun-rb-cc">—</span>
+              </div>
+              <div class="tun-rb rb-sel">
+                <select id="t-foreign" onchange="onTunnelServersChange()"></select>
+              </div>
+              <div class="tun-rb rb-ip">
+                <select id="t-for-ipver" onchange="updateTunFloatDock()">
+                  <option value="v4">IPv4</option>
+                  <option value="v6">IPv6</option>
+                </select>
+                <span class="tun-rb-ip-flag" id="t-for-ip-flag"></span>
+              </div>
             </div>
           </div>
 
@@ -3934,6 +4020,11 @@ function fallbackCopy(text, ok) {
   try { document.execCommand('copy'); ok(); } catch (e) { toast(t('copy_failed'), true); }
   ta.remove();
 }
+function flagEmoji(cc) {
+  const c = (cc || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(c)) return '🌐';
+  return String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65, 0x1F1E6 + c.charCodeAt(1) - 65);
+}
 function flagSVG(cc) {
   const c = (cc || '').toUpperCase();
   const S = b => `<svg class="flag-svg" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg">${b}</svg>`;
@@ -4469,9 +4560,14 @@ async function loadTunnels() {
 }
 
 function populateServerSelects(iranId, forId) {
+  const isTunWiz = (iranId === 't-iran' && forId === 't-foreign');
   const irOpts = SERVERS.map(s => {
-    const tag = s.role === 'iran' ? 'IR • Entry' : 'EX • Exit';
-    return `<option value="${s.id}">[${tag}] ${esc(s.name)} — ${esc(s.host)}</option>`;
+    const cc = s.country_code || (s.role === 'iran' ? 'IR' : '');
+    const fl = flagEmoji(cc);
+    if (isTunWiz) {
+      return `<option value="${s.id}">${esc(s.name)}</option>`;
+    }
+    return `<option value="${s.id}">${esc(s.name)} — ${esc(s.host)} ${fl}</option>`;
   }).join('');
   if ($(iranId)) $(iranId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
   if ($(forId)) $(forId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
@@ -4479,6 +4575,21 @@ function populateServerSelects(iranId, forId) {
   const firstFor = SERVERS.find(s => s.role === 'foreign');
   if (firstIran && $(iranId)) $(iranId).value = firstIran.id;
   if (firstFor && $(forId)) $(forId).value = firstFor.id;
+}
+
+function updateTunnelRouteBubbles(selId, flagBubbleId, ipFlagId) {
+  const sid = parseInt(($(selId) && $(selId).value) || '0', 10);
+  const s = SERVERS.find(x => +x.id === sid);
+  const fb = $(flagBubbleId), ipf = $(ipFlagId);
+  const cc = s ? (s.country_code || (s.role === 'iran' ? 'IR' : '')) : '';
+  const cName = s ? (s.country || (s.role === 'iran' ? (lang === 'fa' ? 'ایران' : 'Iran') : (lang === 'fa' ? 'خارج' : 'Foreign'))) : '—';
+  const dotCls = s ? (s.status === 'online' ? 'dot online' : 'dot offline') : 'dot';
+  if (fb) {
+    fb.innerHTML = `<span class="tun-rb-flag-left"><span class="${dotCls}"></span>${s ? flagSVG(cc) : ''}<span class="tun-rb-country">${esc(cName)}</span></span><span class="tun-rb-cc">${esc((cc || (s && s.role === 'iran' ? 'IR' : '—')).toUpperCase())}</span>`;
+  }
+  if (ipf) {
+    ipf.innerHTML = s ? flagSVG(cc) : '';
+  }
 }
 
 function pickTunnelEngine(eng) {
@@ -4544,6 +4655,8 @@ function updatePerServerIPOptions(selSrvId, selIpId) {
 function onTunnelServersChange() {
   updatePerServerIPOptions('t-iran', 't-iran-ipver');
   updatePerServerIPOptions('t-foreign', 't-for-ipver');
+  updateTunnelRouteBubbles('t-iran', 't-iran-flag-b', 't-iran-ip-flag');
+  updateTunnelRouteBubbles('t-foreign', 't-for-flag-b', 't-for-ip-flag');
   if ($('t-underlay')) pickTunnelUnderlay($('t-underlay').value || 'ip');
   const wrap = $('t-check-proto-wrap');
   if (!wrap) return;
@@ -5721,7 +5834,7 @@ async function bulkDeleteCFRecords() {
 
 function renderSingleCFRecordRow(r) {
   const srvTag = r.server_id
-    ? `<span class="badge ${r.server_role === 'iran' ? 'b-iran' : 'b-ok'} mono">[${r.server_role === 'iran' ? 'IR' : 'EX'}] ${esc(r.server_name)}</span>`
+    ? `<span class="badge ${r.server_role === 'iran' ? 'b-iran' : 'b-ok'} mono">${r.server_role === 'iran' ? 'IRAN' : 'FOREIGN'} • ${esc(r.server_name)}</span>`
     : '';
   const canProxy = (r.type === 'A' || r.type === 'AAAA' || r.type === 'CNAME');
   const isSel = CF_SELECTED_IDS.has(r.id);
@@ -5889,11 +6002,12 @@ function openCFRecordModal(rec) {
   const sp = $('cf-r-srvpick');
   if (sp) {
     sp.innerHTML = '<option value="">— Manual IP / Target —</option>' + SERVERS.map(s => {
-      const tag = s.role === 'iran' ? 'IR' : 'EX';
+      const cc = s.country_code || (s.role === 'iran' ? 'IR' : '');
+      const fl = flagEmoji(cc);
       const v4 = s.ipv4 || s.host || '';
       const v6 = (s.ipv6 && s.ipv6 !== 'N/A') ? s.ipv6 : '';
-      let opts = `<option value="A|${esc(v4)}">[${tag}] ${esc(s.name)} — IPv4 (${esc(v4)})</option>`;
-      if (v6) opts += `<option value="AAAA|${esc(v6)}">[${tag}] ${esc(s.name)} — IPv6 (${esc(v6)})</option>`;
+      let opts = `<option value="A|${esc(v4)}">${esc(s.name)} — IPv4 (${esc(v4)} ${fl})</option>`;
+      if (v6) opts += `<option value="AAAA|${esc(v6)}">${esc(s.name)} — IPv6 (${esc(v6)} ${fl})</option>`;
       return opts;
     }).join('');
   }
