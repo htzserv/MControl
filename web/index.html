@@ -1702,32 +1702,38 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
 }
 
 
-/* ═══ MODULAR METRIC GRAPH AXIS: body[data-gauge="ring"] (Circular Donut Gauge) ═══ */
+/* ═══ MODULAR METRIC GRAPH AXIS: body[data-gauge="ring"] (Large Circular Donut Gauge) ═══ */
+.mc-top-meta { display: none; font-size: .69rem; color: var(--muted); margin-top: 3px; }
 .mc-ring-wrap {
-  display: none; position: relative; width: 88px; height: 88px; margin: 6px auto 2px;
-  align-items: center; justify-content: center;
+  display: none; position: relative; width: 122px; height: 122px; margin: 10px auto 6px;
+  align-items: center; justify-content: center; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 72%);
 }
-.mc-ring-svg { width: 88px; height: 88px; transform: rotate(-90deg); overflow: visible; }
-.mc-ring-bg {
-  fill: none; stroke: color-mix(in srgb, var(--muted) 20%, transparent); stroke-width: 8;
+.mc-ring-svg { width: 122px; height: 122px; transform: rotate(-90deg); overflow: visible; }
+.mc-ring-track {
+  fill: none; stroke: color-mix(in srgb, var(--muted) 18%, transparent); stroke-width: 10;
 }
 .mc-ring-fg {
-  fill: none; stroke-width: 8; stroke-linecap: round;
-  stroke-dasharray: 213.63; stroke-dashoffset: 213.63;
-  transition: stroke-dashoffset .45s cubic-bezier(.22, 1, .36, 1);
-  filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--accent) 32%, transparent));
+  fill: none; stroke-width: 10; stroke-linecap: round;
+  stroke-dasharray: 301.59; stroke-dashoffset: 301.59;
+  transition: stroke-dashoffset .45s cubic-bezier(.22, 1, .36, 1), stroke .25s ease;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 36%, transparent));
 }
 .mc-ring-center {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; text-align: center; pointer-events: none;
+  padding: 0 10px;
 }
-.mc-ring-pct { font-family: var(--ff-m); font-size: .86rem; font-weight: 900; line-height: 1.1; }
-.mc-ring-sub { font-size: .56rem; font-weight: 800; letter-spacing: .5px; color: var(--muted); margin-top: 1px; }
+.mc-ring-pct { font-family: var(--ff-m); font-size: 1.28rem; font-weight: 900; line-height: 1.08; letter-spacing: -.4px; }
+.mc-ring-sub { font-size: .58rem; font-weight: 800; letter-spacing: .7px; color: var(--muted); margin-top: 3px; }
 
+/* In Ring mode, show the big percentage INSIDE the ring once (no duplicate in top-left!) */
 body[data-gauge="ring"] .mc-ring-wrap { display: flex; }
+body[data-gauge="ring"] .mc-top-pct,
+body[data-gauge="ring"] .mc-net-vals,
 body[data-gauge="ring"] .mc-bar-wrap,
 body[data-gauge="ring"] .mc-spark { display: none !important; }
-body[data-gauge="ring"] .mc-val { font-size: 1.15rem; }
+body[data-gauge="ring"] .mc-top-meta { display: block; }
 
 /* ═══ SETTINGS WIDTH & UNIFORM CARD ALIGNMENT FIX ═══ */
 #tab-settings #settings-shell {
@@ -1970,27 +1976,28 @@ body[data-gauge="ring"] .mc-val { font-size: 1.15rem; }
         </div>
       </div>
 
-      <!-- 4 Separate Floating Metric Cards (Supports Wave Sparkline, Circular Ring & Classic Line) -->
+      <!-- 4 Separate Floating Metric Cards (Supports Wave Sparkline, Large Circular Ring & Classic Line) -->
       <div class="local-grid" style="margin-bottom:18px;">
         <!-- Card 1: CPU -->
         <div class="card metric-card mc-cpu">
           <div class="mc-top">
             <div>
               <div class="mc-lbl" data-i18n="loc_cpu">CPU</div>
-              <div class="mc-val" id="loc-cpu" style="color:var(--accent);">0%</div>
+              <div class="mc-val mc-top-pct" id="loc-cpu" style="color:var(--accent);">0%</div>
+              <div class="mc-top-meta mono" id="mc-cpu-meta">Processor</div>
             </div>
             <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--accent) 16%, transparent); color:var(--accent);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
             </span>
           </div>
           <div class="mc-ring-wrap">
-            <svg class="mc-ring-svg" viewBox="0 0 84 84">
-              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
-              <circle class="mc-ring-fg" id="ring-cpu" cx="42" cy="42" r="34" style="stroke:var(--accent);"/>
+            <svg class="mc-ring-svg" viewBox="0 0 116 116">
+              <circle class="mc-ring-track" cx="58" cy="58" r="48"/>
+              <circle class="mc-ring-fg" id="ring-cpu" cx="58" cy="58" r="48" style="stroke:var(--accent);"/>
             </svg>
             <div class="mc-ring-center">
               <span class="mc-ring-pct" id="ring-cpu-txt" style="color:var(--accent);">0%</span>
-              <span class="mc-ring-sub">USED</span>
+              <span class="mc-ring-sub" id="ring-cpu-state">IDLE</span>
             </div>
           </div>
           <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-cpu" style="width:0%; background:var(--accent);"></div></div>
@@ -2003,20 +2010,21 @@ body[data-gauge="ring"] .mc-val { font-size: 1.15rem; }
           <div class="mc-top">
             <div>
               <div class="mc-lbl" data-i18n="loc_ram">RAM</div>
-              <div class="mc-val" id="loc-ram" style="color:var(--accent2);">0%</div>
+              <div class="mc-val mc-top-pct" id="loc-ram" style="color:var(--accent2);">0%</div>
+              <div class="mc-top-meta mono" id="mc-ram-meta">Memory</div>
             </div>
             <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--accent2) 16%, transparent); color:var(--accent2);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3"/><rect x="2" y="6" width="20" height="10" rx="2"/><path d="M6 10h2M11 10h2M16 10h2"/></svg>
             </span>
           </div>
           <div class="mc-ring-wrap">
-            <svg class="mc-ring-svg" viewBox="0 0 84 84">
-              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
-              <circle class="mc-ring-fg" id="ring-ram" cx="42" cy="42" r="34" style="stroke:var(--accent2);"/>
+            <svg class="mc-ring-svg" viewBox="0 0 116 116">
+              <circle class="mc-ring-track" cx="58" cy="58" r="48"/>
+              <circle class="mc-ring-fg" id="ring-ram" cx="58" cy="58" r="48" style="stroke:var(--accent2);"/>
             </svg>
             <div class="mc-ring-center">
               <span class="mc-ring-pct" id="ring-ram-txt" style="color:var(--accent2);">0%</span>
-              <span class="mc-ring-sub">USED</span>
+              <span class="mc-ring-sub" id="ring-ram-state">MEMORY</span>
             </div>
           </div>
           <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-ram" style="width:0%; background:var(--accent2);"></div></div>
@@ -2029,20 +2037,21 @@ body[data-gauge="ring"] .mc-val { font-size: 1.15rem; }
           <div class="mc-top">
             <div>
               <div class="mc-lbl" data-i18n="loc_disk">Disk</div>
-              <div class="mc-val" id="loc-disk" style="color:var(--purple);">0%</div>
+              <div class="mc-val mc-top-pct" id="loc-disk" style="color:var(--purple);">0%</div>
+              <div class="mc-top-meta mono" id="mc-disk-meta">Storage</div>
             </div>
             <span class="mc-ico-pill" style="background:color-mix(in srgb, var(--purple) 16%, transparent); color:var(--purple);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
             </span>
           </div>
           <div class="mc-ring-wrap">
-            <svg class="mc-ring-svg" viewBox="0 0 84 84">
-              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
-              <circle class="mc-ring-fg" id="ring-disk" cx="42" cy="42" r="34" style="stroke:var(--purple);"/>
+            <svg class="mc-ring-svg" viewBox="0 0 116 116">
+              <circle class="mc-ring-track" cx="58" cy="58" r="48"/>
+              <circle class="mc-ring-fg" id="ring-disk" cx="58" cy="58" r="48" style="stroke:var(--purple);"/>
             </svg>
             <div class="mc-ring-center">
               <span class="mc-ring-pct" id="ring-disk-txt" style="color:var(--purple);">0%</span>
-              <span class="mc-ring-sub">USED</span>
+              <span class="mc-ring-sub" id="ring-disk-state">STORAGE</span>
             </div>
           </div>
           <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-disk" style="width:0%; background:var(--purple);"></div></div>
@@ -2065,14 +2074,14 @@ body[data-gauge="ring"] .mc-val { font-size: 1.15rem; }
             </span>
           </div>
           <div class="mc-ring-wrap">
-            <svg class="mc-ring-svg" viewBox="0 0 84 84">
-              <circle class="mc-ring-bg" cx="42" cy="42" r="34"/>
-              <circle class="mc-ring-fg" id="ring-net-rx" cx="42" cy="42" r="34" style="stroke:var(--green);"/>
-              <circle class="mc-ring-fg" id="ring-net-tx" cx="42" cy="42" r="34" style="stroke:var(--yellow);"/>
+            <svg class="mc-ring-svg" viewBox="0 0 116 116">
+              <circle class="mc-ring-track" cx="58" cy="58" r="48"/>
+              <circle class="mc-ring-fg" id="ring-net-rx" cx="58" cy="58" r="48" style="stroke:var(--green);"/>
+              <circle class="mc-ring-fg" id="ring-net-tx" cx="58" cy="58" r="48" style="stroke:var(--yellow);"/>
             </svg>
             <div class="mc-ring-center">
-              <span class="mc-ring-pct" id="ring-net-txt" style="color:var(--green); font-size:.66rem;">RX/TX</span>
-              <span class="mc-ring-sub">RATIO</span>
+              <span class="mc-ring-pct" id="ring-net-txt" style="color:var(--green); font-size:.82rem;">0 / 0</span>
+              <span class="mc-ring-sub">RX / TX %</span>
             </div>
           </div>
           <canvas id="spark-net" width="240" height="52" class="mc-spark" style="margin-top:8px;"></canvas>
@@ -6407,27 +6416,56 @@ async function pollLocalStats() {
   const orb = $('orb-ram-bar'); if (orb) orb.style.width = Math.min(100, s.ram_percent || 0) + '%';
   const orx = $('orb-rx'); if (orx) orx.textContent = '↓ ' + fmtBytes(s.net_rx_speed || 0) + '/s';
   const otx = $('orb-tx'); if (otx) otx.textContent = '↑ ' + fmtBytes(s.net_tx_speed || 0) + '/s';
-  const setRing = (id, pct, offsetPct) => {
+    const ringColorFor = (pct, defColor) => {
+    if (pct >= 90) return 'var(--red)';
+    if (pct >= 72) return 'var(--yellow)';
+    return defColor;
+  };
+  const stateLabelFor = (pct) => {
+    if (pct >= 90) return 'HIGH';
+    if (pct >= 50) return 'ACTIVE';
+    if (pct > 1)  return 'LIGHT';
+    return 'IDLE';
+  };
+  const setRing = (id, pct, offsetPct, customColor) => {
     const el = $(id); if (!el) return;
-    const C = 213.63;
+    const C = 2 * Math.PI * 48; // 301.59
     const clamped = Math.max(0, Math.min(100, pct || 0));
     el.style.strokeDasharray = C.toFixed(2);
     el.style.strokeDashoffset = (C * (1 - clamped / 100)).toFixed(2);
-    if (offsetPct) el.style.transform = `rotate(${(offsetPct / 100) * 360}deg)`;
-    if (offsetPct) el.style.transformOrigin = '42px 42px';
+    if (customColor) el.style.stroke = customColor;
+    if (offsetPct) {
+      el.style.transform = `rotate(${(offsetPct / 100) * 360}deg)`;
+      el.style.transformOrigin = '58px 58px';
+    } else {
+      el.style.transform = '';
+    }
   };
-  setRing('ring-cpu', s.cpu_percent || 0);
-  setRing('ring-ram', s.ram_percent || 0);
-  setRing('ring-disk', s.disk_percent || 0);
-  setT('ring-cpu-txt', Math.round(s.cpu_percent || 0) + '%');
-  setT('ring-ram-txt', Math.round(s.ram_percent || 0) + '%');
-  setT('ring-disk-txt', Math.round(s.disk_percent || 0) + '%');
+  const cpuP = s.cpu_percent || 0, ramP = s.ram_percent || 0, dskP = s.disk_percent || 0;
+  const cpuCol = ringColorFor(cpuP, 'var(--accent)');
+  const ramCol = ringColorFor(ramP, 'var(--accent2)');
+  const dskCol = ringColorFor(dskP, 'var(--purple)');
+  setRing('ring-cpu', cpuP, 0, cpuCol);
+  setRing('ring-ram', ramP, 0, ramCol);
+  setRing('ring-disk', dskP, 0, dskCol);
+  setT('ring-cpu-txt', Math.round(cpuP) + '%');
+  setT('ring-ram-txt', Math.round(ramP) + '%');
+  setT('ring-disk-txt', Math.round(dskP) + '%');
+  if ($('ring-cpu-txt')) $('ring-cpu-txt').style.color = cpuCol;
+  if ($('ring-ram-txt')) $('ring-ram-txt').style.color = ramCol;
+  if ($('ring-disk-txt')) $('ring-disk-txt').style.color = dskCol;
+  setT('ring-cpu-state', stateLabelFor(cpuP));
+  setT('ring-ram-state', Math.round(ramP) + '% USED');
+  setT('ring-disk-state', Math.round(dskP) + '% USED');
+  if (s.cores) setT('mc-cpu-meta', s.cores + ' vCPU');
+  if (s.ram_total_mb) setT('mc-ram-meta', Math.round(s.ram_total_mb / 1024 * 10) / 10 + ' GB Total');
+  if (s.disk_total_gb) setT('mc-disk-meta', Math.round(s.disk_total_gb) + ' GB Total');
   const rxS = s.net_rx_speed || 0, txS = s.net_tx_speed || 0, totS = rxS + txS;
   const rxPct = totS > 0 ? (rxS / totS) * 100 : 50;
   const txPct = totS > 0 ? (txS / totS) * 100 : 50;
-  setRing('ring-net-rx', rxPct, 0);
-  setRing('ring-net-tx', txPct, rxPct);
-  setT('ring-net-txt', totS > 0 ? (Math.round(rxPct) + '/' + Math.round(txPct)) : 'IDLE');
+  setRing('ring-net-rx', rxPct, 0, 'var(--green)');
+  setRing('ring-net-tx', txPct, rxPct, 'var(--yellow)');
+  setT('ring-net-txt', totS > 0 ? (Math.round(rxPct) + '%/' + Math.round(txPct) + '%') : '0/0%');
   cpuHist.push(s.cpu_percent || 0); cpuHist.shift();
   ramHist.push(s.ram_percent || 0); ramHist.shift();
   diskHist.push(s.disk_percent || 0); diskHist.shift();
