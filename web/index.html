@@ -892,6 +892,42 @@ body:is([data-family="Material"], [data-family="Studio"]) { --accent-glow: trans
 .tcard { text-align: start; color: var(--text); font: inherit; min-width: 0; }
 .tcard:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .tg { grid-template-columns: repeat(auto-fill, minmax(min(100%, 224px), 1fr)); }
+
+/* Crisp Opaque Modal Surface across ALL Light & Dark / Glass Themes */
+body.light-mode .modal-bg { background: rgba(15, 23, 42, .32); backdrop-filter: blur(6px); }
+.modal-box {
+  background: var(--surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, .38) !important;
+  border: 1px solid var(--border) !important;
+}
+body.light-mode .tun-sec {
+  background: color-mix(in srgb, var(--bg) 72%, var(--surface));
+  border-color: color-mix(in srgb, var(--border) 90%, transparent);
+}
+body.light-mode .eng-pill {
+  background: color-mix(in srgb, var(--bg) 68%, var(--surface));
+  color: var(--text);
+}
+body.light-mode .eng-pill.active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
+}
+/* Outbound Node Row & Manual URI Input Polish */
+#ob-manual-uri {
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  border-radius: min(var(--rb, 12px), 12px); padding: 9px 13px; font-size: .8rem; outline: none;
+}
+#ob-manual-uri:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.ob-node-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; border-radius: 12px; background: var(--row); border: 1px solid var(--border);
+}
+.ob-node-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.ob-node-name { font-weight: 700; font-size: .82rem; unicode-bidi: isolate; }
+.ob-node-addr { font-family: var(--ff-m); font-size: .72rem; color: var(--muted); unicode-bidi: isolate; direction: ltr; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -1223,6 +1259,8 @@ body:is([data-family="Material"], [data-family="Studio"]) { --accent-glow: trans
         <div class="toolbar" style="margin-bottom:10px;">
           <h4 style="color:var(--accent);">Outbound Nodes Pool <span class="badge b-ok mono" id="ob-nodes-cnt">0</span></h4>
           <div class="flexw" style="gap:6px;">
+            <button class="btn btn-warn btn-sm" id="btn-ob-delay-all" onclick="testOutboundRealDelay('')">⚡ Test Real Delay</button>
+            <button class="btn btn-ghost btn-sm" onclick="disableDeadOutboundNodes()">Disable Dead</button>
             <button class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(true)">Enable All</button>
             <button class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(false)">Disable All</button>
             <button class="btn btn-danger btn-sm" onclick="clearOutboundNodes()">Clear All</button>
@@ -3138,17 +3176,27 @@ function renderOutboundLists() {
     (OB_CFG.subs || []).forEach(s => { subMap[s.id] = s.name; });
     nodesBox.innerHTML = nodes.length ? nodes.map((n, idx) => {
       const srcLbl = n.source === 'manual' ? 'Manual' : (subMap[n.source] || 'Sub');
-      return `<div class="kv" style="margin:0; opacity:${n.enabled ? '1' : '.52'};">
-        <label class="check" style="margin:0; flex:1; min-width:0;">
+      const d = n.last_delay_ms || 0;
+      let dBadge = `<span class="badge b-foreign mono" id="ob-d-${esc(n.id)}">---</span>`;
+      if (d > 0) {
+        const cls = d < 350 ? 'b-iran' : (d < 900 ? 'b-ok' : 'b-miss');
+        dBadge = `<span class="badge ${cls} mono" id="ob-d-${esc(n.id)}">${d} ms</span>`;
+      } else if (d < 0) {
+        dBadge = `<span class="badge b-miss mono" id="ob-d-${esc(n.id)}">TIMEOUT</span>`;
+      }
+      return `<div class="ob-node-row" style="opacity:${n.enabled ? '1' : '.52'};">
+        <label class="ob-node-main" style="cursor:pointer;">
           <input type="checkbox" ${n.enabled ? 'checked' : ''} onchange="toggleOutboundNode(${idx}, this.checked)">
-          <span style="min-width:0;">
-            <span class="badge b-iran mono" style="margin-inline-end:6px;">${esc(n.proto || 'NODE')}</span>
-            <strong>${esc(n.name || 'Node')}</strong>
-            <span class="badge b-foreign" style="margin-inline-start:6px;">${esc(srcLbl)}</span>
-            ${n.address ? `<span class="mono" style="font-size:.72rem; color:var(--muted); margin-inline-start:6px;">${esc(n.address)}</span>` : ''}
-          </span>
+          <span class="badge b-iran mono">${esc(n.proto || 'NODE')}</span>
+          <span class="ob-node-name">${esc(n.name || 'Node')}</span>
+          <span class="badge b-foreign">${esc(srcLbl)}</span>
+          ${n.address ? `<span class="ob-node-addr">${esc(n.address)}</span>` : ''}
         </label>
-        <button class="btn btn-danger btn-sm" onclick="deleteOutboundNode(${idx})">✕</button>
+        <div class="flexw" style="gap:6px; flex-shrink:0;">
+          ${dBadge}
+          <button class="btn btn-ghost btn-sm" title="Test Real Delay" onclick="testOutboundRealDelay('${esc(n.id)}')">⚡</button>
+          <button class="btn btn-danger btn-sm" title="Remove" onclick="deleteOutboundNode(${idx})">✕</button>
+        </div>
       </div>`;
     }).join('') : '<div class="hint" style="margin:0;">No outbound nodes yet. Add a subscription above or paste a manual URI.</div>';
   }
@@ -3270,6 +3318,44 @@ function deleteOutboundNode(idx) {
   OB_CFG.nodes.splice(idx, 1);
   renderOutboundLists();
 }
+
+async function testOutboundRealDelay(nodeId) {
+  const btn = $('btn-ob-delay-all');
+  if (!nodeId && btn) { btn.disabled = true; btn.textContent = 'Testing Real Delay...'; }
+  if (nodeId) {
+    const b = $('ob-d-' + nodeId);
+    if (b) { b.textContent = '...'; b.className = 'badge b-foreign mono'; }
+  } else {
+    (OB_CFG.nodes || []).forEach(n => {
+      const b = $('ob-d-' + n.id);
+      if (b) { b.textContent = '...'; b.className = 'badge b-foreign mono'; }
+    });
+  }
+  try {
+    const r = await api('api/outbound/realdelay', 'POST', { node_id: nodeId || '' });
+    if (r.ok) {
+      OB_CFG = r.config || OB_CFG;
+      renderOutboundLists();
+      if (!nodeId) {
+        toast(`Real Delay done: ${r.ok_count} OK, ${r.failed_count} failed` + (r.best_ms ? ` (Best: ${r.best_ms} ms)` : ''));
+      }
+    } else {
+      toast(r.error || 'Real delay test failed', true);
+    }
+  } finally {
+    if (!nodeId && btn) { btn.disabled = false; btn.textContent = '⚡ Test Real Delay'; }
+  }
+}
+
+function disableDeadOutboundNodes() {
+  let cnt = 0;
+  (OB_CFG.nodes || []).forEach(n => {
+    if ((n.last_delay_ms || 0) < 0 && n.enabled) { n.enabled = false; cnt++; }
+  });
+  renderOutboundLists();
+  toast(cnt > 0 ? `Disabled ${cnt} timed-out nodes. Click Save & Start to apply.` : 'No timed-out nodes found.');
+}
+
 function clearOutboundNodes() {
   if (!confirm('Remove all outbound nodes?')) return;
   OB_CFG.nodes = [];
