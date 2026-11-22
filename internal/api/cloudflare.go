@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,11 +15,13 @@ import (
 )
 
 type cfConfig struct {
-	Enabled  bool   `json:"enabled"`
-	AuthMode string `json:"auth_mode"` // "token" or "global"
-	APIToken string `json:"api_token"`
-	Email    string `json:"email"`
-	APIKey   string `json:"api_key"`
+	Enabled         bool   `json:"enabled"`
+	AuthMode        string `json:"auth_mode"` // "token" or "global"
+	APIToken        string `json:"api_token"`
+	Email           string `json:"email"`
+	APIKey          string `json:"api_key"`
+	AutoSync        bool   `json:"auto_sync"`
+	SyncIntervalMin int    `json:"sync_interval_min"` // 30..1440 minutes
 }
 
 type cfZone struct {
@@ -49,12 +52,18 @@ type cfCache struct {
 
 func (h *Handler) loadCFConfig() cfConfig {
 	raw := h.store.GetSetting("cloudflare_cfg_json")
-	cfg := cfConfig{AuthMode: "token"}
+	cfg := cfConfig{AuthMode: "token", SyncIntervalMin: 60}
 	if raw != "" {
 		_ = json.Unmarshal([]byte(raw), &cfg)
 	}
 	if cfg.AuthMode == "" {
 		cfg.AuthMode = "token"
+	}
+	if cfg.SyncIntervalMin < 30 {
+		cfg.SyncIntervalMin = 60
+	}
+	if cfg.SyncIntervalMin > 1440 {
+		cfg.SyncIntervalMin = 1440
 	}
 	return cfg
 }
@@ -289,6 +298,12 @@ func (h *Handler) handleCFSave(w http.ResponseWriter, r *http.Request) {
 	if req.AuthMode != "global" {
 		req.AuthMode = "token"
 	}
+	if req.SyncIntervalMin < 30 {
+		req.SyncIntervalMin = 30
+	}
+	if req.SyncIntervalMin > 1440 {
+		req.SyncIntervalMin = 1440
+	}
 	h.saveCFConfig(req)
 
 	if !req.Enabled {
@@ -461,4 +476,29 @@ func (h *Handler) handleCFDeleteRecord(w http.ResponseWriter, r *http.Request) {
 		"server_domains": srvDomains,
 		"message":        "DNS record deleted.",
 	})
+}
+
+// StartCloudflareAutoSync runs a background scheduler that refreshes Cloudflare zones/records
+// according to the user's configured interval (30 min to 24 hours).
+func (h *Handler) StartCloudflareAutoSync() {
+	go func() {
+		for {
+			time.Sleep(60 * time.Second)
+			cfg := h.loadCFConfig()
+			if !cfg.Enabled || !cfg.AutoSync {
+				continue
+			}
+			iv := cfg.SyncIntervalMin
+			if iv < 30 {
+				iv = 30
+			}
+			cache := h.loadCFCache()
+			if cache.SyncedAt > 0 && time.Since(time.Unix(cache.SyncedAt, 0)) < time.Duration(iv)*time.Minute {
+				continue
+			}
+			if _, err := h.syncCloudflareAll(cfg); err != nil {
+				log.Printf("[cloudflare] auto-sync warning: %v", err)
+			}
+		}
+	}()
 }

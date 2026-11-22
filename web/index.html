@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2365dcff%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23bda5ff%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%230a1121%22%2F%3E%3Cpath%20d%3D%22M14%2048V24c0-6%207-9%2011-4l7%209%207-9c4-5%2011-2%2011%204v24%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%226.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M22%2048V30c0-3%204-5%206-2l4%205%204-5c2-3%206-1%206%202v18%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%223.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.78%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%226%22%20y1%3D%228%22%20x2%3D%2258%22%20y2%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2322d3ee%22%2F%3E%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23e879f9%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23090f1d%22%2F%3E%3Cpath%20d%3D%22M11%2049V23c0-7.5%208.5-11%2013.5-5L32%2028.5%2039.5%2018C44.5%2012%2053%2015.5%2053%2023v26%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%226.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M20%2049V31c0-3.5%204.2-5.5%206.8-2.2L32%2035.5l5.2-6.7C39.8%2025.5%2044%2027.5%2044%2031v18%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%223.6%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20opacity%3D%22.82%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2218%22%20r%3D%223.4%22%20fill%3D%22%2322d3ee%22%2F%3E%3C%2Fsvg%3E">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -930,61 +930,130 @@ body.light-mode .eng-pill.active {
 .ob-node-addr { font-family: var(--ff-m); font-size: .72rem; color: var(--muted); unicode-bidi: isolate; direction: ltr; }
 
 
-/* Model 3 Neon Ribbon M — Fixed Signature Brand Color & Infinite Back-and-Forth Animation */
-@keyframes mcRibbonFlow {
+/* Modernized MControl Logo — Large, Fixed Flowing Gradient, Bidirectional Infinity Fill */
+@keyframes mcBiFlow {
   0%   { stroke-dashoffset: 100; }
-  42%  { stroke-dashoffset: 0; }
-  58%  { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: 100; }
+  40%  { stroke-dashoffset: 0; }
+  60%  { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -100; }
 }
-@keyframes mcBrandNeonPulse {
+@keyframes mcCorePulse {
+  0%, 100% { r: 3.1; opacity: .7; }
+  50%      { r: 4.5; opacity: 1; }
+}
+@keyframes mcHeroGlow {
   0%, 100% {
-    filter: drop-shadow(0 0 6px rgba(56, 189, 248, .48)) drop-shadow(0 0 16px rgba(168, 85, 247, .32));
+    filter: drop-shadow(0 0 8px rgba(34, 211, 238, .48)) drop-shadow(0 0 22px rgba(168, 85, 247, .34));
     transform: translateY(0);
   }
   50% {
-    filter: drop-shadow(0 0 12px rgba(56, 189, 248, .85)) drop-shadow(0 0 28px rgba(168, 85, 247, .58));
+    filter: drop-shadow(0 0 16px rgba(34, 211, 238, .85)) drop-shadow(0 0 36px rgba(232, 121, 249, .58));
     transform: translateY(-4px);
   }
 }
+@keyframes mcTitleShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 .login-brand-hero {
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  margin-bottom: 18px; user-select: none;
+  margin-bottom: 20px; user-select: none;
 }
 .mc-logo-anim {
-  width: 118px; height: 118px; display: block; margin-bottom: 6px;
-  animation: mcBrandNeonPulse 3.6s ease-in-out infinite;
+  width: 152px; height: 152px; display: block; margin-bottom: 6px;
+  animation: mcHeroGlow 4s ease-in-out infinite;
 }
-.mc-logo-anim .rb-main {
+.mc-logo-anim .rb-bi-out {
   stroke-dasharray: 100; stroke-dashoffset: 100;
-  animation: mcRibbonFlow 3.6s cubic-bezier(.45, .05, .55, .95) infinite;
+  animation: mcBiFlow 3.4s cubic-bezier(.45, .05, .55, .95) infinite;
 }
-.mc-logo-anim .rb-sub {
+.mc-logo-anim .rb-bi-in {
   stroke-dasharray: 100; stroke-dashoffset: 100;
-  animation: mcRibbonFlow 3.6s cubic-bezier(.45, .05, .55, .95) -0.35s infinite;
+  animation: mcBiFlow 3.4s cubic-bezier(.45, .05, .55, .95) -0.35s infinite;
+}
+.mc-logo-anim .rb-core {
+  animation: mcCorePulse 2.4s ease-in-out infinite;
 }
 .login-brand-title {
-  font-size: 1.95rem; font-weight: 900; letter-spacing: -.5px; margin: 0 0 4px;
-  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 52%, #c084fc 100%);
+  font-size: 2.1rem; font-weight: 900; letter-spacing: -.6px; margin: 0 0 4px;
+  background: linear-gradient(120deg, #22d3ee, #818cf8, #e879f9, #38bdf8, #22d3ee);
+  background-size: 240% 240%;
+  animation: mcTitleShift 6s ease infinite;
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.login-brand-sub {
-  margin: 0; font-size: .84rem; color: var(--muted); font-weight: 500;
-}
+.login-brand-sub { margin: 0; font-size: .85rem; color: var(--muted); font-weight: 500; }
 .brand .mc-brand-svg {
-  width: 32px; height: 32px; flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, .42));
+  width: 34px; height: 34px; flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, .44));
 }
 
-/* Cloudflare Domains UI */
+/* Cloudflare Domains — MDesign Bubble Tabs, Polished Inputs & Grouped Cards */
+.cf-ctrl-inp, .cf-ctrl-sel {
+  background: var(--surface) !important; color: var(--text) !important;
+  border: 1px solid var(--border) !important; border-radius: min(var(--rb, 12px), 12px) !important;
+  padding: 8px 12px !important; font-size: .8rem !important; outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.cf-ctrl-inp:focus, .cf-ctrl-sel:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+}
+.cf-bubbles-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; padding: 10px 12px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.cf-bubble {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  background: var(--row); color: var(--text); border: 1px solid var(--border);
+  font-family: inherit; font-size: .8rem; font-weight: 700;
+  transition: all .16s ease;
+}
+.cf-bubble:hover {
+  border-color: var(--accent); transform: translateY(-1px);
+}
+.cf-bubble.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--accent); color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.cf-bubble-cnt {
+  padding: 1px 7px; border-radius: 999px; font-family: var(--ff-m); font-size: .68rem;
+  background: color-mix(in srgb, var(--text) 10%, transparent); color: inherit;
+}
+.cf-view-seg {
+  display: inline-flex; padding: 3px; border-radius: 999px;
+  background: var(--row); border: 1px solid var(--border); gap: 3px;
+}
+.cf-view-btn {
+  padding: 5px 12px; border-radius: 999px; border: none; background: transparent;
+  color: var(--muted); font-family: inherit; font-size: .74rem; font-weight: 700; cursor: pointer;
+  transition: all .15s ease;
+}
+.cf-view-btn.active {
+  background: var(--accent); color: var(--on-accent);
+}
+.cf-zone-group {
+  border-radius: 16px; padding: 12px 14px; margin-bottom: 12px;
+  background: color-mix(in srgb, var(--row) 65%, var(--surface));
+  border: 1px solid var(--border);
+}
+.cf-zone-group-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
 .cf-rec-row {
   display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-  padding: 10px 12px; border-radius: 12px; background: var(--row); border: 1px solid var(--border);
+  padding: 9px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+  transition: border-color .15s ease;
 }
+.cf-rec-row:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
 .cf-rec-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; flex-wrap: wrap; }
 .cf-proxy-btn {
-  padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; cursor: pointer;
-  border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: var(--ff-m);
+  padding: 4px 10px; border-radius: 999px; font-size: .7rem; font-weight: 700; cursor: pointer;
+  border: 1px solid var(--border); background: var(--row); color: var(--muted); font-family: var(--ff-m);
 }
 .cf-proxy-btn.on {
   background: color-mix(in srgb, #f97316 18%, var(--surface));
@@ -1042,18 +1111,31 @@ body.light-mode .eng-pill.active {
     <div class="login-brand-hero">
       <svg class="mc-logo-anim" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mcFixedGrad" x1="6" y1="10" x2="58" y2="56" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#38bdf8"/>
-            <stop offset="52%" stop-color="#818cf8"/>
-            <stop offset="100%" stop-color="#c084fc"/>
+          <linearGradient id="mcFlowGrad" x1="6" y1="8" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#22d3ee">
+              <animate attributeName="stop-color" values="#22d3ee;#818cf8;#e879f9;#38bdf8;#22d3ee" dur="6s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="50%" stop-color="#818cf8">
+              <animate attributeName="stop-color" values="#818cf8;#e879f9;#22d3ee;#a855f7;#818cf8" dur="6s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" stop-color="#e879f9">
+              <animate attributeName="stop-color" values="#e879f9;#22d3ee;#38bdf8;#818cf8;#e879f9" dur="6s" repeatCount="indefinite"/>
+            </stop>
           </linearGradient>
         </defs>
         <!-- Subtle permanent silhouette tracks -->
-        <path d="M12 50V22c0-6.8 7.8-10 12-4.4L32 28l8-10.4C44.2 12 52 15.2 52 22v28" stroke="url(#mcFixedGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".16"/>
-        <path d="M21 50V30c0-3.4 4.1-5.4 6.4-2.3L32 34l4.6-6.3C38.9 24.6 43 26.6 43 30v20" stroke="url(#mcFixedGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".14"/>
-        <!-- Animated infinite back-and-forth neon ribbons -->
-        <path class="rb-main" pathLength="100" d="M12 50V22c0-6.8 7.8-10 12-4.4L32 28l8-10.4C44.2 12 52 15.2 52 22v28" stroke="url(#mcFixedGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path class="rb-sub" pathLength="100" d="M21 50V30c0-3.4 4.1-5.4 6.4-2.3L32 34l4.6-6.3C38.9 24.6 43 26.6 43 30v20" stroke="url(#mcFixedGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
+        <path d="M11 50V23c0-7.5 8.5-11 13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".15"/>
+        <path d="M53 50V23c0-7.5-8.5-11-13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity=".15"/>
+        <path d="M20 50V31c0-3.5 4.2-5.5 6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".14"/>
+        <path d="M44 50V31c0-3.5-4.2-5.5-6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".14"/>
+        <!-- Bidirectional Symmetric Animated Outer Ribbons (Left & Right flow simultaneously to center & back) -->
+        <path class="rb-bi-out" pathLength="100" d="M11 50V23c0-7.5 8.5-11 13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path class="rb-bi-out" pathLength="100" d="M53 50V23c0-7.5-8.5-11-13.5-5L32 28.5" stroke="url(#mcFlowGrad)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Bidirectional Symmetric Animated Inner Ribbons -->
+        <path class="rb-bi-in" pathLength="100" d="M20 50V31c0-3.5 4.2-5.5 6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+        <path class="rb-bi-in" pathLength="100" d="M44 50V31c0-3.5-4.2-5.5-6.8-2.2L32 35.5" stroke="url(#mcFlowGrad)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
+        <!-- Glowing Central Control Node -->
+        <circle class="rb-core" cx="32" cy="17.5" r="3.6" fill="url(#mcFlowGrad)"/>
       </svg>
       <h2 class="login-brand-title">MControl</h2>
       <p class="login-brand-sub" data-i18n="login_sub">MDesign central control plane</p>
@@ -1115,14 +1197,15 @@ body.light-mode .eng-pill.active {
     <div class="brand">
       <svg class="mc-brand-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mcBrandGrad" x1="6" y1="10" x2="58" y2="56" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#38bdf8"/>
-            <stop offset="52%" stop-color="#818cf8"/>
-            <stop offset="100%" stop-color="#c084fc"/>
+          <linearGradient id="mcBrandGrad" x1="6" y1="8" x2="58" y2="56" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#22d3ee"/>
+            <stop offset="50%" stop-color="#818cf8"/>
+            <stop offset="100%" stop-color="#e879f9"/>
           </linearGradient>
         </defs>
-        <path d="M13 49V23c0-6.5 7.5-9.5 11.5-4.2L32 28.5l7.5-9.7C43.5 13.5 51 16.5 51 23v26" stroke="url(#mcBrandGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M21 49V30c0-3.2 4-5.2 6.2-2.2L32 34l4.8-6.2C39 24.8 43 26.8 43 30v19" stroke="url(#mcBrandGrad)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" opacity=".82"/>
+        <path d="M11 50V23c0-7.5 8.5-11 13.5-5L32 28.5 39.5 18C44.5 12 53 15.5 53 23v27" stroke="url(#mcBrandGrad)" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 50V31c0-3.5 4.2-5.5 6.8-2.2L32 35.5l5.2-6.7C39.8 25.5 44 27.5 44 31v19" stroke="url(#mcBrandGrad)" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" opacity=".86"/>
+        <circle cx="32" cy="17.5" r="3.5" fill="url(#mcBrandGrad)"/>
       </svg>
       <span class="bt">MControl</span>
     </div>
@@ -1458,51 +1541,86 @@ body.light-mode .eng-pill.active {
       <div class="toolbar">
         <div>
           <h3>Cloudflare Domains &amp; DNS</h3>
-          <div class="hint" style="margin:2px 0 0;">Manage all Cloudflare zones &amp; DNS records and automatically match them to your MControl servers.</div>
+          <div class="hint" style="margin:2px 0 0;">Manage your Cloudflare zones &amp; subdomains with automatic server IP matching.</div>
         </div>
         <div class="flexw" style="gap:8px;">
           <span class="badge b-foreign mono" id="cf-sync-badge">NOT SYNCED</span>
+          <span class="badge b-ok mono" id="cf-auto-badge" style="display:none;"></span>
           <button class="btn btn-sky btn-sm" id="btn-cf-sync" onclick="syncCloudflare()">Sync Now</button>
-          <button class="btn btn-warn btn-sm" onclick="openCFRecordModal(null)">+ Add DNS Record</button>
+          <button class="btn btn-warn btn-sm" id="btn-cf-add" onclick="openCFRecordModal(null)">+ Add DNS Record</button>
+          <button class="btn btn-ghost btn-sm" onclick="openCFSettingsInTab()">⚙ API Settings</button>
         </div>
       </div>
 
-      <!-- 1. Cloudflare API Credentials -->
-      <div class="card sp" style="margin-bottom:14px;">
+      <!-- First-Time Setup Card (automatically hidden once configured; editable anytime in Settings -> Cloudflare API) -->
+      <div class="card sp" id="cf-setup-card" style="display:none; max-width:680px; margin:0 auto 14px;">
         <div class="toolbar" style="margin-bottom:10px;">
-          <h4 style="color:var(--accent);">1. Cloudflare API Connection</h4>
-          <select id="cf-auth-mode" style="width:auto; padding:5px 10px; font-size:.78rem;" onchange="toggleCFAuthMode()">
+          <div>
+            <h4 style="color:var(--accent);">Connect Your Cloudflare Account</h4>
+            <div class="hint" style="margin:2px 0 0;">Enter your API credentials once. Afterward, you can modify them anytime from <b>Settings ➔ Cloudflare API</b>.</div>
+          </div>
+          <select id="cf-init-mode" class="cf-ctrl-sel" style="width:auto;" onchange="toggleCFInitMode()">
             <option value="token">API Token (Recommended)</option>
             <option value="global">Email + Global API Key</option>
           </select>
         </div>
-        <div id="cf-token-wrap" class="field">
+        <div id="cf-init-token-wrap" class="field">
           <label>Cloudflare API Token (Zone:Read + DNS:Edit)</label>
-          <input id="cf-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
+          <input id="cf-init-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
         </div>
-        <div id="cf-global-wrap" class="row2" style="display:none;">
-          <div class="field"><label>Cloudflare Account Email</label><input id="cf-email" class="mono" placeholder="you@example.com"></div>
-          <div class="field"><label>Global API Key</label><input id="cf-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
+        <div id="cf-init-global-wrap" class="row2" style="display:none;">
+          <div class="field"><label>Cloudflare Account Email</label><input id="cf-init-email" class="mono" placeholder="you@example.com"></div>
+          <div class="field"><label>Global API Key</label><input id="cf-init-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
         </div>
-        <div class="flexw" style="gap:14px; align-items:center;">
-          <label class="check" style="margin:0;"><input type="checkbox" id="cf-en"><span>Enable Cloudflare Integration</span></label>
-          <button class="btn btn-sky btn-sm" id="btn-cf-save" onclick="saveCloudflareSettings()">Save &amp; Sync Zones</button>
+        <div class="tun-sec" style="margin-top:6px;">
+          <div class="tun-sec-title"><span>Automatic Sync Schedule</span></div>
+          <div class="row2" style="align-items:center;">
+            <label class="check" style="margin:0;"><input type="checkbox" id="cf-init-autosync" checked><span>Auto-sync with Cloudflare automatically?</span></label>
+            <select id="cf-init-interval" class="cf-ctrl-sel">
+              <option value="30">Every 30 Minutes</option>
+              <option value="60" selected>Every 1 Hour</option>
+              <option value="180">Every 3 Hours</option>
+              <option value="360">Every 6 Hours</option>
+              <option value="720">Every 12 Hours</option>
+              <option value="1440">Every 24 Hours (1 Day)</option>
+            </select>
+          </div>
+        </div>
+        <div class="flexw" style="justify-content:flex-end; margin-top:12px;">
+          <button class="btn btn-sky" id="btn-cf-init-save" onclick="saveCFInitialSetup()">Connect &amp; Sync Domains</button>
         </div>
       </div>
 
-      <!-- 2. DNS Records Explorer -->
-      <div class="card sp">
-        <div class="toolbar" style="margin-bottom:10px; gap:8px; flex-wrap:wrap;">
-          <h4 style="color:var(--accent);">2. DNS Records <span class="badge b-ok mono" id="cf-rec-cnt">0</span></h4>
-          <div class="flexw" style="gap:8px; flex:1; justify-content:flex-end;">
-            <select id="cf-zone-filter" style="width:auto; min-width:150px; padding:6px 10px; font-size:.78rem;" onchange="renderCFRecords()">
-              <option value="">All Zones</option>
-            </select>
-            <input id="cf-search" style="max-width:220px; padding:6px 10px; font-size:.78rem;" placeholder="Search domain or IP..." oninput="renderCFRecords()">
-            <label class="check" style="margin:0; font-size:.78rem;"><input type="checkbox" id="cf-matched-only" onchange="renderCFRecords()"><span>Matched Servers Only</span></label>
+      <!-- Connected Domains Workspace -->
+      <div id="cf-workspace" style="display:none;">
+        <!-- Bubble Tabs per Domain + All Domains -->
+        <div class="cf-bubbles-bar" id="cf-zone-bubbles"></div>
+
+        <!-- Records Explorer Card -->
+        <div class="card sp">
+          <div class="toolbar" style="margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h4 style="color:var(--accent);" id="cf-active-title">All Domains</h4>
+              <span class="badge b-ok mono" id="cf-rec-cnt">0</span>
+              <div class="cf-view-seg" id="cf-all-view-seg">
+                <button type="button" class="cf-view-btn active" id="cf-v-grouped" onclick="setCFAllView('grouped')">Grouped by Domain</button>
+                <button type="button" class="cf-view-btn" id="cf-v-flat" onclick="setCFAllView('flat')">Unified List</button>
+              </div>
+            </div>
+            <div class="flexw" style="gap:8px; align-items:center; flex-wrap:wrap;">
+              <select id="cf-type-filter" class="cf-ctrl-sel" style="width:auto;" onchange="renderCFRecords()">
+                <option value="">All Types</option>
+                <option value="A">A (IPv4)</option>
+                <option value="AAAA">AAAA (IPv6)</option>
+                <option value="CNAME">CNAME</option>
+                <option value="TXT">TXT</option>
+              </select>
+              <input id="cf-search" class="cf-ctrl-inp" style="width:210px;" placeholder="Search domain, IP or server..." oninput="renderCFRecords()">
+              <label class="check" style="margin:0; font-size:.78rem;"><input type="checkbox" id="cf-matched-only" onchange="renderCFRecords()"><span>Matched Only</span></label>
+            </div>
           </div>
+          <div id="cf-records-list" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
-        <div id="cf-records-list" style="display:flex; flex-direction:column; gap:7px; max-height:460px; overflow-y:auto;"></div>
       </div>
     </section>
 
@@ -1581,6 +1699,7 @@ body.light-mode .eng-pill.active {
           <div class="sub-tab" onclick="switchSubTab('dl', this)" data-i18n="st_tab_dl">Downloads &amp; Engines</div>
           <div class="sub-tab" onclick="switchSubTab('def', this)" data-i18n="st_tab_def">Defaults &amp; Ports</div>
           <div class="sub-tab" onclick="switchSubTab('bak', this)" data-i18n="st_tab_bak">Backup &amp; Restore</div>
+          <div class="sub-tab" id="stab-cf" onclick="switchSubTab('cf', this)">Cloudflare API</div>
           <div class="sub-tab" id="stab-themes" onclick="switchSubTab('themes', this)" data-i18n="nav_themes">Themes</div>
         </div>
 
@@ -1758,6 +1877,51 @@ body.light-mode .eng-pill.active {
           </div>
         </div>
         <!-- 6. Themes Studio -->
+                <!-- Cloudflare API Settings -->
+        <div id="sub-cf" class="sub-pane">
+          <div class="card sp">
+            <div class="toolbar" style="margin-bottom:10px;">
+              <div>
+                <h4 style="color:var(--accent);">Cloudflare API &amp; Auto-Sync Settings</h4>
+                <div class="hint" style="margin:2px 0 0;">Manage your Cloudflare credentials and automatic background sync schedule.</div>
+              </div>
+              <select id="cf-auth-mode" class="cf-ctrl-sel" style="width:auto;" onchange="toggleCFAuthMode()">
+                <option value="token">API Token (Recommended)</option>
+                <option value="global">Email + Global API Key</option>
+              </select>
+            </div>
+            <div id="cf-token-wrap" class="field">
+              <label>Cloudflare API Token (Zone:Read + DNS:Edit)</label>
+              <input id="cf-token" class="mono" type="password" autocomplete="new-password" placeholder="Paste Cloudflare API Token...">
+            </div>
+            <div id="cf-global-wrap" class="row2" style="display:none;">
+              <div class="field"><label>Cloudflare Account Email</label><input id="cf-email" class="mono" placeholder="you@example.com"></div>
+              <div class="field"><label>Global API Key</label><input id="cf-apikey" class="mono" type="password" autocomplete="new-password" placeholder="Global API Key"></div>
+            </div>
+            <div class="row2" style="margin-bottom:12px;">
+              <div class="field" style="margin:0; display:flex; flex-direction:column; gap:8px; justify-content:center;">
+                <label class="check" style="margin:0;"><input type="checkbox" id="cf-en"><span>Enable Cloudflare Integration</span></label>
+                <label class="check" style="margin:0;"><input type="checkbox" id="cf-autosync"><span>Auto-Sync with Cloudflare in background</span></label>
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Auto-Sync Interval (30 min – 1 Day)</label>
+                <select id="cf-sync-int" class="cf-ctrl-sel">
+                  <option value="30">Every 30 Minutes</option>
+                  <option value="60">Every 1 Hour</option>
+                  <option value="180">Every 3 Hours</option>
+                  <option value="360">Every 6 Hours</option>
+                  <option value="720">Every 12 Hours</option>
+                  <option value="1440">Every 24 Hours (1 Day)</option>
+                </select>
+              </div>
+            </div>
+            <div class="flexw" style="gap:8px;">
+              <button class="btn btn-sky" id="btn-cf-save" onclick="saveCloudflareSettings()">Save &amp; Sync Now</button>
+              <button class="btn btn-ghost" onclick="switchTab('domains')">Go to Domains Tab</button>
+            </div>
+          </div>
+        </div>
+
         <div id="sub-themes" class="sub-pane">
 <div class="toolbar">
         <div>
@@ -2703,7 +2867,7 @@ function switchTab(name) {
   if (name === 'domains') { loadCloudflareStatus(); }
   if (name === 'outbound') { loadMasterOutbound(); }
   if (name === 'telegram') { loadTelegramStatus(); }
-  if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); }
+  if (name === 'settings') { loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
 }
@@ -3775,105 +3939,243 @@ async function stopMasterOutbound() {
 
 
 
-let CF_ZONES = [], CF_RECORDS = [], CF_SERVER_DOMAINS = {};
+let CF_ZONES = [], CF_RECORDS = [], CF_SERVER_DOMAINS = {}, CF_CFG = {};
+let CF_ACTIVE_ZONE = 'ALL'; // 'ALL' or zone.id
+let CF_ALL_VIEW = 'grouped'; // 'grouped' | 'flat'
 
 function toggleCFAuthMode() {
   const m = ($('cf-auth-mode') && $('cf-auth-mode').value) || 'token';
   if ($('cf-token-wrap')) $('cf-token-wrap').style.display = m === 'token' ? 'block' : 'none';
   if ($('cf-global-wrap')) $('cf-global-wrap').style.display = m === 'global' ? 'grid' : 'none';
 }
+function toggleCFInitMode() {
+  const m = ($('cf-init-mode') && $('cf-init-mode').value) || 'token';
+  if ($('cf-init-token-wrap')) $('cf-init-token-wrap').style.display = m === 'token' ? 'block' : 'none';
+  if ($('cf-init-global-wrap')) $('cf-init-global-wrap').style.display = m === 'global' ? 'grid' : 'none';
+}
+function openCFSettingsInTab() {
+  switchTab('settings');
+  const stab = $('stab-cf');
+  if (stab) switchSubTab('cf', stab);
+  loadCloudflareStatus(false);
+}
+function setCFAllView(v) {
+  CF_ALL_VIEW = v;
+  if ($('cf-v-grouped')) $('cf-v-grouped').classList.toggle('active', v === 'grouped');
+  if ($('cf-v-flat')) $('cf-v-flat').classList.toggle('active', v === 'flat');
+  renderCFRecords();
+}
+function pickCFZone(zId) {
+  CF_ACTIVE_ZONE = zId;
+  renderCFZoneBubbles();
+  renderCFRecords();
+}
+
+function fmtIntervalLbl(mins) {
+  if (mins >= 1440) return 'Auto: 24h';
+  if (mins >= 60) return 'Auto: ' + Math.round(mins / 60) + 'h';
+  return 'Auto: ' + mins + 'm';
+}
 
 async function loadCloudflareStatus(silent) {
   const r = await api('api/cloudflare/status');
   if (!r.ok) return;
   const c = r.config || {};
+  CF_CFG = c;
   CF_ZONES = r.zones || [];
   CF_RECORDS = r.records || [];
   CF_SERVER_DOMAINS = r.server_domains || {};
 
+  const configured = !!(c.enabled && ((c.auth_mode === 'global' && c.email && c.api_key) || c.api_token));
+
   if (!silent) {
+    // Sync Settings -> Cloudflare API inputs
     if ($('cf-auth-mode')) $('cf-auth-mode').value = c.auth_mode || 'token';
     if ($('cf-token')) $('cf-token').value = c.api_token || '';
     if ($('cf-email')) $('cf-email').value = c.email || '';
     if ($('cf-apikey')) $('cf-apikey').value = c.api_key || '';
     if ($('cf-en')) $('cf-en').checked = !!c.enabled;
+    if ($('cf-autosync')) $('cf-autosync').checked = !!c.auto_sync;
+    if ($('cf-sync-int')) $('cf-sync-int').value = String(c.sync_interval_min || 60);
     toggleCFAuthMode();
+
+    // Show onboarding card ONLY on first-time setup; hide it once configured!
+    if ($('cf-setup-card')) $('cf-setup-card').style.display = configured ? 'none' : 'block';
+    if ($('cf-workspace')) $('cf-workspace').style.display = configured ? 'block' : 'none';
+    if ($('btn-cf-sync')) $('btn-cf-sync').style.display = configured ? 'inline-flex' : 'none';
+    if ($('btn-cf-add')) $('btn-cf-add').style.display = configured ? 'inline-flex' : 'none';
+
     const sb = $('cf-sync-badge');
     if (sb) {
       sb.textContent = r.synced_at ? ('SYNCED • ' + new Date(r.synced_at * 1000).toLocaleTimeString()) : 'NOT SYNCED';
       sb.className = 'badge mono ' + (r.synced_at ? 'b-iran' : 'b-foreign');
     }
+    const ab = $('cf-auto-badge');
+    if (ab) {
+      if (configured && c.auto_sync) {
+        ab.textContent = fmtIntervalLbl(c.sync_interval_min || 60);
+        ab.style.display = 'inline-block';
+      } else {
+        ab.style.display = 'none';
+      }
+    }
+    if (CF_ACTIVE_ZONE !== 'ALL' && !CF_ZONES.some(z => z.id === CF_ACTIVE_ZONE)) {
+      CF_ACTIVE_ZONE = 'ALL';
+    }
     populateCFZoneSelects();
+    renderCFZoneBubbles();
     renderCFRecords();
   }
   if (Object.keys(CF_SERVER_DOMAINS).length > 0) renderServers();
 }
 
 function populateCFZoneSelects() {
-  const zf = $('cf-zone-filter');
-  if (zf) {
-    const prev = zf.value;
-    zf.innerHTML = '<option value="">All Zones (' + CF_ZONES.length + ')</option>' +
-      CF_ZONES.map(z => `<option value="${esc(z.id)}">${esc(z.name)}</option>`).join('');
-    zf.value = prev;
-  }
   const rz = $('cf-r-zone');
   if (rz) {
     rz.innerHTML = CF_ZONES.map(z => `<option value="${esc(z.id)}">${esc(z.name)}</option>`).join('');
   }
 }
 
+function renderCFZoneBubbles() {
+  const bar = $('cf-zone-bubbles');
+  if (!bar) return;
+  const totalMatched = CF_RECORDS.filter(r => r.server_id).length;
+  let html = `<button type="button" class="cf-bubble${CF_ACTIVE_ZONE === 'ALL' ? ' active' : ''}" onclick="pickCFZone('ALL')">
+    <span>🌐 All Domains</span>
+    <span class="cf-bubble-cnt">${CF_RECORDS.length}</span>
+    ${totalMatched ? `<span class="badge b-iran mono" style="padding:1px 6px; font-size:.64rem;">${totalMatched} srv</span>` : ''}
+  </button>`;
+
+  html += CF_ZONES.map(z => {
+    const zRecs = CF_RECORDS.filter(r => r.zone_id === z.id);
+    const zMatched = zRecs.filter(r => r.server_id).length;
+    return `<button type="button" class="cf-bubble${CF_ACTIVE_ZONE === z.id ? ' active' : ''}" onclick="pickCFZone('${esc(z.id)}')">
+      <span>${esc(z.name)}</span>
+      <span class="cf-bubble-cnt">${zRecs.length}</span>
+      ${zMatched ? `<span class="badge b-iran mono" style="padding:1px 6px; font-size:.64rem;">${zMatched}</span>` : ''}
+    </button>`;
+  }).join('');
+
+  bar.innerHTML = html;
+}
+
+function renderSingleCFRecordRow(r) {
+  const srvTag = r.server_id
+    ? `<span class="badge ${r.server_role === 'iran' ? 'b-iran' : 'b-ok'} mono">[${r.server_role === 'iran' ? 'IR' : 'EX'}] ${esc(r.server_name)}</span>`
+    : '';
+  const canProxy = (r.type === 'A' || r.type === 'AAAA' || r.type === 'CNAME');
+  return `<div class="cf-rec-row">
+    <div class="cf-rec-main">
+      <span class="badge b-foreign mono">${esc(r.type)}</span>
+      <strong class="mono" style="font-size:.82rem;">${esc(r.name)}</strong>
+      <span class="mono" style="font-size:.76rem; color:var(--muted);">➔ ${esc(r.content)}</span>
+      ${srvTag}
+    </div>
+    <div class="flexw" style="gap:6px; flex-shrink:0;">
+      ${canProxy ? `<button class="cf-proxy-btn ${r.proxied ? 'on' : ''}" onclick="toggleCFProxy('${esc(r.zone_id)}','${esc(r.id)}')">${r.proxied ? '☁ Proxied' : 'DNS Only'}</button>` : ''}
+      <button class="btn btn-ghost btn-sm" onclick="openCFRecordModalById('${esc(r.id)}')">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCFRecord('${esc(r.zone_id)}','${esc(r.id)}','${esc(r.name)}')">✕</button>
+    </div>
+  </div>`;
+}
+
 function renderCFRecords() {
   const box = $('cf-records-list');
   if (!box) return;
-  const zf = ($('cf-zone-filter') && $('cf-zone-filter').value) || '';
+  const tf = ($('cf-type-filter') && $('cf-type-filter').value) || '';
   const q = (($('cf-search') && $('cf-search').value) || '').trim().toLowerCase();
   const mOnly = !!($('cf-matched-only') && $('cf-matched-only').checked);
 
+  const isAll = CF_ACTIVE_ZONE === 'ALL';
+  if ($('cf-all-view-seg')) $('cf-all-view-seg').style.display = isAll ? 'inline-flex' : 'none';
+  if ($('cf-active-title')) {
+    if (isAll) $('cf-active-title').textContent = 'All Domains';
+    else {
+      const zObj = CF_ZONES.find(z => z.id === CF_ACTIVE_ZONE);
+      $('cf-active-title').textContent = zObj ? zObj.name : 'Domain';
+    }
+  }
+
   const list = CF_RECORDS.filter(r => {
-    if (zf && r.zone_id !== zf) return false;
+    if (!isAll && r.zone_id !== CF_ACTIVE_ZONE) return false;
+    if (tf && r.type !== tf) return false;
     if (mOnly && !r.server_id) return false;
     if (q && !(r.name.toLowerCase().includes(q) || r.content.toLowerCase().includes(q) || (r.server_name || '').toLowerCase().includes(q))) return false;
     return true;
   });
-  if ($('cf-rec-cnt')) $('cf-rec-cnt').textContent = list.length + ' / ' + CF_RECORDS.length;
 
-  box.innerHTML = list.length ? list.map(r => {
-    const srvTag = r.server_id
-      ? `<span class="badge ${r.server_role === 'iran' ? 'b-iran' : 'b-ok'} mono">[${r.server_role === 'iran' ? 'IR' : 'EX'}] ${esc(r.server_name)}</span>`
-      : '';
-    const canProxy = (r.type === 'A' || r.type === 'AAAA' || r.type === 'CNAME');
-    return `<div class="cf-rec-row">
-      <div class="cf-rec-main">
-        <span class="badge b-foreign mono">${esc(r.type)}</span>
-        <strong class="mono" style="font-size:.82rem;">${esc(r.name)}</strong>
-        <span class="mono" style="font-size:.76rem; color:var(--muted);">➔ ${esc(r.content)}</span>
-        ${srvTag}
-      </div>
-      <div class="flexw" style="gap:6px; flex-shrink:0;">
-        ${canProxy ? `<button class="cf-proxy-btn ${r.proxied ? 'on' : ''}" onclick="toggleCFProxy('${esc(r.zone_id)}','${esc(r.id)}')">${r.proxied ? '☁ Proxied' : 'DNS Only'}</button>` : ''}
-        <button class="btn btn-ghost btn-sm" onclick="openCFRecordModalById('${esc(r.id)}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteCFRecord('${esc(r.zone_id)}','${esc(r.id)}','${esc(r.name)}')">✕</button>
-      </div>
-    </div>`;
-  }).join('') : '<div class="hint" style="margin:0;">No DNS records found. Enter your Cloudflare API Token above and click Save &amp; Sync Zones.</div>';
+  if ($('cf-rec-cnt')) $('cf-rec-cnt').textContent = list.length + ' records';
+
+  if (!list.length) {
+    box.innerHTML = '<div class="hint" style="margin:6px 0;">No DNS records match your filter.</div>';
+    return;
+  }
+
+  if (isAll && CF_ALL_VIEW === 'grouped') {
+    const byZone = new Map();
+    list.forEach(r => {
+      if (!byZone.has(r.zone_id)) byZone.set(r.zone_id, { name: r.zone_name || 'Zone', recs: [] });
+      byZone.get(r.zone_id).recs.push(r);
+    });
+    let out = '';
+    byZone.forEach((grp, zId) => {
+      const mCnt = grp.recs.filter(x => x.server_id).length;
+      out += `<div class="cf-zone-group">
+        <div class="cf-zone-group-head">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="font-size:.9rem; color:var(--accent);">🌐 ${esc(grp.name)}</strong>
+            <span class="badge b-ok mono">${grp.recs.length} subdomains</span>
+            ${mCnt ? `<span class="badge b-iran mono">${mCnt} matched</span>` : ''}
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="pickCFZone('${esc(zId)}')">Focus Domain</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          ${grp.recs.map(renderSingleCFRecordRow).join('')}
+        </div>
+      </div>`;
+    });
+    box.innerHTML = out;
+  } else {
+    box.innerHTML = list.map(renderSingleCFRecordRow).join('');
+  }
+}
+
+async function saveCFInitialSetup() {
+  const btn = $('btn-cf-init-save'); btn.disabled = true; btn.textContent = 'Connecting & Syncing...';
+  try {
+    const r = await api('api/cloudflare/save', 'POST', {
+      enabled: true,
+      auth_mode: $('cf-init-mode').value,
+      api_token: $('cf-init-token').value.trim(),
+      email: $('cf-init-email').value.trim(),
+      api_key: $('cf-init-apikey').value.trim(),
+      auto_sync: $('cf-init-autosync').checked,
+      sync_interval_min: parseInt($('cf-init-interval').value || '60', 10) || 60
+    });
+    if (r.ok) {
+      toast(r.message || 'Cloudflare connected & synced!');
+      loadCloudflareStatus(false);
+    } else toast(r.error || 'Cloudflare connection failed', true);
+  } finally { btn.disabled = false; btn.textContent = 'Connect & Sync Domains'; }
 }
 
 async function saveCloudflareSettings() {
-  const btn = $('btn-cf-save'); btn.disabled = true; btn.textContent = 'Syncing...';
+  const btn = $('btn-cf-save'); btn.disabled = true; btn.textContent = 'Saving & Syncing...';
   try {
     const r = await api('api/cloudflare/save', 'POST', {
       enabled: $('cf-en').checked,
       auth_mode: $('cf-auth-mode').value,
       api_token: $('cf-token').value.trim(),
       email: $('cf-email').value.trim(),
-      api_key: $('cf-apikey').value.trim()
+      api_key: $('cf-apikey').value.trim(),
+      auto_sync: $('cf-autosync').checked,
+      sync_interval_min: parseInt($('cf-sync-int').value || '60', 10) || 60
     });
     if (r.ok) {
-      toast(r.message || 'Cloudflare synced!');
+      toast(r.message || 'Cloudflare settings saved!');
       loadCloudflareStatus(false);
     } else toast(r.error || 'Cloudflare sync failed', true);
-  } finally { btn.disabled = false; btn.textContent = 'Save & Sync Zones'; }
+  } finally { btn.disabled = false; btn.textContent = 'Save & Sync Now'; }
 }
 
 async function syncCloudflare() {
@@ -3908,7 +4210,8 @@ function openCFRecordModal(rec) {
   }
   $('cf-rec-title').textContent = rec ? 'Edit DNS Record' : '+ Add DNS Record';
   $('cf-r-id').value = rec ? rec.id : '';
-  $('cf-r-zone').value = rec ? rec.zone_id : (CF_ZONES[0] ? CF_ZONES[0].id : '');
+  const defZone = (CF_ACTIVE_ZONE !== 'ALL') ? CF_ACTIVE_ZONE : (CF_ZONES[0] ? CF_ZONES[0].id : '');
+  $('cf-r-zone').value = rec ? rec.zone_id : defZone;
   $('cf-r-zone').disabled = !!rec;
   $('cf-r-type').value = rec ? rec.type : 'A';
   $('cf-r-name').value = rec ? rec.name : '';

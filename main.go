@@ -55,6 +55,7 @@ func main() {
 	apiHandler.Register(innerMux)
 	apiHandler.StartAutoProbe()
 	apiHandler.StartTelegramBot()
+	apiHandler.StartCloudflareAutoSync()
 
 	subFS, err := fs.Sub(webFS, "web")
 	if err != nil {
