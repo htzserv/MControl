@@ -967,33 +967,38 @@ func (h *Handler) handleTunnelPing8(w http.ResponseWriter, r *http.Request) {
 		ForeignServerID int64  `json:"foreign_server_id"`
 		IranIPVer       string `json:"iran_ip_ver"`
 		ForeignIPVer    string `json:"foreign_ip_ver"`
+		Direction       string `json:"direction"` // "" | "iran_to_foreign" | "foreign_to_iran"
 	}
 	if !readJSON(w, r, &req) {
 		return
 	}
 	iranSrv, err := h.store.GetServerWithSecret(req.IranServerID)
 	if err != nil {
-		fail(w, http.StatusNotFound, "Iran server not found")
+		fail(w, http.StatusNotFound, "Entry server not found")
 		return
 	}
 	forSrv, err := h.store.GetServerWithSecret(req.ForeignServerID)
 	if err != nil {
-		fail(w, http.StatusNotFound, "Foreign server not found")
+		fail(w, http.StatusNotFound, "Exit server not found")
 		return
 	}
 
+	srcSrv, dstSrv := iranSrv, forSrv
 	useV6 := req.ForeignIPVer == "v6"
-	target := forSrv.Host
+	if req.Direction == "foreign_to_iran" {
+		srcSrv, dstSrv = forSrv, iranSrv
+		useV6 = req.IranIPVer == "v6"
+	}
+	target := dstSrv.Host
 	if useV6 {
-		if forSrv.IPv6 != "" && forSrv.IPv6 != "N/A" {
-			target = forSrv.IPv6
+		if dstSrv.IPv6 != "" && dstSrv.IPv6 != "N/A" {
+			target = dstSrv.IPv6
 		} else {
-			// Try detecting IPv6 on foreign node
-			r6 := h.runOnServer(forSrv, `sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1 || true; ip -6 route get 2606:4700:4700::1111 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}'`, 8*time.Second)
+			r6 := h.runOnServer(dstSrv, `sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1 || true; ip -6 route get 2606:4700:4700::1111 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src") {print $(i+1); exit}}'`, 8*time.Second)
 			if s := strings.TrimSpace(r6.Output); s != "" && strings.Contains(s, ":") {
 				target = s
 			} else {
-				fail(w, http.StatusBadRequest, "Foreign server does not have a global IPv6 address")
+				fail(w, http.StatusBadRequest, dstSrv.Name+" does not have a global IPv6 address")
 				return
 			}
 		}
@@ -1006,7 +1011,7 @@ func (h *Handler) handleTunnelPing8(w http.ResponseWriter, r *http.Request) {
 		prepV6 = "sysctl -w net.ipv6.conf.all.disable_ipv6=0 >/dev/null 2>&1 || true; "
 	}
 	cmd := fmt.Sprintf(`%sping %s -c 8 -i 0.25 -W 2 %s 2>&1 || true`, prepV6, pingFlag, sshclient.ShQuote(target))
-	res := h.runOnServer(iranSrv, cmd, 22*time.Second)
+	res := h.runOnServer(srcSrv, cmd, 22*time.Second)
 
 	samples := make([]float64, 8)
 	for i := range samples {

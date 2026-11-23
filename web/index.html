@@ -1764,15 +1764,38 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
 }
 
 
-/* Taller, Airier 3-Step Tunnel Wizard Modal */
-#tun-modal .tun-wiz-shell { max-width: 640px; }
+/* Larger, Wider, Overflow-Free 3-Step Tunnel Wizard Modal */
+#tun-modal .tun-wiz-shell { max-width: 780px !important; width: 96vw !important; }
 #tun-modal .modal-box {
-  min-height: 500px;
-  padding: 24px 26px !important;
+  max-width: 780px !important;
+  min-height: 560px;
+  padding: 26px 28px !important;
+  overflow-x: hidden !important;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
+#tun-modal .row2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+.tun-route-col { min-width: 0 !important; }
+.tun-rb { width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; }
+.tun-side-ping-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 12px; border-radius: 999px; cursor: pointer;
+  font-family: inherit; font-size: .74rem; font-weight: 800;
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  border: 1.3px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  color: var(--accent);
+  transition: all .16s ease;
+}
+.tun-side-ping-btn:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  transform: translateY(-1px);
+}
+.tun-side-ping-btn:disabled { opacity: .6; cursor: wait; transform: none; }
 #tun-modal .tun-step-pane {
   flex: 1;
   min-height: 320px;
@@ -1840,20 +1863,20 @@ body[data-gauge="ring"] .mc-top-meta { display: block; }
 }
 
 
-/* ═══ FLOATING VERSION BUBBLE NEXT TO MAIN NAV ═══ */
+/* ═══ ANIMATED EXPANDING VERSION & UPDATE BUBBLE NEXT TO MAIN NAV ═══ */
 body[data-navx="dock"] #chrome, body[data-navx="float-b"] #chrome { gap: 10px !important; }
 .ver-bubble {
   pointer-events: auto;
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   padding: 0 15px; height: 46px; border-radius: 999px;
   background: var(--card); color: var(--text);
-  border: var(--bw, 1px) solid var(--border);
+  border: var(--bw, 1.4px) solid var(--border);
   backdrop-filter: blur(var(--blur, 18px)) saturate(140%);
   -webkit-backdrop-filter: blur(var(--blur, 18px)) saturate(140%);
   box-shadow: 0 12px 30px var(--shadow);
   font-size: .78rem; font-weight: 800; cursor: pointer;
-  transition: transform .18s ease, border-color .2s ease, box-shadow .2s ease;
-  white-space: nowrap; flex-shrink: 0;
+  transition: transform .22s ease, border-color .35s ease, box-shadow .35s ease, background .35s ease, padding .45s cubic-bezier(.22, 1, .36, 1);
+  white-space: nowrap; flex-shrink: 0; overflow: hidden;
 }
 .ver-bubble:hover {
   transform: translateY(-2px);
@@ -1864,22 +1887,50 @@ body[data-navx="dock"] #chrome, body[data-navx="float-b"] #chrome { gap: 10px !i
   background: var(--green);
   box-shadow: 0 0 8px color-mix(in srgb, var(--green) 70%, transparent);
   flex-shrink: 0;
+  transition: background .3s ease, box-shadow .3s ease;
 }
-/* When an update is available: border & glow turn vivid accent/amber */
+/* Animated Drawer inside Version Bubble — opens smoothly when update is available */
+.ver-upd-drawer {
+  display: inline-flex; align-items: center; gap: 5px;
+  max-width: 0; opacity: 0; overflow: hidden;
+  transform: translateX(-6px);
+  color: #facc15; font-weight: 900; letter-spacing: .2px;
+  transition: max-width .55s cubic-bezier(.22, 1, .36, 1), opacity .4s ease .08s, transform .45s cubic-bezier(.22, 1, .36, 1);
+}
+.ver-upd-drawer svg { width: 14px; height: 14px; flex-shrink: 0; }
+.ver-upd-sep { opacity: .65; }
+
 .ver-bubble.has-upd {
-  border: 1.8px solid var(--yellow) !important;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--yellow) 16%, var(--card)), color-mix(in srgb, var(--accent) 14%, var(--card))) !important;
-  box-shadow: 0 10px 28px -6px var(--shadow), 0 0 18px color-mix(in srgb, var(--yellow) 42%, transparent) !important;
-  color: var(--yellow);
+  padding: 0 18px 0 15px;
+  border: 2px solid #facc15 !important;
+  background: linear-gradient(135deg, rgba(250, 204, 21, .20), color-mix(in srgb, var(--card) 92%, rgba(245, 158, 11, .22))) !important;
+  box-shadow: 0 10px 28px -6px var(--shadow), 0 0 22px rgba(250, 204, 21, .45), inset 0 0 12px rgba(250, 204, 21, .16) !important;
+  animation: updGlowRing 2.2s ease-in-out infinite;
+}
+.ver-bubble.has-upd .ver-upd-drawer {
+  max-width: 130px;
+  opacity: 1;
+  transform: translateX(0);
 }
 .ver-bubble.has-upd .ver-dot {
-  background: var(--yellow);
-  box-shadow: 0 0 10px var(--yellow);
-  animation: verPulse 1.6s ease-in-out infinite;
+  background: #facc15;
+  box-shadow: 0 0 12px #facc15;
+  animation: verPulse 1.5s ease-in-out infinite;
+}
+.ver-bubble.has-upd .ver-upd-drawer svg {
+  animation: updBounceArrow 1.3s ease-in-out infinite;
 }
 @keyframes verPulse {
   0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.38); opacity: .65; }
+  50%      { transform: scale(1.42); opacity: .65; }
+}
+@keyframes updGlowRing {
+  0%, 100% { box-shadow: 0 10px 28px -6px var(--shadow), 0 0 14px rgba(250, 204, 21, .35); }
+  50%      { box-shadow: 0 12px 32px -4px var(--shadow), 0 0 26px rgba(250, 204, 21, .72); }
+}
+@keyframes updBounceArrow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2.5px); }
 }
 body[data-navx="side"] .ver-bubble,
 body[data-navx="side-r"] .ver-bubble,
@@ -2189,6 +2240,11 @@ body[data-navx="top"] .ver-bubble {
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
       <span class="mono" id="nav-ver-lbl">v1.2.3</span>
+      <span class="ver-upd-drawer" id="nav-ver-drawer">
+        <span class="ver-upd-sep">•</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+        <span data-i18n="nav_update">Update</span>
+      </span>
     </button>
     <nav class="nav" id="nav"></nav>
     <button type="button" class="ver-bubble bak-bubble" id="nav-bak-bubble" onclick="openBackupModal()" title="Backup &amp; Restore">
@@ -3451,7 +3507,7 @@ body[data-navx="top"] .ver-bubble {
     <!-- Floating Summary Bubble (auto-appears on Pages 2 & 3 showing prior selections) -->
     <div id="tun-float-dock" class="tun-float-dock"></div>
 
-    <div class="card modal-box" style="max-width:610px; width:100%;">
+    <div class="card modal-box" style="max-width:780px; width:100%; overflow-x:hidden;">
       <div class="toolbar" style="margin-bottom:12px;">
         <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
           <h3 style="color:var(--accent);">+ New 2-Sided Tunnel</h3>
@@ -3470,7 +3526,7 @@ body[data-navx="top"] .ver-bubble {
         <div class="tun-sec" style="margin-bottom:0;">
           <div class="tun-sec-title"><span>Route (Entry ⇄ Exit)</span></div>
           <div class="row2">
-            <!-- Entry Server (3 Stacked Bubbles: 1. Flag, 2. Server Name, 3. IP + Flag) -->
+            <!-- Entry Server (3 Stacked Bubbles + IP Ping Test Button) -->
             <div class="tun-route-col">
               <div class="tun-route-lbl">Entry Server (Iran)</div>
               <div class="tun-rb rb-flag" id="t-iran-flag-b">
@@ -3487,9 +3543,12 @@ body[data-navx="top"] .ver-bubble {
                 </select>
                 <span class="tun-rb-ip-flag" id="t-iran-ip-flag"></span>
               </div>
+              <button type="button" class="tun-side-ping-btn" id="btn-ping8-iran" onclick="runTunnelPing8('foreign_to_iran')" title="Ping this Entry Server's selected IPv4/IPv6 from Exit Server">
+                <span>📡 Ping Entry IP (v4/v6)</span>
+              </button>
             </div>
 
-            <!-- Exit Server (3 Stacked Bubbles: 1. Flag, 2. Server Name, 3. IP + Flag) -->
+            <!-- Exit Server (3 Stacked Bubbles + IP Ping Test Button) -->
             <div class="tun-route-col">
               <div class="tun-route-lbl">Exit Server (Foreign)</div>
               <div class="tun-rb rb-flag" id="t-for-flag-b">
@@ -3506,6 +3565,9 @@ body[data-navx="top"] .ver-bubble {
                 </select>
                 <span class="tun-rb-ip-flag" id="t-for-ip-flag"></span>
               </div>
+              <button type="button" class="tun-side-ping-btn" id="btn-ping8-for" onclick="runTunnelPing8('iran_to_foreign')" title="Ping this Exit Server's selected IPv4/IPv6 from Entry Server">
+                <span>📡 Ping Exit IP (v4/v6)</span>
+              </button>
             </div>
           </div>
 
@@ -4942,22 +5004,26 @@ function onTunnelServersChange() {
   updateTunFloatDock();
 }
 
-async function runTunnelPing8() {
-  const btn = $('btn-ping8'), card = $('t-ping8-card'), grid = $('p8-grid'), sum = $('p8-sum');
+async function runTunnelPing8(dir) {
+  const direction = dir || 'iran_to_foreign';
+  const btnId = direction === 'foreign_to_iran' ? 'btn-ping8-iran' : 'btn-ping8-for';
+  const btn = $(btnId) || $('btn-ping8'), card = $('t-ping8-card'), grid = $('p8-grid'), sum = $('p8-sum');
+  const origTxt = btn ? btn.innerHTML : '';
   const ir = parseInt($('t-iran').value || '0', 10);
   const fr = parseInt($('t-foreign').value || '0', 10);
   const irVer = $('t-iran-ipver') ? $('t-iran-ipver').value : 'v4';
   const frVer = $('t-for-ipver') ? $('t-for-ipver').value : 'v4';
   if (!ir || !fr || ir === fr) { toast('Select two distinct servers first', true); return; }
-  btn.disabled = true; btn.textContent = 'Pinging...';
+  if (btn) { btn.disabled = true; btn.textContent = 'Pinging...'; }
   card.style.display = 'block';
-  $('p8-title').textContent = 'Running 8-Ping Test...';
-  $('p8-target').textContent = irVer.toUpperCase() + ' ➔ ' + frVer.toUpperCase();
+  const targetVer = direction === 'foreign_to_iran' ? irVer : frVer;
+  $('p8-title').textContent = (direction === 'foreign_to_iran' ? 'Exit ➔ Entry' : 'Entry ➔ Exit') + ' (' + targetVer.toUpperCase() + ')...';
+  $('p8-target').textContent = 'Testing ' + targetVer.toUpperCase() + ' reachability';
   grid.innerHTML = Array.from({ length: 8 }, (_, i) => `<div class="ping8-cell wait" id="p8-c-${i}"><span class="p8-seq">#${i+1}</span>...</div>`).join('');
   sum.innerHTML = '<span style="color:var(--muted);">Sending 8 ICMP packets...</span>';
   try {
     const r = await api('api/tunnels/ping8', 'POST', {
-      iran_server_id: ir, foreign_server_id: fr, iran_ip_ver: irVer, foreign_ip_ver: frVer
+      iran_server_id: ir, foreign_server_id: fr, iran_ip_ver: irVer, foreign_ip_ver: frVer, direction
     });
     if (!r.ok) {
       $('p8-title').textContent = 'Ping Test Failed';
@@ -6588,7 +6654,7 @@ async function checkUpdates(notify) {
     const vb = $('nav-ver-bubble'), vLbl = $('nav-ver-lbl');
     if (vb && vLbl) {
       const shortLbl = 'v' + c.current_version + (c.installed_beta_build > 0 ? (' • B' + c.installed_beta_build) : '');
-      vLbl.textContent = c.update_available ? (shortLbl + ' ⬆') : shortLbl;
+      vLbl.textContent = shortLbl;
       vb.classList.toggle('has-upd', !!c.update_available);
       vb.title = c.update_available ? 'Update Available — Click to open Update Center' : ('MControl ' + curLbl);
     }
