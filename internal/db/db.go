@@ -322,6 +322,9 @@ func (s *Store) migrate() error {
 	for _, kv := range defaults {
 		_, _ = s.db.Exec("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", kv[0], kv[1])
 	}
+	if err := s.migrateMonitor(); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.0
+
+### Native Uptime Monitor (Uptime Kuma-Style) & Dedicated Telegram Bot
+- **Multi-Point Monitoring Engine (`internal/db/monitor.go`, `internal/api/monitor.go`):** Track `HTTP/HTTPS` (with live SSL certificate expiry countdown), `TCP Port`, `ICMP Ping (v4/v6)`, and `DNS` targets from **Master**, **Master Outbound (Xray)**, or any managed **Iran/Foreign server** to accurately distinguish ISP filtering from true server outages.
+- **Kuma-Style Heartbeat UI & Incidents Timeline:** New **Uptime** tab featuring 30-tick hoverable heartbeat bars, 24h / 7d / 30d uptime percentages, 1-click **Import Servers / Tunnels**, and **Auto-Heal** (automatically restarts a linked tunnel when its monitor goes down).
+- **Dedicated Notification Telegram Bot:** Completely independent Bot Token, Chat/Channel ID, and Forum Topic ID with anti-spam retries, exact downtime duration on recovery, SSL expiry alerts, and latency spike warnings.
+- **Public Status Page (`/status`):** Clean, login-free MDesign status page exposing only public-flagged monitors under safe display names (hiding IPs and sensitive infrastructure details).
+
+### Disaster Recovery, Network Intelligence & Fleet Pro Suite
+- **Replace Server (Disaster Recovery Wizard):** Reassign and redeploy all linked tunnels plus update all matching Cloudflare/ArvanCloud `A`/`AAAA` DNS records from a failed/filtered server to a replacement server in one click.
+- **Live Network Topology Map & IPv4/IPv6 Reachability Matrix:** Interactive SVG topology view of all Entry ⇄ Exit tunnels plus a cross-node IPv4/IPv6 reachability matrix scanner.
+- **Web File Manager & Script Vault:** Built-in remote file browser/editor inside the Web Terminal modal (`Shell` ⇄ `Files`) plus a reusable **Script Vault**.
+- **Bandwidth Quota Guard & Server Tags:** Track monthly GB quotas (80% & 95% Telegram alerts) and filter servers by custom `#tags`.
+- **Smart DNS Auto-Failover UI:** Configure `Primary ➔ Backup` failover rules directly inside the **Domains** tab with manual `Test Backup` / `Restore Primary` switches.
+- **3x-ui / Marzban Active Port Sync, Auto SSL Cert Sync & MikroTik RouterOS Generator:** Fetch active inbound ports directly into tunnel configs, push SSL certificates across nodes, and generate RouterOS v7 GRE/IP6GRE scripts.
+- **24h / 7d SQLite Metrics History & Inline Server Tweak Bubbles:** 5-minute persistent CPU/RAM/Ping history charts on Overview, inline ON/OFF tweak bubbles directly on server cards, and one-time saved Web Terminal authentication.
+
 ## 1.2.3
 
 ### Tunnel Engine Stability & Hardening

@@ -2158,6 +2158,153 @@ body[data-navx="top"] .ver-bubble {
 .tun-ping-res.warn { border-color: color-mix(in srgb, var(--yellow) 55%, var(--border)); background: color-mix(in srgb, var(--yellow) 10%, var(--row)); }
 .tun-ping-res.bad { border-color: color-mix(in srgb, var(--red) 55%, var(--border)); background: color-mix(in srgb, var(--red) 10%, var(--row)); }
 
+
+/* ═══ INLINE TWEAK BUBBLES DIRECTLY ON SERVER CARD ═══ */
+.srv-tweak-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  padding: 10px 0 8px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+.stw-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 999px; cursor: pointer;
+  background: var(--row); color: var(--text);
+  border: 1.3px solid var(--border);
+  font-family: inherit; font-size: .72rem; font-weight: 800;
+  transition: transform .14s ease, border-color .18s ease, background .18s ease;
+  white-space: nowrap;
+}
+.stw-pill:hover { transform: translateY(-1px); border-color: var(--accent); }
+.stw-pill:disabled { opacity: .6; cursor: wait; transform: none; }
+.stw-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0;
+}
+.stw-st {
+  font-family: var(--ff-m); font-size: .64rem; font-weight: 900;
+  padding: 1px 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 16%, var(--surface));
+  color: var(--muted);
+}
+.stw-pill.is-on {
+  border-color: color-mix(in srgb, var(--green) 52%, var(--border));
+  background: color-mix(in srgb, var(--green) 10%, var(--row));
+}
+.stw-pill.is-on .stw-dot { background: var(--green); box-shadow: 0 0 7px var(--green); }
+.stw-pill.is-on .stw-st { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+.stw-pill.is-off {
+  border-color: color-mix(in srgb, var(--red) 40%, var(--border));
+  background: color-mix(in srgb, var(--red) 7%, var(--row));
+}
+.stw-pill.is-off .stw-dot { background: var(--red); }
+.stw-pill.is-off .stw-st { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+.stw-pill.stw-act {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--row));
+  color: var(--accent);
+}
+.stw-pill.stw-danger {
+  border-color: color-mix(in srgb, var(--red) 42%, var(--border));
+  background: color-mix(in srgb, var(--red) 8%, var(--row));
+  color: var(--red);
+}
+
+
+/* ═══ v1.3.0: UPTIME MONITOR (KUMA-STYLE), TOPOLOGY MAP, MATRIX, TAGS, FILES & METRICS ═══ */
+.mon-grid { display: flex; flex-direction: column; gap: 12px; }
+.mon-card {
+  background: var(--card); border: var(--bw, 1px) solid var(--border);
+  border-radius: var(--rc, 22px); padding: 16px 18px;
+  box-shadow: 0 10px 26px -10px var(--shadow);
+  transition: border-color .2s ease, transform .18s ease;
+}
+.mon-card:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.mon-card.is-down { border-inline-start: 4px solid var(--red); }
+.mon-card.is-up { border-inline-start: 4px solid var(--green); }
+.mon-card.is-pending { border-inline-start: 4px solid var(--yellow); }
+.mon-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.mon-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mon-hb-bars {
+  display: flex; align-items: center; gap: 3px; height: 26px; margin: 6px 0 8px;
+}
+.mon-hb {
+  flex: 1; height: 100%; border-radius: 6px;
+  background: color-mix(in srgb, var(--muted) 16%, var(--row));
+  transition: transform .14s ease, filter .14s ease;
+  cursor: pointer;
+}
+.mon-hb:hover { transform: scaleY(1.22); filter: brightness(1.15); }
+.mon-hb.up { background: var(--green); }
+.mon-hb.warn { background: var(--yellow); }
+.mon-hb.down { background: var(--red); }
+.mon-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: .74rem; color: var(--muted);
+}
+
+.tag-filter-bar {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  background: var(--row); color: var(--muted); border: 1.2px solid var(--border);
+  font-size: .74rem; font-weight: 800; transition: all .15s ease;
+}
+.tag-chip:hover, .tag-chip.active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--row));
+  color: var(--accent); border-color: var(--accent);
+}
+.srv-tag-badge {
+  display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 999px;
+  font-size: .64rem; font-weight: 800;
+  background: color-mix(in srgb, var(--accent) 14%, var(--row));
+  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+}
+.srv-quota-bar {
+  margin-top: 6px; padding: 6px 8px; border-radius: 10px;
+  background: color-mix(in srgb, var(--row) 85%, var(--surface));
+  font-size: .7rem;
+}
+.srv-quota-track {
+  height: 5px; border-radius: 999px; background: color-mix(in srgb, var(--muted) 22%, transparent);
+  overflow: hidden; margin-top: 4px;
+}
+.srv-quota-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width .3s ease; }
+
+.ov-pro-grid {
+  display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; margin-bottom: 16px;
+}
+@media (max-width: 960px) { .ov-pro-grid { grid-template-columns: 1fr; } }
+
+.inc-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 10px; border-radius: 12px; background: var(--row);
+  border: 1px solid var(--border); font-size: .74rem;
+}
+.inc-row.down { border-inline-start: 3px solid var(--red); }
+.inc-row.up { border-inline-start: 3px solid var(--green); }
+.inc-row.heal, .inc-row.failover, .inc-row.replace { border-inline-start: 3px solid var(--accent); }
+.inc-row.ssl, .inc-row.quota { border-inline-start: 3px solid var(--yellow); }
+
+.topo-svg {
+  width: 100%; min-height: 320px; border-radius: 16px;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--accent) 8%, var(--row)), var(--surface));
+  border: 1px solid var(--border);
+}
+.fm-list {
+  max-height: 240px; overflow: auto; display: flex; flex-direction: column; gap: 5px;
+  margin-bottom: 10px;
+}
+.fm-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px; border-radius: 10px; background: var(--row); border: 1px solid var(--border);
+  font-size: .76rem; cursor: pointer;
+}
+.fm-row:hover { border-color: var(--accent); }
+.mtx-table { width: 100%; border-collapse: collapse; font-size: .76rem; }
+.mtx-table th, .mtx-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: start; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -2307,7 +2454,7 @@ body[data-navx="top"] .ver-bubble {
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.2.3</span>
+      <span class="mono" id="nav-ver-lbl">v1.3.0</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -2379,7 +2526,7 @@ body[data-navx="top"] .ver-bubble {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.2.3</span>
+            <span class="badge b-ok" id="loc-ver">v1.3.0</span>
           </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -2515,10 +2662,42 @@ body[data-navx="top"] .ver-bubble {
         <h3 data-i18n="fleet_radar">Fleet hardware radar</h3>
         <div class="flexw">
           <button class="btn btn-sky" id="btn-live-ov" onclick="toggleLiveServers()">LIVE: ON</button>
+          <button class="btn btn-ghost" onclick="openSSLSyncModal()">🔒 SSL Sync</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
         </div>
       </div>
+      <!-- 24h / 7d Metrics History & Incident Timeline -->
+      <div class="ov-pro-grid">
+        <div class="card" style="padding:16px 18px !important;">
+          <div class="toolbar" style="margin-bottom:8px;">
+            <div>
+              <h4 style="color:var(--accent);">📈 Metrics History (24h / 7d)</h4>
+              <div class="hint" style="margin:2px 0 0;">5-minute SQLite snapshots of CPU, RAM &amp; Ping.</div>
+            </div>
+            <div class="flexw" style="gap:6px;">
+              <select id="hist-tgt" style="padding:5px 10px; font-size:.74rem; width:auto;" onchange="loadMetricsHistory()"></select>
+              <select id="hist-rng" style="padding:5px 10px; font-size:.74rem; width:auto;" onchange="loadMetricsHistory()">
+                <option value="24h">24 Hours</option>
+                <option value="7d">7 Days</option>
+              </select>
+            </div>
+          </div>
+          <div id="hist-chart-wrap" style="height:135px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:.76rem;">Loading history...</div>
+        </div>
+
+        <div class="card" style="padding:16px 18px !important;">
+          <div class="toolbar" style="margin-bottom:8px;">
+            <div>
+              <h4 style="color:var(--accent);">⚡ Live Incident Timeline</h4>
+              <div class="hint" style="margin:2px 0 0;">Uptime alerts, auto-heals, failovers &amp; recoveries.</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="switchTab('monitor')">Uptime ➔</button>
+          </div>
+          <div id="ov-inc-list" style="display:flex; flex-direction:column; gap:6px; max-height:145px; overflow:auto;"></div>
+        </div>
+      </div>
+
       <div class="srv-list" id="overview-grid"></div>
     </section>
 
@@ -2532,6 +2711,17 @@ body[data-navx="top"] .ver-bubble {
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
         </div>
       </div>
+      <div class="tag-filter-bar" id="srv-tag-filter"></div>
+      <div class="cf-bulk-bar" id="fleet-bulk-bar">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="badge b-iran mono" id="fleet-bulk-cnt">0 selected</span>
+          <span class="hint" style="margin:0;">Bulk Fleet Runner:</span>
+        </div>
+        <div class="flexw" style="gap:6px;">
+          <button type="button" class="btn btn-sky btn-sm" onclick="openFleetRunnerModal()">⚡ Run Command on Selected</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearFleetSel()">Clear</button>
+        </div>
+      </div>
       <div class="srv-list" id="servers-grid"></div>
     </section>
 
@@ -2540,6 +2730,8 @@ body[data-navx="top"] .ver-bubble {
       <div class="toolbar">
         <h3>Tunnels (Iran ⇄ Foreign)</h3>
         <div class="flexw">
+          <button class="btn btn-ghost" onclick="openTopologyModal()">🗺 Topology Map</button>
+          <button class="btn btn-ghost" onclick="openMatrixModal()">📡 v4/v6 Matrix</button>
           <button class="btn btn-warn" id="btn-open-msmart" onclick="openMSmartModal()">⚡ MSmart Benchmark</button>
           <button class="btn btn-ghost" onclick="openLinkTestModal()">Link Test (iperf3)</button>
           <button class="btn btn-ghost" onclick="loadTunnels()">Refresh</button>
@@ -2728,6 +2920,26 @@ body[data-navx="top"] .ver-bubble {
           </div>
           <div id="cf-records-list" style="display:flex; flex-direction:column; gap:8px;"></div>
         </div>
+
+        <!-- DNS Auto-Failover Rules -->
+        <div class="card" style="margin-top:14px;">
+          <div class="toolbar" style="margin-bottom:10px;">
+            <div>
+              <h4 style="color:var(--accent);">🔄 Smart DNS Auto-Failover Rules</h4>
+              <div class="hint" style="margin:2px 0 0;">Automatically switch a Cloudflare/ArvanCloud DNS record from Primary to Backup server on outage, and failback on recovery.</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="loadFailoverUI()">Refresh</button>
+          </div>
+          <div class="row2">
+            <div class="field"><label>DNS Record</label><select id="fo-rec"></select></div>
+            <div class="field"><label>Primary Server</label><select id="fo-pri"></select></div>
+          </div>
+          <div class="row2" style="align-items:end;">
+            <div class="field" style="margin-bottom:0;"><label>Backup Server</label><select id="fo-bak"></select></div>
+            <div><button class="btn btn-sky btn-sm" onclick="addFailoverRule()" style="width:100%;">+ Add Failover Rule</button></div>
+          </div>
+          <div id="fo-rules-list" style="margin-top:12px; display:flex; flex-direction:column; gap:7px;"></div>
+        </div>
       </div>
     </section>
 
@@ -2882,7 +3094,45 @@ body[data-navx="top"] .ver-bubble {
     </div>
 
     <!-- SETTINGS -->
-    <section id="tab-settings" class="page">
+    
+    <!-- UPTIME MONITOR (KUMA-STYLE + DEDICATED TELEGRAM BOT + PUBLIC /status) -->
+    <section id="tab-monitor" class="page">
+      <div class="stats-strip">
+        <div class="stat-mini"><span class="stat-lbl">Total Monitors</span><span class="stat-val" style="color:var(--accent);" id="mon-st-total">0</span></div>
+        <div class="stat-mini"><span class="stat-lbl">Online (UP)</span><span class="stat-val" style="color:var(--green);" id="mon-st-up">0</span></div>
+        <div class="stat-mini"><span class="stat-lbl">Offline (DOWN)</span><span class="stat-val" style="color:var(--red);" id="mon-st-down">0</span></div>
+        <div class="stat-mini"><span class="stat-lbl">Avg Uptime (24h)</span><span class="stat-val" style="color:var(--purple);" id="mon-st-avg">100%</span></div>
+      </div>
+
+      <div class="toolbar" style="margin-bottom:14px;">
+        <div>
+          <h3 data-i18n="nav_monitor">Uptime Monitor</h3>
+          <div class="hint" style="margin:2px 0 0;">Multi-point HTTP/SSL, TCP, Ping &amp; DNS monitoring with dedicated Telegram notifications &amp; Public Status Page.</div>
+        </div>
+        <div class="flexw" style="gap:7px;">
+          <button class="btn btn-warn btn-sm" onclick="openMonConfigModal()">🔔 Notify Bot &amp; Status Page</button>
+          <button class="btn btn-ghost btn-sm" onclick="importMonitors('servers')">+ Import Servers</button>
+          <button class="btn btn-ghost btn-sm" onclick="importMonitors('tunnels')">+ Import Tunnels</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadMonitorsTab()">Refresh</button>
+          <button class="btn btn-sky btn-sm" onclick="openMonEditModal(0)">+ Add Monitor</button>
+        </div>
+      </div>
+
+      <div id="mon-list" class="mon-grid"></div>
+      <div id="mon-empty" class="card" style="display:none; text-align:center; padding:30px; color:var(--muted);">
+        No monitors yet. Click <b>+ Add Monitor</b> or <b>+ Import Servers / Tunnels</b> to start tracking uptime.
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h4 style="color:var(--accent);">⚡ Recent Incidents &amp; Auto-Heals</h4>
+          <button class="btn btn-ghost btn-sm" onclick="loadMonitorIncidents()">Refresh</button>
+        </div>
+        <div id="mon-inc-list" style="display:flex; flex-direction:column; gap:6px; max-height:260px; overflow:auto;"></div>
+      </div>
+    </section>
+
+<section id="tab-settings" class="page">
       <div id="settings-shell">
         <div class="toolbar" style="justify-content:center; margin-bottom:10px;">
           <h3 data-i18n="nav_settings">Settings</h3>
@@ -3403,6 +3653,40 @@ body[data-navx="top"] .ver-bubble {
             </div>
             <div id="audit-list" class="mono" style="max-height:240px; overflow:auto; display:flex; flex-direction:column; gap:5px; font-size:.73rem;"></div>
           </div>
+          <div class="card">
+            <div class="toolbar" style="margin-bottom:10px;">
+              <div>
+                <h4 style="color:var(--accent);">🧰 Script Vault (Reusable Commands)</h4>
+                <div class="hint" style="margin:2px 0 0;">Save your favorite Linux commands to run in 1 click from Web Terminal or Bulk Fleet Runner.</div>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Script Name</label><input id="sv-name" placeholder="Update System"></div>
+              <div class="field"><label>Description</label><input id="sv-desc" placeholder="Optional note"></div>
+            </div>
+            <div class="field"><label>Shell Command</label><input id="sv-cmd" class="mono" placeholder="apt update && apt upgrade -y"></div>
+            <button class="btn btn-sky btn-sm" onclick="addVaultScript()">+ Save Script</button>
+            <div id="sv-list" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <div class="card">
+            <h4 style="color:var(--accent); margin-bottom:6px;">📊 Bandwidth Quota Guard &amp; Server Tags</h4>
+            <div class="hint" style="margin-bottom:10px;">Set monthly GB traffic limits (alerts at 80% &amp; 95%) and organize servers with custom tags.</div>
+            <div class="row2">
+              <div class="field"><label>Server</label><select id="qt-srv"></select></div>
+              <div class="field"><label>Tags (comma-separated)</label><input id="qt-tags" placeholder="Iran-Main, Backup, EU"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label>Monthly Limit (GB, 0 = off)</label><input id="qt-lim" type="number" value="20000" min="0"></div>
+              <div class="field"><label>Current Used (GB) / Reset Day</label>
+                <div class="row2"><input id="qt-used" type="number" value="0" min="0" placeholder="Used GB"><input id="qt-day" type="number" value="1" min="1" max="28" placeholder="Day"></div>
+              </div>
+            </div>
+            <div class="flexw" style="gap:8px;">
+              <button class="btn btn-sky btn-sm" onclick="saveServerQuota()">Save Quota</button>
+              <button class="btn btn-warn btn-sm" onclick="saveServerTags()">Save Tags</button>
+            </div>
+          </div>
         </div>
 
         <div id="sub-themes" class="sub-pane">
@@ -3506,6 +3790,20 @@ body[data-navx="top"] .ver-bubble {
         </div>
         <div class="hint" id="s-keep" style="display:none;" data-i18n="ph_keep_secret">Leave the secret empty to keep the stored one.</div>
         <div id="srv-test-res" class="hint mono" style="display:none; margin-bottom:4px;"></div>
+
+        <!-- Remote OS Root Login & Password Management (Shown only when Editing a Server) -->
+        <div id="srv-edit-pw-sec" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+          <div style="font-size:.8rem; font-weight:800; color:var(--yellow); margin-bottom:8px;">🔑 Remote OS Root Login &amp; Password</div>
+          <div class="row2">
+            <div class="field" style="margin-bottom:8px;"><label>OS Username</label><input id="ed-tw-user" class="mono" value="root"></div>
+            <div class="field" style="margin-bottom:8px;"><label>New OS Password</label><input id="ed-tw-pass" type="password" placeholder="Enter new password" autocomplete="new-password"></div>
+          </div>
+          <div class="flexw" style="gap:7px;">
+            <button type="button" class="btn btn-warn btn-sm" id="btn-ed-root" onclick="runEditServerPasswordAction('enable_root')">Enable Root SSH Login (+ Set Pass)</button>
+            <button type="button" class="btn btn-sky btn-sm" id="btn-ed-chpass" onclick="runEditServerPasswordAction('change_pass')">Change Password</button>
+          </div>
+          <div id="ed-tw-res" class="hint mono" style="display:none; margin-top:6px;"></div>
+        </div>
       </div>
 
       <!-- PAGE 3 (Conditional): MTunnel Migrator — only activates if MTunnel is detected on this server! -->
@@ -3733,8 +4031,8 @@ body[data-navx="top"] .ver-bubble {
               <select id="t-port-prof" onchange="applyPortProfileToTunnel()"><option value="">— Custom Ports —</option></select>
             </div>
             <div class="field" style="margin-bottom:0;">
-              <label>Forward Ports</label>
-              <input id="t-ports" class="mono" placeholder="443, 8443, 2053">
+              <div style="display:flex; justify-content:space-between; align-items:center;"><label style="margin:0;">Forward Ports</label><button type="button" class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:.66rem;" onclick="openPanelSyncModal('t-ports')">⚡ Sync 3x-ui / Marzban</button></div>
+              <input id="t-ports" class="mono" placeholder="443, 8443, 2053" style="margin-top:5px;">
             </div>
           </div>
         </div>
@@ -4056,7 +4354,7 @@ en: {
   setup_done: 'Setup complete! Restarting panel...', setup_url: 'Your permanent MControl URL:', t_random: 'Random',
   login_sub: 'MDesign central control plane', http_warn: 'Plain HTTP: your password is sent unencrypted. Enable HTTPS (tls.crt / tls.key) or use a reverse proxy.',
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
-  nav_overview: 'Overview', nav_servers: 'Servers', nav_domains: 'Domains', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
+  nav_overview: 'Overview', nav_servers: 'Servers', nav_domains: 'Domains', nav_monitor: 'Uptime', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
   load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', net_dl_ul: 'Download / Upload', btn_bak_short: 'Backup', btn_rst_short: 'Restore', toolbox_title: 'Toolbox', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
@@ -4110,7 +4408,7 @@ fa: {
   setup_done: 'راه‌اندازی کامل شد! در حال راه‌اندازی مجدد پنل...', setup_url: 'آدرس دائمی پنل شما:', t_random: 'تصادفی',
   login_sub: 'پنل مرکزی کنترل MDesign', http_warn: 'اتصال HTTP ساده است و رمز شما بدون رمزگذاری ارسال می‌شود. HTTPS (فایل‌های tls.crt و tls.key) یا ریورس‌پروکسی را فعال کنید.',
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
-  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_domains: 'دامنه‌ها', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
+  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_domains: 'دامنه‌ها', nav_monitor: 'آپتایم', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
   load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', net_dl_ul: 'دانلود / آپلود', btn_bak_short: 'بکاپ', btn_rst_short: 'ریستور', toolbox_title: 'ابزارهای مستر', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
@@ -4245,10 +4543,11 @@ const IC = {
   moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
   globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
-  key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>'
+  key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2M16 7l3 3"/>',
+  pulse: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['domains', 'nav_domains', 'globe'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['domains', 'nav_domains', 'globe'], ['monitor', 'nav_monitor', 'pulse'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -4536,9 +4835,10 @@ function switchTab(name) {
   if (name === 'themes') { openThemesQuick(); return; }
   if (name === 'tunnels') fillCoreSelect();
   if (name === 'update') checkUpdates(false);
-  if (name === 'overview') { pollLocalStats(); }
+  if (name === 'overview') { pollLocalStats(); loadMetricsHistory(); loadOverviewIncidents(); }
   if (name === 'tunnels') { loadTunnels(); loadLegacyTunnels(); loadProfiles(); pollMSmartStatus(); }
-  if (name === 'domains') { loadCloudflareStatus(); }
+  if (name === 'domains') { loadCloudflareStatus(); loadFailoverUI(); }
+  if (name === 'monitor') { loadMonitorsTab(); }
   if (name === 'outbound') { loadMasterOutbound(); }
   if (name === 'telegram') { loadTelegramStatus(); }
   if (name === 'settings') { initMobileSettingsCollapse(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
@@ -4549,11 +4849,93 @@ function closeModal(id) { $(id).classList.remove('active'); }
 
 /* ═══════════════ servers ═══════════════ */
 const openServerIds = new Set();
+const SRV_TWEAK_CACHE = {};
+
+function renderInlineTweakPills(id) {
+  const st = SRV_TWEAK_CACHE[id];
+  const mkToggle = (key, label) => {
+    const cls = !st ? '' : (st[key] ? 'is-on' : 'is-off');
+    const txt = !st ? '...' : (st[key] ? 'ON' : 'OFF');
+    return `<button type="button" class="stw-pill ${cls}" data-stw-srv="${id}" data-stw-key="${key}" onclick="toggleInlineSrvTweak(${id},'${key}',this)"><span class="stw-dot"></span><span>${label}</span><span class="stw-st">${txt}</span></button>`;
+  };
+  return `
+    ${mkToggle('ipv6', 'IPv6')}
+    ${mkToggle('bbr', 'BBR')}
+    ${mkToggle('fw', 'Firewall')}
+    <button type="button" class="stw-pill stw-act" onclick="runInlineSrvTweak(${id},'net_opt','Apply Kernel / Sysctl network optimizations?',this)">⚡ Optimize Kernel</button>
+    <button type="button" class="stw-pill stw-act" onclick="runInlineSrvTweak(${id},'clear_cache','Clear RAM page cache & old logs on this server?',this)">🧹 Clean RAM</button>
+    <button type="button" class="stw-pill stw-danger" onclick="runInlineSrvTweak(${id},'reboot','Reboot this server now?',this)">↻ Reboot</button>
+  `;
+}
+
+function paintInlineTweakBars(id) {
+  document.querySelectorAll(`[data-srv-tweak-bar="${id}"]`).forEach(bar => {
+    bar.innerHTML = renderInlineTweakPills(id);
+  });
+}
+
+async function loadInlineTweakStatus(id) {
+  const r = await api('api/servers/' + id + '/tweak/status');
+  if (r.ok) {
+    SRV_TWEAK_CACHE[id] = { ipv6: !!r.ipv6, bbr: !!r.bbr, fw: !!r.fw };
+    paintInlineTweakBars(id);
+  }
+}
+
+async function toggleInlineSrvTweak(id, key, btn) {
+  let st = SRV_TWEAK_CACHE[id];
+  if (!st) {
+    await loadInlineTweakStatus(id);
+    st = SRV_TWEAK_CACHE[id];
+    if (!st) { toast('Could not read current status', true); return; }
+  }
+  const curOn = !!st[key];
+  const labels = { ipv6: 'IPv6', bbr: 'BBR Congestion', fw: 'Firewall (UFW)' };
+  const nextWord = curOn ? 'OFF (Disable)' : 'ON (Enable)';
+  if (!confirm(`Turn ${labels[key]} ${nextWord} on this server?`)) return;
+  const actMap = {
+    ipv6: curOn ? 'ipv6_off' : 'ipv6_on',
+    bbr:  curOn ? 'bbr_off'  : 'bbr_on',
+    fw:   curOn ? 'fw_off'   : 'fw_on'
+  };
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api('api/servers/' + id + '/tweak', 'POST', { action: actMap[key] });
+    if (r.ok) {
+      toast((r.output || (labels[key] + ' updated')).trim().split('
+')[0]);
+      await loadInlineTweakStatus(id);
+    } else {
+      toast(r.error || 'Tweak failed', true);
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function runInlineSrvTweak(id, action, confirmMsg, btn) {
+  if (confirmMsg && !confirm(confirmMsg)) return;
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api('api/servers/' + id + '/tweak', 'POST', { action });
+    if (r.ok) toast((r.output || 'Done!').trim().split('
+')[0]);
+    else toast(r.error || 'Action failed', true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function toggleServerRow(id, el) {
   const wrap = el.closest('.srv-row-wrap');
   if (!wrap) return;
   const open = wrap.classList.toggle('open');
-  if (open) openServerIds.add(id); else openServerIds.delete(id);
+  if (open) {
+    openServerIds.add(id);
+    loadInlineTweakStatus(id);
+  } else {
+    openServerIds.delete(id);
+  }
 }
 
 function renderServerCard(s) {
@@ -4575,7 +4957,7 @@ function renderServerCard(s) {
           <span class="dot ${on ? 'online' : 'offline'}"></span>
           ${flagSVG(s.country_code)}
           <strong style="font-size:.96rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(s.name)}</strong>
-          ${role}
+          ${role}${(SRV_TAGS[String(id)]||[]).map(tg => `<span class="srv-tag-badge">#${esc(tg)}</span>`).join('')}
         </div>
         <div class="srv-mob-meta">
           <span>${esc(s.host)}</span>
@@ -4611,17 +4993,21 @@ function renderServerCard(s) {
           <div class="srv-mini-lbl">MControl Status</div>
           <div class="srv-mini-val">${s.auth_mode === 'peer' ? '<span style="color:var(--green);">MControl Installed (Peer)</span>' : '<span style="color:var(--yellow);">MControl Not Installed</span>'}</div>
           <div class="mono srv-spd-line" data-spd-srv="${id}" title="${s.last_speed ? esc(s.last_speed) : ""}">${s.last_speed ? esc(s.last_speed) : "No speedtest yet"}</div>
+          ${renderServerQuotaMini(id)}
         </div>
+      </div>
+      <div class="srv-tweak-bar" data-srv-tweak-bar="${id}">
+        ${renderInlineTweakPills(id)}
       </div>
       <div class="card-actions" style="margin-top:4px;">
         <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
-        <button class="btn btn-warn btn-sm" data-act="tweak" data-id="${id}">Tweak</button>
         <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
         <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
         <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
         <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
         <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
         ${s.auth_mode !== 'peer' ? `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
         <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
         <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
       </div>
@@ -4644,6 +5030,7 @@ async function loadServers() {
   SERVERS = res.servers || [];
   renderServers();
   loadCloudflareStatus(true);
+  if (typeof loadProMeta === 'function' && !window._proMetaLoaded) { window._proMetaLoaded = true; loadProMeta(); loadMetricsHistory(); loadOverviewIncidents(); }
   if (curTab === 'tunnels') fillCoreSelect();
 }
 function act(name, id) {
@@ -4784,6 +5171,27 @@ function srvWizNext() {
   setSrvStep(srvWizStep + 1);
 }
 
+
+async function runEditServerPasswordAction(action) {
+  if (!editId) return;
+  const user = ($('ed-tw-user') && $('ed-tw-user').value.trim()) || 'root';
+  const pass = ($('ed-tw-pass') && $('ed-tw-pass').value) || '';
+  if (!pass) { toast('Enter a new password first', true); return; }
+  const label = action === 'enable_root' ? 'Enable Root SSH Login & set password' : ('Change password for ' + user);
+  if (!confirm(label + ' on this server?')) return;
+  const resEl = $('ed-tw-res');
+  if (resEl) { resEl.style.display = 'block'; resEl.style.color = 'var(--muted)'; resEl.textContent = 'Applying...'; }
+  const r = await api('api/servers/' + editId + '/tweak', 'POST', { action, username: user, password: pass });
+  if (r.ok) {
+    toast(r.output || 'Password updated!');
+    if (resEl) { resEl.style.color = 'var(--green)'; resEl.textContent = '✔ ' + (r.output || 'Done!').trim(); }
+    if ($('ed-tw-pass')) $('ed-tw-pass').value = '';
+  } else {
+    toast(r.error || 'Failed', true);
+    if (resEl) { resEl.style.color = 'var(--red)'; resEl.textContent = '✖ ' + (r.error || 'Failed'); }
+  }
+}
+
 function openSrvModal(id) {
   editId = id;
   srvMigServerId = 0;
@@ -4802,6 +5210,10 @@ function openSrvModal(id) {
   $('s-pass').value = s ? '' : (SETTINGS.default_ssh_pass || '');
   $('s-key').value = '';
   $('s-keep').style.display = s ? 'block' : 'none';
+  if ($('srv-edit-pw-sec')) $('srv-edit-pw-sec').style.display = s ? 'block' : 'none';
+  if ($('ed-tw-user')) $('ed-tw-user').value = (s && s.username) ? s.username : 'root';
+  if ($('ed-tw-pass')) $('ed-tw-pass').value = '';
+  if ($('ed-tw-res')) { $('ed-tw-res').style.display = 'none'; $('ed-tw-res').textContent = ''; }
   $('s-cred-mode-wrap').style.display = 'block';
   pickCredMode('custom');
   renderSSHProfiles();
@@ -4986,6 +5398,9 @@ async function loadTunnels() {
           <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'status')">Status</button>
           <button class="btn btn-sky btn-sm" onclick="tunnelAction(${tu.id},'restart')">Restart</button>
           <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'${ok ? 'stop' : 'start'}')">${ok ? 'Stop' : 'Start'}</button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditTunnelModal(${tu.id})">Edit</button>
+          <button class="btn btn-ghost btn-sm" onclick="checkTunnelMetrics(${tu.id},'${esc(tu.name)}')">Metrics</button>
+          ${(tu.engine === 'gre' || tu.engine === 'ip6gre') ? `<button class="btn btn-ghost btn-sm" onclick="openMikrotikModal(${tu.id},'${esc(tu.name)}')">MikroTik</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'logs')">Logs</button>
           <button class="btn btn-danger btn-sm" onclick="deleteTunnel(${tu.id})">Delete</button>
         </div>
@@ -7931,6 +8346,8 @@ async function openWebTerm(id) {
     }
   }
   showTermAuthBox(false);
+  switchTermView('shell');
+  populateVaultDropdown();
   setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
 }
 async function saveTermAuthAndOpen() {
@@ -7949,6 +8366,8 @@ async function saveTermAuthAndOpen() {
       toast(r.message || 'Credentials saved!');
       $('term-pass').value = '';
       showTermAuthBox(false);
+  switchTermView('shell');
+  populateVaultDropdown();
       setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
     } else {
       toast(r.error || 'Failed to save credentials', true);
@@ -8037,6 +8456,8 @@ async function loadOpsTab() {
     if ($('vw-user')) $('vw-user').value = rv.username || '';
   }
   loadAuditLog();
+  renderVaultList();
+  if ($('qt-srv')) $('qt-srv').innerHTML = (SERVERS || []).map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)})</option>`).join('');
 }
 async function addSchedJob() {
   const r = await api('api/scheduler', 'POST', {
@@ -8079,6 +8500,537 @@ async function loadAuditLog() {
   }
 }
 
+
+/* ═══════════════ v1.3.0 PRO MODULES JS ═══════════════ */
+let MONITORS = [], SRV_TAGS = {}, SRV_QUOTAS = {}, VAULT_SCRIPTS = [], activeTagFilter = 'ALL';
+
+async function loadProMeta() {
+  const [rt, rq, rs] = await Promise.all([
+    api('api/pro/tags'),
+    api('api/pro/quotas'),
+    api('api/pro/scripts')
+  ]);
+  if (rt.ok && rt.tags) SRV_TAGS = rt.tags;
+  if (rq.ok && rq.quotas) SRV_QUOTAS = rq.quotas;
+  if (rs.ok && rs.scripts) VAULT_SCRIPTS = rs.scripts;
+  renderTagFilterBar();
+  renderServers();
+  populateVaultDropdown();
+}
+
+function renderServerQuotaMini(id) {
+  const q = SRV_QUOTAS[String(id)];
+  if (!q || !q.limit_gb) return '';
+  const pct = Math.min(100, Math.round((q.used_gb / q.limit_gb) * 100));
+  const col = pct >= 95 ? 'var(--red)' : (pct >= 80 ? 'var(--yellow)' : 'var(--accent)');
+  return `<div class="srv-quota-bar"><div style="display:flex;justify-content:space-between;"><span>Quota</span><span class="mono">${q.used_gb}/${q.limit_gb} GB (${pct}%)</span></div><div class="srv-quota-track"><div class="srv-quota-fill" style="width:${pct}%;background:${col};"></div></div></div>`;
+}
+
+function renderTagFilterBar() {
+  const bar = $('srv-tag-filter');
+  if (!bar) return;
+  const allTags = new Set();
+  Object.values(SRV_TAGS || {}).forEach(arr => (arr || []).forEach(t => allTags.add(t)));
+  if (!allTags.size) { bar.innerHTML = ''; return; }
+  const chips = ['ALL', ...Array.from(allTags)];
+  bar.innerHTML = chips.map(tg => `<span class="tag-chip ${activeTagFilter===tg?'active':''}" onclick="setTagFilter('${esc(tg)}')">${tg==='ALL'?'All Servers':'#'+esc(tg)}</span>`).join('');
+}
+
+function setTagFilter(tg) {
+  activeTagFilter = tg;
+  renderTagFilterBar();
+  const list = tg === 'ALL' ? SERVERS : SERVERS.filter(s => (SRV_TAGS[String(s.id)] || []).includes(tg));
+  if ($('servers-grid')) $('servers-grid').innerHTML = list.length ? list.map(renderServerCard).join('') : '<div class="card" style="color:var(--muted);">No servers in this tag.</div>';
+}
+
+/* ── Overview Metrics History & Recent Incidents ── */
+async function loadMetricsHistory() {
+  const sel = $('hist-tgt');
+  if (sel && sel.options.length <= 1) {
+    sel.innerHTML = '<option value="master">Master Panel</option>' + (SERVERS || []).map(s => `<option value="srv:${s.id}">${esc(s.name)}</option>`).join('');
+  }
+  const tgt = (sel && sel.value) || 'master';
+  const rng = ($('hist-rng') && $('hist-rng').value) || '24h';
+  const r = await api('api/pro/metrics?target=' + encodeURIComponent(tgt) + '&range=' + encodeURIComponent(rng));
+  const box = $('hist-chart-wrap');
+  if (!box) return;
+  const pts = (r.ok && r.points) ? r.points : [];
+  if (pts.length < 2) {
+    box.innerHTML = '<span>Collecting 5-min snapshots... Check back in a few minutes.</span>';
+    return;
+  }
+  const W = 520, H = 120, pad = 10;
+  const mapLine = (vals, maxV, col) => {
+    const coords = vals.map((v, i) => {
+      const x = pad + (i / Math.max(1, vals.length - 1)) * (W - pad * 2);
+      const y = H - pad - (Math.min(maxV, Math.max(0, v)) / maxV) * (H - pad * 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    return `<polyline fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" points="${coords}"/>`;
+  };
+  const cpuLine = mapLine(pts.map(p => p.cpu || 0), 100, 'var(--accent)');
+  const ramLine = mapLine(pts.map(p => p.ram || 0), 100, 'var(--pink)');
+  const last = pts[pts.length - 1];
+  box.innerHTML = `<div style="width:100%;"><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:110px;display:block;">${cpuLine}${ramLine}</svg><div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px;" class="mono"><span><b style="color:var(--accent);">● CPU</b> ${last.cpu.toFixed(1)}% · <b style="color:var(--pink);">● RAM</b> ${last.ram.toFixed(1)}%</span><span>${pts.length} pts (${rng})</span></div></div>`;
+}
+
+async function loadOverviewIncidents() {
+  const r = await api('api/monitors/incidents');
+  const el = $('ov-inc-list');
+  if (!el) return;
+  const list = (r.ok && r.incidents) ? r.incidents.slice(0, 6) : [];
+  el.innerHTML = list.map(renderIncidentRow).join('') || '<div class="hint" style="margin:0;">All quiet — no incidents recorded.</div>';
+}
+
+function renderIncidentRow(inc) {
+  const ico = { down: '🔴', up: '🟢', heal: '🛠', failover: '🔄', quota: '📊', ssl: '🔒', replace: '⚡' }[inc.kind] || '•';
+  return `<div class="inc-row ${esc(inc.kind)}"><span>${ico} <b>${esc(inc.monitor_name || 'System')}</b> — ${esc(inc.message)}</span><span class="mono" style="color:var(--muted);font-size:.68rem;flex-shrink:0;">${new Date(inc.created_at*1000).toLocaleTimeString()}</span></div>`;
+}
+
+/* ── Uptime Monitor Tab (Kuma-Style) ── */
+async function loadMonitorsTab() {
+  const r = await api('api/monitors');
+  if (!r.ok) return;
+  MONITORS = r.monitors || [];
+  if ($('mon-st-total')) $('mon-st-total').textContent = r.total || 0;
+  if ($('mon-st-up')) $('mon-st-up').textContent = r.up || 0;
+  if ($('mon-st-down')) $('mon-st-down').textContent = r.down || 0;
+  if ($('mon-st-avg')) $('mon-st-avg').textContent = (r.avg_uptime ?? 100) + '%';
+  const box = $('mon-list'), emp = $('mon-empty');
+  if (!MONITORS.length) {
+    if (box) box.innerHTML = '';
+    if (emp) emp.style.display = 'block';
+  } else {
+    if (emp) emp.style.display = 'none';
+    if (box) box.innerHTML = MONITORS.map(m => {
+      const beats = m.beats || [];
+      const pad = Math.max(0, 30 - beats.length);
+      const bars = '<div class="mon-hb"></div>'.repeat(pad) + beats.map(b =>
+        `<div class="mon-hb ${esc(b.status)}" title="${new Date(b.created_at*1000).toLocaleString()} · ${b.latency_ms}ms · ${esc(b.msg)}"></div>`
+      ).join('');
+      const stCls = m.status === 'down' ? 'is-down' : (m.status === 'up' ? 'is-up' : 'is-pending');
+      const stBadge = m.status === 'down' ? 'b-miss' : (m.status === 'up' ? 'b-iran' : 'b-foreign');
+      const sslBadge = m.ssl_expiry_days >= 0 ? `<span class="badge ${m.ssl_expiry_days<=7?'b-miss':'b-ok'} mono">SSL ${m.ssl_expiry_days}d</span>` : '';
+      return `<div class="mon-card ${stCls}">
+        <div class="mon-head">
+          <div class="mon-title-row">
+            <span class="dot ${m.status==='up'?'online':'offline'}"></span>
+            <strong>${esc(m.name)}</strong>
+            <span class="badge b-ok mono">${esc(m.type.toUpperCase())}</span>
+            <span class="badge ${stBadge} mono">${esc((m.status||'pending').toUpperCase())}</span>
+            <span class="badge b-foreign mono">via ${esc(m.probe_from || 'master')}</span>
+            ${sslBadge}
+            ${m.is_public ? '<span class="badge b-iran mono">PUBLIC</span>' : ''}
+            ${m.auto_heal === 'restart_tunnel' ? '<span class="badge b-ok mono">AUTO-HEAL</span>' : ''}
+          </div>
+          <div class="flexw" style="gap:5px;">
+            <span class="mono" style="font-size:.76rem; color:var(--accent); font-weight:800;">${m.last_latency_ms || 0} ms</span>
+            <button class="btn btn-ghost btn-sm" onclick="checkMonitorNow(${m.id})">Check</button>
+            <button class="btn btn-ghost btn-sm" onclick="openMonEditModal(${m.id})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteMonitor(${m.id})">Del</button>
+          </div>
+        </div>
+        <div class="mono" style="font-size:.73rem; color:var(--muted);">${esc(m.target)}${m.last_error ? ` · <span style="color:var(--red);">${esc(m.last_error)}</span>` : ''}</div>
+        <div class="mon-hb-bars">${bars}</div>
+        <div class="mon-foot">
+          <span>24h: <b style="color:var(--green);">${m.uptime_24h}%</b> · 7d: <b>${m.uptime_7d}%</b> · 30d: <b>${m.uptime_30d}%</b></span>
+          <span class="mono">Every ${m.interval_sec}s · Retries: ${m.retries}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  loadMonitorIncidents();
+}
+
+async function loadMonitorIncidents() {
+  const r = await api('api/monitors/incidents');
+  if (r.ok && $('mon-inc-list')) {
+    $('mon-inc-list').innerHTML = (r.incidents || []).map(renderIncidentRow).join('') || '<div class="hint">No incidents yet.</div>';
+  }
+}
+
+function openMonEditModal(id) {
+  const m = id ? MONITORS.find(x => +x.id === +id) : null;
+  $('mn-id').value = m ? m.id : 0;
+  $('mon-modal-title').textContent = m ? 'Edit Monitor' : '+ Add Uptime Monitor';
+  $('mn-name').value = m ? m.name : '';
+  $('mn-type').value = m ? m.type : 'http';
+  $('mn-target').value = m ? m.target : '';
+  $('mn-exp').value = m ? (m.expected || '') : '';
+  $('mn-int').value = m ? m.interval_sec : 60;
+  $('mn-ret').value = m ? m.retries : 2;
+  $('mn-lat').value = m ? (m.latency_warn_ms || 0) : 0;
+  $('mn-pubname').value = m ? (m.public_name || '') : '';
+  $('mn-pub').checked = m ? !!m.is_public : true;
+  $('mn-probe').innerHTML = '<option value="master">Master Server</option><option value="outbound">Master Outbound (Xray)</option>' +
+    (SERVERS || []).map(s => `<option value="server:${s.id}">Node: ${esc(s.name)} (${esc(s.role)})</option>`).join('');
+  $('mn-probe').value = m ? (m.probe_from || 'master') : 'master';
+  $('mn-tun').innerHTML = '<option value="0">— None —</option>' +
+    (TUNNELS || []).map(t => `<option value="${t.id}">Restart Tunnel: ${esc(t.name)}</option>`).join('');
+  $('mn-tun').value = m ? (m.linked_tunnel_id || 0) : 0;
+  $('mon-edit-modal').classList.add('active');
+}
+
+async function saveMonitor() {
+  const id = parseInt($('mn-id').value || '0', 10);
+  const tid = parseInt($('mn-tun').value || '0', 10);
+  const payload = {
+    name: $('mn-name').value.trim(),
+    type: $('mn-type').value,
+    target: $('mn-target').value.trim(),
+    expected: $('mn-exp').value.trim(),
+    interval_sec: parseInt($('mn-int').value || '60', 10),
+    timeout_sec: 10,
+    retries: parseInt($('mn-ret').value || '2', 10),
+    latency_warn_ms: parseInt($('mn-lat').value || '0', 10),
+    probe_from: $('mn-probe').value,
+    linked_tunnel_id: tid,
+    auto_heal: tid > 0 ? 'restart_tunnel' : 'none',
+    is_public: $('mn-pub').checked,
+    public_name: $('mn-pubname').value.trim(),
+    enabled: true
+  };
+  const r = id ? await api('api/monitors/' + id, 'PUT', payload) : await api('api/monitors', 'POST', payload);
+  if (r.ok) { toast(r.message || 'Saved!'); closeModal('mon-edit-modal'); setTimeout(loadMonitorsTab, 400); }
+  else toast(r.error || 'Failed', true);
+}
+
+async function checkMonitorNow(id) {
+  toast('Probing monitor...');
+  const r = await api('api/monitors/' + id + '/check', 'POST');
+  if (r.ok) { toast('Check completed!'); loadMonitorsTab(); }
+}
+async function deleteMonitor(id) {
+  if (!confirm('Delete this monitor and its heartbeat history?')) return;
+  await api('api/monitors/' + id, 'DELETE');
+  loadMonitorsTab();
+}
+async function importMonitors(kind) {
+  const r = await api('api/monitors/import', 'POST', { kind });
+  toast(r.message || 'Done!', !r.ok);
+  setTimeout(loadMonitorsTab, 500);
+}
+
+async function openMonConfigModal() {
+  const r = await api('api/monitors/config');
+  if (r.ok && r.config) {
+    const c = r.config;
+    $('mc-en').checked = !!c.enabled;
+    $('mc-tok').value = c.bot_token || '';
+    $('mc-chat').value = c.chat_id || '';
+    $('mc-topic').value = c.topic_id || 0;
+    $('mc-ssl').checked = !!c.notify_ssl;
+    $('mc-ssld').value = c.ssl_warn_days || 7;
+    $('mc-lat').checked = !!c.notify_latency;
+    $('mc-puben').checked = !!c.public_status_enabled;
+    $('mc-pubtitle').value = c.public_status_title || 'MControl Service Status';
+  }
+  $('mon-cfg-modal').classList.add('active');
+}
+async function saveMonConfig() {
+  const r = await api('api/monitors/config', 'POST', {
+    enabled: $('mc-en').checked,
+    bot_token: $('mc-tok').value.trim(),
+    chat_id: $('mc-chat').value.trim(),
+    topic_id: parseInt($('mc-topic').value || '0', 10),
+    notify_ssl: $('mc-ssl').checked,
+    ssl_warn_days: parseInt($('mc-ssld').value || '7', 10),
+    notify_latency: $('mc-lat').checked,
+    public_status_enabled: $('mc-puben').checked,
+    public_status_title: $('mc-pubtitle').value.trim()
+  });
+  toast(r.message || r.error || 'Saved', !r.ok);
+  if (r.ok) closeModal('mon-cfg-modal');
+}
+async function testMonNotify() {
+  const r = await api('api/monitors/test-notify', 'POST', {
+    bot_token: $('mc-tok').value.trim(),
+    chat_id: $('mc-chat').value.trim(),
+    topic_id: parseInt($('mc-topic').value || '0', 10)
+  });
+  toast(r.message || r.error || 'Sent', !r.ok);
+}
+
+/* ── Replace Server (Disaster Recovery) ── */
+function openReplaceSrvModal(oldId) {
+  const oldS = (SERVERS || []).find(x => +x.id === +oldId);
+  $('rep-old-id').value = oldId;
+  $('rep-title').textContent = '🔄 Replace Server — ' + (oldS ? oldS.name : oldId);
+  $('rep-new-id').innerHTML = (SERVERS || []).filter(s => +s.id !== +oldId).map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)})</option>`).join('') || '<option value="0">Add a replacement server first</option>';
+  $('rep-out').textContent = 'Ready to migrate tunnels & DNS records.';
+  $('replace-srv-modal').classList.add('active');
+}
+async function runReplaceServer() {
+  const oldId = $('rep-old-id').value, newId = parseInt($('rep-new-id').value || '0', 10);
+  if (!newId) { toast('Select a replacement server', true); return; }
+  if (!confirm('Migrate all linked Tunnels & matching DNS records to the new server now?')) return;
+  const btn = $('btn-rep-run'); btn.disabled = true; btn.textContent = 'Migrating...';
+  $('rep-out').textContent = 'Reassigning & redeploying tunnels + switching DNS records...';
+  try {
+    const r = await api('api/servers/' + oldId + '/replace', 'POST', {
+      new_server_id: newId,
+      migrate_tunnels: $('rep-tuns').checked,
+      migrate_dns: $('rep-dns').checked
+    });
+    $('rep-out').textContent = (r.logs || []).join('\n') + '\n\n' + (r.message || r.error || '');
+    toast(r.message || r.error || 'Done', !r.ok);
+    if (r.ok) { loadServers(); if (typeof loadTunnels === 'function') loadTunnels(); }
+  } finally { btn.disabled = false; btn.textContent = '⚡ Execute Migration'; }
+}
+
+/* ── Live Network Topology Map (Interactive SVG) ── */
+function openTopologyModal() {
+  $('topo-modal').classList.add('active');
+  renderTopologyMap();
+}
+async function renderTopologyMap() {
+  const r = await api('api/pro/topology');
+  const wrap = $('topo-canvas-wrap');
+  if (!r.ok || !wrap) return;
+  const srvs = r.servers || [], tuns = r.tunnels || [];
+  let left = srvs.filter(s => s.role === 'iran'), right = srvs.filter(s => s.role !== 'iran');
+  if (!left.length) { left = srvs.slice(0, Math.ceil(srvs.length/2)); right = srvs.slice(Math.ceil(srvs.length/2)); }
+  const rows = Math.max(left.length, right.length, 1);
+  const H = Math.max(300, rows * 78 + 40), W = 780;
+  const pos = {};
+  left.forEach((s, i) => { pos[s.id] = { x: 135, y: 55 + i * 76, s }; });
+  right.forEach((s, i) => { pos[s.id] = { x: W - 135, y: 55 + i * 76, s }; });
+
+  const lines = tuns.map(tu => {
+    const a = pos[tu.iran_server_id], b = pos[tu.foreign_server_id];
+    if (!a || !b) return '';
+    const col = tu.status === 'active' ? '#22c55e' : (tu.status === 'error' ? '#ef4444' : '#eab308');
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 14;
+    return `<g style="cursor:pointer;" onclick="closeModal('topo-modal'); checkTunnelMetrics(${tu.id},'${esc(tu.name)}')">
+      <path d="M ${a.x+85} ${a.y} C ${mx} ${a.y}, ${mx} ${b.y}, ${b.x-85} ${b.y}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${tu.status==='active'?'':'6 4'}"/>
+      <rect x="${mx-54}" y="${my-11}" width="108" height="22" rx="11" fill="var(--card)" stroke="${col}" stroke-width="1.3"/>
+      <text x="${mx}" y="${my+4}" text-anchor="middle" fill="var(--text)" font-size="10.5" font-weight="800">${esc(tu.name)} [${esc(tu.engine)}]</text>
+    </g>`;
+  }).join('');
+
+  const nodes = Object.values(pos).map(({x, y, s}) => {
+    const col = s.status === 'online' ? '#22c55e' : '#ef4444';
+    return `<g>
+      <rect x="${x-85}" y="${y-24}" width="170" height="48" rx="16" fill="var(--card)" stroke="${col}" stroke-width="1.6"/>
+      <circle cx="${x-68}" cy="${y}" r="5" fill="${col}"/>
+      <text x="${x-54}" y="${y-4}" fill="var(--text)" font-size="12" font-weight="800">${esc(s.name)}</text>
+      <text x="${x-54}" y="${y+12}" fill="var(--muted)" font-size="10" font-family="monospace">${esc(s.host)}</text>
+    </g>`;
+  }).join('');
+
+  wrap.innerHTML = `<svg class="topo-svg" viewBox="0 0 ${W} ${H}">${lines}${nodes}</svg>`;
+}
+
+/* ── Multi-Node Reachability Matrix ── */
+function openMatrixModal() {
+  $('matrix-modal').classList.add('active');
+}
+async function runMatrixTest() {
+  const btn = $('btn-mtx-run'); btn.disabled = true; btn.textContent = 'Scanning...';
+  $('mtx-out').innerHTML = '<div class="hint">Running live IPv4 &amp; IPv6 ICMP tests across nodes...</div>';
+  try {
+    const r = await api('api/pro/matrix', 'POST');
+    if (!r.ok) { $('mtx-out').innerHTML = `<div class="hint" style="color:var(--red);">${esc(r.error||'Failed')}</div>`; return; }
+    const cells = r.cells || [];
+    const pill = v => {
+      const cls = (!v || v === 'N/A') ? 'b-foreign' : (v === 'FILTERED' || v === 'ERR' ? 'b-miss' : 'b-iran');
+      return `<span class="badge ${cls} mono">${esc(v)}</span>`;
+    };
+    $('mtx-out').innerHTML = cells.length
+      ? `<table class="mtx-table"><thead><tr><th>From Node</th><th>To Node</th><th>IPv4</th><th>IPv6</th></tr></thead><tbody>${cells.map(c => `<tr><td><b>${esc(c.src_name)}</b></td><td><b>${esc(c.dst_name)}</b></td><td>${pill(c.v4)}</td><td>${pill(c.v6)}</td></tr>`).join('')}</tbody></table>`
+      : '<div class="hint">Add at least 2 servers to scan reachability.</div>';
+  } finally { btn.disabled = false; btn.textContent = 'Run Matrix Scan'; }
+}
+
+/* ── Web File Manager (inside Terminal modal) & Script Vault ── */
+function switchTermView(v) {
+  document.querySelectorAll('#term-mode-tabs .role-opt').forEach(el => el.classList.toggle('active', el.dataset.tview === v));
+  if ($('term-shell-wrap')) $('term-shell-wrap').style.display = v === 'shell' ? 'block' : 'none';
+  if ($('term-files-wrap')) $('term-files-wrap').style.display = v === 'files' ? 'block' : 'none';
+  if (v === 'files') fmList();
+}
+function fmGoUp() {
+  const cur = ($('fm-path').value || '/root').replace(/\/+$/, '') || '/';
+  const idx = cur.lastIndexOf('/');
+  $('fm-path').value = idx <= 0 ? '/' : cur.slice(0, idx);
+  fmList();
+}
+async function fmList() {
+  const path = $('fm-path').value.trim() || '/root';
+  $('fm-list').innerHTML = '<div class="hint">Loading...</div>';
+  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'list', path });
+  if (!r.ok) { $('fm-list').innerHTML = `<div class="hint" style="color:var(--red);">${esc(r.error||'Failed')}</div>`; return; }
+  const items = r.items || [];
+  $('fm-list').innerHTML = items.map(it => {
+    const full = (path.endsWith('/') ? path : path + '/') + it.name;
+    if (it.type === 'dir') {
+      return `<div class="fm-row" onclick="$('fm-path').value='${esc(full)}'; fmList();"><span>📁 <b>${esc(it.name)}</b></span><span class="mono" style="color:var(--muted);">DIR</span></div>`;
+    }
+    return `<div class="fm-row" onclick="fmOpenFile('${esc(full)}')"><span>📄 ${esc(it.name)}</span><div class="flexw" style="gap:6px;"><span class="mono" style="color:var(--muted);">${esc(it.size)} B</span><button class="btn btn-danger btn-sm" style="padding:1px 6px;" onclick="event.stopPropagation(); fmDelFile('${esc(full)}')">✕</button></div></div>`;
+  }).join('') || '<div class="hint">Empty directory.</div>';
+}
+async function fmOpenFile(fullPath) {
+  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'read', path: fullPath });
+  if (r.ok) {
+    $('fm-edit-path').textContent = fullPath;
+    $('fm-content').value = r.content || '';
+    $('fm-editor-wrap').style.display = 'block';
+  }
+}
+async function fmSaveFile() {
+  const p = $('fm-edit-path').textContent;
+  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'write', path: p, content: $('fm-content').value });
+  toast(r.message || r.error || 'Saved', !r.ok);
+}
+async function fmDelFile(fullPath) {
+  if (!confirm('Delete file ' + fullPath + '?')) return;
+  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'delete', path: fullPath });
+  toast(r.message || r.error || 'Deleted', !r.ok);
+  fmList();
+}
+
+function populateVaultDropdown() {
+  const sel = $('term-vault-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">🧰 Pick from Script Vault...</option>' + (VAULT_SCRIPTS || []).map(s => `<option value="${esc(s.command)}">${esc(s.name)} — ${esc(s.command.slice(0,38))}</option>`).join('');
+}
+
+async function addVaultScript() {
+  const r = await api('api/pro/scripts', 'POST', { name: $('sv-name').value.trim(), description: $('sv-desc').value.trim(), command: $('sv-cmd').value.trim() });
+  if (r.ok) { toast('Script saved!'); $('sv-name').value=''; $('sv-desc').value=''; $('sv-cmd').value=''; VAULT_SCRIPTS = r.scripts || []; renderVaultList(); populateVaultDropdown(); }
+  else toast(r.error || 'Failed', true);
+}
+async function delVaultScript(id) {
+  const r = await api('api/pro/scripts?id=' + id, 'DELETE');
+  if (r.ok) { VAULT_SCRIPTS = r.scripts || []; renderVaultList(); populateVaultDropdown(); }
+}
+function renderVaultList() {
+  if ($('sv-list')) {
+    $('sv-list').innerHTML = (VAULT_SCRIPTS || []).map(s => `<div class="cf-rec-row"><div class="cf-rec-main"><strong>${esc(s.name)}</strong><span class="mono" style="font-size:.72rem;color:var(--muted);">${esc(s.command)}</span></div><button class="btn btn-danger btn-sm" onclick="delVaultScript(${s.id})">✕</button></div>`).join('') || '<div class="hint">No saved scripts yet.</div>';
+  }
+}
+
+async function saveServerQuota() {
+  const sid = parseInt($('qt-srv').value || '0', 10);
+  if (!sid) return;
+  const r = await api('api/pro/quotas', 'POST', {
+    server_id: sid,
+    limit_gb: parseFloat($('qt-lim').value || '0'),
+    used_gb: parseFloat($('qt-used').value || '0'),
+    reset_day: parseInt($('qt-day').value || '1', 10)
+  });
+  if (r.ok) { SRV_QUOTAS = r.quotas || {}; renderServers(); toast('Quota saved!'); }
+}
+async function saveServerTags() {
+  const sid = parseInt($('qt-srv').value || '0', 10);
+  if (!sid) return;
+  const tags = ($('qt-tags').value || '').split(',').map(x => x.trim()).filter(Boolean);
+  const r = await api('api/pro/tags', 'POST', { server_id: sid, tags });
+  if (r.ok) { SRV_TAGS = r.tags || {}; renderTagFilterBar(); renderServers(); toast('Tags saved!'); }
+}
+
+/* ── DNS Auto-Failover Rules UI (inside Domains tab) ── */
+async function loadFailoverUI() {
+  const [ra, rcf] = await Promise.all([api('api/ops/automation'), api('api/cloudflare/status')]);
+  const recs = (rcf.ok && rcf.records) ? rcf.records.filter(x => x.type === 'A' || x.type === 'AAAA') : [];
+  if ($('fo-rec')) $('fo-rec').innerHTML = recs.map(x => `<option value="${esc(x.zone_id)}|${esc(x.id)}|${esc(x.type)}|${esc(x.name)}">${esc(x.name)} (${esc(x.type)} → ${esc(x.content)})</option>`).join('') || '<option value="">Sync Cloudflare/ArvanCloud first</option>';
+  const srvOpts = (SERVERS || []).map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)})</option>`).join('');
+  if ($('fo-pri')) $('fo-pri').innerHTML = srvOpts;
+  if ($('fo-bak')) $('fo-bak').innerHTML = srvOpts;
+  const rules = (ra.ok && ra.config && ra.config.failover_rules) ? ra.config.failover_rules : [];
+  window._foRules = rules;
+  if ($('fo-rules-list')) {
+    $('fo-rules-list').innerHTML = rules.map(rl => {
+      const pS = (SERVERS || []).find(s => +s.id === +rl.primary_server_id);
+      const bS = (SERVERS || []).find(s => +s.id === +rl.backup_server_id);
+      return `<div class="cf-rec-row">
+        <div class="cf-rec-main">
+          <span class="badge ${rl.active_on_backup?'b-miss':'b-iran'} mono">${rl.active_on_backup?'ON BACKUP':'PRIMARY'}</span>
+          <strong class="mono">${esc(rl.record_name)} (${esc(rl.record_type)})</strong>
+          <span style="font-size:.74rem;color:var(--muted);">${esc(pS?pS.name:'#'+rl.primary_server_id)} ➔ ${esc(bS?bS.name:'#'+rl.backup_server_id)}</span>
+        </div>
+        <div class="flexw" style="gap:5px;">
+          <button class="btn btn-warn btn-sm" onclick="testFailoverRule(${rl.id}, ${!rl.active_on_backup})">${rl.active_on_backup?'Restore Primary':'Test Backup'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFailoverRule(${rl.id})">✕</button>
+        </div>
+      </div>`;
+    }).join('') || '<div class="hint">No DNS failover rules configured yet.</div>';
+  }
+}
+async function addFailoverRule() {
+  const rv = ($('fo-rec').value || '').split('|');
+  const pri = parseInt($('fo-pri').value || '0', 10), bak = parseInt($('fo-bak').value || '0', 10);
+  if (rv.length < 4 || !pri || !bak || pri === bak) { toast('Pick a DNS record and two distinct servers', true); return; }
+  const cur = await api('api/ops/automation');
+  const cfg = (cur.ok && cur.config) ? cur.config : { cpu_threshold: 90, ram_threshold: 90, failover_rules: [] };
+  cfg.failover_rules = cfg.failover_rules || [];
+  cfg.failover_rules.push({
+    id: Date.now(), primary_server_id: pri, backup_server_id: bak,
+    zone_id: rv[0], record_id: rv[1], record_type: rv[2], record_name: rv[3], enabled: true
+  });
+  const r = await api('api/ops/automation', 'POST', cfg);
+  toast(r.ok ? 'Failover rule added!' : (r.error || 'Failed'), !r.ok);
+  loadFailoverUI();
+}
+async function deleteFailoverRule(id) {
+  const cur = await api('api/ops/automation');
+  const cfg = (cur.ok && cur.config) ? cur.config : {};
+  cfg.failover_rules = (cfg.failover_rules || []).filter(x => +x.id !== +id);
+  await api('api/ops/automation', 'POST', cfg);
+  loadFailoverUI();
+}
+async function testFailoverRule(id, toBack) {
+  toast('Switching DNS record...');
+  const r = await api('api/pro/failover/test', 'POST', { rule_id: id, to_backup: !!toBack });
+  toast(r.message || r.error || 'Done', !r.ok);
+  loadFailoverUI();
+}
+
+/* ── Auto SSL Sync, 3x-ui/Marzban Sync, MikroTik Config ── */
+function openSSLSyncModal() {
+  $('ssl-out').textContent = FLEET_SEL.size ? ('Targeting ' + FLEET_SEL.size + ' selected server(s).') : 'Targeting ALL managed servers.';
+  $('ssl-sync-modal').classList.add('active');
+}
+async function runSSLSync() {
+  const ids = FLEET_SEL.size ? Array.from(FLEET_SEL) : (SERVERS || []).map(s => s.id);
+  if (!ids.length) { toast('No servers available', true); return; }
+  const btn = $('btn-ssl-sync'); btn.disabled = true; btn.textContent = 'Syncing...';
+  try {
+    const r = await api('api/pro/ssl-sync', 'POST', {
+      server_ids: ids, cert_pem: $('ssl-cert').value, key_pem: $('ssl-key').value, dest_dir: $('ssl-dest').value.trim()
+    });
+    $('ssl-out').textContent = (r.logs || []).join('\n') || r.error || 'Done';
+    toast(r.message || r.error || 'Done', !r.ok);
+  } finally { btn.disabled = false; btn.textContent = 'Sync SSL Now'; }
+}
+
+function openPanelSyncModal(targetInputId) {
+  $('ps-target-inp').value = targetInputId;
+  $('psync-modal').classList.add('active');
+}
+async function runPanelPortSync() {
+  const btn = $('btn-ps-fetch'); btn.disabled = true; btn.textContent = 'Fetching...';
+  try {
+    const r = await api('api/pro/panel-sync', 'POST', {
+      panel_type: $('ps-type').value, base_url: $('ps-url').value.trim(), username: $('ps-user').value.trim(), password: $('ps-pass').value
+    });
+    if (r.ok) {
+      const tid = $('ps-target-inp').value;
+      if ($(tid) && r.ports_csv) $(tid).value = r.ports_csv;
+      toast(`Synced ${r.count} active port(s): ${r.ports_csv}`);
+      closeModal('psync-modal');
+    } else toast(r.error || 'Sync failed', true);
+  } finally { btn.disabled = false; btn.textContent = 'Fetch Active Ports'; }
+}
+
+async function openMikrotikModal(id, name) {
+  $('mkt-title').textContent = 'MikroTik RouterOS — ' + name;
+  $('mkt-out').textContent = 'Generating script...';
+  $('mkt-modal').classList.add('active');
+  const r = await api('api/tunnels/' + id + '/mikrotik');
+  $('mkt-out').textContent = r.script || r.error || 'Failed';
+}
+
 </script>
 
 <div class="modal-bg" id="cmdk-modal" style="z-index:1200;">
@@ -8100,7 +9052,7 @@ async function loadAuditLog() {
       <div class="field"><label>Tunnel Port</label><input id="te-tport" type="number"></div>
       <div class="field"><label>Token</label><input id="te-tok" class="mono"></div>
     </div>
-    <div class="field"><label>Forwarded Ports (comma-separated)</label><input id="te-ports" class="mono" placeholder="443,8443,2053"></div>
+    <div class="field"><div style="display:flex; justify-content:space-between; align-items:center;"><label style="margin:0;">Forwarded Ports (comma-separated)</label><button type="button" class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:.66rem;" onclick="openPanelSyncModal('te-ports')">⚡ Sync 3x-ui / Marzban</button></div><input id="te-ports" class="mono" placeholder="443,8443,2053" style="margin-top:5px;"></div>
     <div class="flexw" style="justify-content:flex-end; margin-top:10px;">
       <button class="btn btn-sky" id="btn-te-save" onclick="saveEditedTunnel()">Save &amp; Redeploy Both Sides</button>
     </div>
@@ -8141,11 +9093,39 @@ async function loadAuditLog() {
       </div>
     </div>
 
+    <div id="term-mode-tabs" class="role-picker" style="margin-bottom:10px;">
+      <div class="role-opt active" data-tview="shell" onclick="switchTermView('shell')">💻 Shell Terminal</div>
+      <div class="role-opt" data-tview="files" onclick="switchTermView('files')">📁 File Manager</div>
+    </div>
+
     <div id="term-shell-wrap">
+      <div class="flexw" style="gap:6px; margin-bottom:8px;">
+        <select id="term-vault-sel" style="flex:1; padding:6px 10px; font-size:.74rem;" onchange="if(this.value){$('term-inp').value=this.value; this.value='';}"><option value="">🧰 Pick from Script Vault...</option></select>
+      </div>
       <pre class="term" id="term-out" style="height:290px; margin-bottom:10px;">Ready. Type a Linux command below and press Enter.</pre>
       <div class="flexw" style="gap:8px;">
         <input id="term-inp" class="mono" style="flex:1;" placeholder="e.g. uptime && free -h" onkeydown="if(event.key==='Enter') runWebTermCmd()">
         <button class="btn btn-sky" id="btn-term-run" onclick="runWebTermCmd()">Run</button>
+      </div>
+    </div>
+
+    <!-- Web File Manager View -->
+    <div id="term-files-wrap" style="display:none;">
+      <div class="flexw" style="gap:6px; margin-bottom:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="fmGoUp()">⬆ Up</button>
+        <input id="fm-path" class="mono" style="flex:1;" value="/root" onkeydown="if(event.key==='Enter') fmList()">
+        <button class="btn btn-sky btn-sm" onclick="fmList()">Open</button>
+      </div>
+      <div id="fm-list" class="fm-list"></div>
+      <div id="fm-editor-wrap" style="display:none;">
+        <div class="toolbar" style="margin-bottom:6px;">
+          <span class="mono" style="font-size:.74rem; color:var(--accent);" id="fm-edit-path"></span>
+          <div class="flexw" style="gap:6px;">
+            <button class="btn btn-sky btn-sm" onclick="fmSaveFile()">💾 Save File</button>
+            <button class="btn btn-ghost btn-sm" onclick="$('fm-editor-wrap').style.display='none'">Close Editor</button>
+          </div>
+        </div>
+        <textarea id="fm-content" class="mono" style="width:100%; height:170px; font-size:.74rem;"></textarea>
       </div>
     </div>
   </div>
@@ -8195,6 +9175,190 @@ async function loadAuditLog() {
       <button class="btn btn-sky btn-sm" onclick="saveSvcList()">Save List</button>
     </div>
     <div id="svc-statuses" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+</div>
+
+
+<!-- ADD / EDIT UPTIME MONITOR MODAL -->
+<div class="modal-bg" id="mon-edit-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:600px;">
+    <div class="toolbar" style="margin-bottom:12px;">
+      <h3 style="color:var(--accent);" id="mon-modal-title">+ Add Uptime Monitor</h3>
+      <button class="btn btn-danger btn-sm" data-close="mon-edit-modal">Close</button>
+    </div>
+    <input type="hidden" id="mn-id" value="0">
+    <div class="row2">
+      <div class="field"><label>Monitor Name</label><input id="mn-name" placeholder="Germany Main HTTPS"></div>
+      <div class="field"><label>Monitor Type</label>
+        <select id="mn-type">
+          <option value="http">HTTP / HTTPS (+ SSL Check)</option>
+          <option value="tcp">TCP Port</option>
+          <option value="ping">Ping (ICMP v4/v6)</option>
+          <option value="dns">DNS Record</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Target (URL / host:port / IP / domain)</label><input id="mn-target" class="mono" placeholder="https://example.com or 1.2.3.4:443"></div>
+      <div class="field"><label>Expected (Keyword / Status / IP — optional)</label><input id="mn-exp" class="mono" placeholder="200 or keyword"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Probe From (Multi-Point)</label><select id="mn-probe"></select></div>
+      <div class="field"><label>Interval / Retries / Latency Warn (ms)</label>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+          <input id="mn-int" type="number" value="60" min="15" title="Interval sec">
+          <input id="mn-ret" type="number" value="2" min="1" title="Retries">
+          <input id="mn-lat" type="number" value="0" min="0" title="Latency warn ms">
+        </div>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Auto-Heal Linked Tunnel (on DOWN)</label><select id="mn-tun"></select></div>
+      <div class="field"><label>Public Status Display Name</label><input id="mn-pubname" placeholder="EU Node #1 (hides IP)"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="mn-pub" checked><span>Show on Public Status Page (/status)</span></label>
+    <div class="flexw" style="justify-content:flex-end; gap:8px; margin-top:10px;">
+      <button class="btn btn-sky" onclick="saveMonitor()">Save Monitor</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEDICATED UPTIME TELEGRAM BOT & PUBLIC STATUS PAGE CONFIG MODAL -->
+<div class="modal-bg" id="mon-cfg-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:580px;">
+    <div class="toolbar" style="margin-bottom:12px;">
+      <div>
+        <h3 style="color:var(--accent);">🔔 Dedicated Uptime Bot &amp; Status Page</h3>
+        <div class="hint" style="margin:2px 0 0;">Completely independent Telegram notification bot &amp; public /status page.</div>
+      </div>
+      <button class="btn btn-danger btn-sm" data-close="mon-cfg-modal">Close</button>
+    </div>
+    <label class="check"><input type="checkbox" id="mc-en"><span>Enable Dedicated Uptime Telegram Notifications</span></label>
+    <div class="field"><label>Dedicated Bot Token (from @BotFather)</label><input id="mc-tok" class="mono" placeholder="123456:ABC-DEF..."></div>
+    <div class="row2">
+      <div class="field"><label>Chat ID / Channel ID</label><input id="mc-chat" class="mono" placeholder="-1001234567890"></div>
+      <div class="field"><label>Forum Topic ID (optional, 0 = none)</label><input id="mc-topic" type="number" value="0" min="0"></div>
+    </div>
+    <div class="row2">
+      <label class="check"><input type="checkbox" id="mc-ssl" checked><span>Warn before SSL expiry</span></label>
+      <div class="field" style="margin:0;"><label>SSL Warn Days</label><input id="mc-ssld" type="number" value="7" min="1"></div>
+    </div>
+    <label class="check" style="margin-top:6px;"><input type="checkbox" id="mc-lat" checked><span>Alert on High Latency Spikes</span></label>
+    <hr style="margin:12px 0;">
+    <label class="check"><input type="checkbox" id="mc-puben"><span>Enable Public Status Page (no login required at <code>/status</code>)</span></label>
+    <div class="field"><label>Public Status Page Title</label><input id="mc-pubtitle" placeholder="MControl Service Status"></div>
+    <div class="flexw" style="justify-content:space-between; gap:8px; margin-top:10px;">
+      <div class="flexw" style="gap:6px;">
+        <button class="btn btn-warn btn-sm" onclick="testMonNotify()">Send Test Alert</button>
+        <a class="btn btn-ghost btn-sm" href="/status" target="_blank" rel="noopener">Open /status ↗</a>
+      </div>
+      <button class="btn btn-sky" onclick="saveMonConfig()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPLACE SERVER / DISASTER RECOVERY MODAL -->
+<div class="modal-bg" id="replace-srv-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:560px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);" id="rep-title">🔄 Replace Server (Disaster Recovery)</h3>
+      <button class="btn btn-danger btn-sm" data-close="replace-srv-modal">Close</button>
+    </div>
+    <input type="hidden" id="rep-old-id">
+    <div class="hint" style="margin-bottom:10px;">Automatically migrate all tunnels and matching Cloudflare/ArvanCloud DNS records from the failed/filtered server to a new server.</div>
+    <div class="field"><label>Destination Replacement Server</label><select id="rep-new-id"></select></div>
+    <label class="check"><input type="checkbox" id="rep-tuns" checked><span>Reassign &amp; Redeploy all linked Tunnels on both sides</span></label>
+    <label class="check"><input type="checkbox" id="rep-dns" checked><span>Update all matching A / AAAA DNS records to new server IP</span></label>
+    <div class="flexw" style="justify-content:flex-end; margin:10px 0;">
+      <button class="btn btn-sky" id="btn-rep-run" onclick="runReplaceServer()">⚡ Execute Migration</button>
+    </div>
+    <pre class="term" id="rep-out" style="height:150px;">Ready.</pre>
+  </div>
+</div>
+
+<!-- LIVE NETWORK TOPOLOGY MAP MODAL -->
+<div class="modal-bg" id="topo-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:860px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <div>
+        <h3 style="color:var(--accent);">🗺 Live Network Topology Map</h3>
+        <div class="hint" style="margin:2px 0 0;">Click any tunnel line to check live metrics or edit.</div>
+      </div>
+      <div class="flexw" style="gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="renderTopologyMap()">Refresh</button>
+        <button class="btn btn-danger btn-sm" data-close="topo-modal">Close</button>
+      </div>
+    </div>
+    <div id="topo-canvas-wrap"></div>
+  </div>
+</div>
+
+<!-- MULTI-NODE REACHABILITY MATRIX MODAL -->
+<div class="modal-bg" id="matrix-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:780px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <div>
+        <h3 style="color:var(--accent);">📡 Multi-Node IPv4 / IPv6 Reachability Matrix</h3>
+        <div class="hint" style="margin:2px 0 0;">Live cross-node ICMP test showing which Entry ➔ Exit IPv4/IPv6 routes are healthy or filtered.</div>
+      </div>
+      <div class="flexw" style="gap:6px;">
+        <button class="btn btn-sky btn-sm" id="btn-mtx-run" onclick="runMatrixTest()">Run Matrix Scan</button>
+        <button class="btn btn-danger btn-sm" data-close="matrix-modal">Close</button>
+      </div>
+    </div>
+    <div id="mtx-out" style="max-height:360px; overflow:auto;">Click <b>Run Matrix Scan</b> to test all node pairs.</div>
+  </div>
+</div>
+
+<!-- AUTO SSL CERT SYNC MODAL -->
+<div class="modal-bg" id="ssl-sync-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:580px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);">🔒 Auto SSL Certificate Sync</h3>
+      <button class="btn btn-danger btn-sm" data-close="ssl-sync-modal">Close</button>
+    </div>
+    <div class="hint" style="margin-bottom:10px;">Leave Cert/Key empty to sync Master's own <code>tls.crt</code>/<code>tls.key</code> to selected servers (or all servers if none selected).</div>
+    <div class="field"><label>Destination Directory on Remote Servers</label><input id="ssl-dest" class="mono" value="/etc/mcontrol/ssl"></div>
+    <div class="field"><label>Custom Fullchain PEM (optional)</label><textarea id="ssl-cert" class="mono" style="height:70px;" placeholder="-----BEGIN CERTIFICATE-----"></textarea></div>
+    <div class="field"><label>Custom Private Key PEM (optional)</label><textarea id="ssl-key" class="mono" style="height:70px;" placeholder="-----BEGIN PRIVATE KEY-----"></textarea></div>
+    <div class="flexw" style="justify-content:flex-end; margin-bottom:8px;">
+      <button class="btn btn-sky" id="btn-ssl-sync" onclick="runSSLSync()">Sync SSL Now</button>
+    </div>
+    <pre class="term" id="ssl-out" style="height:110px;">Ready.</pre>
+  </div>
+</div>
+
+<!-- 3X-UI / MARZBAN PORT SYNC MODAL -->
+<div class="modal-bg" id="psync-modal" style="z-index:1160;">
+  <div class="card modal-box" style="max-width:480px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);">⚡ Sync Ports from 3x-ui / Marzban</h3>
+      <button class="btn btn-danger btn-sm" data-close="psync-modal">Close</button>
+    </div>
+    <input type="hidden" id="ps-target-inp">
+    <div class="field"><label>Panel Type</label><select id="ps-type"><option value="3x-ui">3x-ui / x-ui</option><option value="marzban">Marzban</option></select></div>
+    <div class="field"><label>Panel Base URL</label><input id="ps-url" class="mono" placeholder="https://sub.domain.com:2053/path"></div>
+    <div class="row2">
+      <div class="field"><label>Username</label><input id="ps-user"></div>
+      <div class="field"><label>Password</label><input id="ps-pass" type="password"></div>
+    </div>
+    <div class="flexw" style="justify-content:flex-end; margin-top:8px;">
+      <button class="btn btn-sky" id="btn-ps-fetch" onclick="runPanelPortSync()">Fetch Active Ports</button>
+    </div>
+  </div>
+</div>
+
+<!-- MIKROTIK ROUTEROS SCRIPT MODAL -->
+<div class="modal-bg" id="mkt-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:680px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="color:var(--accent);" id="mkt-title">MikroTik RouterOS Config</h3>
+      <div class="flexw" style="gap:6px;">
+        <button class="btn btn-sky btn-sm" onclick="copyText($('mkt-out').textContent, 'RouterOS script')">Copy</button>
+        <button class="btn btn-danger btn-sm" data-close="mkt-modal">Close</button>
+      </div>
+    </div>
+    <pre class="term" id="mkt-out" style="height:220px;">Loading...</pre>
   </div>
 </div>
 

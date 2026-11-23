@@ -52,7 +52,15 @@ curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | 
 ### 5. Native Telegram Bot & Auto-Backuper
 - Full inline-keyboard tunnel creation & control, scheduled Auto-Backuper (6/12/24/48h), Pre-Update backups, Send-to-Restore `.zip` backups, actionable outage alerts (with Restart/Logs buttons), and Daily Digest.
 
-### 6. Modular MDesign Theme Engine
+### 6. Native Uptime Monitor (Kuma-Style), Dedicated Alert Bot & Public `/status` Page
+- **Multi-Point Probes:** Monitor `HTTP/HTTPS` (+ SSL expiry), `TCP`, `Ping (v4/v6)`, and `DNS` directly from **Master**, **Master Outbound**, or any managed **Iran/Foreign server** with 30-tick heartbeat bars, Auto-Heal tunnel restarts, a **Dedicated Telegram Notification Bot** (with Forum Topic ID support), and a login-free **Public Status Page (`/status`)**.
+
+### 7. Fleet Pro Operations & Disaster Recovery
+- **1-Click Replace Server:** Migrate all linked tunnels and matching Cloudflare/ArvanCloud DNS records to a replacement server.
+- **Live Topology Map & v4/v6 Reachability Matrix:** Visual tunnel map and cross-node IPv4/IPv6 reachability matrix.
+- **Web Terminal + File Manager + Script Vault + Firewall/Services + Scheduler + 3x-ui/Marzban Port Sync + Auto SSL Sync + MikroTik GRE/IP6GRE Generator + 24h/7d Metrics History + Viewer RBAC + PWA + `Ctrl+K` Command Palette.**
+
+### 8. Modular MDesign Theme Engine
 - **11 Independent Customization Axes** in Theme Studio: Navigation (`Dock`, `Floating Sidebar`, `Sidebar`, `Icon Rail`, `Bottom`), Card Surface (`Glass`, `Prism Bubbles`, `Liquid Glass`, `Neumorphic`, `Brutalist`, etc.), Master Cards (`Unified` vs `Separate Bubbles`), Metric Graphs (`Wave Sparkline`, `Circular Ring`, `Classic Line`), Checkboxes (`Rounded`, `Square`, `Circle`, `Neon Glow`, `Material`, `Mini Switch`), Fonts, Density, and Background effects.
 - **Master Toolbox & Symmetric Top Bar:** Floating **Version/Update** bubble (with Rolling Beta toggle & Offline ZIP installer), floating **Backup/Restore** bubble, and an Overview **Toolbox** card (`Speedtest`, `Tweak`, `Clean RAM`, `MSmart`, `Restart Panel`).
 

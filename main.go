@@ -58,6 +58,8 @@ func main() {
 	apiHandler.StartCloudflareAutoSync()
 	apiHandler.StartTunnelWatchdog()
 	apiHandler.StartOpsDaemon()
+	apiHandler.StartMonitorDaemon()
+	apiHandler.StartProMetricsDaemon()
 
 	subFS, err := fs.Sub(webFS, "web")
 	if err != nil {
@@ -113,6 +115,10 @@ func main() {
 	finalHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/_mc_dist/") {
 			apiHandler.ServeDist(w, r)
+			return
+		}
+		if r.URL.Path == "/status" || r.URL.Path == "/status/" || r.URL.Path == "/api/public/status" {
+			apiHandler.ServePublicStatus(w, r)
 			return
 		}
 		rootHandler.ServeHTTP(w, r)
