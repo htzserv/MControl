@@ -65,6 +65,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/tenant/tunnels", s.guard.RequireAuth(s.handleTenantListTunnels))
 	mux.HandleFunc("POST /api/tenant/tunnels", s.guard.RequireAuth(s.handleTenantAddTunnel))
 	mux.HandleFunc("DELETE /api/tenant/tunnels/{id}", s.guard.RequireAuth(s.handleTenantDeleteTunnel))
+	mux.HandleFunc("POST /api/tenant/tunnels/{id}/deploy", s.guard.RequireAuth(s.handleTenantDeployTunnel))
+	mux.HandleFunc("POST /api/tenant/tunnels/{id}/action", s.guard.RequireAuth(s.handleTenantTunnelAction))
+	mux.HandleFunc("POST /api/tenant/tunnels/{id}/ping", s.guard.RequireAuth(s.handleTenantTunnelPing))
+	mux.HandleFunc("POST /api/tenant/tunnels/{id}/mikrotik", s.guard.RequireAuth(s.handleTenantTunnelMikrotik))
+	mux.HandleFunc("POST /api/tenant/diag/mtu", s.guard.RequireAuth(s.handleTenantDiagMTU))
+	mux.HandleFunc("POST /api/tenant/diag/mtr", s.guard.RequireAuth(s.handleTenantDiagMTR))
 
 	mux.HandleFunc("PUT /api/tenant/layout", s.guard.RequireAuth(s.handleTenantSaveLayout))
 	mux.HandleFunc("GET /api/tenant/theme", s.guard.RequireAuth(s.handleTenantGetTheme))

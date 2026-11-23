@@ -210,11 +210,18 @@ func initTenantSchema(ctx context.Context, db *sql.DB) error {
 		id                INTEGER PRIMARY KEY AUTOINCREMENT,
 		name              TEXT NOT NULL,
 		engine            TEXT NOT NULL DEFAULT 'backhaul',
+		transport         TEXT NOT NULL DEFAULT 'tcp',
 		iran_server_id    INTEGER NOT NULL,
 		foreign_server_id INTEGER NOT NULL,
 		tunnel_port       INTEGER NOT NULL DEFAULT 3080,
 		ports             TEXT NOT NULL DEFAULT '443',
-		status            TEXT NOT NULL DEFAULT 'active',
+		token             TEXT NOT NULL DEFAULT '',
+		local_ip          TEXT NOT NULL DEFAULT '',
+		remote_ip         TEXT NOT NULL DEFAULT '',
+		mtu               INTEGER NOT NULL DEFAULT 1420,
+		status            TEXT NOT NULL DEFAULT 'draft',
+		last_ping         TEXT NOT NULL DEFAULT '',
+		last_log          TEXT NOT NULL DEFAULT '',
 		created_at        INTEGER NOT NULL
 	);
 	CREATE TABLE IF NOT EXISTS tenant_settings (
@@ -236,6 +243,13 @@ func initTenantSchema(ctx context.Context, db *sql.DB) error {
 		`ALTER TABLE servers ADD COLUMN ping_ms TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE servers ADD COLUMN last_speed TEXT NOT NULL DEFAULT ''`,
 		`ALTER TABLE servers ADD COLUMN last_error TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE tunnels ADD COLUMN transport TEXT NOT NULL DEFAULT 'tcp'`,
+		`ALTER TABLE tunnels ADD COLUMN token TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE tunnels ADD COLUMN local_ip TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE tunnels ADD COLUMN remote_ip TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE tunnels ADD COLUMN mtu INTEGER NOT NULL DEFAULT 1420`,
+		`ALTER TABLE tunnels ADD COLUMN last_ping TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE tunnels ADD COLUMN last_log TEXT NOT NULL DEFAULT ''`,
 	}
 	for _, q := range alters {
 		_, _ = db.ExecContext(ctx, q)
@@ -585,27 +599,49 @@ func (m *Manager) DeleteServer(ctx context.Context, tenantID, serverID int64) er
 	return err
 }
 
+const tunnelSelectCols = `id, name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, ports, token, local_ip, remote_ip, mtu, status, last_ping, last_log, created_at`
+
+func scanTunnel(row interface{ Scan(...any) error }) (*storage.Tunnel, error) {
+	var t storage.Tunnel
+	var ts int64
+	if err := row.Scan(
+		&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
+		&t.TunnelPort, &t.Ports, &t.Token, &t.LocalIP, &t.RemoteIP, &t.MTU,
+		&t.Status, &t.LastPing, &t.LastLog, &ts,
+	); err != nil {
+		return nil, err
+	}
+	t.CreatedAt = time.Unix(ts, 0).UTC()
+	return &t, nil
+}
+
 func (m *Manager) ListTunnels(ctx context.Context, tenantID int64) ([]storage.Tunnel, error) {
 	db, err := m.getTenantDB(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.QueryContext(ctx, `SELECT id, name, engine, iran_server_id, foreign_server_id, tunnel_port, ports, status, created_at FROM tunnels ORDER BY id ASC`)
+	rows, err := db.QueryContext(ctx, `SELECT `+tunnelSelectCols+` FROM tunnels ORDER BY id ASC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	out := []storage.Tunnel{}
 	for rows.Next() {
-		var t storage.Tunnel
-		var ts int64
-		if err := rows.Scan(&t.ID, &t.Name, &t.Engine, &t.IranServerID, &t.ForeignServerID, &t.TunnelPort, &t.Ports, &t.Status, &ts); err != nil {
+		t, err := scanTunnel(rows)
+		if err != nil {
 			return nil, err
 		}
-		t.CreatedAt = time.Unix(ts, 0).UTC()
-		out = append(out, t)
+		out = append(out, *t)
 	}
 	return out, nil
+}
+
+func (m *Manager) GetTunnel(ctx context.Context, tenantID, tunnelID int64) (*storage.Tunnel, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	return scanTunnel(db.QueryRowContext(ctx, `SELECT `+tunnelSelectCols+` FROM tunnels WHERE id = ?`, tunnelID))
 }
 
 func (m *Manager) AddTunnel(ctx context.Context, tenantID int64, t *storage.Tunnel) (int64, error) {
@@ -616,21 +652,54 @@ func (m *Manager) AddTunnel(ctx context.Context, tenantID int64, t *storage.Tunn
 	if t.Engine == "" {
 		t.Engine = "backhaul"
 	}
+	if t.Transport == "" {
+		t.Transport = "tcp"
+	}
 	if t.TunnelPort <= 0 {
 		t.TunnelPort = 3080
 	}
 	if strings.TrimSpace(t.Ports) == "" {
 		t.Ports = "443"
 	}
+	if t.MTU <= 0 {
+		t.MTU = 1420
+	}
+	if strings.TrimSpace(t.Token) == "" {
+		b := make([]byte, 12)
+		_, _ = io.ReadFull(rand.Reader, b)
+		t.Token = fmt.Sprintf("%x", b)
+	}
 	res, err := db.ExecContext(ctx,
-		`INSERT INTO tunnels (name, engine, iran_server_id, foreign_server_id, tunnel_port, ports, status, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, 'active', ?)`,
-		strings.TrimSpace(t.Name), t.Engine, t.IranServerID, t.ForeignServerID, t.TunnelPort, strings.TrimSpace(t.Ports), time.Now().Unix(),
+		`INSERT INTO tunnels (name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, ports, token, local_ip, remote_ip, mtu, status, last_ping, last_log, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', '', '', ?)`,
+		strings.TrimSpace(t.Name), t.Engine, t.Transport, t.IranServerID, t.ForeignServerID,
+		t.TunnelPort, strings.TrimSpace(t.Ports), t.Token, strings.TrimSpace(t.LocalIP), strings.TrimSpace(t.RemoteIP), t.MTU, time.Now().Unix(),
 	)
 	if err != nil {
 		return 0, err
 	}
 	return res.LastInsertId()
+}
+
+func (m *Manager) UpdateTunnelRuntime(ctx context.Context, tenantID, tunnelID int64, status, lastLog, lastPing string) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	if lastLog != "" && lastPing != "" {
+		_, err = db.ExecContext(ctx, `UPDATE tunnels SET status=?, last_log=?, last_ping=? WHERE id=?`, status, lastLog, lastPing, tunnelID)
+		return err
+	}
+	if lastLog != "" {
+		_, err = db.ExecContext(ctx, `UPDATE tunnels SET status=?, last_log=? WHERE id=?`, status, lastLog, tunnelID)
+		return err
+	}
+	if lastPing != "" {
+		_, err = db.ExecContext(ctx, `UPDATE tunnels SET last_ping=? WHERE id=?`, lastPing, tunnelID)
+		return err
+	}
+	_, err = db.ExecContext(ctx, `UPDATE tunnels SET status=? WHERE id=?`, status, tunnelID)
+	return err
 }
 
 func (m *Manager) DeleteTunnel(ctx context.Context, tenantID, tunnelID int64) error {

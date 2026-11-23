@@ -56,11 +56,18 @@ export interface TunnelItem {
   id: number;
   name: string;
   engine: string;
+  transport: string;
   iran_server_id: number;
   foreign_server_id: number;
   tunnel_port: number;
   ports: string;
-  status: string;
+  token: string;
+  local_ip: string;
+  remote_ip: string;
+  mtu: number;
+  status: 'draft' | 'active' | 'stopped' | 'error';
+  last_ping: string;
+  last_log: string;
   created_at: string;
 }
 

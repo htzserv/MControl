@@ -61,12 +61,19 @@ type Server struct {
 type Tunnel struct {
 	ID              int64     `json:"id"`
 	Name            string    `json:"name"`
-	Engine          string    `json:"engine"` // backhaul | paqet | rathole | gre | ip6gre | vxlan
+	Engine          string    `json:"engine"`    // backhaul | paqet | rathole | gre | ip6gre | vxlan
+	Transport       string    `json:"transport"` // tcp | ws | tcpmux | udp
 	IranServerID    int64     `json:"iran_server_id"`
 	ForeignServerID int64     `json:"foreign_server_id"`
 	TunnelPort      int       `json:"tunnel_port"`
 	Ports           string    `json:"ports"`
-	Status          string    `json:"status"`
+	Token           string    `json:"token"`
+	LocalIP         string    `json:"local_ip"`
+	RemoteIP        string    `json:"remote_ip"`
+	MTU             int       `json:"mtu"`
+	Status          string    `json:"status"` // draft | active | stopped | error
+	LastPing        string    `json:"last_ping"`
+	LastLog         string    `json:"last_log"`
 	CreatedAt       time.Time `json:"created_at"`
 }
 
@@ -116,7 +123,9 @@ type Engine interface {
 	DeleteServer(ctx context.Context, tenantID, serverID int64) error
 
 	ListTunnels(ctx context.Context, tenantID int64) ([]Tunnel, error)
+	GetTunnel(ctx context.Context, tenantID, tunnelID int64) (*Tunnel, error)
 	AddTunnel(ctx context.Context, tenantID int64, t *Tunnel) (int64, error)
+	UpdateTunnelRuntime(ctx context.Context, tenantID, tunnelID int64, status, lastLog, lastPing string) error
 	DeleteTunnel(ctx context.Context, tenantID, tunnelID int64) error
 
 	SaveLayout(ctx context.Context, tenantID int64, items []LayoutItem) error
