@@ -297,35 +297,6 @@ echo "STATUS=$ST"`, unit)
 	})
 }
 
-func (h *Handler) handleServerExec(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathID(w, r)
-	if !ok {
-		return
-	}
-	var req struct {
-		Command string `json:"command"`
-	}
-	if !readJSON(w, r, &req) {
-		return
-	}
-	cmd := strings.TrimSpace(req.Command)
-	if cmd == "" {
-		fail(w, http.StatusBadRequest, "command is required")
-		return
-	}
-	srv, err := h.store.GetServerWithSecret(id)
-	if err != nil {
-		fail(w, http.StatusNotFound, "server not found")
-		return
-	}
-	res := h.runOnServer(srv, cmd, 35*time.Second)
-	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":     res.Err == nil,
-		"output": res.Output,
-		"error":  func() string { if res.Err != nil { return res.Err.Error() }; return "" }(),
-	})
-}
-
 func (h *Handler) handleFleetExec(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ServerIDs []int64 `json:"server_ids"`

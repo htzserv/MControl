@@ -411,7 +411,6 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /api/legacy/tunnels/{id}", h.auth(h.handleLegacyDelete))
 	mux.HandleFunc("PUT /api/tunnels/{id}", h.auth(h.handleUpdateTunnel))
 	mux.HandleFunc("GET /api/tunnels/{id}/metrics", h.auth(h.handleTunnelMetrics))
-	mux.HandleFunc("POST /api/servers/{id}/exec", h.auth(h.handleServerExec))
 	mux.HandleFunc("POST /api/fleet/exec", h.auth(h.handleFleetExec))
 	mux.HandleFunc("GET /api/servers/{id}/ports", h.auth(h.handleServerPorts))
 	mux.HandleFunc("POST /api/servers/{id}/firewall", h.auth(h.handleServerFirewall))

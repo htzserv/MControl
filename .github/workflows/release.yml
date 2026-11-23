@@ -66,6 +66,7 @@ jobs:
         run: |
           go mod tidy
           go vet ./...
+          go test ./...
 
       - name: Build static Linux binaries (amd64 & arm64)
         env:
