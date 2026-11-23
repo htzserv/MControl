@@ -31,6 +31,7 @@ type UptimeNotifyConfig struct {
 	DailySummary        bool   `json:"daily_summary"`
 	PublicStatusEnabled bool   `json:"public_status_enabled"`
 	PublicStatusTitle   string `json:"public_status_title"`
+	PublicStatusTheme   string `json:"public_status_theme"`
 }
 
 var (
@@ -62,6 +63,9 @@ func (h *Handler) loadUptimeCfg() UptimeNotifyConfig {
 	}
 	if strings.TrimSpace(cfg.PublicStatusTitle) == "" {
 		cfg.PublicStatusTitle = "MControl Service Status"
+	}
+	if strings.TrimSpace(cfg.PublicStatusTheme) == "" {
+		cfg.PublicStatusTheme = "mdesign-dark"
 	}
 	return cfg
 }
@@ -819,6 +823,7 @@ func (h *Handler) ServePublicStatus(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"ok":         true,
 			"title":      cfg.PublicStatusTitle,
+			"theme":      cfg.PublicStatusTheme,
 			"all_up":     allUp,
 			"updated_at": time.Now().Unix(),
 			"monitors":   items,
@@ -837,41 +842,66 @@ const publicStatusHTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Service Status — MControl</title>
 <style>
-  :root { --bg:#090f1d; --card:rgba(19,27,46,.86); --bdr:rgba(148,163,184,.18); --txt:#e2e8f0; --mut:#94a3b8; --g:#22c55e; --y:#eab308; --r:#ef4444; --acc:#6366f1; }
+  :root { --bg1:#162040; --bg2:#090f1d; --card:rgba(19,27,46,.86); --bdr:rgba(148,163,184,.18); --txt:#e2e8f0; --mut:#94a3b8; --g:#22c55e; --y:#eab308; --r:#ef4444; --acc:#6366f1; --bar-r:6px; --glow:none; }
+  body[data-pt="kuma-emerald"] { --bg1:#0c2b22; --bg2:#071410; --card:rgba(13,34,27,.88); --bdr:rgba(52,211,153,.22); --txt:#ecfdf5; --mut:#86efac; --g:#10b981; --acc:#10b981; }
+  body[data-pt="prism-light"] { --bg1:#eef2ff; --bg2:#f8fafc; --card:rgba(255,255,255,.92); --bdr:rgba(99,102,241,.18); --txt:#0f172a; --mut:#64748b; --g:#059669; --y:#d97706; --r:#dc2626; --acc:#6366f1; }
+  body[data-pt="neon-cyber"] { --bg1:#1e0b36; --bg2:#07040f; --card:rgba(20,10,38,.86); --bdr:rgba(192,132,252,.32); --txt:#f5f3ff; --mut:#c4b5fd; --g:#22d3ee; --y:#facc15; --r:#f43f5e; --acc:#e879f9; --glow:0 0 12px currentColor; }
+  body[data-pt="obsidian-gold"] { --bg1:#241c0d; --bg2:#0c0a07; --card:rgba(24,20,14,.92); --bdr:rgba(245,158,11,.28); --txt:#fef3c7; --mut:#d6b87c; --g:#34d399; --y:#f59e0b; --r:#f87171; --acc:#f59e0b; }
+  body[data-pt="minimal-slate"] { --bg1:#1e293b; --bg2:#0f172a; --card:rgba(30,41,59,.78); --bdr:rgba(148,163,184,.16); --txt:#f1f5f9; --mut:#94a3b8; --g:#4ade80; --acc:#38bdf8; --bar-r:3px; }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:system-ui,-apple-system,sans-serif; background:radial-gradient(circle at top,#162040,var(--bg)); color:var(--txt); min-height:100vh; padding:28px 16px; }
-  .wrap { max-width:780px; margin:0 auto; }
+  body { font-family:system-ui,-apple-system,sans-serif; background:radial-gradient(circle at top,var(--bg1),var(--bg2)); color:var(--txt); min-height:100vh; padding:28px 16px; transition:background .25s,color .25s; }
+  .wrap { max-width:860px; margin:0 auto; }
   .hdr { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
-  .banner { padding:16px 20px; border-radius:20px; background:var(--card); border:1.5px solid var(--bdr); display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  .banner.ok { border-color:rgba(34,197,94,.45); }
-  .banner.deg { border-color:rgba(239,68,68,.55); }
+  .hdr-r { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .th-sel { background:var(--card); color:var(--txt); border:1px solid var(--bdr); border-radius:999px; padding:6px 12px; font-size:.76rem; font-weight:700; cursor:pointer; outline:none; }
+  .banner { padding:16px 20px; border-radius:20px; background:var(--card); border:1.5px solid var(--bdr); display:flex; align-items:center; gap:12px; margin-bottom:18px; backdrop-filter:blur(14px); }
+  .banner.ok { border-color:var(--g); }
+  .banner.deg { border-color:var(--r); }
   .dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
   .dot.up { background:var(--g); box-shadow:0 0 12px var(--g); }
   .dot.down { background:var(--r); box-shadow:0 0 12px var(--r); }
-  .card { background:var(--card); border:1px solid var(--bdr); border-radius:20px; padding:16px 18px; margin-bottom:12px; }
+  .card { background:var(--card); border:1px solid var(--bdr); border-radius:20px; padding:16px 18px; margin-bottom:12px; backdrop-filter:blur(14px); }
   .top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
   .pill { font-size:.74rem; font-weight:800; padding:3px 10px; border-radius:999px; }
   .pill.up { background:rgba(34,197,94,.16); color:var(--g); }
   .pill.down { background:rgba(239,68,68,.18); color:var(--r); }
   .bars { display:flex; gap:4px; align-items:center; height:26px; }
-  .bar { flex:1; height:100%; border-radius:6px; background:rgba(148,163,184,.16); transition:transform .15s; }
-  .bar:hover { transform:scaleY(1.15); }
-  .bar.up { background:var(--g); }
-  .bar.warn { background:var(--y); }
-  .bar.down { background:var(--r); }
+  .bar { flex:1; height:100%; border-radius:var(--bar-r); background:rgba(148,163,184,.16); transition:transform .15s; }
+  .bar:hover { transform:scaleY(1.16); }
+  .bar.up { background:var(--g); color:var(--g); box-shadow:var(--glow); }
+  .bar.warn { background:var(--y); color:var(--y); box-shadow:var(--glow); }
+  .bar.down { background:var(--r); color:var(--r); box-shadow:var(--glow); }
   .foot { display:flex; justify-content:space-between; font-size:.74rem; color:var(--mut); margin-top:8px; }
 </style>
 </head>
-<body>
+<body data-pt="mdesign-dark">
 <div class="wrap">
-  <div class="hdr"><h2 id="st-title">Service Status</h2><span id="st-upd" style="font-size:.78rem;color:var(--mut);">Loading...</span></div>
+  <div class="hdr">
+    <h2 id="st-title">Service Status</h2>
+    <div class="hdr-r">
+      <select class="th-sel" id="pt-sel" onchange="setPT(this.value)" title="Switch Theme">
+        <option value="mdesign-dark">🎨 MDesign Dark</option>
+        <option value="kuma-emerald">💚 Kuma Emerald</option>
+        <option value="prism-light">☀️ Prism Light</option>
+        <option value="neon-cyber">⚡ Neon Cyber</option>
+        <option value="obsidian-gold">✨ Obsidian Gold</option>
+        <option value="minimal-slate">🧊 Minimal Slate</option>
+      </select>
+      <span id="st-upd" style="font-size:.76rem;color:var(--mut);">Loading...</span>
+    </div>
+  </div>
   <div class="banner" id="st-banner"><span class="dot up" id="st-bdot"></span><strong id="st-btxt">Checking services...</strong></div>
   <div id="st-list"></div>
 </div>
 <script>
+let userPickedPT = localStorage.getItem('mc_pub_theme') || '';
+function setPT(t){ userPickedPT = t; localStorage.setItem('mc_pub_theme', t); document.body.dataset.pt = t; document.getElementById('pt-sel').value = t; }
 async function load(){
   const r = await fetch('/api/public/status').then(x=>x.json()).catch(()=>null);
   if(!r||!r.ok) return;
+  const th = userPickedPT || r.theme || 'mdesign-dark';
+  document.body.dataset.pt = th;
+  document.getElementById('pt-sel').value = th;
   document.getElementById('st-title').textContent = r.title || 'Service Status';
   document.getElementById('st-upd').textContent = 'Updated: ' + new Date(r.updated_at*1000).toLocaleTimeString();
   const b = document.getElementById('st-banner'), d = document.getElementById('st-bdot'), t = document.getElementById('st-btxt');

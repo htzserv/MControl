@@ -2305,6 +2305,147 @@ body[data-navx="top"] .ver-bubble {
 .mtx-table { width: 100%; border-collapse: collapse; font-size: .76rem; }
 .mtx-table th, .mtx-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: start; }
 
+
+/* ═══ CENTERED SERVER CARD BUBBLES & ACTIONS ═══ */
+.srv-tweak-bar {
+  justify-content: center !important;
+}
+.srv-detail-body .card-actions {
+  justify-content: center !important;
+}
+
+/* ═══ LARGE, READABLE & RESPONSIVE TERMINAL + SFTP FILE MANAGER ═══ */
+#term-modal .modal-box {
+  max-width: min(1160px, 96vw) !important;
+  width: 96vw !important;
+  max-height: 92vh !important;
+  padding: 20px 24px !important;
+  display: flex; flex-direction: column;
+  transition: max-width .22s ease, width .22s ease, height .22s ease;
+}
+#term-modal .modal-box.is-max {
+  max-width: 99vw !important;
+  width: 99vw !important;
+  height: 95vh !important;
+  max-height: 95vh !important;
+  border-radius: 16px !important;
+}
+#term-out {
+  height: clamp(320px, 48vh, 560px) !important;
+  font-size: .85rem !important;
+  line-height: 1.58 !important;
+  padding: 14px 16px !important;
+}
+#term-modal .modal-box.is-max #term-out {
+  height: clamp(380px, 60vh, 720px) !important;
+}
+#term-inp {
+  min-height: 82px !important;
+  font-size: .85rem !important;
+  line-height: 1.52 !important;
+}
+.fm-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.fm-split.has-editor {
+  grid-template-columns: minmax(280px, 0.9fr) 1.45fr;
+}
+.fm-list {
+  max-height: clamp(300px, 50vh, 560px) !important;
+  min-height: 260px;
+}
+.fm-row {
+  padding: 9px 12px !important;
+  font-size: .82rem !important;
+}
+#fm-content {
+  height: clamp(300px, 48vh, 520px) !important;
+  font-size: .83rem !important;
+  line-height: 1.55 !important;
+  padding: 12px 14px !important;
+}
+@media (max-width: 860px) {
+  #term-modal .modal-box { padding: 14px 14px !important; width: 98vw !important; }
+  #term-out { height: clamp(230px, 38vh, 380px) !important; font-size: .78rem !important; }
+  .fm-split.has-editor { grid-template-columns: 1fr !important; }
+  .fm-list { max-height: 220px !important; min-height: 140px; }
+  #fm-content { height: 240px !important; }
+}
+
+/* ═══ UPTIME QUICK THEME BAR & 6 MDESIGN UPTIME THEMES ═══ */
+.mon-theme-bar {
+  display: none; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 12px 16px; margin-bottom: 14px; border-radius: 18px;
+  background: var(--card); border: 1.3px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: 0 10px 26px -10px var(--shadow);
+}
+.mon-theme-bar.show { display: flex; }
+.mon-th-pills { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mon-th-pill {
+  padding: 6px 13px; border-radius: 999px; cursor: pointer;
+  background: var(--row); color: var(--text); border: 1.3px solid var(--border);
+  font-family: inherit; font-size: .75rem; font-weight: 800;
+  transition: all .16s ease;
+}
+.mon-th-pill:hover { border-color: var(--accent); transform: translateY(-1px); }
+.mon-th-pill.active {
+  background: var(--accent); color: var(--on-accent, #fff); border-color: var(--accent);
+  box-shadow: 0 6px 18px -6px var(--accent);
+}
+
+/* Style 2: Neon Cyber */
+body[data-uptime="neon"] .mon-card {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 10%, var(--card)), var(--card));
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  box-shadow: 0 10px 28px -10px var(--shadow), 0 0 18px -8px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+body[data-uptime="neon"] .mon-hb.up { background: #22d3ee; box-shadow: 0 0 9px rgba(34,211,238,.75); }
+body[data-uptime="neon"] .mon-hb.warn { background: #facc15; box-shadow: 0 0 9px rgba(250,204,21,.75); }
+body[data-uptime="neon"] .mon-hb.down { background: #f43f5e; box-shadow: 0 0 10px rgba(244,63,94,.85); }
+
+/* Style 3: Signal LED Dots */
+body[data-uptime="dots"] .mon-hb-bars {
+  height: 18px; gap: 5px; justify-content: space-between;
+}
+body[data-uptime="dots"] .mon-hb {
+  flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50%;
+}
+body[data-uptime="dots"] .mon-hb.up { box-shadow: 0 0 7px color-mix(in srgb, var(--green) 70%, transparent); }
+body[data-uptime="dots"] .mon-hb.down { box-shadow: 0 0 7px color-mix(in srgb, var(--red) 80%, transparent); }
+
+/* Style 4: 2-Column Dashboard Grid */
+body[data-uptime="grid"] .mon-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+}
+@media (max-width: 900px) { body[data-uptime="grid"] .mon-grid { grid-template-columns: 1fr; } }
+body[data-uptime="grid"] .mon-hb-bars { height: 20px; gap: 2px; }
+
+/* Style 5: Prism Soft Bubbles */
+body[data-uptime="prism"] .mon-card {
+  border-radius: 26px; padding: 18px 20px; border-inline-start-width: 1.5px;
+}
+body[data-uptime="prism"] .mon-card.is-up {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--green) 10%, var(--card)), var(--card));
+  border-color: color-mix(in srgb, var(--green) 36%, var(--border));
+}
+body[data-uptime="prism"] .mon-card.is-down {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--red) 12%, var(--card)), var(--card));
+  border-color: color-mix(in srgb, var(--red) 45%, var(--border));
+}
+body[data-uptime="prism"] .mon-hb-bars { height: 22px; gap: 4px; }
+body[data-uptime="prism"] .mon-hb { border-radius: 999px; }
+
+/* Style 6: NOC Matrix */
+body[data-uptime="noc"] .mon-card {
+  border-radius: 10px; font-family: var(--ff-m);
+  background: color-mix(in srgb, var(--surface) 92%, #000);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+}
+body[data-uptime="noc"] .mon-hb-bars { height: 18px; gap: 2px; }
+body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3110,12 +3251,18 @@ body[data-navx="top"] .ver-bubble {
           <div class="hint" style="margin:2px 0 0;">Multi-point HTTP/SSL, TCP, Ping &amp; DNS monitoring with dedicated Telegram notifications &amp; Public Status Page.</div>
         </div>
         <div class="flexw" style="gap:7px;">
+          <button class="btn btn-ghost btn-sm" onclick="toggleMonThemeBar()">🎨 Uptime Theme</button>
           <button class="btn btn-warn btn-sm" onclick="openMonConfigModal()">🔔 Notify Bot &amp; Status Page</button>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('servers')">+ Import Servers</button>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('tunnels')">+ Import Tunnels</button>
           <button class="btn btn-ghost btn-sm" onclick="loadMonitorsTab()">Refresh</button>
           <button class="btn btn-sky btn-sm" onclick="openMonEditModal(0)">+ Add Monitor</button>
         </div>
+      </div>
+
+            <div class="mon-theme-bar" id="mon-theme-bar">
+        <div class="mon-th-pills" id="mon-th-pills"></div>
+        <button type="button" class="btn btn-sky btn-sm" onclick="openThemesQuick()">✨ Full MDesign Studio</button>
       </div>
 
       <div id="mon-list" class="mon-grid"></div>
@@ -4368,7 +4515,7 @@ en: {
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
-  studio_den: 'Density', studio_srv: 'Server layout', studio_stat: 'Stats strip', studio_accent: 'Accent color', studio_radius: 'Corner radius',
+  studio_den: 'Density', studio_srv: 'Server layout', studio_stat: 'Stats strip', studio_chart: 'Master cards', studio_gauge: 'Metric graph', studio_chk: 'Checkboxes', studio_uptime: 'Uptime monitor style', studio_accent: 'Accent color', studio_radius: 'Corner radius',
   upd_title: 'Panel update center', upd_installed: 'Installed version', upd_github: 'Official GitHub', upd_mirror: 'Iran mirror',
   upd_checksum_note: 'Remote updates require a .sha256 file next to the package and are rejected if the hash does not match.',
   btn_check_updates: 'Check for updates', btn_upd_github: 'Update from GitHub', btn_upd_mirror: 'Update from Iran mirror',
@@ -4422,7 +4569,7 @@ fa: {
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
-  studio_den: 'تراکم', studio_srv: 'چیدمان سرورها', studio_stat: 'نوار آمار', studio_accent: 'رنگ تأکید', studio_radius: 'گردی گوشه‌ها',
+  studio_den: 'تراکم', studio_srv: 'چیدمان سرورها', studio_stat: 'نوار آمار', studio_chart: 'کارت‌های مستر', studio_gauge: 'نوع نمودار', studio_chk: 'چک‌باکس‌ها', studio_uptime: 'استایل آپتایم', studio_accent: 'رنگ تأکید', studio_radius: 'گردی گوشه‌ها',
   upd_title: 'مرکز آپدیت پنل', upd_installed: 'نسخه نصب‌شده', upd_github: 'گیت‌هاب رسمی', upd_mirror: 'میرور ایران',
   upd_checksum_note: 'آپدیت از راه دور به فایل .sha256 کنار بسته نیاز دارد و در صورت عدم تطابق هش رد می‌شود.',
   btn_check_updates: 'بررسی آپدیت', btn_upd_github: 'آپدیت از گیت‌هاب', btn_upd_mirror: 'آپدیت از میرور ایران',
@@ -4467,7 +4614,8 @@ const OPT = {
   stat: { tiles: ['Tiles', 'کاشی'], ribbon: ['Ribbon', 'نوار'] },
   chart: { unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
   gauge: { wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
-  chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] }
+  chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
+  uptime: { kuma: ['Kuma Classic', 'کوما کلاسیک'], neon: ['Neon Cyber', 'نئون سایبری'], dots: ['LED Dots', 'نقطه‌ای LED'], grid: ['2-Col Grid', 'کارت ۲ستونه'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], noc: ['NOC Matrix', 'رادار NOC'] }
 };
 let lang = ls.get('mc_lang', '') || ((navigator.language || '').toLowerCase().startsWith('fa') ? 'fa' : 'en');
 function t(key, p) {
@@ -4640,7 +4788,7 @@ function flagSVG(cc) {
 }
 
 /* ═══════════════ theme engine ═══════════════ */
-const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk'];
+const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk', 'uptime'];
 function lum(hex) {
   let h = String(hex || '').replace('#', '');
   if (h.length === 3) h = h.split('').map(c => c + c).join('');
@@ -4671,7 +4819,7 @@ function applyTheme() {
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
   b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
-  b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.navx = navxFor(e);
+  b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_custom', JSON.stringify(custom));
@@ -4797,7 +4945,7 @@ function renderThemes() {
 function renderStudio() {
   const box = $('studio'); if (!box) return;
   const e = effective();
-  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk' };
+  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk', uptime: 'studio_uptime' };
   let h = DIMS.map(k => `<div class="field"><label>${t(labels[k])}</label><select data-dim="${k}"><option value="">${esc(t('theme_default'))}: ${esc(optLabel(k, curTheme()[k]))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></div>`).join('');
   h += `<div class="field"><label>${t('studio_accent')}</label><input type="color" data-dim="accent" value="${esc(/^#[0-9a-f]{6}$/i.test(e.pal[4]) ? e.pal[4] : '#38bdf8')}"></div>`;
   h += `<div class="field"><label>${t('studio_radius')}: <span id="rad-val">${e.r}</span>px</label><input type="range" min="0" max="36" data-dim="r" value="${e.r}"></div>`;
@@ -8732,6 +8880,7 @@ async function openMonConfigModal() {
     $('mc-lat').checked = !!c.notify_latency;
     $('mc-puben').checked = !!c.public_status_enabled;
     $('mc-pubtitle').value = c.public_status_title || 'MControl Service Status';
+    if ($('mc-pubtheme')) $('mc-pubtheme').value = c.public_status_theme || 'mdesign-dark';
   }
   $('mon-cfg-modal').classList.add('active');
 }
@@ -8745,7 +8894,8 @@ async function saveMonConfig() {
     ssl_warn_days: parseInt($('mc-ssld').value || '7', 10),
     notify_latency: $('mc-lat').checked,
     public_status_enabled: $('mc-puben').checked,
-    public_status_title: $('mc-pubtitle').value.trim()
+    public_status_title: $('mc-pubtitle').value.trim(),
+    public_status_theme: ($('mc-pubtheme') && $('mc-pubtheme').value) || 'mdesign-dark'
   });
   toast(r.message || r.error || 'Saved', !r.ok);
   if (r.ok) closeModal('mon-cfg-modal');
@@ -8882,7 +9032,7 @@ async function fmOpenFile(fullPath) {
   if (r.ok) {
     $('fm-edit-path').textContent = fullPath;
     $('fm-content').value = r.content || '';
-    $('fm-editor-wrap').style.display = 'block';
+    $('fm-editor-wrap').style.display = 'block'; if ($('fm-split')) $('fm-split').classList.add('has-editor');
   }
 }
 async function fmSaveFile() {
@@ -9039,6 +9189,40 @@ async function openMikrotikModal(id, name) {
   $('mkt-out').textContent = r.script || r.error || 'Failed';
 }
 
+
+function toggleTermMax() {
+  const box = document.querySelector('#term-modal .modal-box');
+  const btn = $('btn-term-max');
+  if (!box) return;
+  const max = box.classList.toggle('is-max');
+  if (btn) btn.textContent = max ? '🗗 Restore' : '⛶ Expand';
+}
+function fmCloseEditor() {
+  if ($('fm-editor-wrap')) $('fm-editor-wrap').style.display = 'none';
+  if ($('fm-split')) $('fm-split').classList.remove('has-editor');
+}
+function renderMonThemePills() {
+  const box = $('mon-th-pills');
+  if (!box || !OPT.uptime) return;
+  const cur = (custom && custom.uptime) || (effective().uptime) || 'kuma';
+  box.innerHTML = Object.keys(OPT.uptime).map(k =>
+    `<button type="button" class="mon-th-pill ${cur===k?'active':''}" onclick="setUptimeStyle('${k}')">${esc(optLabel('uptime', k))}</button>`
+  ).join('');
+}
+function toggleMonThemeBar() {
+  const bar = $('mon-theme-bar');
+  if (!bar) return;
+  bar.classList.toggle('show');
+  renderMonThemePills();
+}
+function setUptimeStyle(styleKey) {
+  custom.uptime = styleKey;
+  applyTheme();
+  renderStudio();
+  renderMonThemePills();
+  toast('Uptime style: ' + optLabel('uptime', styleKey));
+}
+
 boot();
 </script>
 
@@ -9073,6 +9257,7 @@ boot();
     <div class="toolbar" style="margin-bottom:10px;">
       <h3 style="color:var(--accent);" id="term-title">Web Terminal</h3>
       <div class="flexw" style="gap:6px;">
+        <button class="btn btn-ghost btn-sm" id="btn-term-max" onclick="toggleTermMax()">⛶ Expand</button>
         <button class="btn btn-ghost btn-sm" id="btn-term-chauth" onclick="showTermAuthBox(true)">🔑 Change Auth</button>
         <button class="btn btn-danger btn-sm" data-close="term-modal">Close</button>
       </div>
@@ -9104,7 +9289,7 @@ boot();
 
     <div id="term-mode-tabs" class="role-picker" style="margin-bottom:10px;">
       <div class="role-opt active" data-tview="shell" onclick="switchTermView('shell')">💻 Shell Terminal</div>
-      <div class="role-opt" data-tview="files" onclick="switchTermView('files')">📁 File Manager</div>
+      <div class="role-opt" data-tview="files" onclick="switchTermView('files')">📁 Files / SFTP</div>
     </div>
 
     <div id="term-shell-wrap">
@@ -9131,16 +9316,18 @@ boot();
         <input id="fm-path" class="mono" style="flex:1;" value="/root" onkeydown="if(event.key==='Enter') fmList()">
         <button class="btn btn-sky btn-sm" onclick="fmList()">Open</button>
       </div>
-      <div id="fm-list" class="fm-list"></div>
-      <div id="fm-editor-wrap" style="display:none;">
-        <div class="toolbar" style="margin-bottom:6px;">
-          <span class="mono" style="font-size:.74rem; color:var(--accent);" id="fm-edit-path"></span>
-          <div class="flexw" style="gap:6px;">
-            <button class="btn btn-sky btn-sm" onclick="fmSaveFile()">💾 Save File</button>
-            <button class="btn btn-ghost btn-sm" onclick="$('fm-editor-wrap').style.display='none'">Close Editor</button>
+      <div class="fm-split" id="fm-split">
+        <div id="fm-list" class="fm-list"></div>
+        <div id="fm-editor-wrap" style="display:none;">
+          <div class="toolbar" style="margin-bottom:6px;">
+            <span class="mono" style="font-size:.78rem; color:var(--accent); word-break:break-all;" id="fm-edit-path"></span>
+            <div class="flexw" style="gap:6px;">
+              <button class="btn btn-sky btn-sm" onclick="fmSaveFile()">💾 Save File</button>
+              <button class="btn btn-ghost btn-sm" onclick="fmCloseEditor()">Close Editor</button>
+            </div>
           </div>
+          <textarea id="fm-content" class="mono" spellcheck="false" style="width:100%;"></textarea>
         </div>
-        <textarea id="fm-content" class="mono" style="width:100%; height:170px; font-size:.74rem;"></textarea>
       </div>
     </div>
   </div>
@@ -9261,7 +9448,19 @@ boot();
     <label class="check" style="margin-top:6px;"><input type="checkbox" id="mc-lat" checked><span>Alert on High Latency Spikes</span></label>
     <hr style="margin:12px 0;">
     <label class="check"><input type="checkbox" id="mc-puben"><span>Enable Public Status Page (no login required at <code>/status</code>)</span></label>
-    <div class="field"><label>Public Status Page Title</label><input id="mc-pubtitle" placeholder="MControl Service Status"></div>
+    <div class="row2">
+      <div class="field"><label>Public Status Page Title</label><input id="mc-pubtitle" placeholder="MControl Service Status"></div>
+      <div class="field"><label>Public Status Page Theme</label>
+        <select id="mc-pubtheme">
+          <option value="mdesign-dark">🎨 MDesign Dark</option>
+          <option value="kuma-emerald">💚 Kuma Emerald</option>
+          <option value="prism-light">☀️ Prism Light</option>
+          <option value="neon-cyber">⚡ Neon Cyber</option>
+          <option value="obsidian-gold">✨ Obsidian Gold</option>
+          <option value="minimal-slate">🧊 Minimal Slate</option>
+        </select>
+      </div>
+    </div>
     <div class="flexw" style="justify-content:space-between; gap:8px; margin-top:10px;">
       <div class="flexw" style="gap:6px;">
         <button class="btn btn-warn btn-sm" onclick="testMonNotify()">Send Test Alert</button>
