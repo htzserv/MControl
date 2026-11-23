@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.4
+- **CLI Show Settings (Excluding Credentials):** Added `Show Settings (Excluding User/Pass)` to the MDesign terminal menu (`main.sh` & `mcontrol-cli.sh`) displaying panel port, web path, domain/HTTPS status, channel, and SQLite settings without exposing passwords or credentials.
+
 ## 1.4.3
 - **Optional Domain & 1-Click Let's Encrypt SSL during First-Time Setup:** Added optional Panel Domain / Address and automatic SSL issuance toggle directly on the First-Time Setup screen (`POST /api/setup/complete`).
 - **Full Deep Wipe Option in Installer (`--wipe`):** Added `sudo bash install.sh --wipe` to completely remove old v1/v2 binaries, services, databases, and caches before a clean install.

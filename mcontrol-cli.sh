@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MControl v1.4.0 — MTunnel-Style MDesign Terminal Menu (Static IP-Only Header)
-MODULE_VERSION="1.4.3"
+MODULE_VERSION="1.4.4"
 set -u
 umask 077
 
@@ -232,6 +232,53 @@ install_channel() {
     echo -e "  ${G}✓ Updated to ${target_ch^^} and service restarted.${NC}"
 }
 
+show_settings() {
+    local ch port wpath dom strict_dom tls_state twofa_state probe_iv repo_url mirror_url svc_name active_url
+    mc_detect_ips
+    ch=$(mc_get_channel)
+    port=$(mc_get_port)
+    wpath=$(db_get web_path)
+    dom=$(db_get listen_domain)
+    strict_dom=$(db_get strict_domain)
+    twofa_state=$(db_get twofa_enabled)
+    probe_iv=$(db_get probe_interval)
+    repo_url=$(db_get github_repo_url)
+    mirror_url=$(db_get iran_mirror_url)
+    svc_name=$(db_get service_name)
+
+    if [[ -f "$DATA_DIR/tls.crt" && -f "$DATA_DIR/tls.key" ]]; then
+        tls_state="ENABLED (HTTPS)"
+    else
+        tls_state="DISABLED (HTTP)"
+    fi
+
+    local host_for_url="$MC_IP4"
+    [[ -n "$dom" ]] && host_for_url="$dom"
+    local scheme="http"
+    [[ "$tls_state" == *"HTTPS"* ]] && scheme="https"
+    active_url="${scheme}://${host_for_url}:${port}/${wpath:+${wpath}/}"
+
+    echo ""
+    printf "  ${FR}┌─[ PANEL SETTINGS — CREDENTIALS HIDDEN ]${NC}\n"
+    printf "  ${FR}│${NC}\n"
+    printf "  ${FR}├─${NC} ${DIM}Channel        :${NC} ${Y}%s${NC}\n" "$ch"
+    printf "  ${FR}├─${NC} ${DIM}Panel URL      :${NC} ${C}%s${NC}\n" "$active_url"
+    printf "  ${FR}├─${NC} ${DIM}Active Port    :${NC} ${W}%s${NC}\n" "$port"
+    printf "  ${FR}├─${NC} ${DIM}Secret WebPath :${NC} ${W}/%s/${NC}\n" "${wpath:-<auto>}"
+    printf "  ${FR}├─${NC} ${DIM}Listen Domain  :${NC} ${W}%s${NC}\n" "${dom:-<not set>}"
+    printf "  ${FR}├─${NC} ${DIM}Strict Domain  :${NC} ${W}%s${NC}\n" "${strict_dom:-0}"
+    printf "  ${FR}├─${NC} ${DIM}HTTPS / TLS    :${NC} ${G}%s${NC}\n" "$tls_state"
+    printf "  ${FR}├─${NC} ${DIM}2FA (TOTP)     :${NC} ${W}%s${NC}\n" "${twofa_state:-0}"
+    printf "  ${FR}├─${NC} ${DIM}Probe Interval :${NC} ${W}%s min${NC}\n" "${probe_iv:-0}"
+    printf "  ${FR}├─${NC} ${DIM}Agent Service  :${NC} ${W}%s${NC}\n" "${svc_name:-mcontrol-agent}"
+    printf "  ${FR}├─${NC} ${DIM}GitHub Repo URL:${NC} ${DIM}%s${NC}\n" "${repo_url:-<default>}"
+    printf "  ${FR}├─${NC} ${DIM}Iran Mirror URL:${NC} ${DIM}%s${NC}\n" "${mirror_url:-<default>}"
+    printf "  ${FR}├─${NC} ${DIM}IPv4 Address   :${NC} ${M}%s${NC}\n" "$MC_IP4"
+    printf "  ${FR}├─${NC} ${DIM}IPv6 Address   :${NC} ${M}%s${NC}\n" "$MC_IP6"
+    printf "  ${FR}├─${NC} ${DIM}Data Directory :${NC} ${W}%s${NC}\n" "$DATA_DIR"
+    printf "  ${FR}└─${NC} ${DIM}Credentials    :${NC} ${Y}[HIDDEN — User & Password Excluded]${NC}\n"
+}
+
 while true; do
     draw_header
     cur_ch=$(mc_get_channel)
@@ -241,6 +288,7 @@ while true; do
     mc_row "2"  "Start MControl Service" "$C"
     mc_row "3"  "Stop MControl Service" "$Y"
     mc_row "4"  "View Service Logs (last 40 lines)" "$C"
+    mc_row "44" "Show Settings (Excl. User/Pass)" "$C" " ${DIM}(No Secrets)${NC}"
 
     mc_group "ACCESS & SECURITY"
     mc_row "5"  "Change Panel Port" "$M" " ${DIM}(SQLite + systemd)${NC}"
@@ -266,6 +314,7 @@ while true; do
         2) systemctl start "$SVC" && echo -e "\n  ${G}✓ Service started.${NC}" || echo -e "\n  ${R}✖ Start failed.${NC}"; mc_pause ;;
         3) systemctl stop "$SVC" && echo -e "\n  ${Y}● Service stopped.${NC}" || echo -e "\n  ${R}✖ Stop failed.${NC}"; mc_pause ;;
         4) echo ""; journalctl -u "$SVC" -n 40 --no-pager || true; mc_pause ;;
+        44) show_settings; mc_pause ;;
         5)
             echo ""
             printf "  ${C}Enter new port (1-65535): ${NC}"
