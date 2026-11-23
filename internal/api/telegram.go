@@ -69,10 +69,10 @@ func newTgRuntime() *tgRuntime {
 }
 
 func (h *Handler) tg() *tgRuntime {
-	if h.h.tg() == nil {
-		h.h.tg() = newTgRuntime()
+	if h.tgRT == nil {
+		h.tgRT = newTgRuntime()
 	}
-	return h.h.tg()
+	return h.tgRT
 }
 
 func (h *Handler) loadTelegramCfg() telegramConfig {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MControl v1.4.0 — MTunnel-Style MDesign Installer (Static IP-Only Header + Stable/Beta)
-MODULE_VERSION="1.4.1"
+MODULE_VERSION="1.4.2"
 set -euo pipefail
 umask 077
 

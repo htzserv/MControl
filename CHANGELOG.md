@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4.2
+- **Build Fix:** Fixed method receiver syntax typo (`func (h *Handler) benchLog`) in `internal/api/msmart.go`.
+
 ## 1.4.1
 - **Release & Clean Repository Structure:** Bumped version to `v1.4.1` for a clean release tag (`v1.4.1` + rolling `beta-latest`) without legacy `ci-release.yml` / `internal/httpapi` artifacts.
 

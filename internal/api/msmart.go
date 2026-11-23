@@ -53,7 +53,7 @@ type BenchJob struct {
 	Results         []BenchResult `json:"results"`
 }
 
-func (h *Handler) h.benchLog(line string) {
+func (h *Handler) benchLog(line string) {
 	h.benchMu.Lock()
 	defer h.benchMu.Unlock()
 	h.benchJob.Logs = append(h.benchJob.Logs, fmt.Sprintf("[%s] %s", time.Now().Format("15:04:05"), line))
