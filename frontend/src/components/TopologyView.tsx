@@ -53,11 +53,15 @@ export function TopologyView({ servers, tunnels, maxTunnels, onRefresh, notify }
   // Modal output for logs / MikroTik script
   const [viewerModal, setViewerModal] = useState<{ title: string; text: string } | null>(null);
 
-  // Network Diagnostics (Path MTU + MTR)
+  // Network Diagnostics (Path MTU + MTR + Protocol Matrix + MSmart)
   const [diagSrc, setDiagSrc] = useState<number>(0);
   const [diagDst, setDiagDst] = useState<string>('');
   const [diagOut, setDiagOut] = useState<string>('');
   const [diagBusy, setDiagBusy] = useState(false);
+  const [protoIran, setProtoIran] = useState<number>(0);
+  const [protoFor, setProtoFor] = useState<number>(0);
+  const [protoRes, setProtoRes] = useState<{ recommended: string; matrix: Record<string, string> } | null>(null);
+  const [smartRes, setSmartRes] = useState<{ best_tunnel_id: number; results: { tunnel_id: number; name: string; engine: string; status: string; ping_ms: string; score: number }[] } | null>(null);
 
   useEffect(() => {
     if (servers.length > 0 && diagSrc === 0) {
@@ -227,6 +231,46 @@ export function TopologyView({ servers, tunnels, maxTunnels, onRefresh, notify }
     }
   }
 
+
+  async function runProtocolMatrix() {
+    const ir = protoIran || servers.find((s) => s.role === 'iran')?.id || servers[0]?.id || 0;
+    const fr = protoFor || servers.find((s) => s.role === 'foreign')?.id || servers[1]?.id || 0;
+    if (!ir || !fr || ir === fr) {
+      notify('Select two distinct servers (Entry & Exit) for Protocol Matrix.', true);
+      return;
+    }
+    setDiagBusy(true);
+    notify('Running Protocol Matrix test (ICMPv4, ICMPv6, TCP, GRE, Engines)...');
+    try {
+      const r = await api<{ recommended: string; matrix: Record<string, string> }>('/api/tenant/diag/protocol-matrix', 'POST', {
+        iran_server_id: ir,
+        foreign_server_id: fr,
+        test_port: 443,
+      });
+      if (r.ok && r.matrix) {
+        setProtoRes({ recommended: r.recommended, matrix: r.matrix });
+        notify(`Recommended: ${r.recommended}`);
+      } else notify(r.error || 'Matrix test failed', true);
+    } finally {
+      setDiagBusy(false);
+    }
+  }
+
+  async function runMSmart() {
+    setDiagBusy(true);
+    notify('Running MSmart Benchmark across all tunnels...');
+    try {
+      const r = await api<{ best_tunnel_id: number; results: { tunnel_id: number; name: string; engine: string; status: string; ping_ms: string; score: number }[] }>('/api/tenant/msmart/benchmark', 'POST');
+      if (r.ok) {
+        setSmartRes({ best_tunnel_id: r.best_tunnel_id, results: r.results || [] });
+        notify('MSmart Benchmark complete!');
+        onRefresh();
+      } else notify(r.error || 'Benchmark failed', true);
+    } finally {
+      setDiagBusy(false);
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="toolbar" style={{ marginBottom: 0 }}>
@@ -379,6 +423,70 @@ export function TopologyView({ servers, tunnels, maxTunnels, onRefresh, notify }
                   <button className="btn btn-danger btn-sm" disabled={busyId === t.id} onClick={() => handleDeleteTunnel(t.id)}>
                     <Trash2 size={13} />
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Protocol Matrix Tester & MSmart Benchmark */}
+      <div className="card">
+        <div className="toolbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Activity size={17} style={{ color: 'var(--accent)' }} />
+            <strong>Protocol Matrix Tester &amp; MSmart Failover Benchmark</strong>
+          </div>
+          <button className="btn btn-primary btn-sm" disabled={diagBusy} onClick={runMSmart}>
+            <Rocket size={13} /> Run MSmart Benchmark
+          </button>
+        </div>
+
+        <div className="row2" style={{ marginBottom: 10 }}>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Entry Server (Iran)</label>
+            <select value={protoIran || servers.find((s) => s.role === 'iran')?.id || servers[0]?.id || 0} onChange={(e) => setProtoIran(Number(e.target.value))}>
+              {servers.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.host})</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label>Exit Server (Foreign)</label>
+            <select value={protoFor || servers.find((s) => s.role === 'foreign')?.id || servers[1]?.id || 0} onChange={(e) => setProtoFor(Number(e.target.value))}>
+              {servers.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.host})</option>)}
+            </select>
+          </div>
+        </div>
+        <button className="btn btn-primary btn-sm" disabled={diagBusy} onClick={runProtocolMatrix}>
+          <Gauge size={14} /> Run Full Protocol Matrix Test
+        </button>
+
+        {protoRes && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 14, background: 'var(--row)', border: '1px solid var(--border)' }}>
+            <div style={{ marginBottom: 8 }}>
+              <strong>Recommended Protocol: </strong>
+              <span className="badge badge-green">{protoRes.recommended}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {Object.entries(protoRes.matrix).map(([k, v]) => (
+                <span key={k} className={`badge mono ${v.includes('FAIL') || v.includes('BLOCKED') || v.includes('MISSING') ? 'badge-red' : 'badge-accent'}`}>
+                  {k}: {v}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {smartRes && smartRes.results.length > 0 && (
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <strong style={{ fontSize: '0.82rem', color: 'var(--accent)' }}>MSmart Tunnel Ranking:</strong>
+            {smartRes.results.map((r) => (
+              <div key={r.tunnel_id} className="file-row" style={{ cursor: 'default' }}>
+                <div>
+                  <strong>{r.name}</strong> <span className="badge badge-accent mono">{r.engine}</span>{' '}
+                  {r.tunnel_id === smartRes.best_tunnel_id && <span className="badge badge-green">★ BEST ROUTE</span>}
+                </div>
+                <div className="mono" style={{ fontSize: '0.76rem' }}>
+                  {r.status.toUpperCase()} • {r.ping_ms} • Score {r.score}
                 </div>
               </div>
             ))}

@@ -249,6 +249,7 @@ func (s *Server) handleTenantServerExec(w http.ResponseWriter, r *http.Request) 
 	}
 	var req struct {
 		Command string `json:"command"`
+		Cwd     string `json:"cwd"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -263,7 +264,19 @@ func (s *Server) handleTenantServerExec(w http.ResponseWriter, r *http.Request) 
 		fail(w, http.StatusNotFound, "server not found")
 		return
 	}
-	res := sshclient.Run(toSSHTarget(srv), cmd, 10*time.Second, 60*time.Second)
+	cwd := strings.TrimSpace(req.Cwd)
+	if cwd == "" {
+		cwd = "/root"
+	}
+	const marker = "__MCONTROL_CWD__="
+	wrapped := fmt.Sprintf("cd %s 2>/dev/null || cd /root
+%s
+__mc_rc=$?
+printf '\n%s%%s\n' "$PWD"
+exit $__mc_rc",
+		sshclient.ShQuote(cwd), cmd, marker)
+
+	res := sshclient.Run(toSSHTarget(srv), wrapped, 10*time.Second, 60*time.Second)
 	exitStr := ""
 	if res.Err != nil {
 		if !sshclient.IsExitError(res.Err) {
@@ -272,9 +285,24 @@ func (s *Server) handleTenantServerExec(w http.ResponseWriter, r *http.Request) 
 		}
 		exitStr = res.Err.Error()
 	}
+	out := res.Output
+	newCwd := cwd
+	if idx := strings.LastIndex(out, marker); idx >= 0 {
+		tail := strings.TrimSpace(out[idx+len(marker):])
+		if nl := strings.IndexByte(tail, '
+'); nl >= 0 {
+			tail = strings.TrimSpace(tail[:nl])
+		}
+		if tail != "" {
+			newCwd = tail
+		}
+		out = strings.TrimRight(out[:idx], "
+")
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":     true,
-		"output": res.Output,
+		"output": out,
+		"cwd":    newCwd,
 		"exit":   exitStr,
 	})
 }

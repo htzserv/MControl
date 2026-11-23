@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, UserPlus, LogIn, Trash2, Ban, CheckCircle } from 'lucide-react';
+import { Shield, UserPlus, LogIn, Trash2, Ban, CheckCircle, DownloadCloud, RefreshCw } from 'lucide-react';
 import { api, setToken } from '../api';
 import type { Branding, SystemStats, User } from '../types';
 
@@ -22,6 +22,9 @@ export function AdminView({ branding, onBrandingSaved, onImpersonated, notify }:
   const [appName, setAppName] = useState(branding.app_name);
   const [subtitle, setSubtitle] = useState(branding.subtitle);
   const [accent, setAccent] = useState(branding.accent);
+  const [updChannel, setUpdChannel] = useState<'stable' | 'beta'>('stable');
+  const [updInfo, setUpdInfo] = useState<{ current: string; latest: string; update_available: boolean; channel: string } | null>(null);
+  const [updBusy, setUpdBusy] = useState(false);
 
   async function load() {
     const [ru, rs] = await Promise.all([
@@ -90,6 +93,34 @@ export function AdminView({ branding, onBrandingSaved, onImpersonated, notify }:
       onBrandingSaved(b);
       notify('White-label branding saved!');
     } else notify(r.error || 'Failed', true);
+  }
+
+
+  async function checkUpdate() {
+    setUpdBusy(true);
+    try {
+      const r = await api<{ current: string; latest: string; update_available: boolean; channel: string }>(
+        `/api/admin/update/check?channel=${updChannel}`
+      );
+      if (r.ok) {
+        setUpdInfo({ current: r.current, latest: r.latest, update_available: r.update_available, channel: r.channel || updChannel });
+        notify(r.update_available ? `New ${updChannel.toUpperCase()} v${r.latest} available!` : `Already on latest (${updChannel}) v${r.current}.`);
+      } else notify(r.error || 'Update check failed', true);
+    } finally {
+      setUpdBusy(false);
+    }
+  }
+
+  async function applyUpdate() {
+    if (!confirm(`Download, verify SHA-256, and switch MControl to ${updChannel.toUpperCase()} channel?`)) return;
+    setUpdBusy(true);
+    notify(`Downloading & verifying ${updChannel.toUpperCase()} release...`);
+    try {
+      const r = await api<{ message?: string }>('/api/admin/update/apply', 'POST', { channel: updChannel });
+      notify(r.message || r.error || 'Done', !r.ok);
+    } finally {
+      setUpdBusy(false);
+    }
   }
 
   return (
@@ -174,6 +205,36 @@ export function AdminView({ branding, onBrandingSaved, onImpersonated, notify }:
               )}
             </div>
           ))}
+        </div>
+      </div>
+
+            <div className="card">
+        <div className="toolbar" style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <DownloadCloud size={18} style={{ color: 'var(--accent)' }} />
+            <h4>Panel Auto-Updater (Stable / Beta)</h4>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              value={updChannel}
+              onChange={(e) => setUpdChannel(e.target.value as 'stable' | 'beta')}
+              style={{ width: 'auto', padding: '6px 12px', fontSize: '0.78rem' }}
+            >
+              <option value="stable">Stable (v2-latest)</option>
+              <option value="beta">Beta — Latest Action (v2-beta)</option>
+            </select>
+            <button type="button" className="btn btn-sm" disabled={updBusy} onClick={checkUpdate}>
+              <RefreshCw size={13} /> Check
+            </button>
+            <button type="button" className="btn btn-primary btn-sm" disabled={updBusy} onClick={applyUpdate}>
+              <DownloadCloud size={13} /> Install {updChannel.toUpperCase()}
+            </button>
+          </div>
+        </div>
+        <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+          {updInfo
+            ? `Current: v${updInfo.current} • ${updInfo.channel.toUpperCase()}: v${updInfo.latest} ${updInfo.update_available ? '— Update Ready!' : '— Up to date'}`
+            : 'Select Stable (v2-latest) or Beta (v2-beta) to check and install SHA-256 verified builds.'}
         </div>
       </div>
 

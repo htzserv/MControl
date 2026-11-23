@@ -362,7 +362,7 @@ export function App() {
 
       {tab === 'uptime' && <UptimeView username={user.username} maxMonitors={user.max_monitors} notify={notify} />}
       {tab === 'dns' && <DNSView notify={notify} />}
-      {tab === 'cloud' && <CloudView notify={notify} />}
+      {tab === 'cloud' && <CloudView servers={servers} notify={notify} />}
 
       {tab === 'admin' && isSuper && (
         <AdminView

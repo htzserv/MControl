@@ -131,6 +131,9 @@ function SortableServerCard({
         <button type="button" className="tweak-pill" onClick={() => onTweak(srv.id, 'clear_cache')}>
           Clean RAM
         </button>
+        <button type="button" className="tweak-pill" onClick={() => onTweak(srv.id, srv.role === 'iran' ? 'mirror_arvan' : 'mirror_hetzner')}>
+          APT Mirror
+        </button>
       </div>
 
       {/* Centered Action Buttons */}
@@ -296,6 +299,13 @@ export function ServersView({ servers, maxServers, onRefresh, onReorderLocal, no
   }
 
   async function handleTweak(id: number, action: string) {
+    if (action === 'mirror_arvan' || action === 'mirror_hetzner') {
+      const m = action === 'mirror_arvan' ? 'arvan' : 'hetzner';
+      notify(`Switching APT mirror to ${m}...`);
+      const mr = await api<{ output?: string }>(`/api/tenant/servers/${id}/mirror`, 'POST', { mirror: m });
+      notify(mr.ok ? `APT Mirror switched to ${m}!` : mr.error || 'Mirror switch failed', !mr.ok);
+      return;
+    }
     notify(`Applying ${action}...`);
     const r = await api<{ output?: string }>(`/api/tenant/servers/${id}/tweak`, 'POST', { action });
     if (r.ok) {

@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Cloud, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { api } from '../api';
-import type { CloudAccount, CloudInstance } from '../types';
+import type { CloudAccount, CloudInstance, ServerItem } from '../types';
 
 interface Props {
+  servers: ServerItem[];
   notify: (msg: string, err?: boolean) => void;
 }
 
-export function CloudView({ notify }: Props) {
+export function CloudView({ servers, notify }: Props) {
+  const [spSrv, setSpSrv] = useState<number>(servers[0]?.id || 0);
+  const [spPort, setSpPort] = useState(10808);
+  const [spUser, setSpUser] = useState('mcontrol');
+  const [spPass, setSpPass] = useState('');
+  const [spUrl, setSpUrl] = useState('');
+  const [spBusy, setSpBusy] = useState(false);
   const [accounts, setAccounts] = useState<CloudAccount[]>([]);
   const [instances, setInstances] = useState<CloudInstance[]>([]);
   const [provider, setProvider] = useState<'hetzner' | 'digitalocean' | 'vultr'>('hetzner');
@@ -46,6 +53,32 @@ export function CloudView({ notify }: Props) {
   async function removeAcc(id: number) {
     const r = await api(`/api/tenant/cloud/${id}`, 'DELETE');
     if (r.ok) load();
+  }
+
+
+  async function deploySwiftProxy(e: React.FormEvent) {
+    e.preventDefault();
+    const targetId = spSrv || servers[0]?.id || 0;
+    if (!targetId) {
+      notify('Add a server first in the Servers tab.', true);
+      return;
+    }
+    setSpBusy(true);
+    notify('Deploying SwiftProxy (SOCKS5/HTTP) over SSH...');
+    try {
+      const r = await api<{ proxy_url?: string; output?: string }>('/api/tenant/cloud/swiftproxy', 'POST', {
+        server_id: targetId,
+        port: spPort,
+        username: spUser,
+        password: spPass,
+      });
+      if (r.ok && r.proxy_url) {
+        setSpUrl(r.proxy_url);
+        notify('SwiftProxy deployed & active!');
+      } else notify(r.error || 'Deploy failed', true);
+    } finally {
+      setSpBusy(false);
+    }
   }
 
   return (
@@ -101,6 +134,29 @@ export function CloudView({ notify }: Props) {
           </div>
         </div>
       )}
+      <form className="card" onSubmit={deploySwiftProxy}>
+        <h4 style={{ marginBottom: 10, color: 'var(--accent)' }}>SwiftProxy (1-Click Authenticated SOCKS5/HTTP)</h4>
+        <div className="row2">
+          <div className="field"><label>Target Server</label>
+            <select value={spSrv || servers[0]?.id || 0} onChange={(e) => setSpSrv(Number(e.target.value))}>
+              {servers.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.host})</option>)}
+            </select>
+          </div>
+          <div className="field"><label>Port</label><input type="number" value={spPort} onChange={(e) => setSpPort(Number(e.target.value))} /></div>
+        </div>
+        <div className="row2">
+          <div className="field"><label>Proxy Username</label><input className="mono" value={spUser} onChange={(e) => setSpUser(e.target.value)} required /></div>
+          <div className="field"><label>Proxy Password</label><input type="password" value={spPass} onChange={(e) => setSpPass(e.target.value)} required /></div>
+        </div>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={spBusy}>
+          {spBusy ? 'Deploying...' : 'Deploy SwiftProxy'}
+        </button>
+        {spUrl && (
+          <div className="mono" style={{ marginTop: 10, padding: '8px 12px', borderRadius: 12, background: 'var(--row)', color: 'var(--green)', fontSize: '0.8rem', wordBreak: 'break-all' }}>
+            {spUrl}
+          </div>
+        )}
+      </form>
     </div>
   );
 }

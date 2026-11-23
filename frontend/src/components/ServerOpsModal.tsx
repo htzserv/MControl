@@ -50,8 +50,11 @@ export function ServerOpsModal({ server, initialTab, onClose, notify }: Props) {
   const [tab, setTab] = useState<OpsTab>(initialTab);
   const [full, setFull] = useState(false);
 
-  // Terminal state
-  const [termOut, setTermOut] = useState(`Connected to ${server.name} (${server.username}@${server.host}:${server.port})\nReady for single or multi-line bash scripts...\n`);
+  // Terminal state (with persistent CWD + command history)
+  const [cwd, setCwd] = useState('/root');
+  const [history, setHistory] = useState<string[]>([]);
+  const [histIdx, setHistIdx] = useState(-1);
+  const [termOut, setTermOut] = useState(`Connected to ${server.name} (${server.username}@${server.host}:${server.port})\nWorking dir: /root • Ready for single or multi-line bash scripts...\n`);
   const [cmd, setCmd] = useState('');
   const [running, setRunning] = useState(false);
   const termRef = useRef<HTMLPreElement | null>(null);
@@ -85,22 +88,28 @@ export function ServerOpsModal({ server, initialTab, onClose, notify }: Props) {
     if (tab === 'processes') loadProcesses();
   }, [tab]);
 
-  async function runCmd() {
-    const clean = cmd.replace(/\r\n/g, '\n').trim();
+  async function runCmd(overrideCmd?: string) {
+    const clean = (overrideCmd ?? cmd).replace(/\r\n/g, '\n').trim();
     if (!clean || running) return;
+    if (!overrideCmd) {
+      setHistory((prev) => [clean, ...prev.slice(0, 49)]);
+      setHistIdx(-1);
+      setCmd('');
+    }
     const prompt = clean
       .split('\n')
-      .map((l, i) => `${i === 0 ? '$ ' : '> '}${l}`)
+      .map((l, i) => `${i === 0 ? `${server.username}@${server.name}:${cwd}# ` : '> '}${l}`)
       .join('\n');
     setTermOut((prev) => `${prev}\n${prompt}\n...`);
-    setCmd('');
     setRunning(true);
     try {
-      const r = await api<{ output?: string; exit?: string }>(`/api/tenant/servers/${server.id}/exec`, 'POST', {
+      const r = await api<{ output?: string; cwd?: string; exit?: string }>(`/api/tenant/servers/${server.id}/exec`, 'POST', {
         command: clean,
+        cwd,
       });
+      if (r.ok && r.cwd) setCwd(r.cwd);
       const resTxt = r.ok
-        ? `${r.output || '(no output)'}${r.exit ? `\n[exit: ${r.exit}]` : ''}`
+        ? `${r.output || '(done)'}${r.exit ? `\n[exit: ${r.exit}]` : ''}`
         : `ERROR: ${r.error || 'execution failed'}`;
       setTermOut((prev) => prev.replace(/\n\.\.\.$/, `\n${resTxt}`));
       window.setTimeout(() => {
@@ -310,27 +319,45 @@ export function ServerOpsModal({ server, initialTab, onClose, notify }: Props) {
 
         {tab === 'terminal' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span className="badge badge-accent mono">{cwd}</span>
+              <button className="btn btn-sm" disabled={running} onClick={() => runCmd('uname -a && uptime')}>SysInfo</button>
+              <button className="btn btn-sm" disabled={running} onClick={() => runCmd('df -h')}>Disk</button>
+              <button className="btn btn-sm" disabled={running} onClick={() => runCmd('free -h')}>RAM</button>
+              <button className="btn btn-sm" disabled={running} onClick={() => runCmd('ss -tulpn')}>Ports</button>
+              <button className="btn btn-sm" disabled={running} onClick={() => runCmd('journalctl -p err -n 20 --no-pager')}>Errors</button>
+            </div>
             <pre ref={termRef} className="term-screen">{termOut}</pre>
             <textarea
               className="code-box"
               rows={3}
               value={cmd}
               onChange={(e) => setCmd(e.target.value)}
-              placeholder={'Enter single or multi-line bash scripts...\nEnter = new line  |  Ctrl+Enter = Run'}
+              placeholder={'Enter single or multi-line bash scripts (cd persists!)...\nEnter = new line  |  Ctrl+Enter = Run  |  ↑/↓ = History'}
               onKeyDown={(e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                   e.preventDefault();
                   runCmd();
+                } else if (e.key === 'ArrowUp' && !cmd.includes('\n') && history.length > 0) {
+                  e.preventDefault();
+                  const next = Math.min(histIdx + 1, history.length - 1);
+                  setHistIdx(next);
+                  setCmd(history[next]);
+                } else if (e.key === 'ArrowDown' && !cmd.includes('\n') && histIdx >= 0) {
+                  e.preventDefault();
+                  const next = histIdx - 1;
+                  setHistIdx(next);
+                  setCmd(next >= 0 ? history[next] : '');
                 }
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                Multi-line supported • Press <strong>Ctrl+Enter</strong> or click Run
+                Persistent <code>cd</code> • ↑/↓ History • <strong>Ctrl+Enter</strong> to Run
               </span>
               <div style={{ display: 'flex', gap: 6 }}>
                 <button className="btn btn-sm" onClick={() => setTermOut('')}>Clear</button>
-                <button className="btn btn-primary btn-sm" disabled={running} onClick={runCmd}>
+                <button className="btn btn-primary btn-sm" disabled={running} onClick={() => runCmd()}>
                   <Play size={14} /> {running ? 'Running...' : 'Run Script'}
                 </button>
               </div>

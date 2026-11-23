@@ -143,7 +143,7 @@ echo "DEPLOY_OK"`, unit, setupLines, unit, unit, t.Name, mode, unit, ifName, uni
 			return fmt.Sprintf(`mkdir -p /etc/mcontrol
 if ! command -v rathole >/dev/null 2>&1 && [ ! -x /usr/local/bin/rathole ]; then
   ARCH=$(uname -m | sed 's/x86_64/x86_64-unknown-linux-gnu/;s/aarch64/aarch64-unknown-linux-musl/')
-  curl -fsSL "https://github.com/rapiz1/rathole/releases/latest/download/rathole-${ARCH}.zip" -o /tmp/rh.zip && unzip -o /tmp/rh.zip -d /usr/local/bin/ && chmod +x /usr/local/bin/rathole && rm -f /tmp/rh.zip
+  (curl -fsSL --connect-timeout 8 "https://github.com/rapiz1/rathole/releases/latest/download/rathole-${ARCH}.zip" -o /tmp/rh.zip || curl -fsSL --connect-timeout 10 "https://gh-proxy.com/https://github.com/rapiz1/rathole/releases/latest/download/rathole-${ARCH}.zip" -o /tmp/rh.zip) && unzip -o /tmp/rh.zip -d /usr/local/bin/ && chmod +x /usr/local/bin/rathole && rm -f /tmp/rh.zip
 fi
 cat <<'EOF' > /etc/mcontrol/%s.toml
 %s
@@ -169,7 +169,70 @@ echo "DEPLOY_OK"`, unit, conf, unit, t.Name, unit, unit, unit)
 		}
 		return mkRathole(iranConf), mkRathole(forConf)
 
-	default: // backhaul (default) & paqet fallback
+	case "paqet":
+		var fwdLines []string
+		for _, p := range ports {
+			fwdLines = append(fwdLines, fmt.Sprintf("  - listen: \"0.0.0.0:%s\"\n    target: \"127.0.0.1:%s\"\n    protocol: \"tcp\"", p, p))
+		}
+		iranConf := fmt.Sprintf(`role: "client"
+log:
+  level: "info"
+server:
+  addr: "%s:%d"
+transport:
+  protocol: "kcp"
+  kcp:
+    mode: "fast"
+    key: "%s"
+forward:
+%s
+`, foreign.Host, t.TunnelPort, t.Token, strings.Join(fwdLines, "\n"))
+
+		forConf := fmt.Sprintf(`role: "server"
+log:
+  level: "info"
+listen:
+  addr: "0.0.0.0:%d"
+transport:
+  protocol: "kcp"
+  kcp:
+    mode: "fast"
+    key: "%s"
+`, t.TunnelPort, t.Token)
+
+		mkPaqet := func(conf string) string {
+			return fmt.Sprintf(`mkdir -p /etc/mcontrol
+if [ ! -x /usr/local/bin/paqet ]; then
+  ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+  (curl -fsSL --connect-timeout 8 "https://github.com/hanselime/paqet/releases/latest/download/paqet_linux_${ARCH}.tar.gz" -o /tmp/pq.tar.gz || curl -fsSL --connect-timeout 10 "https://gh-proxy.com/https://github.com/hanselime/paqet/releases/latest/download/paqet_linux_${ARCH}.tar.gz" -o /tmp/pq.tar.gz) && tar -xzf /tmp/pq.tar.gz -C /usr/local/bin/ && chmod +x /usr/local/bin/paqet* 2>/dev/null || true
+  if [ ! -x /usr/local/bin/paqet ] && [ -x /usr/local/bin/paqet_linux_${ARCH} ]; then mv /usr/local/bin/paqet_linux_${ARCH} /usr/local/bin/paqet; fi
+  rm -f /tmp/pq.tar.gz
+fi
+cat <<'EOF' > /etc/mcontrol/%s.yaml
+%s
+EOF
+cat <<'EOF' > /etc/systemd/system/%s.service
+[Unit]
+Description=MControl Paqet %s
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/paqet run -c /etc/mcontrol/%s.yaml
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable --now %s.service
+systemctl is-active %s.service
+echo "DEPLOY_OK"`, unit, conf, unit, t.Name, unit, unit, unit)
+		}
+		return mkPaqet(iranConf), mkPaqet(forConf)
+
+	default: // backhaul
 		transport := t.Transport
 		if transport == "" {
 			transport = "tcp"
@@ -204,7 +267,7 @@ retry_interval = 3
 			return fmt.Sprintf(`mkdir -p /etc/mcontrol
 if [ ! -x /usr/local/bin/backhaul ]; then
   ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-  curl -fsSL "https://github.com/Musixal/Backhaul/releases/latest/download/backhaul_linux_${ARCH}.tar.gz" -o /tmp/bh.tar.gz && tar -xzf /tmp/bh.tar.gz -C /usr/local/bin/ backhaul && chmod +x /usr/local/bin/backhaul && rm -f /tmp/bh.tar.gz
+  (curl -fsSL --connect-timeout 8 "https://github.com/Musixal/Backhaul/releases/latest/download/backhaul_linux_${ARCH}.tar.gz" -o /tmp/bh.tar.gz || curl -fsSL --connect-timeout 10 "https://gh-proxy.com/https://github.com/Musixal/Backhaul/releases/latest/download/backhaul_linux_${ARCH}.tar.gz" -o /tmp/bh.tar.gz) && tar -xzf /tmp/bh.tar.gz -C /usr/local/bin/ backhaul && chmod +x /usr/local/bin/backhaul && rm -f /tmp/bh.tar.gz
 fi
 cat <<'EOF' > /etc/mcontrol/%s.toml
 %s

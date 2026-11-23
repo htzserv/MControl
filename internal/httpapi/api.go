@@ -43,6 +43,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/admin/users/{id}/impersonate", s.guard.RequireSuperAdmin(s.handleAdminImpersonate))
 	mux.HandleFunc("GET /api/admin/branding", s.guard.RequireSuperAdmin(s.handleAdminGetBranding))
 	mux.HandleFunc("PUT /api/admin/branding", s.guard.RequireSuperAdmin(s.handleAdminSaveBranding))
+	mux.HandleFunc("GET /api/admin/update/check", s.guard.RequireSuperAdmin(s.handleAdminCheckUpdate))
+	mux.HandleFunc("POST /api/admin/update/apply", s.guard.RequireSuperAdmin(s.handleAdminApplyUpdate))
 
 	// Per-Tenant Isolated Workspace
 	mux.HandleFunc("GET /api/tenant/servers", s.guard.RequireAuth(s.handleTenantListServers))
@@ -71,6 +73,9 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/tenant/tunnels/{id}/mikrotik", s.guard.RequireAuth(s.handleTenantTunnelMikrotik))
 	mux.HandleFunc("POST /api/tenant/diag/mtu", s.guard.RequireAuth(s.handleTenantDiagMTU))
 	mux.HandleFunc("POST /api/tenant/diag/mtr", s.guard.RequireAuth(s.handleTenantDiagMTR))
+	mux.HandleFunc("POST /api/tenant/diag/protocol-matrix", s.guard.RequireAuth(s.handleTenantDiagProtocolMatrix))
+	mux.HandleFunc("POST /api/tenant/msmart/benchmark", s.guard.RequireAuth(s.handleTenantMSmartBenchmark))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/mirror", s.guard.RequireAuth(s.handleTenantServerMirror))
 
 	mux.HandleFunc("PUT /api/tenant/layout", s.guard.RequireAuth(s.handleTenantSaveLayout))
 	mux.HandleFunc("GET /api/tenant/theme", s.guard.RequireAuth(s.handleTenantGetTheme))
@@ -95,6 +100,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/tenant/cloud", s.guard.RequireAuth(s.handleTenantAddCloud))
 	mux.HandleFunc("GET /api/tenant/cloud/{id}/instances", s.guard.RequireAuth(s.handleTenantCloudInstances))
 	mux.HandleFunc("DELETE /api/tenant/cloud/{id}", s.guard.RequireAuth(s.handleTenantDeleteCloud))
+	mux.HandleFunc("POST /api/tenant/cloud/swiftproxy", s.guard.RequireAuth(s.handleTenantDeploySwiftProxy))
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {

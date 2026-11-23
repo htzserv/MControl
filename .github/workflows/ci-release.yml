@@ -2,10 +2,20 @@ name: Build, Verify & Release MControl v2
 
 on:
   push:
-    branches: ["main", "v2-core"]
+    branches: ["main", "v2-core", "beta", "v2-beta"]
+    tags: ["v[0-9]*.[0-9]*.[0-9]*"]
     paths-ignore:
       - "README.md"
   workflow_dispatch:
+    inputs:
+      channel:
+        description: "Release channel (stable = promote to v2-latest, beta = publish to v2-beta)"
+        required: true
+        default: "stable"
+        type: choice
+        options:
+          - stable
+          - beta
 
 permissions:
   contents: write
@@ -19,6 +29,24 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Determine Release Channel (Every Push = Beta, Tag/Manual = Stable)
+        id: chan
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.channel }}" = "stable" ]; then
+            echo "tag=v2-latest" >> "$GITHUB_OUTPUT"
+            echo "label=STABLE" >> "$GITHUB_OUTPUT"
+            echo "is_pre=false" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "tag=v2-latest" >> "$GITHUB_OUTPUT"
+            echo "label=STABLE" >> "$GITHUB_OUTPUT"
+            echo "is_pre=false" >> "$GITHUB_OUTPUT"
+          else
+            # Every normal push Action run is published as a Beta build
+            echo "tag=v2-beta" >> "$GITHUB_OUTPUT"
+            echo "label=BETA" >> "$GITHUB_OUTPUT"
+            echo "is_pre=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -47,23 +75,43 @@ jobs:
         run: |
           mkdir -p dist
           V=$(tr -d '[:space:]' < VERSION)
+          if [ "${{ steps.chan.outputs.label }}" = "BETA" ] && [[ "$V" != *beta* ]]; then
+            V="${V}-beta.${{ github.run_number }}"
+          fi
+          printf '%s\n' "$V" > dist/VERSION
+          echo "BUILD_VERSION=${V}" >> "$GITHUB_ENV"
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w -X github.com/htzserv/MControl/internal/version.Current=${V}" -o dist/mcontrol-linux-amd64 ./cmd/mcontrol
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w -X github.com/htzserv/MControl/internal/version.Current=${V}" -o dist/mcontrol-linux-arm64 ./cmd/mcontrol
+          cp install.sh dist/install.sh
+          cp main.sh dist/main.sh
           cd dist
           for f in mcontrol-linux-amd64 mcontrol-linux-arm64; do
             sha256sum "$f" > "${f}.sha256"
           done
-          cp ../VERSION VERSION
           ls -lh
 
-      - name: Publish Release
+      - name: Upload Action Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcontrol-v2-${{ steps.chan.outputs.label }}-build-${{ github.run_number }}
+          path: dist/
+          retention-days: 14
+
+      - name: Publish Release (${{ steps.chan.outputs.tag }})
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2-latest
-          name: MControl v2 (Build #${{ github.run_number }})
-          prerelease: true
+          tag_name: ${{ steps.chan.outputs.tag }}
+          name: MControl v2 ${{ steps.chan.outputs.label }} (${{ env.BUILD_VERSION }} · Action #${{ github.run_number }})
+          body: |
+            - **Version:** `${{ env.BUILD_VERSION }}`
+            - **Channel:** `${{ steps.chan.outputs.label }}` (`${{ steps.chan.outputs.tag }}`)
+            - **Action Run:** `#${{ github.run_number }}`
+            - **Commit:** `${{ github.sha }}`
+          prerelease: ${{ steps.chan.outputs.is_pre }}
           files: |
             dist/VERSION
+            dist/install.sh
+            dist/main.sh
             dist/mcontrol-linux-amd64
             dist/mcontrol-linux-amd64.sha256
             dist/mcontrol-linux-arm64
