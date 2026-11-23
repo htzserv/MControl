@@ -2454,7 +2454,7 @@ body[data-navx="top"] .ver-bubble {
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.3.0</span>
+      <span class="mono" id="nav-ver-lbl">v1.3.1</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -2526,7 +2526,7 @@ body[data-navx="top"] .ver-bubble {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.3.0</span>
+            <span class="badge b-ok" id="loc-ver">v1.3.1</span>
           </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -3664,7 +3664,7 @@ body[data-navx="top"] .ver-bubble {
               <div class="field"><label>Script Name</label><input id="sv-name" placeholder="Update System"></div>
               <div class="field"><label>Description</label><input id="sv-desc" placeholder="Optional note"></div>
             </div>
-            <div class="field"><label>Shell Command</label><input id="sv-cmd" class="mono" placeholder="apt update && apt upgrade -y"></div>
+            <div class="field"><label>Shell Command / Multi-line Script</label><textarea id="sv-cmd" class="mono" rows="3" spellcheck="false" style="min-height:72px; resize:vertical;" placeholder="apt update&#10;apt upgrade -y"></textarea></div>
             <button class="btn btn-sky btn-sm" onclick="addVaultScript()">+ Save Script</button>
             <div id="sv-list" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;"></div>
           </div>
@@ -4902,8 +4902,7 @@ async function toggleInlineSrvTweak(id, key, btn) {
   try {
     const r = await api('api/servers/' + id + '/tweak', 'POST', { action: actMap[key] });
     if (r.ok) {
-      toast((r.output || (labels[key] + ' updated')).trim().split('
-')[0]);
+      toast((r.output || (labels[key] + ' updated')).trim().split('\n')[0]);
       await loadInlineTweakStatus(id);
     } else {
       toast(r.error || 'Tweak failed', true);
@@ -4918,8 +4917,7 @@ async function runInlineSrvTweak(id, action, confirmMsg, btn) {
   if (btn) btn.disabled = true;
   try {
     const r = await api('api/servers/' + id + '/tweak', 'POST', { action });
-    if (r.ok) toast((r.output || 'Done!').trim().split('
-')[0]);
+    if (r.ok) toast((r.output || 'Done!').trim().split('\n')[0]);
     else toast(r.error || 'Action failed', true);
   } finally {
     if (btn) btn.disabled = false;
@@ -8202,9 +8200,7 @@ $('btn-save-settings').onclick = saveSettings;
 $('btn-pw').onclick = changePass;
 $('btn-backup').onclick = downloadBackup;
 $('btn-db-restore').onclick = restoreBackup;
-document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('mousedown', e => { if (e.target === m) m.classList.remove('active'); }));
-
-boot();
+document.addEventListener('mousedown', e => { if (e.target && e.target.classList && e.target.classList.contains('modal-bg')) e.target.classList.remove('active'); });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -8317,7 +8313,9 @@ function pickTermAuthMode(m) {
 }
 function showTermAuthBox(show) {
   if ($('term-auth-box')) $('term-auth-box').style.display = show ? 'block' : 'none';
+  if ($('term-mode-tabs')) $('term-mode-tabs').style.display = show ? 'none' : 'grid';
   if ($('term-shell-wrap')) $('term-shell-wrap').style.display = show ? 'none' : 'block';
+  if (show && $('term-files-wrap')) $('term-files-wrap').style.display = 'none';
   if (show && $('term-prof-sel')) {
     const profs = (typeof SSH_PROFILES !== 'undefined' && SSH_PROFILES) ? SSH_PROFILES : [];
     $('term-prof-sel').innerHTML = profs.length
@@ -8377,13 +8375,23 @@ async function saveTermAuthAndOpen() {
   }
 }
 async function runWebTermCmd() {
-  const cmd = $('term-inp').value.trim();
+  const cmd = ($('term-inp').value || '').replace(/\r\n/g, '\n').trim();
   if (!cmd || !termSrvId) return;
-  $('term-out').textContent += '\n$ ' + cmd + '\n...';
-  $('term-inp').value = '';
-  const r = await api('api/servers/' + termSrvId + '/exec', 'POST', { command: cmd });
-  $('term-out').textContent = $('term-out').textContent.replace(/\n\.\.\.$/, '\n' + (r.output || r.error || '(no output)'));
+  const btn = $('btn-term-run');
+  const promptTxt = cmd.split('\n').map((ln, idx) => (idx === 0 ? '$ ' : '> ') + ln).join('\n');
+  $('term-out').textContent += '\n' + promptTxt + '\n...';
   $('term-out').scrollTop = $('term-out').scrollHeight;
+  $('term-inp').value = '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
+  try {
+    const r = await api('api/servers/' + termSrvId + '/exec', 'POST', { command: cmd });
+    const out = (r.output || '') + (r.exit ? ('\n[exit: ' + r.exit + ']') : '') + (!r.ok && r.error ? ('\nERROR: ' + r.error) : '');
+    $('term-out').textContent = $('term-out').textContent.replace(/\n\.\.\.$/, '\n' + (out.trim() || '(no output)'));
+    $('term-out').scrollTop = $('term-out').scrollHeight;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Run Script'; }
+    $('term-inp').focus();
+  }
 }
 
 function openFwModal(id) {
@@ -9031,6 +9039,7 @@ async function openMikrotikModal(id, name) {
   $('mkt-out').textContent = r.script || r.error || 'Failed';
 }
 
+boot();
 </script>
 
 <div class="modal-bg" id="cmdk-modal" style="z-index:1200;">
@@ -9103,9 +9112,15 @@ async function openMikrotikModal(id, name) {
         <select id="term-vault-sel" style="flex:1; padding:6px 10px; font-size:.74rem;" onchange="if(this.value){$('term-inp').value=this.value; this.value='';}"><option value="">🧰 Pick from Script Vault...</option></select>
       </div>
       <pre class="term" id="term-out" style="height:290px; margin-bottom:10px;">Ready. Type a Linux command below and press Enter.</pre>
-      <div class="flexw" style="gap:8px;">
-        <input id="term-inp" class="mono" style="flex:1;" placeholder="e.g. uptime && free -h" onkeydown="if(event.key==='Enter') runWebTermCmd()">
-        <button class="btn btn-sky" id="btn-term-run" onclick="runWebTermCmd()">Run</button>
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <textarea id="term-inp" class="mono" rows="3" spellcheck="false" style="width:100%; min-height:74px; resize:vertical; font-size:.8rem; line-height:1.45; padding:10px 12px;" placeholder="Enter single or multi-line bash commands...&#10;Enter = new line  |  Ctrl+Enter = Run" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();runWebTermCmd();}"></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="hint" style="margin:0; font-size:.71rem;">Multi-line supported • Press <b>Ctrl+Enter</b> or click <b>Run</b></span>
+          <div class="flexw" style="gap:6px;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="$('term-out').textContent='Cleared.';">Clear Output</button>
+            <button type="button" class="btn btn-sky btn-sm" id="btn-term-run" onclick="runWebTermCmd()">▶ Run Script</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -9137,7 +9152,7 @@ async function openMikrotikModal(id, name) {
       <h3 style="color:var(--accent);">⚡ Bulk Fleet Command Runner</h3>
       <button class="btn btn-danger btn-sm" data-close="fleet-run-modal">Close</button>
     </div>
-    <div class="field"><label>Command / Script to run in parallel on selected servers</label><input id="fleet-cmd-inp" class="mono" placeholder="uname -a && uptime"></div>
+    <div class="field"><label>Command / Multi-line Script to run in parallel on selected servers</label><textarea id="fleet-cmd-inp" class="mono" rows="3" spellcheck="false" style="min-height:76px; resize:vertical;" placeholder="uname -a&#10;uptime&#10;free -h"></textarea></div>
     <div class="flexw" style="justify-content:flex-end; margin-bottom:10px;">
       <button class="btn btn-sky" id="btn-fleet-run" onclick="runFleetCommand()">Execute on Selected</button>
     </div>

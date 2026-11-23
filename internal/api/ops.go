@@ -305,7 +305,7 @@ func (h *Handler) handleFleetExec(w http.ResponseWriter, r *http.Request) {
 	if !readJSON(w, r, &req) {
 		return
 	}
-	cmd := strings.TrimSpace(req.Command)
+	cmd := strings.TrimSpace(strings.ReplaceAll(req.Command, "\r\n", "\n"))
 	if cmd == "" || len(req.ServerIDs) == 0 {
 		fail(w, http.StatusBadRequest, "select servers and enter a command")
 		return

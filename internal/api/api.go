@@ -982,9 +982,10 @@ func (h *Handler) handleExec(w http.ResponseWriter, r *http.Request) {
 	if !readJSON(w, r, &req) {
 		return
 	}
+	req.Command = strings.ReplaceAll(req.Command, "\r\n", "\n")
 	req.Command = strings.TrimSpace(req.Command)
-	if req.Command == "" || len(req.Command) > 4000 {
-		fail(w, http.StatusBadRequest, "command is empty or too long (max 4000 chars)")
+	if req.Command == "" || len(req.Command) > 32000 {
+		fail(w, http.StatusBadRequest, "command is empty or too long (max 32000 chars)")
 		return
 	}
 	srv, err := h.store.GetServerWithSecret(id)
@@ -993,7 +994,7 @@ func (h *Handler) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("remote exec on server %d by %s: %q", id, r.Header.Get("X-MC-User"), req.Command)
-	res := h.runOnServer(srv, req.Command, 30*time.Second)
+	res := h.runOnServer(srv, req.Command, 60*time.Second)
 	exit := ""
 	if res.Err != nil {
 		if !sshclient.IsExitError(res.Err) {
