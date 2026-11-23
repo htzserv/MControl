@@ -73,6 +73,7 @@ jobs:
           MC_VER: ${{ steps.ver.outputs.version }}
           MC_BNUM: ${{ steps.ver.outputs.build_num }}
           MC_SHA: ${{ steps.ver.outputs.short_sha }}
+          MC_MODE: ${{ steps.ver.outputs.mode }}
         run: |
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o dist/mcontrol-linux-amd64 .
@@ -86,10 +87,12 @@ jobs:
           bnum = int(os.environ["MC_BNUM"])
           sha = os.environ["MC_SHA"]
           msg = subprocess.check_output(["git", "log", "-1", "--pretty=format:%s%n%b"], text=True).strip()
+          mode = os.environ.get("MC_MODE", "beta")
           meta = {
               "version": ver,
               "build": bnum,
               "commit": sha,
+              "channel": mode,
               "tag": f"{ver}-beta.{bnum}",
               "built_at": int(time.time()),
               "changelog": msg,

@@ -320,6 +320,7 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 			Version   string `json:"version"`
 			Build     int    `json:"build"`
 			Commit    string `json:"commit"`
+			Channel   string `json:"channel"`
 			Tag       string `json:"tag"`
 			Changelog string `json:"changelog"`
 		}
@@ -338,11 +339,16 @@ func fetchBetaStatus(githubURL, mirrorURL, socksProxy string, installedBuild int
 			st.Tag = fmt.Sprintf("%s-beta.%d", st.Version, st.Build)
 		}
 		cmp := version.Compare(st.Version, version.Current)
-		if installedBuild > 0 {
-			st.Available = (cmp > 0) || (cmp == 0 && st.Build > installedBuild)
-		} else {
-			// Already on a Stable release: only offer Beta if its version is strictly newer than current Stable
-			st.Available = (cmp > 0)
+		if cmp > 0 {
+			st.Available = true
+		} else if cmp == 0 {
+			// If beta-latest was just mirrored from the exact same official release, don't nag Stable users.
+			// Otherwise (a true post-release Rolling Beta build), offer it whenever build > installedBuild!
+			if strings.EqualFold(strings.TrimSpace(meta.Channel), "release") && installedBuild == 0 {
+				st.Available = false
+			} else {
+				st.Available = st.Build > installedBuild
+			}
 		}
 		return st
 	}

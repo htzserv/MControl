@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2
+- **Fixed Rolling Beta Updater & Offline ZIP Upload:**
+  - Added `channel` (`release` vs `beta`) metadata to `beta-meta.json` in GitHub Actions so Stable installs no longer show false beta alerts for the same release, while any subsequent Rolling Beta build (`channel: "beta"`) is detected immediately even from a Stable install.
+  - Restored the dedicated **`Install Rolling Beta`** button inside the Update Center modal (`#update-modal`) and fixed the **Offline ZIP** file-picker click handler.
+- **MDesign UI Polish:** Larger responsive Web Terminal & SFTP Split-View editor (with Expand button), centered Server Card tweak/action bubbles, 6 MDesign Uptime themes (12th studio axis + quick theme bar), and 6 selectable themes on the Public `/status` page.
+
 ## 1.3.1
 - **Critical Hotfix (Blank White Screen):** Fixed unescaped newline literals inside `.split('\n')[0]` in `web/index.html` that broke JavaScript parsing on page load, and moved `boot()` to the end of `<script>` to prevent initialization ordering issues.
 - **Multi-Line Web Terminal & Fleet Script Runner:** Upgraded Web Terminal, Bulk Fleet Runner, and Script Vault inputs to multi-line `<textarea>` editors (`Ctrl+Enter` to execute, natural `Enter` for new lines, safe paste of multi-line bash scripts), normalized CRLF (`\r\n` → `\n`) on backend execution, and raised command limit to 32 KB (60s timeout).

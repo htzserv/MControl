@@ -2595,7 +2595,7 @@ body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.3.1</span>
+      <span class="mono" id="nav-ver-lbl">v1.3.2</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -2667,7 +2667,7 @@ body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.3.1</span>
+            <span class="badge b-ok" id="loc-ver">v1.3.2</span>
           </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -3210,6 +3210,7 @@ body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
           <button class="btn btn-check-box" id="btn-upd-check" data-i18n="btn_check_updates">Check for updates</button>
           <button class="btn btn-sky" data-upd="github" data-i18n="btn_upd_github">Update from GitHub</button>
           <button class="btn btn-sky" data-upd="mirror" data-i18n="btn_upd_mirror">Update from Iran mirror</button>
+          <button class="btn btn-warn" id="btn-upd-beta" data-upd="beta" style="display:none;">Install Rolling Beta</button>
         </div>
 
         <hr style="margin:14px 0;">
@@ -7430,7 +7431,7 @@ async function checkUpdates(notify) {
     const bRow = $('upd-beta-row'), bBtn = $('btn-upd-beta'), bEl = $('upd-beta');
     if (c.beta && c.beta.enabled) {
       if (bRow) bRow.style.display = 'flex';
-      if (bBtn) bBtn.style.display = 'inline-flex';
+      if (bBtn) { bBtn.style.display = 'inline-flex'; bBtn.textContent = c.beta.build ? ('Install Beta #' + c.beta.build) : 'Install Rolling Beta'; }
       if (bEl) {
         if (c.beta.error) bEl.innerHTML = `<span style="color:var(--red);">${esc(c.beta.error)}</span>`;
         else if (c.beta.available) bEl.innerHTML = `<span style="color:var(--yellow);">v${esc(c.beta.tag)} (${t('upd_new')})</span>`;
@@ -7537,12 +7538,7 @@ async function toggleBetaFromUpdateModal(enabled) {
 function onOfflineZipPicked() {
   const inp = $('upd-zip-file');
   if (!inp || !inp.files || !inp.files[0]) return;
-  const f = inp.files[0];
-  if (!confirm('Install offline update package "' + f.name + '"?')) {
-    inp.value = '';
-    return;
-  }
-  uploadZipUpdate();
+  uploadZip();
 }
 
 function openQuickUpdateModal() {
@@ -8343,7 +8339,7 @@ $('btn-rand-mix').onclick = randMix;
 $('btn-reset-custom').onclick = () => { custom = {}; applyTheme(); renderStudio(); };
 $('theme-search').addEventListener('input', e => { themeQuery = e.target.value; renderThemes(); });
 $('btn-upd-check').onclick = () => checkUpdates(true);
-$('btn-zip-upd').onclick = uploadZip;
+$('btn-zip-upd').onclick = () => $('upd-zip-file').click();
 $('btn-save-settings').onclick = saveSettings;
 $('btn-pw').onclick = changePass;
 $('btn-backup').onclick = downloadBackup;
