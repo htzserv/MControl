@@ -28,7 +28,7 @@ type AuditEntry struct {
 var auditMu sync.Mutex
 
 func (h *Handler) getSettingDef(key, defVal string) string {
-	if v := h.getSettingDef(key); v != "" {
+	if v := h.store.GetSetting(key); v != "" {
 		return v
 	}
 	return defVal
