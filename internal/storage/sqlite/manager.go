@@ -91,6 +91,33 @@ func (m *Manager) encrypt(plain string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ct), nil
 }
 
+func (m *Manager) decrypt(encoded string) (string, error) {
+	if encoded == "" {
+		return "", nil
+	}
+	raw, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return "", err
+	}
+	blk, err := aes.NewCipher(m.encKey)
+	if err != nil {
+		return "", err
+	}
+	gcm, err := cipher.NewGCM(blk)
+	if err != nil {
+		return "", err
+	}
+	ns := gcm.NonceSize()
+	if len(raw) < ns {
+		return "", errors.New("ciphertext too short")
+	}
+	pt, err := gcm.Open(nil, raw[:ns], raw[ns:], nil)
+	if err != nil {
+		return "", err
+	}
+	return string(pt), nil
+}
+
 func (m *Manager) initMasterSchema(ctx context.Context) error {
 	const schema = `
 	CREATE TABLE IF NOT EXISTS users (
@@ -162,8 +189,18 @@ func initTenantSchema(ctx context.Context, db *sql.DB) error {
 		port       INTEGER NOT NULL DEFAULT 22,
 		username   TEXT NOT NULL DEFAULT 'root',
 		secret_enc TEXT NOT NULL DEFAULT '',
+		auth_type  TEXT NOT NULL DEFAULT 'password',
 		country    TEXT NOT NULL DEFAULT '',
-		status     TEXT NOT NULL DEFAULT 'online',
+		datacenter TEXT NOT NULL DEFAULT '',
+		status     TEXT NOT NULL DEFAULT 'unknown',
+		cpu        TEXT NOT NULL DEFAULT '0%',
+		ram        TEXT NOT NULL DEFAULT '0%',
+		uptime     TEXT NOT NULL DEFAULT '—',
+		ipv4       TEXT NOT NULL DEFAULT '',
+		ipv6       TEXT NOT NULL DEFAULT '',
+		ping_ms    TEXT NOT NULL DEFAULT '',
+		last_speed TEXT NOT NULL DEFAULT '',
+		last_error TEXT NOT NULL DEFAULT '',
 		sort_order INTEGER NOT NULL DEFAULT 0,
 		pos_x      REAL NOT NULL DEFAULT 0,
 		pos_y      REAL NOT NULL DEFAULT 0,
@@ -184,8 +221,26 @@ func initTenantSchema(ctx context.Context, db *sql.DB) error {
 		key   TEXT PRIMARY KEY,
 		value TEXT NOT NULL
 	);`
-	_, err := db.ExecContext(ctx, schema)
-	return err
+	if _, err := db.ExecContext(ctx, schema); err != nil {
+		return err
+	}
+	// Seamless column upgrades if DB was created in v1.0.0 core
+	alters := []string{
+		`ALTER TABLE servers ADD COLUMN auth_type TEXT NOT NULL DEFAULT 'password'`,
+		`ALTER TABLE servers ADD COLUMN datacenter TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE servers ADD COLUMN cpu TEXT NOT NULL DEFAULT '0%'`,
+		`ALTER TABLE servers ADD COLUMN ram TEXT NOT NULL DEFAULT '0%'`,
+		`ALTER TABLE servers ADD COLUMN uptime TEXT NOT NULL DEFAULT '—'`,
+		`ALTER TABLE servers ADD COLUMN ipv4 TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE servers ADD COLUMN ipv6 TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE servers ADD COLUMN ping_ms TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE servers ADD COLUMN last_speed TEXT NOT NULL DEFAULT ''`,
+		`ALTER TABLE servers ADD COLUMN last_error TEXT NOT NULL DEFAULT ''`,
+	}
+	for _, q := range alters {
+		_, _ = db.ExecContext(ctx, q)
+	}
+	return nil
 }
 
 // ── MasterStore Implementation ───────────────────────────────────────────────
@@ -266,7 +321,6 @@ func (m *Manager) CreateUser(ctx context.Context, u *storage.User) (int64, error
 	if err != nil {
 		return 0, err
 	}
-	// Pre-initialize the user's isolated SQLite database immediately
 	_, _ = m.getTenantDB(ctx, id)
 	return id, nil
 }
@@ -359,27 +413,66 @@ func (m *Manager) GetSystemStats(ctx context.Context) (storage.SystemStats, erro
 
 // ── Per-Tenant Isolated Store Implementation ─────────────────────────────────
 
+const serverSelectCols = `id, name, role, host, port, username, secret_enc, auth_type, country, datacenter, status, cpu, ram, uptime, ipv4, ipv6, ping_ms, last_speed, last_error, sort_order, pos_x, pos_y, created_at`
+
+func scanServer(row interface{ Scan(...any) error }) (*storage.Server, error) {
+	var s storage.Server
+	var secEnc string
+	var ts int64
+	if err := row.Scan(
+		&s.ID, &s.Name, &s.Role, &s.Host, &s.Port, &s.Username, &secEnc, &s.AuthType,
+		&s.Country, &s.Datacenter, &s.Status, &s.CPU, &s.RAM, &s.Uptime,
+		&s.IPv4, &s.IPv6, &s.PingMs, &s.LastSpeed, &s.LastError,
+		&s.SortOrder, &s.PosX, &s.PosY, &ts,
+	); err != nil {
+		return nil, err
+	}
+	s.HasSecret = secEnc != ""
+	s.Secret = secEnc
+	s.CreatedAt = time.Unix(ts, 0).UTC()
+	return &s, nil
+}
+
 func (m *Manager) ListServers(ctx context.Context, tenantID int64) ([]storage.Server, error) {
 	db, err := m.getTenantDB(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.QueryContext(ctx, `SELECT id, name, role, host, port, username, country, status, sort_order, pos_x, pos_y, created_at FROM servers ORDER BY sort_order ASC, id ASC`)
+	rows, err := db.QueryContext(ctx, `SELECT `+serverSelectCols+` FROM servers ORDER BY sort_order ASC, id ASC`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	out := []storage.Server{}
 	for rows.Next() {
-		var s storage.Server
-		var ts int64
-		if err := rows.Scan(&s.ID, &s.Name, &s.Role, &s.Host, &s.Port, &s.Username, &s.Country, &s.Status, &s.SortOrder, &s.PosX, &s.PosY, &ts); err != nil {
+		s, err := scanServer(rows)
+		if err != nil {
 			return nil, err
 		}
-		s.CreatedAt = time.Unix(ts, 0).UTC()
-		out = append(out, s)
+		s.Secret = "" // Never leak ciphertext to list API
+		out = append(out, *s)
 	}
 	return out, nil
+}
+
+func (m *Manager) GetServerWithSecret(ctx context.Context, tenantID, serverID int64) (*storage.Server, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	row := db.QueryRowContext(ctx, `SELECT `+serverSelectCols+` FROM servers WHERE id = ?`, serverID)
+	s, err := scanServer(row)
+	if err != nil {
+		return nil, err
+	}
+	if s.Secret != "" {
+		plain, err := m.decrypt(s.Secret)
+		if err != nil {
+			return nil, err
+		}
+		s.Secret = plain
+	}
+	return s, nil
 }
 
 func (m *Manager) AddServer(ctx context.Context, tenantID int64, s *storage.Server) (int64, error) {
@@ -409,14 +502,17 @@ func (m *Manager) AddServer(ctx context.Context, tenantID int64, s *storage.Serv
 	if strings.TrimSpace(s.Username) == "" {
 		s.Username = "root"
 	}
+	if s.AuthType != "key" {
+		s.AuthType = "password"
+	}
 	if strings.TrimSpace(s.Status) == "" {
-		s.Status = "online"
+		s.Status = "unknown"
 	}
 	res, err := db.ExecContext(ctx,
-		`INSERT INTO servers (name, role, host, port, username, secret_enc, country, status, sort_order, pos_x, pos_y, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO servers (name, role, host, port, username, secret_enc, auth_type, country, datacenter, status, sort_order, pos_x, pos_y, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		strings.TrimSpace(s.Name), s.Role, strings.TrimSpace(s.Host), s.Port, strings.TrimSpace(s.Username),
-		secEnc, strings.TrimSpace(s.Country), s.Status, nextOrder, posX, posY, time.Now().Unix(),
+		secEnc, s.AuthType, strings.TrimSpace(s.Country), strings.TrimSpace(s.Datacenter), s.Status, nextOrder, posX, posY, time.Now().Unix(),
 	)
 	if err != nil {
 		return 0, err
@@ -424,7 +520,62 @@ func (m *Manager) AddServer(ctx context.Context, tenantID int64, s *storage.Serv
 	return res.LastInsertId()
 }
 
-func (m *Manager) DeleteServer(ctx context.Context, tenantID int64, serverID int64) error {
+func (m *Manager) UpdateServer(ctx context.Context, tenantID int64, s *storage.Server) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	if s.Port <= 0 {
+		s.Port = 22
+	}
+	if strings.TrimSpace(s.Username) == "" {
+		s.Username = "root"
+	}
+	if s.AuthType != "key" {
+		s.AuthType = "password"
+	}
+	if strings.TrimSpace(s.Secret) != "" {
+		secEnc, err := m.encrypt(s.Secret)
+		if err != nil {
+			return err
+		}
+		_, err = db.ExecContext(ctx,
+			`UPDATE servers SET name=?, role=?, host=?, port=?, username=?, secret_enc=?, auth_type=?, country=?, datacenter=? WHERE id=?`,
+			strings.TrimSpace(s.Name), s.Role, strings.TrimSpace(s.Host), s.Port, strings.TrimSpace(s.Username),
+			secEnc, s.AuthType, strings.TrimSpace(s.Country), strings.TrimSpace(s.Datacenter), s.ID,
+		)
+		return err
+	}
+	_, err = db.ExecContext(ctx,
+		`UPDATE servers SET name=?, role=?, host=?, port=?, username=?, auth_type=?, country=?, datacenter=? WHERE id=?`,
+		strings.TrimSpace(s.Name), s.Role, strings.TrimSpace(s.Host), s.Port, strings.TrimSpace(s.Username),
+		s.AuthType, strings.TrimSpace(s.Country), strings.TrimSpace(s.Datacenter), s.ID,
+	)
+	return err
+}
+
+func (m *Manager) UpdateServerRuntime(ctx context.Context, tenantID, serverID int64, status, cpu, ram, uptime, ipv4, ipv6, pingMs, lastErr string) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx,
+		`UPDATE servers SET status=?, cpu=?, ram=?, uptime=?, ipv4=?, ipv6=?, ping_ms=?, last_error=? WHERE id=?`,
+		status, cpu, ram, uptime, ipv4, ipv6, pingMs, lastErr, serverID,
+	)
+	return err
+}
+
+func (m *Manager) UpdateServerSpeed(ctx context.Context, tenantID, serverID int64, lastSpeed string) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `UPDATE servers SET last_speed=? WHERE id=?`, lastSpeed, serverID)
+	return err
+}
+
+func (m *Manager) DeleteServer(ctx context.Context, tenantID, serverID int64) error {
 	db, err := m.getTenantDB(ctx, tenantID)
 	if err != nil {
 		return err
@@ -482,7 +633,7 @@ func (m *Manager) AddTunnel(ctx context.Context, tenantID int64, t *storage.Tunn
 	return res.LastInsertId()
 }
 
-func (m *Manager) DeleteTunnel(ctx context.Context, tenantID int64, tunnelID int64) error {
+func (m *Manager) DeleteTunnel(ctx context.Context, tenantID, tunnelID int64) error {
 	db, err := m.getTenantDB(ctx, tenantID)
 	if err != nil {
 		return err

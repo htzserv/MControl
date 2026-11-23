@@ -32,19 +32,30 @@ type Branding struct {
 }
 
 type Server struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	Role      string    `json:"role"` // iran | foreign
-	Host      string    `json:"host"`
-	Port      int       `json:"port"`
-	Username  string    `json:"username"`
-	Secret    string    `json:"secret,omitempty"`
-	Country   string    `json:"country"`
-	Status    string    `json:"status"`
-	SortOrder int       `json:"sort_order"`
-	PosX      float64   `json:"pos_x"`
-	PosY      float64   `json:"pos_y"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         int64     `json:"id"`
+	Name       string    `json:"name"`
+	Role       string    `json:"role"` // iran | foreign
+	Host       string    `json:"host"`
+	Port       int       `json:"port"`
+	Username   string    `json:"username"`
+	Secret     string    `json:"secret,omitempty"`
+	AuthType   string    `json:"auth_type"` // password | key
+	HasSecret  bool      `json:"has_secret"`
+	Country    string    `json:"country"`
+	Datacenter string    `json:"datacenter"`
+	Status     string    `json:"status"` // online | offline | unknown
+	CPU        string    `json:"cpu"`
+	RAM        string    `json:"ram"`
+	Uptime     string    `json:"uptime"`
+	IPv4       string    `json:"ipv4"`
+	IPv6       string    `json:"ipv6"`
+	PingMs     string    `json:"ping_ms"`
+	LastSpeed  string    `json:"last_speed"`
+	LastError  string    `json:"last_error"`
+	SortOrder  int       `json:"sort_order"`
+	PosX       float64   `json:"pos_x"`
+	PosY       float64   `json:"pos_y"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type Tunnel struct {
@@ -82,8 +93,6 @@ type SystemStats struct {
 	TotalTunnels  int `json:"total_tunnels"`
 }
 
-// Engine abstracts the database backend so SQLite-per-Tenant and PostgreSQL+TimescaleDB
-// can coexist cleanly behind the exact same API handlers.
 type Engine interface {
 	IsInitialized(ctx context.Context) (bool, error)
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
@@ -99,12 +108,16 @@ type Engine interface {
 
 	// Per-Tenant isolated operations
 	ListServers(ctx context.Context, tenantID int64) ([]Server, error)
+	GetServerWithSecret(ctx context.Context, tenantID, serverID int64) (*Server, error)
 	AddServer(ctx context.Context, tenantID int64, s *Server) (int64, error)
-	DeleteServer(ctx context.Context, tenantID int64, serverID int64) error
+	UpdateServer(ctx context.Context, tenantID int64, s *Server) error
+	UpdateServerRuntime(ctx context.Context, tenantID, serverID int64, status, cpu, ram, uptime, ipv4, ipv6, pingMs, lastErr string) error
+	UpdateServerSpeed(ctx context.Context, tenantID, serverID int64, lastSpeed string) error
+	DeleteServer(ctx context.Context, tenantID, serverID int64) error
 
 	ListTunnels(ctx context.Context, tenantID int64) ([]Tunnel, error)
 	AddTunnel(ctx context.Context, tenantID int64, t *Tunnel) (int64, error)
-	DeleteTunnel(ctx context.Context, tenantID int64, tunnelID int64) error
+	DeleteTunnel(ctx context.Context, tenantID, tunnelID int64) error
 
 	SaveLayout(ctx context.Context, tenantID int64, items []LayoutItem) error
 	GetThemePrefs(ctx context.Context, tenantID int64) (ThemePrefs, error)

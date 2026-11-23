@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/htzserv/MControl/internal/auth"
+	"github.com/htzserv/MControl/internal/geo"
 	"github.com/htzserv/MControl/internal/storage"
 	"github.com/htzserv/MControl/internal/version"
 )
@@ -46,7 +47,20 @@ func (s *Server) Register(mux *http.ServeMux) {
 	// Per-Tenant Isolated Workspace
 	mux.HandleFunc("GET /api/tenant/servers", s.guard.RequireAuth(s.handleTenantListServers))
 	mux.HandleFunc("POST /api/tenant/servers", s.guard.RequireAuth(s.handleTenantAddServer))
+	mux.HandleFunc("PUT /api/tenant/servers/{id}", s.guard.RequireAuth(s.handleTenantUpdateServer))
 	mux.HandleFunc("DELETE /api/tenant/servers/{id}", s.guard.RequireAuth(s.handleTenantDeleteServer))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/probe", s.guard.RequireAuth(s.handleTenantProbeServer))
+	mux.HandleFunc("POST /api/tenant/servers/probe-all", s.guard.RequireAuth(s.handleTenantProbeAll))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/speedtest", s.guard.RequireAuth(s.handleTenantServerSpeedtest))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/tweak", s.guard.RequireAuth(s.handleTenantServerTweak))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/exec", s.guard.RequireAuth(s.handleTenantServerExec))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/files", s.guard.RequireAuth(s.handleTenantServerFiles))
+	mux.HandleFunc("GET /api/tenant/servers/{id}/firewall", s.guard.RequireAuth(s.handleTenantServerFirewall))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/firewall", s.guard.RequireAuth(s.handleTenantServerFirewall))
+	mux.HandleFunc("GET /api/tenant/servers/{id}/services", s.guard.RequireAuth(s.handleTenantServerServices))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/services", s.guard.RequireAuth(s.handleTenantServerServices))
+	mux.HandleFunc("GET /api/tenant/servers/{id}/processes", s.guard.RequireAuth(s.handleTenantServerProcesses))
+	mux.HandleFunc("POST /api/tenant/servers/{id}/processes", s.guard.RequireAuth(s.handleTenantServerProcesses))
 
 	mux.HandleFunc("GET /api/tenant/tunnels", s.guard.RequireAuth(s.handleTenantListTunnels))
 	mux.HandleFunc("POST /api/tenant/tunnels", s.guard.RequireAuth(s.handleTenantAddTunnel))
@@ -468,6 +482,11 @@ func (s *Server) handleTenantAddServer(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Role != "iran" && req.Role != "foreign" {
 		req.Role = "foreign"
+	}
+	if strings.TrimSpace(req.Country) == "" {
+		gi := geo.Lookup(req.Host)
+		req.Country = gi.Country
+		req.Datacenter = gi.Datacenter
 	}
 	id, err := s.engine.AddServer(r.Context(), claims.UserID, &req)
 	if err != nil {

@@ -9,6 +9,7 @@ import {
   type Node,
   type Edge,
   type Connection,
+  type OnNodeDrag,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Trash2, Network } from 'lucide-react';
@@ -74,7 +75,7 @@ export function TopologyView({ servers, tunnels, maxTunnels, onRefresh, notify }
     setPendingConn({ src, dst });
   }
 
-  async function handleNodeDragStop(_: React.MouseEvent, node: Node) {
+  const handleNodeDragStop: OnNodeDrag = async (_, node) => {
     const r = await api('/api/tenant/layout', 'PUT', {
       items: [
         {
