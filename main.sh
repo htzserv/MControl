@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# MControl v2 — MDesign Terminal Menu (Static IP-Only Header + Stable/Beta Channel Manager)
-MODULE_VERSION="1.3.4"
+# MControl v1.4.0 — MTunnel-Style MDesign Terminal Menu (Static IP-Only Header)
+MODULE_VERSION="1.4.0"
 set -u
 umask 077
 
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
-    echo -e "\033[1;31m  ✖ Run MControl Menu with root privileges: sudo mcontrol-menu\033[0m" >&2
+    echo -e "\033[1;31m  ✖ Run MControl CLI with root privileges: sudo mcontrol\033[0m" >&2
     exit 1
 fi
 
@@ -19,51 +19,77 @@ M='\033[1;35m'
 W='\033[1;37m'
 DIM='\033[2;37m'
 NC='\033[0m'
-FR='\033[1;33m' # Gold frame & tree connectors
+FR='\033[1;33m' # Gold double-line frame & tree connectors
 
+SVC="mcontrol.service"
 REPO="${MCONTROL_REPO:-htzserv/MControl}"
-BIN="/usr/local/bin/mcontrol"
-MENU_BIN="/usr/local/bin/mcontrol-menu"
+INSTALL_DIR="/opt/mcontrol"
+BIN="${INSTALL_DIR}/mcontrol"
+CLI_BIN="/usr/local/bin/mcontrol"
 DATA_DIR="/var/lib/mcontrol"
-LOCAL_DIR="/root/mcontrol"
+DB_FILE="${DATA_DIR}/mcontrol.db"
 CHANNEL_FILE="${DATA_DIR}/.channel"
-SERVICE="mcontrol"
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
 
 mc_arch() {
     case "$(uname -m)" in
-        x86_64|amd64)  echo "amd64" ;;
         aarch64|arm64) echo "arm64" ;;
-        *)             echo "" ;;
+        *)             echo "amd64" ;;
     esac
+}
+
+db_get() {
+    local key="$1"
+    [[ -f "$DB_FILE" ]] || { echo ""; return; }
+    python3 - "$DB_FILE" "$key" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+row = con.execute("SELECT value FROM settings WHERE key=?", (sys.argv[2],)).fetchone()
+print(row[0] if row else "")
+PY
+}
+
+db_set() {
+    local key="$1" val="$2"
+    [[ -f "$DB_FILE" ]] || return 1
+    python3 - "$DB_FILE" "$key" "$val" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+con.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (sys.argv[2], sys.argv[3]))
+con.commit()
+PY
 }
 
 mc_get_channel() {
     if [[ -f "$CHANNEL_FILE" ]]; then
         local ch
         ch=$(tr -d '[:space:]' < "$CHANNEL_FILE" 2>/dev/null || true)
-        if [[ "$ch" == "beta" ]]; then echo "beta"; return; fi
+        [[ "$ch" == "beta" ]] && { echo "beta"; return; }
+    fi
+    if [[ "$(db_get beta_builds)" == "1" ]]; then
+        echo "beta"; return
     fi
     echo "stable"
 }
 
-mc_channel_tag() {
-    if [[ "$1" == "beta" ]]; then echo "v2-beta"; else echo "v2-latest"; fi
+mc_channel_base() {
+    if [[ "$1" == "beta" ]]; then
+        echo "https://github.com/${REPO}/releases/download/beta-latest"
+    else
+        echo "https://github.com/${REPO}/releases/latest/download"
+    fi
 }
 
 mc_get_port() {
     local p
-    p=$(grep -oE -- '-port[[:space:]]+[0-9]+' "/etc/systemd/system/${SERVICE}.service" 2>/dev/null | awk '{print $2}' | head -n1 || true)
+    p=$(db_get panel_port)
+    [[ -n "$p" ]] || p=$(grep -oE -- '-port[[:space:]]+[0-9]+' /etc/systemd/system/mcontrol.service 2>/dev/null | awk '{print $2}' | head -n1 || true)
     [[ -n "$p" ]] && echo "$p" || echo "2053"
 }
 
 mc_detect_ips() {
     MC_IP4=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}' || true)
-    if [[ -z "${MC_IP4:-}" ]]; then
-        MC_IP4=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
-    fi
-    [[ -n "${MC_IP4:-}" ]] || MC_IP4="N/A"
+    [[ -n "${MC_IP4:-}" ]] || MC_IP4=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+    [[ -n "${MC_IP4:-}" ]] || MC_IP4="127.0.0.1"
 
     MC_IP6=$(ip -6 addr show scope global 2>/dev/null | awk '/inet6/{split($2,a,"/"); if(a[1] !~ /^f[cd]/){print a[1]; exit}}' || true)
     [[ -n "${MC_IP6:-}" ]] || MC_IP6="OFF"
@@ -71,21 +97,14 @@ mc_detect_ips() {
 
 mc_download() {
     local url="$1" dest="$2"
-    if curl -fsSL --connect-timeout 8 --max-time 60 "$url" -o "$dest" 2>/dev/null; then
-        return 0
-    fi
-    # Iran Mirror fallback via gh-proxy
-    if curl -fsSL --connect-timeout 10 --max-time 60 "https://gh-proxy.com/${url}" -o "$dest" 2>/dev/null; then
-        return 0
-    fi
-    return 1
+    curl -fsSL --connect-timeout 8 --max-time 60 "$url" -o "$dest" 2>/dev/null \
+        || curl -fsSL --connect-timeout 10 --max-time 60 "https://gh-proxy.com/${url}" -o "$dest" 2>/dev/null
 }
 
-# ── Static Header (MTunnel MDesign Gold Double-Line Frame — IPs Only, No Live Loop) ──
+# ── Static Gold Double-Line Header (IPs Only, No Live Refresh Loop) ──────────
 
 mc_hdr_line() {
-    local plain="$1" colored="$2" w="$3"
-    local LC_CTYPE=C.UTF-8
+    local plain="$1" colored="$2" w="$3" LC_CTYPE=C.UTF-8
     if (( ${#plain} > w )); then
         plain="${plain:0:$((w-1))}…"
         colored="$plain"
@@ -99,26 +118,25 @@ draw_header() {
     clear 2>/dev/null || true
     mc_detect_ips
 
-    local ch tag ch_label ch_col port
+    local ch ch_lbl ch_col port
     ch=$(mc_get_channel)
-    tag=$(mc_channel_tag "$ch")
     port=$(mc_get_port)
     if [[ "$ch" == "beta" ]]; then
-        ch_label="BETA (${tag})"
+        ch_lbl="BETA (beta-latest)"
         ch_col="$Y"
     else
-        ch_label="STABLE (${tag})"
+        ch_lbl="STABLE (latest)"
         ch_col="$G"
     fi
 
-    local term_cols boxw content_w border
+    local term_cols boxw content_w inner_w border
     term_cols=$(tput cols 2>/dev/null || echo 80)
     [[ "$term_cols" =~ ^[0-9]+$ ]] || term_cols=80
     boxw=$(( term_cols - 4 ))
     (( boxw < 46 )) && boxw=46
     (( boxw > 78 )) && boxw=78
     content_w=$(( boxw - 2 ))
-    local inner_w=$(( content_w - 2 ))
+    inner_w=$(( content_w - 2 ))
     printf -v border '%*s' "$content_w" ''
     border="${border// /═}"
 
@@ -128,8 +146,8 @@ draw_header() {
     echo ""
     printf "  ${FR}╔%s╗${NC}\n" "$border"
     mc_hdr_line \
-        "MControl v2  v${MODULE_VERSION}  |  ${ch_label}" \
-        "${W}MControl v2${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${ch_col}${ch_label}${NC}" \
+        "MControl  v${MODULE_VERSION}  |  ${ch_lbl}" \
+        "${W}MControl${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${ch_col}${ch_lbl}${NC}" \
         "$inner_w"
     mc_hdr_line \
         "IPv4: ${MC_IP4}  |  Port: ${port}" \
@@ -171,184 +189,142 @@ mc_pause() {
     read -r _
 }
 
-# ── Actions ──────────────────────────────────────────────────────────────────
-
-install_channel_binary() {
+install_channel() {
     local target_ch="$1"
-    local tag arch base_url tmp_bin tmp_sha expected actual
-    tag=$(mc_channel_tag "$target_ch")
+    local arch base_url tmp_bin tmp_sha exp got
     arch=$(mc_arch)
-    if [[ -z "$arch" ]]; then
-        echo -e "  ${R}✖ Unsupported architecture: $(uname -m)${NC}"
-        return 1
-    fi
-    base_url="https://github.com/${REPO}/releases/download/${tag}"
+    base_url=$(mc_channel_base "$target_ch")
     tmp_bin="${BIN}.new"
     tmp_sha="/tmp/mcontrol.sha256"
 
-    echo -e "\n  ${C}● Downloading MControl (${target_ch^^} / ${tag}) for linux-${arch}...${NC}"
+    mkdir -p "$INSTALL_DIR" "$DATA_DIR"
+    echo -e "\n  ${C}● Downloading MControl (${target_ch^^}) for linux-${arch}...${NC}"
     if ! mc_download "${base_url}/mcontrol-linux-${arch}" "$tmp_bin"; then
         echo -e "  ${R}✖ Download failed from GitHub & Mirror.${NC}"
         rm -f "$tmp_bin"
         return 1
     fi
-
     if mc_download "${base_url}/mcontrol-linux-${arch}.sha256" "$tmp_sha"; then
-        expected=$(awk '{print $1}' "$tmp_sha" | tr -d '[:space:]')
-        actual=$(sha256sum "$tmp_bin" | awk '{print $1}')
+        exp=$(awk '{print $1}' "$tmp_sha" | tr -d '[:space:]')
+        got=$(sha256sum "$tmp_bin" | awk '{print $1}')
         rm -f "$tmp_sha"
-        if [[ -n "$expected" && "${expected,,}" != "${actual,,}" ]]; then
-            echo -e "  ${R}✖ SHA-256 checksum mismatch! Aborting update.${NC}"
+        if [[ -n "$exp" && "${exp,,}" != "${got,,}" ]]; then
+            echo -e "  ${R}✖ SHA-256 mismatch! Update aborted.${NC}"
             rm -f "$tmp_bin"
             return 1
         fi
         echo -e "  ${G}✓ SHA-256 checksum verified.${NC}"
     fi
-
-    chmod +x "$tmp_bin"
+    chmod 755 "$tmp_bin"
     mv -f "$tmp_bin" "$BIN"
-    mkdir -p "$DATA_DIR" && chmod 700 "$DATA_DIR"
     printf '%s\n' "$target_ch" > "$CHANNEL_FILE"
+    if [[ "$target_ch" == "beta" ]]; then db_set beta_builds "1" || true; else db_set beta_builds "0" || true; fi
+
+    if mc_download "${base_url}/mcontrol-cli.sh" "${CLI_BIN}.new"; then
+        chmod 755 "${CLI_BIN}.new"
+        mv -f "${CLI_BIN}.new" "$CLI_BIN"
+    else
+        rm -f "${CLI_BIN}.new"
+    fi
 
     systemctl daemon-reload 2>/dev/null || true
-    systemctl restart "$SERVICE" 2>/dev/null || systemctl enable --now "$SERVICE" 2>/dev/null || true
-    echo -e "  ${G}✓ MControl updated to ${target_ch^^} (${tag}) and restarted.${NC}"
+    systemctl restart "$SVC" 2>/dev/null || systemctl enable --now "$SVC" 2>/dev/null || true
+    echo -e "  ${G}✓ Updated to ${target_ch^^} and service restarted.${NC}"
 }
-
-update_cli_scripts() {
-    local ch tag base_url
-    ch=$(mc_get_channel)
-    tag=$(mc_channel_tag "$ch")
-    base_url="https://github.com/${REPO}/releases/download/${tag}"
-    mkdir -p "$LOCAL_DIR"
-    echo -e "\n  ${C}● Updating terminal menu (main.sh) from ${tag}...${NC}"
-    if mc_download "${base_url}/main.sh" "${LOCAL_DIR}/main.sh.tmp"; then
-        chmod +x "${LOCAL_DIR}/main.sh.tmp"
-        mv -f "${LOCAL_DIR}/main.sh.tmp" "${LOCAL_DIR}/main.sh"
-        cp -f "${LOCAL_DIR}/main.sh" "$MENU_BIN"
-        chmod +x "$MENU_BIN"
-        echo -e "  ${G}✓ Terminal menu updated! Reloading...${NC}"
-        sleep 1
-        exec "$MENU_BIN"
-    else
-        rm -f "${LOCAL_DIR}/main.sh.tmp"
-        echo -e "  ${R}✖ Could not download main.sh from ${tag}.${NC}"
-    fi
-}
-
-change_panel_port() {
-    local cur_port new_port
-    cur_port=$(mc_get_port)
-    echo ""
-    printf "  ${C}Enter new panel port ${DIM}(current: ${cur_port})${C}: ${NC}"
-    read -r new_port
-    if ! [[ "$new_port" =~ ^[0-9]+$ ]] || (( new_port < 1 || new_port > 65535 )); then
-        echo -e "  ${R}✖ Invalid port number.${NC}"
-        return 1
-    fi
-    if [[ -f "/etc/systemd/system/${SERVICE}.service" ]]; then
-        sed -i -E "s/-port[[:space:]]+[0-9]+/-port ${new_port}/" "/etc/systemd/system/${SERVICE}.service"
-        systemctl daemon-reload
-        systemctl restart "$SERVICE"
-        echo -e "  ${G}✓ Panel port changed to ${new_port} and service restarted.${NC}"
-    else
-        echo -e "  ${R}✖ Service file not found. Run install.sh first.${NC}"
-    fi
-}
-
-backup_data() {
-    local ts out
-    ts=$(date +%Y%m%d-%H%M%S)
-    out="/root/mcontrol-backup-${ts}.tar.gz"
-    if [[ ! -d "$DATA_DIR" ]]; then
-        echo -e "  ${R}✖ Data directory ${DATA_DIR} does not exist.${NC}"
-        return 1
-    fi
-    tar -czf "$out" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")"
-    echo -e "  ${G}✓ Backup created: ${W}${out}${NC}"
-}
-
-uninstall_mcontrol() {
-    echo ""
-    printf "  ${R}⚠ Permanently remove MControl binary, service & databases? [yes/N]: ${NC}"
-    local ans
-    read -r ans
-    if [[ "$ans" != "yes" ]]; then
-        echo -e "  ${Y}● Uninstall cancelled.${NC}"
-        return 0
-    fi
-    systemctl disable --now "$SERVICE" 2>/dev/null || true
-    rm -f "/etc/systemd/system/${SERVICE}.service"
-    systemctl daemon-reload 2>/dev/null || true
-    rm -f "$BIN" "$MENU_BIN"
-    rm -rf "$DATA_DIR" "$LOCAL_DIR"
-    echo -e "\n  ${G}✓ MControl completely removed from this server.${NC}\n"
-    exit 0
-}
-
-# ── Main Interactive Loop ────────────────────────────────────────────────────
 
 while true; do
     draw_header
     cur_ch=$(mc_get_channel)
 
     mc_group "PANEL SERVICE" first
-    mc_row "1" "Start / Restart Panel" "$G" " ${DIM}(systemd)${NC}"
-    mc_row "2" "Stop Panel" "$Y"
-    mc_row "3" "Service Status & Logs" "$C"
-    mc_row "4" "Change Panel Port" "$M"
+    mc_row "1"  "Restart MControl Service" "$G"
+    mc_row "2"  "Start MControl Service" "$C"
+    mc_row "3"  "Stop MControl Service" "$Y"
+    mc_row "4"  "View Service Logs (last 40 lines)" "$C"
+
+    mc_group "ACCESS & SECURITY"
+    mc_row "5"  "Change Panel Port" "$M" " ${DIM}(SQLite + systemd)${NC}"
+    mc_row "6"  "Change Secret Web Path" "$M"
+    mc_row "7"  "Disable 2FA" "$Y" " ${DIM}(Emergency Reset)${NC}"
+    mc_row "8"  "Disable HTTPS" "$Y" " ${DIM}(Switch back to HTTP)${NC}"
 
     mc_group "UPDATE & CHANNELS (STABLE / BETA)"
-    mc_row "5" "Update on Current Channel" "$C" " ${DIM}(${cur_ch^^})${NC}"
-    mc_row "6" "Switch to STABLE Channel" "$G" " ${DIM}(v2-latest)${NC}"
-    mc_row "7" "Switch to BETA Channel" "$Y" " ${DIM}(Latest Action · v2-beta)${NC}"
-    mc_row "8" "Update Terminal Menu" "$B" " ${DIM}(main.sh)${NC}"
+    mc_row "9"  "Update on Current Channel" "$C" " ${DIM}(${cur_ch^^})${NC}"
+    mc_row "10" "Switch to STABLE Channel" "$G" " ${DIM}(releases/latest)${NC}"
+    mc_row "11" "Switch to BETA Channel" "$Y" " ${DIM}(Rolling Action · beta-latest)${NC}"
 
     mc_group "MAINTENANCE"
-    mc_row "9" "Backup Databases" "$C" " ${DIM}(/var/lib/mcontrol)${NC}"
-    mc_row "10" "Uninstall MControl" "$R"
+    mc_row "12" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
+    mc_row "13" "Uninstall MControl" "$R"
 
     mc_footer "Exit"
 
     printf "  ${C}Select ❯❯ ${NC}"
-    read -r choice || exit 0
-    case "$choice" in
-        1)
-            systemctl restart "$SERVICE" 2>/dev/null && echo -e "\n  ${G}✓ Panel restarted.${NC}" || echo -e "\n  ${R}✖ Failed to restart ${SERVICE}.${NC}"
-            mc_pause ;;
-        2)
-            systemctl stop "$SERVICE" 2>/dev/null && echo -e "\n  ${Y}● Panel stopped.${NC}" || echo -e "\n  ${R}✖ Failed to stop ${SERVICE}.${NC}"
-            mc_pause ;;
-        3)
-            echo ""
-            systemctl status "$SERVICE" --no-pager -n 15 || true
-            mc_pause ;;
-        4)
-            change_panel_port
-            mc_pause ;;
+    read -r opt || exit 0
+    case "$opt" in
+        1) systemctl restart "$SVC" && echo -e "\n  ${G}✓ Service restarted.${NC}" || echo -e "\n  ${R}✖ Restart failed.${NC}"; mc_pause ;;
+        2) systemctl start "$SVC" && echo -e "\n  ${G}✓ Service started.${NC}" || echo -e "\n  ${R}✖ Start failed.${NC}"; mc_pause ;;
+        3) systemctl stop "$SVC" && echo -e "\n  ${Y}● Service stopped.${NC}" || echo -e "\n  ${R}✖ Stop failed.${NC}"; mc_pause ;;
+        4) echo ""; journalctl -u "$SVC" -n 40 --no-pager || true; mc_pause ;;
         5)
-            install_channel_binary "$cur_ch"
+            echo ""
+            printf "  ${C}Enter new port (1-65535): ${NC}"
+            read -r newp
+            if [[ "$newp" =~ ^[0-9]+$ ]] && (( newp >= 1 && newp <= 65535 )); then
+                db_set panel_port "$newp" || true
+                sed -i -E "s/-port [0-9]+/-port ${newp}/" /etc/systemd/system/mcontrol.service 2>/dev/null || true
+                systemctl daemon-reload
+                systemctl restart "$SVC"
+                echo -e "  ${G}✓ Panel port updated to ${newp}.${NC}"
+            else
+                echo -e "  ${R}✖ Invalid port.${NC}"
+            fi
             mc_pause ;;
         6)
-            install_channel_binary "stable"
+            echo ""
+            printf "  ${C}Enter new web path (3-48 chars, e.g. mc_panel1): ${NC}"
+            read -r newwp
+            newwp="${newwp#/}"; newwp="${newwp%/}"
+            if [[ "$newwp" =~ ^[A-Za-z0-9_-]{3,48}$ ]]; then
+                db_set web_path "$newwp" && systemctl restart "$SVC"
+                echo -e "  ${G}✓ Web path updated to /${newwp}/ and service restarted.${NC}"
+            else
+                echo -e "  ${R}✖ Invalid web path format.${NC}"
+            fi
             mc_pause ;;
         7)
-            install_channel_binary "beta"
+            db_set twofa_enabled "0" && echo -e "\n  ${G}✓ 2FA disabled.${NC}" || echo -e "\n  ${R}✖ Database not found.${NC}"
             mc_pause ;;
         8)
-            update_cli_scripts
+            rm -f "$DATA_DIR/tls.crt" "$DATA_DIR/tls.key" && systemctl restart "$SVC"
+            echo -e "\n  ${Y}● HTTPS certificates removed. Switched to HTTP.${NC}"
             mc_pause ;;
-        9)
-            backup_data
+        9)  install_channel "$cur_ch"; mc_pause ;;
+        10) install_channel "stable"; mc_pause ;;
+        11) install_channel "beta"; mc_pause ;;
+        12)
+            out="/root/mcontrol-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+            if [[ -d "$DATA_DIR" ]]; then
+                tar -czf "$out" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")"
+                echo -e "\n  ${G}✓ Backup created: ${W}${out}${NC}"
+            else
+                echo -e "\n  ${R}✖ ${DATA_DIR} not found.${NC}"
+            fi
             mc_pause ;;
-        10)
-            uninstall_mcontrol
-            mc_pause ;;
-        0|q|Q)
+        13)
             echo ""
-            exit 0 ;;
-        *)
-            echo -e "  ${R}✖ Invalid selection.${NC}"
-            sleep 1 ;;
+            printf "  ${R}⚠ Uninstall MControl? [y/N]: ${NC}"
+            read -r yn
+            if [[ "$yn" =~ ^[Yy]$ ]]; then
+                systemctl disable --now "$SVC" 2>/dev/null || true
+                rm -f /etc/systemd/system/mcontrol.service "$CLI_BIN"
+                rm -rf "$INSTALL_DIR"
+                systemctl daemon-reload 2>/dev/null || true
+                echo -e "\n  ${Y}✓ MControl uninstalled (databases kept at ${DATA_DIR}).${NC}\n"
+                exit 0
+            fi
+            mc_pause ;;
+        0|q|Q) echo ""; exit 0 ;;
+        *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
     esac
 done
