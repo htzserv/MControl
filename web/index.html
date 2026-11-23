@@ -2469,6 +2469,16 @@ body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
       </div>
     </div>
     <div class="field"><label data-i18n="lbl_port">Panel port</label><input id="su-port" type="number" value="2053"></div>
+    <div class="field">
+      <label>Panel Domain / Address <span style="color:var(--muted); font-weight:400;">(Optional — e.g. panel.example.com)</span></label>
+      <input id="su-domain" class="mono" placeholder="panel.example.com" autocomplete="off">
+    </div>
+    <div class="field" id="su-ssl-wrap" style="display:none;">
+      <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:.82rem;">
+        <input type="checkbox" id="su-ssl" style="width:auto;">
+        <span>Auto-issue Free SSL Certificate (Let's Encrypt — Port 80 must be free)</span>
+      </label>
+    </div>
     <button class="btn btn-sky" id="btn-setup-go" style="width:100%; justify-content:center;" data-i18n="btn_setup">Save &amp; launch panel</button>
     <div id="setup-result" style="display:none; margin-top:16px; text-align:center;">
       <div class="b-ok badge" style="margin-bottom:8px;" data-i18n="setup_done">Setup complete! Restarting panel...</div>
@@ -2595,7 +2605,7 @@ body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.4.2</span>
+      <span class="mono" id="nav-ver-lbl">v1.4.3</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -8256,17 +8266,32 @@ async function logout() {
   if (token) { try { await api('api/logout', 'POST'); } catch (e) {} }
   token = ''; ls.del('mc_token'); location.reload();
 }
+if ($('su-domain')) {
+  $('su-domain').addEventListener('input', () => {
+    const v = $('su-domain').value.trim();
+    const isDom = /^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(v);
+    if ($('su-ssl-wrap')) $('su-ssl-wrap').style.display = isDom ? 'block' : 'none';
+    if (!isDom && $('su-ssl')) $('su-ssl').checked = false;
+  });
+}
 async function completeSetup() {
   const btn = $('btn-setup-go'); btn.disabled = true;
+  const dom = $('su-domain') ? $('su-domain').value.trim() : '';
+  const wantSSL = !!($('su-ssl') && $('su-ssl').checked);
+  if (wantSSL) toast('Issuing Let\'s Encrypt SSL certificate... please wait 10-20s');
   const res = await api('api/setup/complete', 'POST', {
     username: $('su-user').value, password: $('su-pass').value, web_path: $('su-path').value,
-    port: parseInt($('su-port').value || '0', 10), setup_token: $('su-token').value
+    port: parseInt($('su-port').value || '0', 10), setup_token: $('su-token').value,
+    domain: dom, issue_ssl: wantSSL
   });
   if (res.ok) {
-    const url = location.protocol + '//' + location.hostname + ':' + res.port + '/' + res.web_path + '/';
+    if (res.ssl_warning) toast(res.ssl_warning, true);
+    const proto = res.ssl_issued ? 'https:' : location.protocol;
+    const host = (res.domain && res.domain.length > 0) ? res.domain : location.hostname;
+    const url = proto + '//' + host + ':' + res.port + '/' + res.web_path + '/';
     const a = $('setup-new-url'); a.href = url; a.textContent = url;
     $('setup-result').style.display = 'block';
-    setTimeout(() => { location.href = url; }, 3500);
+    setTimeout(() => { location.href = url; }, res.ssl_warning ? 6000 : 3500);
   } else { toast(res.error || 'Setup failed', true); btn.disabled = false; }
 }
 function randPath() {

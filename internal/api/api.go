@@ -580,6 +580,8 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 		WebPath    string `json:"web_path"`
 		Port       int    `json:"port"`
 		SetupToken string `json:"setup_token"`
+		Domain     string `json:"domain"`
+		IssueSSL   bool   `json:"issue_ssl"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -609,21 +611,88 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 		}
 		req.Port = p
 	}
+	domain := strings.ToLower(strings.TrimSpace(req.Domain))
+	domain = strings.TrimPrefix(domain, "https://")
+	domain = strings.TrimPrefix(domain, "http://")
+	if idx := strings.IndexAny(domain, "/:"); idx >= 0 {
+		domain = domain[:idx]
+	}
+	if domain != "" && !validHostRe.MatchString(domain) {
+		fail(w, http.StatusBadRequest, "invalid domain or address")
+		return
+	}
+	if req.IssueSSL {
+		if domain == "" || !validDomainRe.MatchString(domain) {
+			fail(w, http.StatusBadRequest, "a valid domain name (e.g. panel.example.com) is required to issue SSL")
+			return
+		}
+	}
+
 	req.Username = strings.TrimSpace(req.Username)
 	if err := h.store.CompleteSetup(req.Username, req.Password, req.WebPath, req.Port); err != nil {
 		fail(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	if domain != "" {
+		_ = h.store.SetListenDomain(domain)
+	}
+
+	sslIssued := false
+	sslWarning := ""
+	if req.IssueSSL && domain != "" {
+		dir := h.store.DataDir()
+		certPath := filepath.Join(dir, "tls.crt")
+		keyPath := filepath.Join(dir, "tls.key")
+		mail := "admin@" + domain
+		script := fmt.Sprintf(`set -e
+DOM=%s
+MAIL=%s
+CRT=%s
+KEY=%s
+if ! command -v certbot >/dev/null 2>&1; then
+  if command -v apt-get >/dev/null 2>&1; then
+    DEBIAN_FRONTEND=noninteractive apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq certbot >/dev/null
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y -q certbot >/dev/null
+  elif command -v yum >/dev/null 2>&1; then
+    yum install -y -q certbot >/dev/null
+  fi
+fi
+if command -v certbot >/dev/null 2>&1; then
+  certbot certonly --standalone --non-interactive --agree-tos --email "$MAIL" -d "$DOM" --keep-until-expiring --preferred-challenges http
+  cp -f "/etc/letsencrypt/live/$DOM/fullchain.pem" "$CRT"
+  cp -f "/etc/letsencrypt/live/$DOM/privkey.pem" "$KEY"
+  chmod 600 "$CRT" "$KEY"
+else
+  if [ ! -x /root/.acme.sh/acme.sh ]; then
+    curl -fsSL https://get.acme.sh | sh -s email="$MAIL"
+  fi
+  /root/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+  /root/.acme.sh/acme.sh --issue --standalone -d "$DOM" --force
+  /root/.acme.sh/acme.sh --install-cert -d "$DOM" --fullchain-file "$CRT" --key-file "$KEY"
+  chmod 600 "$CRT" "$KEY"
+fi`, sshclient.ShQuote(domain), sshclient.ShQuote(mail), sshclient.ShQuote(certPath), sshclient.ShQuote(keyPath))
+		cmd := exec.Command("bash", "-c", script)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			sslWarning = "SSL issuance failed (ensure port 80 is free & DNS points to this server): " + strings.TrimSpace(string(out))
+		} else {
+			sslIssued = true
+		}
+	}
+
 	h.limiter.ok(ip)
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":       true,
-		"web_path": req.WebPath,
-		"port":     req.Port,
-		"token":    h.makeToken(req.Username),
+		"ok":          true,
+		"web_path":    req.WebPath,
+		"port":        req.Port,
+		"domain":      domain,
+		"ssl_issued":  sslIssued,
+		"ssl_warning": sslWarning,
+		"token":       h.makeToken(req.Username),
 	})
 
-	// Exit cleanly so systemd (Restart=always) immediately relaunches MControl on the new port & web_path.
+	// Exit cleanly so systemd (Restart=always) immediately relaunches MControl on the new port, web_path & TLS.
 	go func() {
 		time.Sleep(1200 * time.Millisecond)
 		os.Exit(0)

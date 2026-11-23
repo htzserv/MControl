@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.3
+- **Optional Domain & 1-Click Let's Encrypt SSL during First-Time Setup:** Added optional Panel Domain / Address and automatic SSL issuance toggle directly on the First-Time Setup screen (`POST /api/setup/complete`).
+- **Full Deep Wipe Option in Installer (`--wipe`):** Added `sudo bash install.sh --wipe` to completely remove old v1/v2 binaries, services, databases, and caches before a clean install.
+
 ## 1.4.2
 - **Build Fix:** Fixed method receiver syntax typo (`func (h *Handler) benchLog`) in `internal/api/msmart.go`.
 

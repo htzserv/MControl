@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MControl v1.4.0 — MTunnel-Style MDesign Installer (Static IP-Only Header + Stable/Beta)
-MODULE_VERSION="1.4.2"
+MODULE_VERSION="1.4.3"
 set -euo pipefail
 umask 077
 
@@ -22,9 +22,11 @@ fi
 
 PORT="2053"
 CHANNEL="${MCONTROL_CHANNEL:-stable}"
+DO_WIPE=0
 for arg in "$@"; do
     case "$arg" in
         --beta|beta)     CHANNEL="beta" ;;
+    --wipe|wipe)     DO_WIPE=1 ;;
         --stable|stable) CHANNEL="stable" ;;
         [0-9]*)          PORT="$arg" ;;
     esac
@@ -45,6 +47,15 @@ case "$(uname -m)" in
     aarch64|arm64) ARCH="arm64" ;;
     *)             ARCH="amd64" ;;
 esac
+
+if [[ "$DO_WIPE" -eq 1 ]]; then
+    echo -e "  ${Y}● Wiping all previous MControl binaries, services & databases...${NC}"
+    systemctl disable --now mcontrol.service 2>/dev/null || true
+    rm -f /etc/systemd/system/mcontrol.service /usr/local/bin/mcontrol /usr/local/bin/mcontrol-menu
+    rm -rf /opt/mcontrol /var/lib/mcontrol /root/mcontrol /etc/mcontrol
+    systemctl daemon-reload 2>/dev/null || true
+    echo -e "  ${G}✓ Previous installation and databases completely wiped.${NC}"
+fi
 
 # ── Static IP Detection & Gold Header (No Live Refresh Loop) ────────────────
 IP4=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}' || true)
