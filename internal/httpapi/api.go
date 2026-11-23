@@ -75,6 +75,26 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/tenant/layout", s.guard.RequireAuth(s.handleTenantSaveLayout))
 	mux.HandleFunc("GET /api/tenant/theme", s.guard.RequireAuth(s.handleTenantGetTheme))
 	mux.HandleFunc("PUT /api/tenant/theme", s.guard.RequireAuth(s.handleTenantSaveTheme))
+
+	// Package 3: Per-Tenant Uptime, Telegram, Public Status, DNS Failover & Cloud
+	mux.HandleFunc("GET /api/public/status/{username}", s.handlePublicStatus)
+	mux.HandleFunc("GET /api/tenant/monitors", s.guard.RequireAuth(s.handleTenantListMonitors))
+	mux.HandleFunc("POST /api/tenant/monitors", s.guard.RequireAuth(s.handleTenantAddMonitor))
+	mux.HandleFunc("POST /api/tenant/monitors/{id}/check", s.guard.RequireAuth(s.handleTenantCheckMonitor))
+	mux.HandleFunc("DELETE /api/tenant/monitors/{id}", s.guard.RequireAuth(s.handleTenantDeleteMonitor))
+	mux.HandleFunc("GET /api/tenant/telegram", s.guard.RequireAuth(s.handleTenantGetTelegram))
+	mux.HandleFunc("PUT /api/tenant/telegram", s.guard.RequireAuth(s.handleTenantSaveTelegram))
+	mux.HandleFunc("POST /api/tenant/telegram/test", s.guard.RequireAuth(s.handleTenantTestTelegram))
+
+	mux.HandleFunc("GET /api/tenant/dns", s.guard.RequireAuth(s.handleTenantListDNS))
+	mux.HandleFunc("POST /api/tenant/dns", s.guard.RequireAuth(s.handleTenantAddDNS))
+	mux.HandleFunc("POST /api/tenant/dns/{id}/switch", s.guard.RequireAuth(s.handleTenantSwitchDNS))
+	mux.HandleFunc("DELETE /api/tenant/dns/{id}", s.guard.RequireAuth(s.handleTenantDeleteDNS))
+
+	mux.HandleFunc("GET /api/tenant/cloud", s.guard.RequireAuth(s.handleTenantListCloud))
+	mux.HandleFunc("POST /api/tenant/cloud", s.guard.RequireAuth(s.handleTenantAddCloud))
+	mux.HandleFunc("GET /api/tenant/cloud/{id}/instances", s.guard.RequireAuth(s.handleTenantCloudInstances))
+	mux.HandleFunc("DELETE /api/tenant/cloud/{id}", s.guard.RequireAuth(s.handleTenantDeleteCloud))
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {

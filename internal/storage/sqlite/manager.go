@@ -227,6 +227,47 @@ func initTenantSchema(ctx context.Context, db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS tenant_settings (
 		key   TEXT PRIMARY KEY,
 		value TEXT NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS monitors (
+		id           INTEGER PRIMARY KEY AUTOINCREMENT,
+		name         TEXT NOT NULL,
+		type         TEXT NOT NULL DEFAULT 'http',
+		target       TEXT NOT NULL,
+		interval_sec INTEGER NOT NULL DEFAULT 60,
+		status       TEXT NOT NULL DEFAULT 'unknown',
+		latency_ms   INTEGER NOT NULL DEFAULT 0,
+		last_error   TEXT NOT NULL DEFAULT '',
+		is_public    INTEGER NOT NULL DEFAULT 1,
+		created_at   INTEGER NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS monitor_heartbeats (
+		id         INTEGER PRIMARY KEY AUTOINCREMENT,
+		monitor_id INTEGER NOT NULL,
+		is_up      INTEGER NOT NULL,
+		latency_ms INTEGER NOT NULL DEFAULT 0,
+		checked_at INTEGER NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS dns_rules (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		provider    TEXT NOT NULL DEFAULT 'cloudflare',
+		domain      TEXT NOT NULL,
+		zone_id     TEXT NOT NULL DEFAULT '',
+		record_id   TEXT NOT NULL DEFAULT '',
+		record_name TEXT NOT NULL,
+		token_enc   TEXT NOT NULL DEFAULT '',
+		primary_ip  TEXT NOT NULL,
+		backup_ip   TEXT NOT NULL,
+		active_ip   TEXT NOT NULL,
+		status      TEXT NOT NULL DEFAULT 'primary',
+		last_switch TEXT NOT NULL DEFAULT '',
+		created_at  INTEGER NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS cloud_accounts (
+		id         INTEGER PRIMARY KEY AUTOINCREMENT,
+		provider   TEXT NOT NULL DEFAULT 'hetzner',
+		label      TEXT NOT NULL,
+		token_enc  TEXT NOT NULL DEFAULT '',
+		created_at INTEGER NOT NULL
 	);`
 	if _, err := db.ExecContext(ctx, schema); err != nil {
 		return err
@@ -756,6 +797,320 @@ func (m *Manager) SaveThemePrefs(ctx context.Context, tenantID int64, prefs stor
 	}
 	raw, _ := json.Marshal(prefs)
 	_, err = db.ExecContext(ctx, `INSERT INTO tenant_settings (key, value) VALUES ('theme', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, string(raw))
+	return err
+}
+
+
+// ── Package 3: Per-Tenant Uptime, Telegram, DNS Failover & Cloud ─────────────
+
+func (m *Manager) ListMonitors(ctx context.Context, tenantID int64) ([]storage.Monitor, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := db.QueryContext(ctx, `SELECT id, name, type, target, interval_sec, status, latency_ms, last_error, is_public, created_at FROM monitors ORDER BY id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []storage.Monitor{}
+	for rows.Next() {
+		var mon storage.Monitor
+		var pub int
+		var ts int64
+		if err := rows.Scan(&mon.ID, &mon.Name, &mon.Type, &mon.Target, &mon.IntervalSec, &mon.Status, &mon.LatencyMs, &mon.LastError, &pub, &ts); err != nil {
+			return nil, err
+		}
+		mon.Public = pub == 1
+		mon.CreatedAt = time.Unix(ts, 0).UTC()
+		mon.History = []int{}
+		out = append(out, mon)
+	}
+	for i := range out {
+		hRows, err := db.QueryContext(ctx, `SELECT is_up FROM monitor_heartbeats WHERE monitor_id = ? ORDER BY id DESC LIMIT 30`, out[i].ID)
+		if err == nil {
+			var rev []int
+			upCnt := 0
+			for hRows.Next() {
+				var v int
+				if err := hRows.Scan(&v); err == nil {
+					rev = append(rev, v)
+					if v == 1 {
+						upCnt++
+					}
+				}
+			}
+			_ = hRows.Close()
+			for j := len(rev) - 1; j >= 0; j-- {
+				out[i].History = append(out[i].History, rev[j])
+			}
+			if len(rev) > 0 {
+				out[i].UptimePct = float64(upCnt*1000/len(rev)) / 10.0
+			} else {
+				out[i].UptimePct = 100.0
+			}
+		}
+	}
+	return out, nil
+}
+
+func (m *Manager) AddMonitor(ctx context.Context, tenantID int64, mon *storage.Monitor) (int64, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return 0, err
+	}
+	if mon.Type != "tcp" {
+		mon.Type = "http"
+	}
+	if mon.IntervalSec < 15 {
+		mon.IntervalSec = 60
+	}
+	pub := 0
+	if mon.Public {
+		pub = 1
+	}
+	res, err := db.ExecContext(ctx,
+		`INSERT INTO monitors (name, type, target, interval_sec, status, latency_ms, last_error, is_public, created_at)
+		 VALUES (?, ?, ?, ?, 'unknown', 0, '', ?, ?)`,
+		strings.TrimSpace(mon.Name), mon.Type, strings.TrimSpace(mon.Target), mon.IntervalSec, pub, time.Now().Unix(),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (m *Manager) DeleteMonitor(ctx context.Context, tenantID, monitorID int64) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	_, _ = db.ExecContext(ctx, `DELETE FROM monitor_heartbeats WHERE monitor_id = ?`, monitorID)
+	_, err = db.ExecContext(ctx, `DELETE FROM monitors WHERE id = ?`, monitorID)
+	return err
+}
+
+func (m *Manager) RecordHeartbeat(ctx context.Context, tenantID, monitorID int64, up bool, latencyMs int, errMsg string) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	st := "down"
+	upInt := 0
+	if up {
+		st = "up"
+		upInt = 1
+	}
+	_, err = db.ExecContext(ctx, `UPDATE monitors SET status=?, latency_ms=?, last_error=? WHERE id=?`, st, latencyMs, errMsg, monitorID)
+	if err != nil {
+		return err
+	}
+	_, _ = db.ExecContext(ctx, `INSERT INTO monitor_heartbeats (monitor_id, is_up, latency_ms, checked_at) VALUES (?, ?, ?, ?)`, monitorID, upInt, latencyMs, time.Now().Unix())
+	_, _ = db.ExecContext(ctx, `DELETE FROM monitor_heartbeats WHERE monitor_id = ? AND id NOT IN (SELECT id FROM monitor_heartbeats WHERE monitor_id = ? ORDER BY id DESC LIMIT 100)`, monitorID, monitorID)
+	return nil
+}
+
+func (m *Manager) GetTelegramConfig(ctx context.Context, tenantID int64) (storage.TelegramConfig, error) {
+	var cfg storage.TelegramConfig
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return cfg, err
+	}
+	var raw string
+	if err := db.QueryRowContext(ctx, `SELECT value FROM tenant_settings WHERE key = 'telegram'`).Scan(&raw); err == nil && raw != "" {
+		_ = json.Unmarshal([]byte(raw), &cfg)
+		if cfg.BotToken != "" {
+			if plain, err := m.decrypt(cfg.BotToken); err == nil {
+				cfg.BotToken = plain
+			}
+		}
+	}
+	return cfg, nil
+}
+
+func (m *Manager) SaveTelegramConfig(ctx context.Context, tenantID int64, cfg storage.TelegramConfig) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	stored := cfg
+	if strings.TrimSpace(cfg.BotToken) != "" {
+		enc, err := m.encrypt(strings.TrimSpace(cfg.BotToken))
+		if err != nil {
+			return err
+		}
+		stored.BotToken = enc
+	}
+	raw, _ := json.Marshal(stored)
+	_, err = db.ExecContext(ctx, `INSERT INTO tenant_settings (key, value) VALUES ('telegram', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, string(raw))
+	return err
+}
+
+func (m *Manager) ListDNSRules(ctx context.Context, tenantID int64) ([]storage.DNSRule, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := db.QueryContext(ctx, `SELECT id, provider, domain, zone_id, record_id, record_name, token_enc, primary_ip, backup_ip, active_ip, status, last_switch, created_at FROM dns_rules ORDER BY id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []storage.DNSRule{}
+	for rows.Next() {
+		var r storage.DNSRule
+		var tokEnc string
+		var ts int64
+		if err := rows.Scan(&r.ID, &r.Provider, &r.Domain, &r.ZoneID, &r.RecordID, &r.RecordName, &tokEnc, &r.PrimaryIP, &r.BackupIP, &r.ActiveIP, &r.Status, &r.LastSwitch, &ts); err != nil {
+			return nil, err
+		}
+		r.HasToken = tokEnc != ""
+		r.CreatedAt = time.Unix(ts, 0).UTC()
+		out = append(out, r)
+	}
+	return out, nil
+}
+
+func (m *Manager) GetDNSRuleWithToken(ctx context.Context, tenantID, ruleID int64) (*storage.DNSRule, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	var r storage.DNSRule
+	var tokEnc string
+	var ts int64
+	err = db.QueryRowContext(ctx, `SELECT id, provider, domain, zone_id, record_id, record_name, token_enc, primary_ip, backup_ip, active_ip, status, last_switch, created_at FROM dns_rules WHERE id = ?`, ruleID).
+		Scan(&r.ID, &r.Provider, &r.Domain, &r.ZoneID, &r.RecordID, &r.RecordName, &tokEnc, &r.PrimaryIP, &r.BackupIP, &r.ActiveIP, &r.Status, &r.LastSwitch, &ts)
+	if err != nil {
+		return nil, err
+	}
+	r.HasToken = tokEnc != ""
+	if tokEnc != "" {
+		if plain, err := m.decrypt(tokEnc); err == nil {
+			r.APIToken = plain
+		}
+	}
+	r.CreatedAt = time.Unix(ts, 0).UTC()
+	return &r, nil
+}
+
+func (m *Manager) AddDNSRule(ctx context.Context, tenantID int64, r *storage.DNSRule) (int64, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return 0, err
+	}
+	tokEnc, err := m.encrypt(strings.TrimSpace(r.APIToken))
+	if err != nil {
+		return 0, err
+	}
+	if r.Provider != "arvancloud" {
+		r.Provider = "cloudflare"
+	}
+	activeIP := strings.TrimSpace(r.PrimaryIP)
+	res, err := db.ExecContext(ctx,
+		`INSERT INTO dns_rules (provider, domain, zone_id, record_id, record_name, token_enc, primary_ip, backup_ip, active_ip, status, last_switch, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'primary', '', ?)`,
+		r.Provider, strings.TrimSpace(r.Domain), strings.TrimSpace(r.ZoneID), strings.TrimSpace(r.RecordID),
+		strings.TrimSpace(r.RecordName), tokEnc, activeIP, strings.TrimSpace(r.BackupIP), activeIP, time.Now().Unix(),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (m *Manager) UpdateDNSRuleActive(ctx context.Context, tenantID, ruleID int64, activeIP, status, lastSwitch string) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `UPDATE dns_rules SET active_ip=?, status=?, last_switch=? WHERE id=?`, activeIP, status, lastSwitch, ruleID)
+	return err
+}
+
+func (m *Manager) DeleteDNSRule(ctx context.Context, tenantID, ruleID int64) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `DELETE FROM dns_rules WHERE id = ?`, ruleID)
+	return err
+}
+
+func (m *Manager) ListCloudAccounts(ctx context.Context, tenantID int64) ([]storage.CloudAccount, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := db.QueryContext(ctx, `SELECT id, provider, label, token_enc, created_at FROM cloud_accounts ORDER BY id ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []storage.CloudAccount{}
+	for rows.Next() {
+		var a storage.CloudAccount
+		var tokEnc string
+		var ts int64
+		if err := rows.Scan(&a.ID, &a.Provider, &a.Label, &tokEnc, &ts); err != nil {
+			return nil, err
+		}
+		a.HasToken = tokEnc != ""
+		a.CreatedAt = time.Unix(ts, 0).UTC()
+		out = append(out, a)
+	}
+	return out, nil
+}
+
+func (m *Manager) GetCloudAccountWithToken(ctx context.Context, tenantID, accID int64) (*storage.CloudAccount, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	var a storage.CloudAccount
+	var tokEnc string
+	var ts int64
+	err = db.QueryRowContext(ctx, `SELECT id, provider, label, token_enc, created_at FROM cloud_accounts WHERE id = ?`, accID).
+		Scan(&a.ID, &a.Provider, &a.Label, &tokEnc, &ts)
+	if err != nil {
+		return nil, err
+	}
+	a.HasToken = tokEnc != ""
+	if tokEnc != "" {
+		if plain, err := m.decrypt(tokEnc); err == nil {
+			a.APIToken = plain
+		}
+	}
+	a.CreatedAt = time.Unix(ts, 0).UTC()
+	return &a, nil
+}
+
+func (m *Manager) AddCloudAccount(ctx context.Context, tenantID int64, a *storage.CloudAccount) (int64, error) {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return 0, err
+	}
+	tokEnc, err := m.encrypt(strings.TrimSpace(a.APIToken))
+	if err != nil {
+		return 0, err
+	}
+	if a.Provider != "digitalocean" && a.Provider != "vultr" {
+		a.Provider = "hetzner"
+	}
+	res, err := db.ExecContext(ctx, `INSERT INTO cloud_accounts (provider, label, token_enc, created_at) VALUES (?, ?, ?, ?)`,
+		a.Provider, strings.TrimSpace(a.Label), tokEnc, time.Now().Unix())
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func (m *Manager) DeleteCloudAccount(ctx context.Context, tenantID, accID int64) error {
+	db, err := m.getTenantDB(ctx, tenantID)
+	if err != nil {
+		return err
+	}
+	_, err = db.ExecContext(ctx, `DELETE FROM cloud_accounts WHERE id = ?`, accID)
 	return err
 }
 

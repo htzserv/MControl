@@ -93,6 +93,54 @@ type ThemePrefs struct {
 	Lang   string `json:"lang"` // fa | en
 }
 
+
+type Monitor struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Type        string    `json:"type"`   // http | tcp
+	Target      string    `json:"target"` // https://... or host:port
+	IntervalSec int       `json:"interval_sec"`
+	Status      string    `json:"status"` // up | down | unknown
+	LatencyMs   int       `json:"latency_ms"`
+	UptimePct   float64   `json:"uptime_pct"`
+	LastError   string    `json:"last_error"`
+	Public      bool      `json:"public"`
+	History     []int     `json:"history"` // 1=up, 0=down (last 30 checks)
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type TelegramConfig struct {
+	Enabled  bool   `json:"enabled"`
+	BotToken string `json:"bot_token"`
+	ChatID   string `json:"chat_id"`
+}
+
+type DNSRule struct {
+	ID         int64     `json:"id"`
+	Provider   string    `json:"provider"` // cloudflare | arvancloud
+	Domain     string    `json:"domain"`
+	ZoneID     string    `json:"zone_id"`
+	RecordID   string    `json:"record_id"`
+	RecordName string    `json:"record_name"`
+	APIToken   string    `json:"api_token,omitempty"`
+	HasToken   bool      `json:"has_token"`
+	PrimaryIP  string    `json:"primary_ip"`
+	BackupIP   string    `json:"backup_ip"`
+	ActiveIP   string    `json:"active_ip"`
+	Status     string    `json:"status"`
+	LastSwitch string    `json:"last_switch"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type CloudAccount struct {
+	ID        int64     `json:"id"`
+	Provider  string    `json:"provider"` // hetzner | digitalocean | vultr
+	Label     string    `json:"label"`
+	APIToken  string    `json:"api_token,omitempty"`
+	HasToken  bool      `json:"has_token"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type SystemStats struct {
 	TotalUsers    int `json:"total_users"`
 	ActiveTenants int `json:"active_tenants"`
@@ -131,6 +179,25 @@ type Engine interface {
 	SaveLayout(ctx context.Context, tenantID int64, items []LayoutItem) error
 	GetThemePrefs(ctx context.Context, tenantID int64) (ThemePrefs, error)
 	SaveThemePrefs(ctx context.Context, tenantID int64, prefs ThemePrefs) error
+
+	// Package 3: Per-Tenant Uptime, Telegram, DNS Failover & Cloud
+	ListMonitors(ctx context.Context, tenantID int64) ([]Monitor, error)
+	AddMonitor(ctx context.Context, tenantID int64, m *Monitor) (int64, error)
+	DeleteMonitor(ctx context.Context, tenantID, monitorID int64) error
+	RecordHeartbeat(ctx context.Context, tenantID, monitorID int64, up bool, latencyMs int, errMsg string) error
+	GetTelegramConfig(ctx context.Context, tenantID int64) (TelegramConfig, error)
+	SaveTelegramConfig(ctx context.Context, tenantID int64, cfg TelegramConfig) error
+
+	ListDNSRules(ctx context.Context, tenantID int64) ([]DNSRule, error)
+	GetDNSRuleWithToken(ctx context.Context, tenantID, ruleID int64) (*DNSRule, error)
+	AddDNSRule(ctx context.Context, tenantID int64, r *DNSRule) (int64, error)
+	UpdateDNSRuleActive(ctx context.Context, tenantID, ruleID int64, activeIP, status, lastSwitch string) error
+	DeleteDNSRule(ctx context.Context, tenantID, ruleID int64) error
+
+	ListCloudAccounts(ctx context.Context, tenantID int64) ([]CloudAccount, error)
+	GetCloudAccountWithToken(ctx context.Context, tenantID, accID int64) (*CloudAccount, error)
+	AddCloudAccount(ctx context.Context, tenantID int64, a *CloudAccount) (int64, error)
+	DeleteCloudAccount(ctx context.Context, tenantID, accID int64) error
 
 	MigrateLegacyV1(legacyDBPath string, targetTenantID int64) (bool, error)
 	Close() error

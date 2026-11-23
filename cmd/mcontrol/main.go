@@ -75,6 +75,9 @@ func main() {
 
 	mux := http.NewServeMux()
 	apiSrv.Register(mux)
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	defer workerCancel()
+	apiSrv.StartUptimeWorker(workerCtx)
 
 	spa, err := webui.SPAHandler()
 	if err != nil {

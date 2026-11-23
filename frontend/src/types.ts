@@ -77,3 +77,54 @@ export interface SystemStats {
   total_servers: number;
   total_tunnels: number;
 }
+
+export interface MonitorItem {
+  id: number;
+  name: string;
+  type: 'http' | 'tcp';
+  target: string;
+  interval_sec: number;
+  status: 'up' | 'down' | 'unknown';
+  latency_ms: number;
+  uptime_pct: number;
+  last_error: string;
+  public: boolean;
+  history: number[];
+}
+
+export interface TelegramConfig {
+  enabled: boolean;
+  bot_token: string;
+  chat_id: string;
+}
+
+export interface DNSRule {
+  id: number;
+  provider: 'cloudflare' | 'arvancloud';
+  domain: string;
+  zone_id: string;
+  record_id: string;
+  record_name: string;
+  has_token: boolean;
+  primary_ip: string;
+  backup_ip: string;
+  active_ip: string;
+  status: string;
+  last_switch: string;
+}
+
+export interface CloudAccount {
+  id: number;
+  provider: 'hetzner' | 'digitalocean' | 'vultr';
+  label: string;
+  has_token: boolean;
+}
+
+export interface CloudInstance {
+  id: string;
+  name: string;
+  ipv4: string;
+  region: string;
+  status: string;
+  provider: string;
+}

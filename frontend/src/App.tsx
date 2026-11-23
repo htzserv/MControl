@@ -9,14 +9,20 @@ import {
   Sun,
   Moon,
   AlertTriangle,
+  Activity,
+  Globe,
+  Cloud,
 } from 'lucide-react';
 import { api, getToken, setToken } from './api';
 import { ServersView } from './components/ServersView';
 import { TopologyView } from './components/TopologyView';
 import { AdminView } from './components/AdminView';
+import { UptimeView } from './components/UptimeView';
+import { DNSView } from './components/DNSView';
+import { CloudView } from './components/CloudView';
 import type { Branding, ServerItem, ThemePrefs, TunnelItem, User } from './types';
 
-type Tab = 'overview' | 'servers' | 'topology' | 'admin' | 'theme';
+type Tab = 'overview' | 'servers' | 'topology' | 'uptime' | 'dns' | 'cloud' | 'admin' | 'theme';
 
 export function App() {
   const [loading, setLoading] = useState(true);
@@ -150,6 +156,46 @@ export function App() {
     await api('/api/tenant/theme', 'PUT', next);
   }
 
+
+  // Public Status Page route: /status/<username>
+  const [pubData, setPubData] = useState<{ username: string; monitors: { id: number; name: string; status: string; uptime_pct: number; latency_ms: number; history: number[] }[] } | null>(null);
+  const statusMatch = window.location.pathname.match(/^\/status\/([^/]+)/);
+  useEffect(() => {
+    if (statusMatch) {
+      api<{ username: string; monitors: { id: number; name: string; status: string; uptime_pct: number; latency_ms: number; history: number[] }[] }>(`/api/public/status/${encodeURIComponent(statusMatch[1])}`)
+        .then((r) => {
+          if (r.ok) setPubData({ username: r.username, monitors: r.monitors || [] });
+        });
+    }
+  }, []);
+
+  if (statusMatch) {
+    return (
+      <div className="shell" style={{ maxWidth: 820 }}>
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 style={{ color: 'var(--accent)' }}>{branding.app_name} — Status Page</h2>
+          <div style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>Tenant: {pubData?.username || statusMatch[1]}</div>
+        </div>
+        {(pubData?.monitors || []).map((m) => (
+          <div key={m.id} className="card" style={{ marginBottom: 10 }}>
+            <div className="toolbar" style={{ marginBottom: 8 }}>
+              <strong>{m.name}</strong>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <span className={`badge ${m.status === 'up' ? 'badge-green' : 'badge-red'}`}>{m.status.toUpperCase()}</span>
+                <span className="badge mono">{m.uptime_pct.toFixed(1)}% • {m.latency_ms} ms</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 3, height: 16 }}>
+              {(m.history || []).map((v, i) => (
+                <span key={i} style={{ flex: 1, maxWidth: 14, borderRadius: 4, background: v === 1 ? 'var(--green)' : 'var(--red)' }} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="auth-wrap">
@@ -221,6 +267,15 @@ export function App() {
           </button>
           <button className={`nav-btn ${tab === 'topology' ? 'active' : ''}`} onClick={() => setTab('topology')}>
             <Network size={15} /> {theme.lang === 'fa' ? 'توپولوژی و تانل' : 'Topology'}
+          </button>
+          <button className={`nav-btn ${tab === 'uptime' ? 'active' : ''}`} onClick={() => setTab('uptime')}>
+            <Activity size={15} /> {theme.lang === 'fa' ? 'آپتایم' : 'Uptime'}
+          </button>
+          <button className={`nav-btn ${tab === 'dns' ? 'active' : ''}`} onClick={() => setTab('dns')}>
+            <Globe size={15} /> DNS
+          </button>
+          <button className={`nav-btn ${tab === 'cloud' ? 'active' : ''}`} onClick={() => setTab('cloud')}>
+            <Cloud size={15} /> Cloud
           </button>
           {isSuper && (
             <button className={`nav-btn ${tab === 'admin' ? 'active' : ''}`} onClick={() => setTab('admin')}>
@@ -304,6 +359,10 @@ export function App() {
           notify={notify}
         />
       )}
+
+      {tab === 'uptime' && <UptimeView username={user.username} maxMonitors={user.max_monitors} notify={notify} />}
+      {tab === 'dns' && <DNSView notify={notify} />}
+      {tab === 'cloud' && <CloudView notify={notify} />}
 
       {tab === 'admin' && isSuper && (
         <AdminView
