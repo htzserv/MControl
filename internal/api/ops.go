@@ -751,3 +751,115 @@ func (h *Handler) StartOpsDaemon() {
 		}
 	}()
 }
+
+// ── Live Tweak Status (IPv6 / BBR / Firewall) ────────────────────────────────
+
+const tweakStatusCmd = `IPV6_DIS=$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null || echo 0)
+BBR_CUR=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo cubic)
+FW_ON=0
+if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi "Status: active"; then FW_ON=1; fi
+if systemctl is-active --quiet firewalld 2>/dev/null; then FW_ON=1; fi
+echo "IPV6_DIS=$IPV6_DIS"
+echo "BBR_CUR=$BBR_CUR"
+echo "FW_ON=$FW_ON"`
+
+func parseTweakStatus(out string) map[string]any {
+	kv := parseKV(out)
+	return map[string]any{
+		"ok":   true,
+		"ipv6": kv["IPV6_DIS"] != "1",
+		"bbr":  strings.EqualFold(kv["BBR_CUR"], "bbr"),
+		"fw":   kv["FW_ON"] == "1",
+	}
+}
+
+func (h *Handler) handleLocalTweakStatus(w http.ResponseWriter, r *http.Request) {
+	b, _ := exec.Command("sh", "-c", tweakStatusCmd).CombinedOutput()
+	writeJSON(w, http.StatusOK, parseTweakStatus(string(b)))
+}
+
+func (h *Handler) handleServerTweakStatus(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	res := h.runOnServer(srv, tweakStatusCmd, 12*time.Second)
+	writeJSON(w, http.StatusOK, parseTweakStatus(res.Output))
+}
+
+// ── Terminal Remember-Once Credentials (Custom or Saved SSH Profile) ─────────
+
+func (h *Handler) handleServerTermAuth(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	if r.Method == http.MethodGet {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":         true,
+			"has_secret": srv.Password != "",
+			"username":   srv.Username,
+			"port":       srv.Port,
+			"auth_mode":  srv.AuthMode,
+		})
+		return
+	}
+	var req struct {
+		Mode         string `json:"mode"` // "custom" | "saved"
+		SSHProfileID int64  `json:"ssh_profile_id"`
+		Username     string `json:"username"`
+		Port         int    `json:"port"`
+		Password     string `json:"password"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	user := strings.TrimSpace(req.Username)
+	if user == "" {
+		user = srv.Username
+	}
+	if user == "" {
+		user = "root"
+	}
+	port := req.Port
+	if port <= 0 {
+		port = srv.Port
+	}
+	if port <= 0 {
+		port = 22
+	}
+	pass := req.Password
+	if req.Mode == "saved" {
+		if req.SSHProfileID <= 0 {
+			fail(w, http.StatusBadRequest, "select a saved SSH profile")
+			return
+		}
+		prof, err := h.store.GetSSHProfileWithSecret(req.SSHProfileID)
+		if err != nil {
+			fail(w, http.StatusNotFound, "saved SSH profile not found")
+			return
+		}
+		user = prof.Username
+		port = prof.Port
+		pass = prof.Password
+	}
+	if pass == "" {
+		fail(w, http.StatusBadRequest, "SSH password is required")
+		return
+	}
+	if err := h.store.UpdateServerCredentials(id, user, port, pass); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Terminal credentials saved & unlocked!"})
+}

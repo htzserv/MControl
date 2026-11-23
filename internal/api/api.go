@@ -359,6 +359,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/local/stats", h.auth(h.handleLocalStats))
 	mux.HandleFunc("GET /api/local/logs", h.auth(h.handleLocalLogs))
 	mux.HandleFunc("POST /api/local/speedtest", h.auth(h.handleLocalSpeedtest))
+	mux.HandleFunc("GET /api/local/tweak/status", h.auth(h.handleLocalTweakStatus))
 	mux.HandleFunc("POST /api/local/tweak", h.auth(h.handleLocalTweak))
 	mux.HandleFunc("POST /api/local/clean-cache", h.auth(h.handleLocalCleanCache))
 	mux.HandleFunc("POST /api/local/restart", h.auth(h.handleLocalRestart))
@@ -398,7 +399,10 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/settings/tls/acme", h.auth(h.handleIssueACME))
 	mux.HandleFunc("DELETE /api/settings/tls", h.auth(h.handleDeleteTLS))
 	mux.HandleFunc("POST /api/settings/panel-name", h.auth(h.handleSavePanelName))
+	mux.HandleFunc("GET /api/servers/{id}/tweak/status", h.auth(h.handleServerTweakStatus))
 	mux.HandleFunc("POST /api/servers/{id}/tweak", h.auth(h.handleServerTweak))
+	mux.HandleFunc("GET /api/servers/{id}/term-auth", h.auth(h.handleServerTermAuth))
+	mux.HandleFunc("POST /api/servers/{id}/term-auth", h.auth(h.handleServerTermAuth))
 	mux.HandleFunc("GET /api/servers/{id}/setup/status", h.auth(h.handleServerSetupStatus))
 	mux.HandleFunc("POST /api/servers/{id}/setup/run", h.auth(h.handleServerSetupRun))
 	mux.HandleFunc("GET /api/servers/{id}/legacy/scan", h.auth(h.handleLegacyScan))
@@ -1855,8 +1859,12 @@ func (h *Handler) handleServerTweak(w http.ResponseWriter, r *http.Request) {
 	switch req.Action {
 	case "fw_off":
 		cmd = `sudo ufw disable 2>/dev/null || true; sudo systemctl stop firewalld 2>/dev/null || true; sudo systemctl disable firewalld 2>/dev/null || true; sudo iptables -P INPUT ACCEPT 2>/dev/null || true; sudo iptables -F 2>/dev/null || true; echo "Firewall disabled & flushed."`
+	case "fw_on":
+		cmd = `if command -v ufw >/dev/null 2>&1; then sudo ufw allow 22/tcp >/dev/null 2>&1 || true; sudo ufw --force enable; else echo "UFW not installed on this server."; fi`
 	case "bbr_on":
 		cmd = `sudo sysctl -w net.core.default_qdisc=fq net.ipv4.tcp_congestion_control=bbr && (grep -q "tcp_congestion_control=bbr" /etc/sysctl.conf || printf "\nnet.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n" | sudo tee -a /etc/sysctl.conf >/dev/null) && echo "BBR enabled: $(sysctl -n net.ipv4.tcp_congestion_control)"`
+	case "bbr_off":
+		cmd = `sudo sysctl -w net.ipv4.tcp_congestion_control=cubic && echo "BBR disabled (switched to cubic)."`
 	case "ipv6_on":
 		cmd = `sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0 net.ipv6.conf.default.disable_ipv6=0 net.ipv6.conf.lo.disable_ipv6=0 && echo "IPv6 enabled."`
 	case "ipv6_off":
@@ -2019,8 +2027,12 @@ func (h *Handler) handleLocalTweak(w http.ResponseWriter, r *http.Request) {
 	switch req.Action {
 	case "fw_off":
 		cmd = `ufw disable 2>/dev/null || true; systemctl stop firewalld 2>/dev/null || true; systemctl disable firewalld 2>/dev/null || true; iptables -P INPUT ACCEPT 2>/dev/null || true; iptables -F 2>/dev/null || true; echo "Master firewall disabled & flushed."`
+	case "fw_on":
+		cmd = `if command -v ufw >/dev/null 2>&1; then ufw allow 22/tcp >/dev/null 2>&1 || true; ufw --force enable; else echo "UFW not installed on Master."; fi`
 	case "bbr_on":
 		cmd = `sysctl -w net.core.default_qdisc=fq net.ipv4.tcp_congestion_control=bbr && (grep -q "tcp_congestion_control=bbr" /etc/sysctl.conf || printf "\nnet.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n" >> /etc/sysctl.conf) && echo "BBR enabled on Master: $(sysctl -n net.ipv4.tcp_congestion_control)"`
+	case "bbr_off":
+		cmd = `sysctl -w net.ipv4.tcp_congestion_control=cubic && echo "BBR disabled on Master (cubic)."`
 	case "ipv6_on":
 		cmd = `sysctl -w net.ipv6.conf.all.disable_ipv6=0 net.ipv6.conf.default.disable_ipv6=0 net.ipv6.conf.lo.disable_ipv6=0 && echo "IPv6 enabled on Master."`
 	case "ipv6_off":

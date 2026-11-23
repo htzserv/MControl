@@ -2090,6 +2090,74 @@ body[data-navx="top"] .ver-bubble {
   justify-content: center;
 }
 
+
+/* ═══ TWEAK SINGLE TOGGLE BUBBLES (ON / OFF with Confirmation) ═══ */
+.tweak-bubble-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+}
+@media (max-width: 520px) { .tweak-bubble-grid { grid-template-columns: 1fr; } }
+.tw-bubble {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 15px; border-radius: 999px; cursor: pointer;
+  background: var(--row); color: var(--text);
+  border: 1.5px solid var(--border);
+  font-family: inherit; font-size: .8rem; font-weight: 800;
+  transition: transform .15s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.tw-bubble:hover { transform: translateY(-1.5px); border-color: var(--accent); }
+.tw-b-left { display: inline-flex; align-items: center; gap: 8px; }
+.tw-b-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--muted);
+  transition: background .2s ease, box-shadow .2s ease;
+}
+.tw-b-pill {
+  font-family: var(--ff-m); font-size: .68rem; font-weight: 900;
+  padding: 3px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 18%, var(--surface));
+  color: var(--muted);
+}
+.tw-bubble.is-on {
+  border-color: color-mix(in srgb, var(--green) 58%, var(--border));
+  background: color-mix(in srgb, var(--green) 11%, var(--row));
+}
+.tw-bubble.is-on .tw-b-dot { background: var(--green); box-shadow: 0 0 9px var(--green); }
+.tw-bubble.is-on .tw-b-pill { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+.tw-bubble.is-off {
+  border-color: color-mix(in srgb, var(--red) 42%, var(--border));
+  background: color-mix(in srgb, var(--red) 7%, var(--row));
+}
+.tw-bubble.is-off .tw-b-dot { background: var(--red); }
+.tw-bubble.is-off .tw-b-pill { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+.tw-bubble.action {
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+  background: color-mix(in srgb, var(--accent) 9%, var(--row));
+}
+.tw-bubble.action .tw-b-pill { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+
+
+/* ═══ PER-SIDE PEER PING CONTROL + INLINE RESULT FIELD ═══ */
+.tun-ping-row {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+}
+.tun-ping-ver {
+  flex: 0 0 auto; width: auto !important; min-width: 78px;
+  padding: 7px 10px !important; border-radius: 999px !important;
+  font-family: var(--ff-m); font-size: .73rem !important; font-weight: 800;
+  background: var(--surface); border: 1.3px solid var(--border); color: var(--text);
+  cursor: pointer; outline: none;
+}
+.tun-ping-row .tun-side-ping-btn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tun-ping-res {
+  display: none; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 7px 12px; border-radius: 14px; font-size: .72rem; line-height: 1.35;
+  background: var(--row); border: 1.2px solid var(--border); color: var(--text);
+  word-break: break-all;
+}
+.tun-ping-res.show { display: flex; flex-wrap: wrap; }
+.tun-ping-res.ok { border-color: color-mix(in srgb, var(--green) 55%, var(--border)); background: color-mix(in srgb, var(--green) 10%, var(--row)); }
+.tun-ping-res.warn { border-color: color-mix(in srgb, var(--yellow) 55%, var(--border)); background: color-mix(in srgb, var(--yellow) 10%, var(--row)); }
+.tun-ping-res.bad { border-color: color-mix(in srgb, var(--red) 55%, var(--border)); background: color-mix(in srgb, var(--red) 10%, var(--row)); }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3526,7 +3594,7 @@ body[data-navx="top"] .ver-bubble {
         <div class="tun-sec" style="margin-bottom:0;">
           <div class="tun-sec-title"><span>Route (Entry ⇄ Exit)</span></div>
           <div class="row2">
-            <!-- Entry Server (3 Stacked Bubbles + IP Ping Test Button) -->
+            <!-- Entry Server (Server 1): Pings Opposite Server (Server 2) IPv4 / IPv6 -->
             <div class="tun-route-col">
               <div class="tun-route-lbl">Entry Server (Iran)</div>
               <div class="tun-rb rb-flag" id="t-iran-flag-b">
@@ -3537,18 +3605,25 @@ body[data-navx="top"] .ver-bubble {
                 <select id="t-iran" onchange="onTunnelServersChange()"></select>
               </div>
               <div class="tun-rb rb-ip">
-                <select id="t-iran-ipver" onchange="updateTunFloatDock()">
+                <select id="t-iran-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock()">
                   <option value="v4">IPv4</option>
                   <option value="v6">IPv6</option>
                 </select>
                 <span class="tun-rb-ip-flag" id="t-iran-ip-flag"></span>
               </div>
-              <button type="button" class="tun-side-ping-btn" id="btn-ping8-iran" onclick="runTunnelPing8('foreign_to_iran')" title="Ping this Entry Server's selected IPv4/IPv6 from Exit Server">
-                <span>📡 Ping Entry IP (v4/v6)</span>
-              </button>
+              <div class="tun-ping-row">
+                <select id="t-iran-ping-ver" class="tun-ping-ver" title="Target IP version on opposite server">
+                  <option value="v4">Peer IPv4</option>
+                  <option value="v6">Peer IPv6</option>
+                </select>
+                <button type="button" class="tun-side-ping-btn" id="btn-ping8-iran" onclick="runTunnelPing8('iran_to_foreign')" title="Ping opposite Exit Server IPv4/IPv6 from this Entry Server">
+                  <span>📡 Ping Peer</span>
+                </button>
+              </div>
+              <div class="tun-ping-res" id="t-iran-ping-res"></div>
             </div>
 
-            <!-- Exit Server (3 Stacked Bubbles + IP Ping Test Button) -->
+            <!-- Exit Server (Server 2): Pings Opposite Server (Server 1) IPv4 / IPv6 -->
             <div class="tun-route-col">
               <div class="tun-route-lbl">Exit Server (Foreign)</div>
               <div class="tun-rb rb-flag" id="t-for-flag-b">
@@ -3559,23 +3634,29 @@ body[data-navx="top"] .ver-bubble {
                 <select id="t-foreign" onchange="onTunnelServersChange()"></select>
               </div>
               <div class="tun-rb rb-ip">
-                <select id="t-for-ipver" onchange="updateTunFloatDock()">
+                <select id="t-for-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock()">
                   <option value="v4">IPv4</option>
                   <option value="v6">IPv6</option>
                 </select>
                 <span class="tun-rb-ip-flag" id="t-for-ip-flag"></span>
               </div>
-              <button type="button" class="tun-side-ping-btn" id="btn-ping8-for" onclick="runTunnelPing8('iran_to_foreign')" title="Ping this Exit Server's selected IPv4/IPv6 from Entry Server">
-                <span>📡 Ping Exit IP (v4/v6)</span>
-              </button>
+              <div class="tun-ping-row">
+                <select id="t-for-ping-ver" class="tun-ping-ver" title="Target IP version on opposite server">
+                  <option value="v4">Peer IPv4</option>
+                  <option value="v6">Peer IPv6</option>
+                </select>
+                <button type="button" class="tun-side-ping-btn" id="btn-ping8-for" onclick="runTunnelPing8('foreign_to_iran')" title="Ping opposite Entry Server IPv4/IPv6 from this Exit Server">
+                  <span>📡 Ping Peer</span>
+                </button>
+              </div>
+              <div class="tun-ping-res" id="t-for-ping-res"></div>
             </div>
           </div>
 
           <div id="t-check-proto-wrap" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:.74rem; color:var(--muted);">Verify link quality or compare all protocols:</span>
+            <span style="font-size:.74rem; color:var(--muted);">Compare all tunnel protocols between these two servers:</span>
             <div class="flexw" style="gap:6px;">
-              <button type="button" class="btn btn-sky btn-sm" id="btn-ping8" onclick="runTunnelPing8()">Ping Test (8x)</button>
-              <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">Check Protocols</button>
+              <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">⚡ Check Protocols</button>
             </div>
           </div>
         </div>
@@ -3838,6 +3919,7 @@ body[data-navx="top"] .ver-bubble {
     <div class="tweak-grid" style="margin-bottom:10px;">
       <button class="btn btn-sky" style="grid-column:1 / -1; justify-content:center;" id="btn-setup-all" onclick="runSetupAction('all')">⚡ Install Static Bundle (All Prereqs + Engines — Zero APT)</button>
       <button class="btn btn-ghost" style="grid-column:1 / -1; justify-content:center;" onclick="runSetupAction('kernel')">Enable Kernel Tunnel Modules (GRE / IP6GRE / VXLAN)</button>
+      <button class="btn btn-warn" style="grid-column:1 / -1; justify-content:center;" onclick="closeModal('setup-modal'); openLegacyModal(setupTargetId)">🔄 MTunnel Migrator (Scan &amp; Import Old Tunnels)</button>
     </div>
 
     <div class="field" style="margin-bottom:12px;">
@@ -3903,13 +3985,27 @@ body[data-navx="top"] .ver-bubble {
       <h3 style="color:var(--accent);" id="tweak-title">Server Tweaks</h3>
       <button class="btn btn-danger btn-sm" data-close="tweak-modal" data-i18n="btn_close">Close</button>
     </div>
-    <div class="tweak-grid">
-      <button class="btn btn-ghost" onclick="runTweak('fw_off')">Disable Firewall (UFW/IPTables)</button>
-      <button class="btn btn-sky" onclick="runTweak('bbr_on')">Enable BBR Congestion</button>
-      <button class="btn btn-ghost" onclick="runTweak('ipv6_on')">Enable IPv6</button>
-      <button class="btn btn-ghost" onclick="runTweak('ipv6_off')">Disable IPv6</button>
-      <button class="btn btn-sky" onclick="runTweak('net_opt')">Optimize Kernel / Sysctl</button>
-      <button class="btn btn-ghost" onclick="runTweak('clear_cache')">Clear RAM Cache &amp; Logs</button>
+    <div class="tweak-bubble-grid">
+      <button type="button" class="tw-bubble" id="tw-b-ipv6" onclick="toggleTweakBubble('ipv6')">
+        <span class="tw-b-left"><span class="tw-b-dot"></span><span>IPv6</span></span>
+        <span class="tw-b-pill" id="tw-st-ipv6">...</span>
+      </button>
+      <button type="button" class="tw-bubble" id="tw-b-bbr" onclick="toggleTweakBubble('bbr')">
+        <span class="tw-b-left"><span class="tw-b-dot"></span><span>BBR Congestion</span></span>
+        <span class="tw-b-pill" id="tw-st-bbr">...</span>
+      </button>
+      <button type="button" class="tw-bubble" id="tw-b-fw" onclick="toggleTweakBubble('fw')">
+        <span class="tw-b-left"><span class="tw-b-dot"></span><span>Firewall (UFW)</span></span>
+        <span class="tw-b-pill" id="tw-st-fw">...</span>
+      </button>
+      <button type="button" class="tw-bubble action" onclick="if(confirm('Apply Kernel / Sysctl network optimizations?')) runTweak('net_opt')">
+        <span class="tw-b-left"><span>⚡ Optimize Kernel / Sysctl</span></span>
+        <span class="tw-b-pill">RUN</span>
+      </button>
+      <button type="button" class="tw-bubble action" style="grid-column:1 / -1;" onclick="if(confirm('Clear RAM page cache & old logs?')) runTweak('clear_cache')">
+        <span class="tw-b-left"><span>🧹 Clear RAM Cache &amp; Logs</span></span>
+        <span class="tw-b-pill">RUN</span>
+      </button>
     </div>
     <hr style="margin:14px 0;">
     <div id="tweak-ssh-sec"><h4 style="font-size:.86rem; color:var(--yellow); margin-bottom:10px;">Root Login &amp; Password Management</h4>
@@ -4519,8 +4615,10 @@ function renderServerCard(s) {
       </div>
       <div class="card-actions" style="margin-top:4px;">
         <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
-        <button class="btn btn-ghost btn-sm" data-act="legacy" data-id="${id}">MTunnel</button>
         <button class="btn btn-warn btn-sm" data-act="tweak" data-id="${id}">Tweak</button>
+        <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
+        <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
+        <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
         <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
         <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
         ${s.auth_mode !== 'peer' ? `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>` : ''}
@@ -4994,6 +5092,8 @@ function onTunnelServersChange() {
   updatePerServerIPOptions('t-foreign', 't-for-ipver');
   updateTunnelRouteBubbles('t-iran', 't-iran-flag-b', 't-iran-ip-flag');
   updateTunnelRouteBubbles('t-foreign', 't-for-flag-b', 't-for-ip-flag');
+  syncPingVerDefaults();
+  updateSidePingButtonLabels();
   if ($('t-underlay')) pickTunnelUnderlay($('t-underlay').value || 'ip');
   const wrap = $('t-check-proto-wrap');
   if (!wrap) return;
@@ -5004,23 +5104,66 @@ function onTunnelServersChange() {
   updateTunFloatDock();
 }
 
-async function runTunnelPing8(dir) {
-  const direction = dir || 'iran_to_foreign';
-  const btnId = direction === 'foreign_to_iran' ? 'btn-ping8-iran' : 'btn-ping8-for';
-  const btn = $(btnId) || $('btn-ping8'), card = $('t-ping8-card'), grid = $('p8-grid'), sum = $('p8-sum');
-  const origTxt = btn ? btn.innerHTML : '';
-  const ir = parseInt($('t-iran').value || '0', 10);
-  const fr = parseInt($('t-foreign').value || '0', 10);
+function syncPingVerDefaults() {
   const irVer = $('t-iran-ipver') ? $('t-iran-ipver').value : 'v4';
   const frVer = $('t-for-ipver') ? $('t-for-ipver').value : 'v4';
+  // Left (Entry) pings Right (Exit), so its default matches Exit's selected IP version
+  if ($('t-iran-ping-ver')) $('t-iran-ping-ver').value = frVer;
+  // Right (Exit) pings Left (Entry), so its default matches Entry's selected IP version
+  if ($('t-for-ping-ver')) $('t-for-ping-ver').value = irVer;
+}
+
+function updateSidePingButtonLabels() {
+  const ir = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
+  const fr = parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
+  const sIr = (SERVERS || []).find(x => +x.id === ir);
+  const sFr = (SERVERS || []).find(x => +x.id === fr);
+  if ($('btn-ping8-iran')) {
+    $('btn-ping8-iran').innerHTML = `<span>📡 Ping ${esc(sFr ? sFr.name : 'Peer')}</span>`;
+  }
+  if ($('btn-ping8-for')) {
+    $('btn-ping8-for').innerHTML = `<span>📡 Ping ${esc(sIr ? sIr.name : 'Peer')}</span>`;
+  }
+  if ($('t-iran-ping-res')) { $('t-iran-ping-res').className = 'tun-ping-res'; $('t-iran-ping-res').innerHTML = ''; }
+  if ($('t-for-ping-res')) { $('t-for-ping-res').className = 'tun-ping-res'; $('t-for-ping-res').innerHTML = ''; }
+}
+
+async function runTunnelPing8(dir) {
+  const direction = dir || 'iran_to_foreign';
+  const isLeftBtn = (direction === 'iran_to_foreign'); // Left (Server 1) pings Right (Server 2)
+  const btn = $(isLeftBtn ? 'btn-ping8-iran' : 'btn-ping8-for');
+  const resBox = $(isLeftBtn ? 't-iran-ping-res' : 't-for-ping-res');
+  const card = $('t-ping8-card'), grid = $('p8-grid'), sum = $('p8-sum');
+  const origHtml = btn ? btn.innerHTML : '';
+
+  const ir = parseInt($('t-iran').value || '0', 10);
+  const fr = parseInt($('t-foreign').value || '0', 10);
   if (!ir || !fr || ir === fr) { toast('Select two distinct servers first', true); return; }
+
+  const sIr = (SERVERS || []).find(x => +x.id === ir);
+  const sFr = (SERVERS || []).find(x => +x.id === fr);
+  const srcName = isLeftBtn ? (sIr ? sIr.name : 'Entry') : (sFr ? sFr.name : 'Exit');
+  const dstName = isLeftBtn ? (sFr ? sFr.name : 'Exit') : (sIr ? sIr.name : 'Entry');
+
+  // Use the Peer IP version selected right next to the clicked Ping button!
+  const chosenVer = isLeftBtn
+    ? ($('t-iran-ping-ver') ? $('t-iran-ping-ver').value : 'v4')
+    : ($('t-for-ping-ver') ? $('t-for-ping-ver').value : 'v4');
+  const irVer = isLeftBtn ? ($('t-iran-ipver') ? $('t-iran-ipver').value : 'v4') : chosenVer;
+  const frVer = isLeftBtn ? chosenVer : ($('t-for-ipver') ? $('t-for-ipver').value : 'v4');
+  const verLabel = chosenVer === 'v6' ? 'IPv6' : 'IPv4';
+
   if (btn) { btn.disabled = true; btn.textContent = 'Pinging...'; }
+  if (resBox) {
+    resBox.className = 'tun-ping-res show';
+    resBox.innerHTML = `<span style="color:var(--muted);">Pinging ${verLabel} of <b>${esc(dstName)}</b> from ${esc(srcName)}...</span>`;
+  }
   card.style.display = 'block';
-  const targetVer = direction === 'foreign_to_iran' ? irVer : frVer;
-  $('p8-title').textContent = (direction === 'foreign_to_iran' ? 'Exit ➔ Entry' : 'Entry ➔ Exit') + ' (' + targetVer.toUpperCase() + ')...';
-  $('p8-target').textContent = 'Testing ' + targetVer.toUpperCase() + ' reachability';
+  $('p8-title').textContent = `${srcName} ➔ ${dstName} (${verLabel})...`;
+  $('p8-target').textContent = `Peer ${verLabel}`;
   grid.innerHTML = Array.from({ length: 8 }, (_, i) => `<div class="ping8-cell wait" id="p8-c-${i}"><span class="p8-seq">#${i+1}</span>...</div>`).join('');
   sum.innerHTML = '<span style="color:var(--muted);">Sending 8 ICMP packets...</span>';
+
   try {
     const r = await api('api/tunnels/ping8', 'POST', {
       iran_server_id: ir, foreign_server_id: fr, iran_ip_ver: irVer, foreign_ip_ver: frVer, direction
@@ -5028,13 +5171,21 @@ async function runTunnelPing8(dir) {
     if (!r.ok) {
       $('p8-title').textContent = 'Ping Test Failed';
       sum.innerHTML = `<span style="color:var(--red);">${esc(r.error || 'Error')}</span>`;
+      if (resBox) {
+        resBox.className = 'tun-ping-res show bad';
+        resBox.innerHTML = `<span style="color:var(--red);">✖ ${esc(verLabel)} (${esc(dstName)}): ${esc(r.error || 'Failed')}</span>`;
+      }
       return;
     }
-    $('p8-title').textContent = '8-Ping Result (' + esc(r.ip_ver) + ')';
+    const peerLbl = lang === 'fa'
+      ? `${esc(r.ip_ver)} سرور مقابل (${esc(dstName)})`
+      : `Peer ${esc(r.ip_ver)} (${esc(dstName)})`;
+    $('p8-title').textContent = `${srcName} ➔ ${peerLbl}`;
     $('p8-target').textContent = r.target || '';
+
     const samples = r.samples || [];
     for (let i = 0; i < 8; i++) {
-      await new Promise(res => setTimeout(res, 95));
+      await new Promise(res => setTimeout(res, 75));
       const ms = samples[i];
       const cell = $('p8-c-' + i);
       if (!cell) continue;
@@ -5047,13 +5198,21 @@ async function runTunnelPing8(dir) {
       }
     }
     const lossCls = r.loss_pct === 0 ? 'b-iran' : (r.loss_pct >= 50 ? 'b-miss' : 'b-foreign');
-    const avgTxt = r.received > 0 ? (r.avg_ms + ' ms') : 'N/A';
+    const avgTxt = r.received > 0 ? (r.avg_ms + ' ms') : 'Filtered / Timeout';
     sum.innerHTML = `
       <span class="badge b-ok mono">Avg Ping: ${esc(avgTxt)}</span>
       <span class="badge ${lossCls} mono">Loss: ${r.loss_pct}% (${r.received}/8)</span>
     `;
+    if (resBox) {
+      const stateCls = r.loss_pct === 0 ? 'ok' : (r.received === 0 ? 'bad' : 'warn');
+      resBox.className = 'tun-ping-res show ' + stateCls;
+      resBox.innerHTML = `
+        <span><b>${peerLbl}</b> <span class="mono" style="opacity:.82;">${esc(r.target || '')}</span></span>
+        <span class="mono" style="font-weight:900; color:${stateCls==='ok'?'var(--green)':(stateCls==='bad'?'var(--red)':'var(--yellow)')};">${esc(avgTxt)} · ${r.loss_pct}% loss</span>
+      `;
+    }
   } finally {
-    btn.disabled = false; btn.textContent = '📡 Ping Test (8x)';
+    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
   }
 }
 
@@ -6526,12 +6685,52 @@ async function delMasterCache(p) {
 }
 
 let tweakTargetId = 0;
+let tweakState = { ipv6: true, bbr: false, fw: false };
+
+function renderTweakBubbles() {
+  const apply = (id, pillId, on) => {
+    const b = $(id), p = $(pillId);
+    if (!b || !p) return;
+    b.classList.toggle('is-on', !!on);
+    b.classList.toggle('is-off', !on);
+    p.textContent = on ? 'ON' : 'OFF';
+  };
+  apply('tw-b-ipv6', 'tw-st-ipv6', tweakState.ipv6);
+  apply('tw-b-bbr', 'tw-st-bbr', tweakState.bbr);
+  apply('tw-b-fw', 'tw-st-fw', tweakState.fw);
+}
+
+async function loadTweakStatus() {
+  ['tw-st-ipv6', 'tw-st-bbr', 'tw-st-fw'].forEach(id => { if ($(id)) $(id).textContent = '...'; });
+  const url = tweakTargetId === 'master' ? 'api/local/tweak/status' : ('api/servers/' + tweakTargetId + '/tweak/status');
+  const r = await api(url);
+  if (r.ok) {
+    tweakState = { ipv6: !!r.ipv6, bbr: !!r.bbr, fw: !!r.fw };
+    renderTweakBubbles();
+  }
+}
+
+async function toggleTweakBubble(key) {
+  const curOn = !!tweakState[key];
+  const labels = { ipv6: 'IPv6', bbr: 'BBR Congestion', fw: 'Firewall (UFW)' };
+  const nextWord = curOn ? 'OFF (Disable)' : 'ON (Enable)';
+  if (!confirm(`Turn ${labels[key]} ${nextWord}?`)) return;
+  const actMap = {
+    ipv6: curOn ? 'ipv6_off' : 'ipv6_on',
+    bbr:  curOn ? 'bbr_off'  : 'bbr_on',
+    fw:   curOn ? 'fw_off'   : 'fw_on'
+  };
+  await runTweak(actMap[key]);
+  loadTweakStatus();
+}
+
 function openMasterTweakModal() {
   tweakTargetId = 'master';
   $('tweak-title').textContent = 'Master Server Tweaks (Local)';
   if ($('tweak-ssh-sec')) $('tweak-ssh-sec').style.display = 'none';
-  $('tweak-out').textContent = 'Ready — select a tweak action for the Master server.';
+  $('tweak-out').textContent = 'Ready — click any toggle bubble to turn it ON or OFF.';
   $('tweak-modal').classList.add('active');
+  loadTweakStatus();
 }
 function openTweakModal(id) {
   tweakTargetId = id;
@@ -6540,8 +6739,9 @@ function openTweakModal(id) {
   if ($('tweak-ssh-sec')) $('tweak-ssh-sec').style.display = 'block';
   $('tw-user').value = (s && s.username) ? s.username : 'root';
   $('tw-pass').value = '';
-  $('tweak-out').textContent = 'Ready — select a tweak action above.';
+  $('tweak-out').textContent = 'Ready — click any toggle bubble to turn it ON or OFF.';
   $('tweak-modal').classList.add('active');
+  loadTweakStatus();
 }
 async function runTweak(action) {
   if (!tweakTargetId) return;
@@ -7693,14 +7893,69 @@ async function runFleetCommand() {
   } finally { btn.disabled = false; btn.textContent = 'Execute on Selected'; }
 }
 
-function openWebTerm(id) {
+let termAuthMode = 'custom';
+function pickTermAuthMode(m) {
+  termAuthMode = m;
+  document.querySelectorAll('#term-auth-mode .role-opt').forEach(el => el.classList.toggle('active', el.dataset.tm === m));
+  if ($('term-auth-saved-wrap')) $('term-auth-saved-wrap').style.display = m === 'saved' ? 'block' : 'none';
+  if ($('term-auth-custom-wrap')) $('term-auth-custom-wrap').style.display = m === 'custom' ? 'block' : 'none';
+}
+function showTermAuthBox(show) {
+  if ($('term-auth-box')) $('term-auth-box').style.display = show ? 'block' : 'none';
+  if ($('term-shell-wrap')) $('term-shell-wrap').style.display = show ? 'none' : 'block';
+  if (show && $('term-prof-sel')) {
+    const profs = (typeof SSH_PROFILES !== 'undefined' && SSH_PROFILES) ? SSH_PROFILES : [];
+    $('term-prof-sel').innerHTML = profs.length
+      ? profs.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.username)}:${p.port})</option>`).join('')
+      : '<option value="0">No saved SSH profiles (add in Settings)</option>';
+  }
+}
+async function openWebTerm(id) {
   termSrvId = id;
   const s = (SERVERS || []).find(x => +x.id === +id);
   $('term-title').textContent = 'Terminal — ' + (s ? s.name : id);
   $('term-out').textContent = 'Connected to ' + (s ? s.host : id) + '. Type a command below.';
   $('term-inp').value = '';
+  $('term-pass').value = '';
+  if (typeof loadProfiles === 'function') loadProfiles();
   $('term-modal').classList.add('active');
-  setTimeout(() => $('term-inp').focus(), 40);
+  const r = await api('api/servers/' + id + '/term-auth');
+  if (r.ok) {
+    if ($('term-user')) $('term-user').value = r.username || (s && s.username) || 'root';
+    if ($('term-port')) $('term-port').value = r.port || (s && s.port) || 22;
+    if (!r.has_secret) {
+      pickTermAuthMode('custom');
+      showTermAuthBox(true);
+      setTimeout(() => $('term-pass') && $('term-pass').focus(), 40);
+      return;
+    }
+  }
+  showTermAuthBox(false);
+  setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
+}
+async function saveTermAuthAndOpen() {
+  const btn = $('btn-term-unlock');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    const payload = {
+      mode: termAuthMode,
+      ssh_profile_id: termAuthMode === 'saved' ? parseInt($('term-prof-sel').value || '0', 10) : 0,
+      username: $('term-user').value.trim(),
+      port: parseInt($('term-port').value || '22', 10),
+      password: $('term-pass').value
+    };
+    const r = await api('api/servers/' + termSrvId + '/term-auth', 'POST', payload);
+    if (r.ok) {
+      toast(r.message || 'Credentials saved!');
+      $('term-pass').value = '';
+      showTermAuthBox(false);
+      setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
+    } else {
+      toast(r.error || 'Failed to save credentials', true);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save & Open Terminal'; }
+  }
 }
 async function runWebTermCmd() {
   const cmd = $('term-inp').value.trim();
@@ -7853,15 +8108,45 @@ async function loadAuditLog() {
 </div>
 
 <div class="modal-bg" id="term-modal" style="z-index:1140;">
-  <div class="card modal-box" style="max-width:740px;">
+  <div class="card modal-box" style="max-width:760px;">
     <div class="toolbar" style="margin-bottom:10px;">
       <h3 style="color:var(--accent);" id="term-title">Web Terminal</h3>
-      <button class="btn btn-danger btn-sm" data-close="term-modal">Close</button>
+      <div class="flexw" style="gap:6px;">
+        <button class="btn btn-ghost btn-sm" id="btn-term-chauth" onclick="showTermAuthBox(true)">🔑 Change Auth</button>
+        <button class="btn btn-danger btn-sm" data-close="term-modal">Close</button>
+      </div>
     </div>
-    <pre class="term" id="term-out" style="height:280px; margin-bottom:10px;">Ready. Type a Linux command below and press Enter.</pre>
-    <div class="flexw" style="gap:8px;">
-      <input id="term-inp" class="mono" style="flex:1;" placeholder="e.g. uptime && free -h" onkeydown="if(event.key==='Enter') runWebTermCmd()">
-      <button class="btn btn-sky" id="btn-term-run" onclick="runWebTermCmd()">Run</button>
+
+    <!-- One-Time Password Unlock (Manual OR Saved SSH Profile — remembered forever once saved) -->
+    <div id="term-auth-box" style="display:none; padding:14px; border-radius:16px; background:var(--row); border:1px solid var(--border); margin-bottom:10px;">
+      <div style="font-size:.82rem; font-weight:800; color:var(--accent); margin-bottom:6px;">🔒 One-Time Terminal Authentication</div>
+      <div class="hint" style="margin:0 0 10px;">Enter SSH password or pick a Saved SSH Profile once. MControl will remember it encrypted for all future terminal sessions.</div>
+      <div class="role-picker" id="term-auth-mode" style="margin-bottom:10px;">
+        <div class="role-opt active" data-tm="custom" onclick="pickTermAuthMode('custom')">Enter Password</div>
+        <div class="role-opt" data-tm="saved" onclick="pickTermAuthMode('saved')">Saved SSH Profile</div>
+      </div>
+      <div id="term-auth-saved-wrap" class="field" style="display:none;">
+        <label>Select Saved SSH Profile</label>
+        <select id="term-prof-sel"></select>
+      </div>
+      <div id="term-auth-custom-wrap">
+        <div class="row2">
+          <div class="field"><label>SSH User</label><input id="term-user" class="mono" value="root"></div>
+          <div class="field"><label>SSH Port</label><input id="term-port" type="number" value="22"></div>
+        </div>
+        <div class="field"><label>SSH Password</label><input id="term-pass" type="password" placeholder="Enter SSH password" onkeydown="if(event.key==='Enter') saveTermAuthAndOpen()"></div>
+      </div>
+      <div class="flexw" style="justify-content:flex-end; gap:8px;">
+        <button class="btn btn-sky btn-sm" id="btn-term-unlock" onclick="saveTermAuthAndOpen()">Save &amp; Open Terminal</button>
+      </div>
+    </div>
+
+    <div id="term-shell-wrap">
+      <pre class="term" id="term-out" style="height:290px; margin-bottom:10px;">Ready. Type a Linux command below and press Enter.</pre>
+      <div class="flexw" style="gap:8px;">
+        <input id="term-inp" class="mono" style="flex:1;" placeholder="e.g. uptime && free -h" onkeydown="if(event.key==='Enter') runWebTermCmd()">
+        <button class="btn btn-sky" id="btn-term-run" onclick="runWebTermCmd()">Run</button>
+      </div>
     </div>
   </div>
 </div>

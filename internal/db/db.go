@@ -1068,3 +1068,19 @@ func (s *Store) UpdateTunnelFull(t *Tunnel) error {
 		t.Name, t.Transport, t.TunnelPort, t.Token, t.Ports, t.LBMode, t.VIPTargets, t.Status, t.ID)
 	return err
 }
+
+func (s *Store) UpdateServerCredentials(id int64, username string, port int, password string) error {
+	enc, err := s.Encrypt(password)
+	if err != nil {
+		return err
+	}
+	if port <= 0 {
+		port = 22
+	}
+	if strings.TrimSpace(username) == "" {
+		username = "root"
+	}
+	_, err = s.db.Exec("UPDATE servers SET username = ?, port = ?, password_enc = ?, auth_type = 'password' WHERE id = ?",
+		strings.TrimSpace(username), port, enc, id)
+	return err
+}
