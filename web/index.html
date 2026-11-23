@@ -26,7 +26,7 @@
 html { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
 body { overflow-x: hidden; }
 body {
-  --card: color-mix(in srgb, var(--surface) 74%, transparent);
+  --card: color-mix(in srgb, var(--surface) var(--glass-opacity, 74%), transparent);
   --row: color-mix(in srgb, var(--text) 5.5%, transparent);
   --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
   --accent-glow: color-mix(in srgb, var(--accent) 42%, transparent);
@@ -320,7 +320,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
   background: color-mix(in srgb, var(--surface) 78%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
   border-radius: 18px;
-  backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(var(--blur)) saturate(160%); -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 14px 34px rgba(0,0,0,.38);
 }
 .side-orbs.visible { display: flex; }
@@ -1411,7 +1411,7 @@ body[data-navx="side-float"] #chrome {
   flex-direction: column; align-items: stretch; padding: 20px 14px; gap: 14px;
   border-radius: 26px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(22px) saturate(160%); -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(var(--blur)) saturate(160%); -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
   border: 1px solid color-mix(in srgb, var(--border) 85%, #ffffff);
   box-shadow: 0 20px 50px -16px color-mix(in srgb, var(--accent) 22%, var(--shadow)), 0 2px 10px -2px rgba(15, 23, 42, .06);
 }
@@ -1455,8 +1455,8 @@ body[data-navx="side-float"] .util {
 /* ═══ NEW BUBBLE CARD STYLE: Prism Minimal Colorful SaaS Bubbles (data-card="prism") ═══ */
 body[data-card="prism"] .card {
   background: color-mix(in srgb, var(--surface) 96%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 78%, rgba(255,255,255,.7));
-  border-radius: max(var(--rc, 22px), 22px);
+  border: var(--bw) solid var(--border);
+  border-radius: var(--rc);
   box-shadow:
     0 14px 36px -14px color-mix(in srgb, var(--accent) 20%, var(--shadow)),
     0 3px 10px -3px rgba(15, 23, 42, .05),
@@ -1472,28 +1472,17 @@ body[data-card="prism"] .card:hover {
 }
 /* Multi-color pastel SaaS accent bubbles on Overview Stat Tiles */
 body[data-card="prism"] .stats .stat {
-  border-radius: 22px; position: relative; overflow: hidden;
+  border-radius: var(--rc); position: relative; overflow: hidden;
 }
-body[data-card="prism"] .stats .stat:nth-child(1) {
-  background: linear-gradient(145deg, color-mix(in srgb, #8b5cf6 10%, var(--surface)), var(--surface));
-  border-color: color-mix(in srgb, #8b5cf6 26%, var(--border));
+body[data-card="prism"] .stats .stat {
+  --tile-ink: var(--accent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--tile-ink) 10%, var(--surface)), var(--surface));
+  border-color: color-mix(in srgb, var(--tile-ink) 26%, var(--border));
 }
-body[data-card="prism"] .stats .stat:nth-child(1) .sv { color: #7c3aed; }
-body[data-card="prism"] .stats .stat:nth-child(2) {
-  background: linear-gradient(145deg, color-mix(in srgb, #10b981 10%, var(--surface)), var(--surface));
-  border-color: color-mix(in srgb, #10b981 26%, var(--border));
-}
-body[data-card="prism"] .stats .stat:nth-child(2) .sv { color: #059669; }
-body[data-card="prism"] .stats .stat:nth-child(3) {
-  background: linear-gradient(145deg, color-mix(in srgb, #3b82f6 10%, var(--surface)), var(--surface));
-  border-color: color-mix(in srgb, #3b82f6 26%, var(--border));
-}
-body[data-card="prism"] .stats .stat:nth-child(3) .sv { color: #2563eb; }
-body[data-card="prism"] .stats .stat:nth-child(4) {
-  background: linear-gradient(145deg, color-mix(in srgb, #ec4899 10%, var(--surface)), var(--surface));
-  border-color: color-mix(in srgb, #ec4899 26%, var(--border));
-}
-body[data-card="prism"] .stats .stat:nth-child(4) .sv { color: #db2777; }
+body[data-card="prism"] .stats .stat:nth-child(2) { --tile-ink: var(--green); }
+body[data-card="prism"] .stats .stat:nth-child(3) { --tile-ink: var(--accent2); }
+body[data-card="prism"] .stats .stat:nth-child(4) { --tile-ink: var(--pink); }
+body[data-card="prism"] .stats .stat .sv { color: var(--tile-ink); }
 body[data-card="prism"] .srv-row-wrap {
   border-radius: 20px;
   box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--accent) 16%, var(--shadow));
@@ -2446,6 +2435,42 @@ body[data-uptime="noc"] .mon-card {
 body[data-uptime="noc"] .mon-hb-bars { height: 18px; gap: 2px; }
 body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
 
+body[data-motion="reduced"], body[data-motion="reduced"] *,
+body[data-motion="reduced"] *::before, body[data-motion="reduced"] *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+}
+/* Theme workspace */
+#sub-themes > .toolbar { padding-block: var(--gap); border-bottom: 1px solid var(--border); }
+#sub-themes h3 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.2; }
+#sub-themes .hint { max-width: 66ch; line-height: 1.65; }
+#theme-grid { margin-block-end: calc(var(--gap) * 2); }
+#theme-grid .tcard { padding: 10px; }
+#theme-grid .pv { height: 86px; border-radius: min(var(--rc), 12px); }
+#theme-grid .ttags { margin-block: 5px 2px; }
+#studio { display: grid; grid-template-columns: 1fr; gap: var(--gap); }
+#studio fieldset { min-width: 0; border: none; border-top: 1px solid var(--border); }
+#studio legend { font-size: .85rem; font-weight: 700; padding-inline-end: 10px; color: var(--accent); }
+.studio-fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%, 150px),1fr)); gap: 10px 14px; margin-block: 14px 4px; }
+.studio-fields .field { margin: 0; min-width: 0; }
+.studio-fields .field span { display: block; margin-bottom: 5px; font-size: .78rem; color: var(--muted); }
+.studio-fields input[type="range"] { padding: 0; accent-color: var(--accent); }
+.studio-color { display: flex; align-items: center; gap: 9px; padding: 7px; background: var(--row); border-radius: min(var(--rc),10px); font-size: .8rem; cursor: pointer; }
+.studio-color input { width: 2rem; height: 2rem; border: 0; padding: 0; background: transparent; cursor: pointer; }
+body :is(button, summary, select, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stat-val, .sv { font-variant-numeric: tabular-nums; }
+body[data-family="Neon"][data-card="glass"] .card {
+  background: linear-gradient(140deg, color-mix(in srgb, var(--accent) 4%, var(--surface)), var(--card) 64%);
+  border-color: color-mix(in srgb, var(--accent) 12%, var(--border));
+  box-shadow: 0 12px 32px -20px var(--shadow);
+}
+body[data-family="Material"][data-card="flat"] .card {
+  border-color: color-mix(in srgb, var(--border) 60%, var(--surface));
+  box-shadow: 0 4px 14px -10px var(--shadow);
+}
+body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card="outline"]) .card { box-shadow: 0 2px 8px -4px var(--shadow); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3861,23 +3886,27 @@ body[data-uptime="noc"] .mon-hb { border-radius: 2px; }
         </div>
       </div>
 
-      <div class="card sp">
-        <div class="toolbar" style="margin-bottom:10px;">
-          <h4 data-i18n="cust_title">Studio: mix your own</h4>
-          <div class="flexw">
-            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
-            <button class="btn btn-warn btn-sm" id="btn-reset-custom" data-i18n="btn_reset">Reset overrides</button>
-          </div>
-        </div>
-        <div class="studio" id="studio"></div>
-      </div>
-
       <div class="flexw sp">
         <input id="theme-search" class="mono" style="padding:8px 13px; border-radius:var(--rb); border:1px solid var(--border); background:color-mix(in srgb, var(--bg) 60%, transparent); color:var(--text); outline:none; min-width:200px;" data-i18n-ph="theme_search" placeholder="Search themes...">
         <span class="hint" style="margin:0;" id="theme-count"></span>
       </div>
       <div class="chips" id="theme-groups"></div>
       <div class="tg" id="theme-grid"></div>
+      <div class="card sp">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <h4 data-i18n="cust_title">Studio: mix your own</h4>
+          <div class="flexw">
+            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
+            <button class="btn btn-ghost btn-sm" id="style-export" data-i18n="style_export"></button>
+            <button class="btn btn-ghost btn-sm" id="style-import" data-i18n="style_import"></button>
+            <input type="file" accept=".json,application/json" id="style-file" hidden>
+            <button class="btn btn-warn btn-sm" id="btn-reset-custom" data-i18n="btn_reset">Reset overrides</button>
+          </div>
+        </div>
+        <div class="studio" id="studio"></div>
+      </div>
+
+
         </div>
       </div>
     </section>
@@ -4522,11 +4551,11 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
-  studio_den: 'Density', studio_srv: 'Server layout', studio_stat: 'Stats strip', studio_chart: 'Master cards', studio_gauge: 'Metric graph', studio_chk: 'Checkboxes', studio_uptime: 'Uptime monitor style', studio_accent: 'Accent color', studio_radius: 'Corner radius',
+  studio_den: 'Density', studio_srv: 'Server layout', studio_stat: 'Stats strip', studio_chart: 'Master cards', studio_gauge: 'Metric graph', studio_chk: 'Checkboxes', studio_uptime: 'Uptime monitor style', studio_motion: 'Motion', studio_accent: 'Accent color', studio_radius: 'Corner radius',
   upd_title: 'Panel update center', upd_installed: 'Installed version', upd_github: 'Official GitHub', upd_mirror: 'Iran mirror',
   upd_checksum_note: 'Remote updates require a .sha256 file next to the package and are rejected if the hash does not match.',
   btn_check_updates: 'Check for updates', btn_upd_github: 'Update from GitHub', btn_upd_mirror: 'Update from Iran mirror',
@@ -4576,7 +4605,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -4626,6 +4655,7 @@ const OPT = {
   chart: { unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
   gauge: { wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
   chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
+  motion: { system: ['System preference', 'تنظیم سیستم'], reduced: ['Reduced', 'حداقل حرکت'] },
   uptime: { kuma: ['Kuma Classic', 'کوما کلاسیک'], neon: ['Neon Cyber', 'نئون سایبری'], dots: ['LED Dots', 'نقطه‌ای LED'], grid: ['2-Col Grid', 'کارت ۲ستونه'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], noc: ['NOC Matrix', 'رادار NOC'] }
 };
 let lang = ls.get('mc_lang', '') || ((navigator.language || '').toLowerCase().startsWith('fa') ? 'fa' : 'en');
@@ -4649,44 +4679,18 @@ function T(id, n, g, s, d, l) {
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
-T('prism-violet', 'Prism Violet', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1', '#0f1021 #181a30 #f1f3f9 #a3a9c2 #8b5cf6 #38bdf8 #2b2f52', '#f3f5fc #ffffff #14182b #64708a #6d28d9 #2563eb #e2e8f7');
-T('prism-azure', 'Prism Azure', 'Prism', 'side-float prism pill aurora sans cozy grid tiles 22 1', '#0b1426 #132038 #f0f5fc #9eb2cc #38bdf8 #818cf8 #22385c', '#eef6ff #ffffff #0f172a #5b6b84 #2563eb #7c3aed #dce9fa');
-T('prism-mint', 'Prism Mint', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1', '#091a17 #112924 #eefaf7 #97b5ae #10b981 #38bdf8 #1f473e', '#eefbf6 #ffffff #0c1f1a #527067 #059669 #0284c7 #d5f0e6');
-T('prism-rose', 'Prism Rose', 'Prism', 'side-float prism pill aurora sans cozy grid tiles 22 1', '#1a0e1d #28162d #fbf1f8 #b89eb8 #ec4899 #8b5cf6 #492852', '#fdf2f8 #ffffff #1f1124 #6f5b75 #db2777 #7c3aed #f4d8e8');
-T('prism-sunset', 'Prism Sunset', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1', '#1b1214 #291c1f #fcf3f0 #baa5a2 #f97316 #a855f7 #4d3238', '#fff5f0 #ffffff #211512 #73605a #ea580c #7c3aed #f5dfd4');
 T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#0f1021 #181a30 #f1f3f9 #a3a9c2 #8b5cf6 #38bdf8 #2b2f52', '#f3f5fc #ffffff #14182b #64708a #6d28d9 #2563eb #e2e8f7');
-T('prism-aurora', 'Prism Aurora', 'Prism', 'side-float prism pill aurora sans cozy grid tiles 22 1', '#0e1324 #171e36 #f2f4fb #a0a9c4 #6366f1 #10b981 #293257', '#f4f6fe #ffffff #13182e #5f6982 #4f46e5 #059669 #e0e5f8');
 
 T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#0a1121 #142033 #ecedef #adb1b8 #65dcff #bda5ff #284f66', '#edf4fa #fbfdfe #0b111e #515661 #005a79 #644291 #b2ceda');
 T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#171222 #251d35 #eeedef #b3b0b8 #d9a0ff #ff99bf #523e68', '#f7f2fa #fdfcfe #16121f #5a5762 #663188 #95395b #d3c2de');
 T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#091915 #132a25 #eceeee #acb4b3 #5af4c3 #98cdfa #255c4c', '#edf7f3 #fbfdfc #0a1714 #505c59 #00634c #245980 #b2d2c9');
-T('ember', 'Ember Line', 'Neon', 'side outline round solid sans cozy list tiles 10 1', '#191311 #2c201b #eeeded #b5b1af #ffa775 #e9cd91 #614232', '#fbf4ee #fefdfb #171211 #5c5756 #893a18 #725319 #dec6b8');
-T('pulse', 'Blue Pulse', 'Neon', 'top deck round solid sans compact table tiles 8 1', '#0d1425 #192640 #edeef0 #aeb3bc #93b4ff #72e5e2 #384a70', '#eff4ff #fbfdff #0e1321 #535864 #284c99 #006369 #bdcae6');
-T('orchid', 'Night Orchid', 'Neon', 'dock glass pill aurora sans cozy grid tiles 18 1', '#1a101e #2c1b30 #eeedee #b5afb7 #ff9ddd #c7b1ff #613c5b', '#faf1f8 #fefcfd #18101b #5c555f #88336d #5c4290 #dec2d5');
-T('limewire', 'Lime Signal', 'Neon', 'rail flat round solid mono compact list ribbon 6 1', '#12190e #212b1b #edeeed #b1b5af #cef780 #83d6bd #4c5e34', '#f4f7ec #fdfdfb #12170e #575c54 #526719 #216557 #ccd3b7');
-T('ocean', 'Deep Ocean', 'Neon', 'side glass round aurora sans cozy grid tiles 14 1', '#091922 #132a38 #eceeef #acb4b9 #68e3ed #87b9ff #285865', '#eef6f8 #fbfdfd #0a171f #505c62 #006575 #305b95 #b2d2d7');
-T('aurora', 'Aurora Mint', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#08141c #102330 #edf3f7 #9fb5c2 #5ef2d6 #a78bfa #23545e', '#edf8f6 #fbfefe #0a1b24 #4c626d #00685c #5b3fa3 #b0d6cf');
-T('crimson', 'Crimson Grid', 'Neon', 'top deck round solid sans compact table tiles 10 1', '#180d11 #28161c #f3ecee #bca6ad #ff7a90 #fbbf24 #5e2f3d', '#fdf1f3 #fffcfd #240e14 #6b4e56 #a31c39 #8f5b00 #e3bec7');
 T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#151520 #232432 #ededef #b2b2b7 #cbbcff #a8c8ff #4d4a65', '#f4f1fa #fdfcfe #14141d #595961 #5d4494 #385c88 #cec6e0');
-T('iris', 'Material Iris', 'Material', 'rail flat pill solid sans cozy grid tiles 20 1', '#17141c #29232f #eeedee #b4b2b6 #eab4ed #b9c4ff #59475e', '#f8f1f8 #fdfcfd #16131a #5a585e #77427c #465986 #d8c5d9');
 T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#111a1a #1e2a2b #edeeee #b0b4b5 #8cd8ce #b1cbd9 #3a5654', '#eef6f4 #fbfdfd #111818 #565c5c #21685e #425f70 #bbd2ce');
-T('clay', 'Material Clay', 'Material', 'top paper pill solid sans roomy grid tiles 18 1', '#1c1614 #302522 #eeeeed #b7b3b2 #ecb29d #e4c48c #5f4841', '#faf2ed #fefcfb #1a1513 #5e5a58 #884730 #74591d #dec7be');
-T('birch', 'Material Birch', 'Material', 'side flat round solid sans cozy grid tiles 16 1', '#171a13 #272d21 #eeeeed #b3b6b1 #c3d5a1 #a0cfbe #4e5741', '#f3f6ed #fcfdfb #161812 #5a5c57 #52672e #376956 #cbd2bd');
-T('denim', 'Material Denim', 'Material', 'rail flat round solid sans compact table ribbon 12 1', '#141923 #222b38 #edeeef #b2b5b9 #abc8f4 #c4bfdf #445267', '#f0f4fa #fcfdfe #131720 #585c63 #365b85 #5d5278 #c2cedd');
-T('sakura', 'Material Sakura', 'Material', 'bottom flat pill solid round cozy grid tiles 20 1', '#20161b #31232a #efedee #b7b2b4 #f1b3c8 #cdbecf #614752', '#fbf2f4 #fefcfd #1d1519 #615a5d #883f60 #69506a #dec5cf');
-T('saffron', 'Material Saffron', 'Material', 'top paper round solid sans cozy list tiles 14 1', '#1c1912 #2f2a1e #eeeeed #b6b4b0 #e6c680 #b8cda2 #5d5136', '#f9f5e9 #fefdfa #1a1712 #5e5c57 #765918 #4e663d #d8ceb5');
 T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#181310 #29211c #f2ece6 #b8ada4 #e8b882 #a3c9a8 #57463a', '#f8f3ee #fefcfa #1c1612 #635850 #874e1d #3e6b48 #dccbb9');
-T('cobaltm', 'Material Cobalt', 'Material', 'bottom flat pill solid sans cozy grid tiles 20 1', '#101624 #1c263b #edf1f8 #a9b4c7 #8cb8ff #c6b4ff #3c4d6e', '#eef3fc #fbfdff #111828 #525d73 #23519e #5a4699 #c0cde6');
 T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#101621 #202935 #edeeef #b1b4b8 #a6c8ef #b7bdcd #425164', '#f0f3f7 #fcfcfd #10151e #555a61 #395775 #545e70 #c2ccd6');
 T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#101824 #1e2c40 #edeef0 #b0b5bc #9bcfff #c6bcf3 #3d5570', '#eef4fa #fbfdfe #101720 #555b64 #245c96 #644d8a #bccee1');
-T('fluent', 'Windows Fluent', 'Studio', 'side paper round solid sans cozy grid tiles 8 1', '#171a1e #252a30 #eeeeee #b3b4b7 #88cafa #b7c6d5 #3e5262', '#f2f4f6 #fcfdfd #16181b #5a5c5f #00598d #4a6075 #b6cddc');
-T('paper', 'Paper Notes', 'Studio', 'side paper round solid sans roomy list tiles 10 1', '#1c1a16 #2c2923 #eeeeed #b5b4b2 #e7c499 #b6c7a3 #5b5040', '#f6f2e9 #fdfcfa #1a1815 #5e5c5a #794f2d #4d6442 #d7c9ba');
 T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#101716 #1d2927 #edeeee #b0b4b3 #93d7b5 #c0caba #3a544a', '#f1f5f3 #fcfdfc #101615 #555a5a #34634b #596450 #c2d0c9');
-T('nord', 'Nord', 'Studio', 'side flat round solid sans cozy grid tiles 10 1', '#252d39 #333e4c #eff0f1 #b8bbc0 #a2cddb #cbbad2 #4f6270', '#edf1f5 #fbfcfd #212832 #646a72 #396378 #705573 #c0ced6');
-T('ink', 'Ink Ledger', 'Studio', 'top paper square solid sans compact table ribbon 4 1', '#151619 #24262a #edeeee #b2b3b4 #c1c8d7 #e3bf99 #4b4e55', '#f6f5f2 #fdfdfc #141517 #595a5c #404c61 #765637 #c8cbce');
-T('cobalt', 'Cobalt Desk', 'Studio', 'rail deck round solid sans cozy list tiles 10 1', '#101826 #202c40 #edeef0 #b1b5bc #a5bcff #c9d5e4 #415070', '#f1f4f9 #fcfdfe #101722 #555b65 #344f98 #435971 #c2cbe1');
 T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#0d0e11 #181a1f #f0f2f5 #9fa6b2 #d1d9e6 #8ea4c8 #343942', '#f4f5f7 #ffffff #111318 #5c6370 #2c3e55 #4d627d #cfd5de');
-T('emerald', 'Emerald Desk', 'Studio', 'rail deck round solid sans cozy grid tiles 12 1', '#0d1714 #182722 #edf4f1 #a2b5ae #6ee7b7 #d6c39a #2e4f44', '#eff6f3 #fbfdfc #0e1c17 #4e635b #156e4e #755e2e #bed4cb');
 
 /* ═══════════════ icons ═══════════════ */
 const IC = {
@@ -4715,10 +4719,45 @@ let SETTINGS = {};
 let curTab = 'overview';
 let editId = 0, installTargetId = 0, updAvail = false;
 let themeId = ls.get('mc_theme', 'mdesign');
-if (!TH.some(th => th.id === themeId)) themeId = 'mdesign';
+const retiredThemes = {
+  "prism-violet": "prism-ring",
+  "prism-azure": "prism-ring",
+  "prism-mint": "prism-ring",
+  "prism-rose": "prism-ring",
+  "prism-sunset": "prism-ring",
+  "prism-aurora": "prism-ring",
+  "orchid": "mdesign",
+  "ocean": "mdesign",
+  "aurora": "mdesign",
+  "limewire": "ion",
+  "emerald": "ion",
+  "crimson": "synth",
+  "ember": "synth",
+  "iris": "m3",
+  "sakura": "m3",
+  "cobaltm": "m3",
+  "birch": "lagoon",
+  "clay": "espresso",
+  "saffron": "espresso",
+  "paper": "espresso",
+  "pulse": "slate",
+  "denim": "slate",
+  "cobalt": "slate",
+  "nord": "slate",
+  "fluent": "slate",
+  "ink": "terminal"
+};
+if (!TH.some(th => th.id === themeId)) themeId = retiredThemes[themeId] || 'mdesign';
 let mode = ls.get('mc_mode', 'dark');
 let custom = {};
-try { custom = JSON.parse(ls.get('mc_custom', '{}')) || {}; } catch (e) { custom = {}; }
+function readThemeSettings(id, fallback = '{}') {
+  try {
+    const value = JSON.parse(ls.get('mc_style_' + id, fallback));
+    if (value && typeof value === 'object' && !Array.isArray(value)) return value;
+  } catch {}
+  return {};
+}
+custom = readThemeSettings(themeId, ls.get('mc_custom', '{}'));
 let groupFilter = 'all', themeQuery = '';
 let PRESETS = [];
 
@@ -4799,7 +4838,7 @@ function flagSVG(cc) {
 }
 
 /* ═══════════════ theme engine ═══════════════ */
-const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk', 'uptime'];
+const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk', 'uptime', 'motion'];
 function lum(hex) {
   let h = String(hex || '').replace('#', '');
   if (h.length === 3) h = h.split('').map(c => c + c).join('');
@@ -4810,36 +4849,64 @@ function lum(hex) {
 const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
 function effMode() { return mode === 'auto' ? (mq && mq.matches ? 'light' : 'dark') : (mode === 'light' ? 'light' : 'dark'); }
 function curTheme() { return TH.find(x => x.id === themeId) || TH[0]; }
-function effective() {
-  const th = curTheme();
-  const e = Object.assign({}, th);
-  DIMS.forEach(k => { if (custom[k]) e[k] = custom[k]; });
-  if (custom.r !== undefined && custom.r !== '') e.r = +custom.r;
-  e.pal = (effMode() === 'light' ? th.l : th.d).slice();
-  if (custom.accent) e.pal[4] = custom.accent;
+const colorRoles = [
+  ['bg', 'Canvas', 'زمینه'], ['surface', 'Surface', 'سطح کارت'], ['text', 'Text', 'متن'],
+  ['muted', 'Secondary text', 'متن فرعی'], ['accent', 'Accent', 'تأکید'], ['accent2', 'Secondary accent', 'تأکید دوم'],
+  ['border', 'Border', 'حاشیه'], ['green', 'Success', 'موفقیت'], ['red', 'Error', 'خطا'],
+  ['yellow', 'Warning', 'هشدار'], ['purple', 'Chart violet', 'بنفش نمودار'], ['pink', 'Chart pink', 'صورتی نمودار']
+];
+const sizeRoles = [
+  ['r', 'Card radius', 'گردی کارت', 0, 36, 'px'],
+  ['bw', 'Border width', 'ضخامت حاشیه', 0, 4, 'px'],
+  ['blur', 'Glass blur', 'تاری شیشه', 0, 32, 'px'],
+  ['scale', 'Text scale', 'مقیاس متن', 85, 125, '%'],
+  ['opacity', 'Surface opacity', 'پوشانندگی سطح شیشه', 40, 100, '%'],
+  ['shadow', 'Shadow strength', 'شدت سایه', 0, 65, '%']
+];
+function effective(th = curTheme(), settings = custom) {
+  const e = { blur: 18, scale: 100, opacity: 74, shadow: 30, motion: 'system', uptime: 'kuma', ...th };
+  for (const key of DIMS) {
+    if (Object.hasOwn(OPT[key], settings[key])) e[key] = settings[key];
+  }
+  for (const [key, , , min, max] of sizeRoles) {
+    const n = settings[key];
+    if (Number.isInteger(n) && n >= min && n <= max) e[key] = n;
+  }
+  const light = effMode() === 'light';
+  const defaults = light
+    ? [...th.l, '#047857', '#b91c1c', '#92400e', '#7e22ce', '#be185d']
+    : [...th.d, '#56dbac', '#ff8895', '#f4c56f', '#c4a2ff', '#f59bc7'];
+  e.pal = colorRoles.map(([key], i) => {
+    const value = settings[effMode() + '_' + key] || (key === 'accent' && settings.accent);
+    return /^#[0-9a-f]{6}$/i.test(value) ? value : defaults[i];
+  });
   return e;
 }
 function navxFor(e) { return window.innerWidth <= 860 ? 'bottom' : e.nav; }
 function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
-  set('--bg', p[0]); set('--surface', p[1]); set('--text', p[2]); set('--muted', p[3]); set('--accent', p[4]); set('--accent2', p[5]); set('--border', p[6]);
+  colorRoles.forEach(([role], i) => set('--' + role, p[i]));
   set('--on-accent', lum(p[4]) > 0.179 ? '#000000' : '#ffffff');
-  set('--green', dark ? '#34d399' : '#059669'); set('--red', dark ? '#f87171' : '#dc2626');
-  set('--yellow', dark ? '#fbbf24' : '#b45309'); set('--purple', dark ? '#c084fc' : '#9333ea'); set('--pink', dark ? '#f472b6' : '#db2777');
+  set('--blur', e.blur + 'px');
+  set('--glass-opacity', e.opacity + '%');
+  set('--shadow', 'rgb(0 0 0 / ' + e.shadow + '%)');
+  b.dataset.motion = e.motion;
+  document.documentElement.style.fontSize = e.scale + '%';
+  document.querySelector('meta[name="theme-color"]').content = p[0];
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
   b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
   b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
-  ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_custom', JSON.stringify(custom));
+  ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
   if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
   const mb = $('btn-mode'); if (mb) mb.innerHTML = svg(dark ? 'moon' : 'sun');
   document.querySelectorAll('[data-mode]').forEach(c => c.classList.toggle('on', c.dataset.mode === mode));
 }
 window.addEventListener('resize', () => { document.body.dataset.navx = navxFor(effective()); });
-if (mq && mq.addEventListener) mq.addEventListener('change', () => { if (mode === 'auto') { applyTheme(); renderThemes(); } });
+if (mq && mq.addEventListener) mq.addEventListener('change', () => { if (mode === 'auto') { applyTheme(); renderThemes(); renderStudio(); } });
 
 
 function setLoginFX(fx) {
@@ -4857,18 +4924,15 @@ function toggleLoginThemeDrawer() {
 function renderLoginSwatches() {
   const box = $('login-swatches');
   if (!box) return;
-  const picks = ['mdesign', 'aurora', 'ios', 'm3', 'fluent', 'ion', 'synth', 'obsidian', 'emerald'];
-  box.innerHTML = picks.map(id => {
-    const th = TH.find(x => x.id === id);
-    if (!th) return '';
-    const pal = effMode() === 'light' ? th.l : th.d;
+  box.innerHTML = TH.map(th => {
+    const pal = effective(th, th.id === themeId ? custom : readThemeSettings(th.id)).pal;
     return `<button type="button" class="l-swatch${th.id === themeId ? ' on' : ''}" onclick="setTheme('${th.id}'); renderLoginSwatches();"><i style="background:${pal[4]};"></i><span>${esc(th.n)}</span></button>`;
   }).join('');
 }
 
-function setTheme(id) { themeId = id; custom = {}; applyTheme(); renderThemes(); renderStudio(); }
-function setMode(m) { mode = m; applyTheme(); renderThemes(); }
-function toggleMode() { mode = effMode() === 'dark' ? 'light' : 'dark'; applyTheme(); renderThemes(); }
+function setTheme(id) { themeId = id; custom = readThemeSettings(id); applyTheme(); renderThemes(); renderStudio(); }
+function setMode(m) { mode = m; applyTheme(); renderThemes(); renderStudio(); }
+function toggleMode() { mode = effMode() === 'dark' ? 'light' : 'dark'; applyTheme(); renderThemes(); renderStudio(); }
 function hsl2hex(h, s, l) {
   s /= 100; l /= 100;
   const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -4885,7 +4949,7 @@ function randMix() {
   DIMS.forEach(k => { c[k] = pick(Object.keys(OPT[k])); });
   c.accent = hsl2hex(Math.floor(Math.random() * 360), 70 + Math.floor(Math.random() * 25), effMode() === 'dark' ? 62 : 42);
   c.r = Math.floor(Math.random() * 30);
-  custom = c; applyTheme(); renderStudio();
+  custom = c; applyTheme(); renderStudio(); renderThemes();
 }
 
 /* gallery preview ------------------------------------------------ */
@@ -4921,7 +4985,7 @@ function pvCard(th, p) {
   }
 }
 function pvHTML(th) {
-  const p = effMode() === 'light' ? th.l : th.d;
+  const p = th.pal || (effMode() === 'light' ? th.l : th.d);
   const [bg, sf, tx, , ac, ac2, bd] = p;
   const rad = th.btn === 'pill' ? '99px' : (th.btn === 'round' ? '5px' : '0');
   const ins = { t: 7, l: 7, r: 7, b: 7 };
@@ -4931,6 +4995,7 @@ function pvHTML(th) {
     case 'dock': nav = `<div class="pn" style="--pc:${sf};top:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.t = 24; break;
     case 'float-b': nav = `<div class="pn" style="--pc:${sf};bottom:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.b = 24; break;
     case 'top': nav = `<div class="pn" style="--pc:${sf};top:0;left:0;right:0;height:12px;border-width:0 0 1px 0">${bars(false)}</div>`; ins.t = 19; break;
+    case 'side-float': nav = `<div class="pn" style="--pc:${sf};inset:5px auto 5px 5px;width:22px;border-radius:8px">${bars(true)}</div>`; ins.l = 33; break;
     case 'side': nav = `<div class="pn" style="--pc:${sf};top:0;bottom:0;left:0;width:30px;border-width:0 1px 0 0">${bars(true)}</div>`; ins.l = 38; break;
     case 'side-r': nav = `<div class="pn" style="--pc:${sf};top:0;bottom:0;right:0;width:30px;border-width:0 0 0 1px">${bars(true)}</div>`; ins.r = 38; break;
     case 'rail': nav = `<div class="pn" style="--pc:${sf};top:0;bottom:0;left:0;width:13px;border-width:0 1px 0 0">${bars(true).replace(/60%/g, '50%')}</div>`; ins.l = 21; break;
@@ -4938,9 +5003,9 @@ function pvHTML(th) {
   }
   const list = th.srv !== 'grid';
   const cr = Math.min(th.r, 9) + 'px';
-  const one = `<div style="flex:1;border-radius:${cr};${pvCard(th, p)}overflow:hidden"><i style="display:block;height:3px;width:42%;margin:6px 6px 3px;background:${ac};border-radius:2px"></i><i style="display:block;height:3px;width:26%;margin:0 6px;background:${ac2};border-radius:2px"></i></div>`;
+  const tile = (height, ink) => `<div style="flex:1;border-radius:${cr};${pvCard(th, p)}overflow:hidden"><i style="display:block;height:3px;width:42%;margin:6px 6px 3px;background:${ac};border-radius:2px"></i><i style="display:block;height:3px;width:26%;margin:0 6px;background:${ac2};border-radius:2px"></i><svg aria-hidden="true" viewBox="0 0 100 26" preserveAspectRatio="none" style="display:block;width:100%;height:${height}%;margin-top:3px;color:${ink}"><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3 V26 H0Z" fill="currentColor" opacity=".16"/><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>`;
   const area = `left:${ins.l}px;right:${ins.r}px;top:${ins.t}px;bottom:${ins.b}px;display:flex;gap:5px;flex-direction:${list ? 'column' : 'row'};`;
-  return `<div class="pv" style="background-color:${bg};${pvBg(th, p)}">${nav}<div style="${area}">${one}${one}${list ? '' : one}</div><span class="pt" style="right:9px;bottom:${ins.b + 5}px;color:${ac};font-family:${FF[th.font]};z-index:3;text-shadow:0 1px 2px ${bg}">Aa</span></div>`;
+  return `<div class="pv" style="background-color:${bg};${pvBg(th, p)}">${nav}<div style="${area}">${tile(45, ac)}${tile(32, ac2)}</div><span class="pt" style="right:9px;bottom:${ins.b + 5}px;color:${ac};font-family:${FF[th.font]};z-index:3;text-shadow:0 1px 2px ${bg}">Aa</span></div>`;
 }
 function renderThemes() {
   const grid = $('theme-grid'); if (!grid) return;
@@ -4949,24 +5014,33 @@ function renderThemes() {
   const q = themeQuery.trim().toLowerCase();
   const list = TH.filter(x => (groupFilter === 'all' || x.g === groupFilter) && (!q || (x.n + ' ' + t('g_' + x.g) + ' ' + x.g + ' ' + x.nav + ' ' + x.card).toLowerCase().includes(q)));
   $('theme-count').textContent = list.length + ' / ' + TH.length + ' ' + t('themes_n');
-  grid.innerHTML = list.map(x => `<button type="button" aria-pressed="${x.id === themeId}" class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
+  const profiles = list.map(x => effective(x, x.id === themeId ? custom : readThemeSettings(x.id)));
+  grid.innerHTML = profiles.map(x => `<button type="button" aria-pressed="${x.id === themeId}" class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
     <div class="tmeta"><strong>${esc(x.n)}</strong>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
     <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
 }
 function renderStudio() {
   const box = $('studio'); if (!box) return;
   const e = effective();
-  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk', uptime: 'studio_uptime' };
-  let h = DIMS.map(k => `<div class="field"><label>${t(labels[k])}</label><select data-dim="${k}"><option value="">${esc(t('theme_default'))}: ${esc(optLabel(k, curTheme()[k]))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></div>`).join('');
-  h += `<div class="field"><label>${t('studio_accent')}</label><input type="color" data-dim="accent" value="${esc(/^#[0-9a-f]{6}$/i.test(e.pal[4]) ? e.pal[4] : '#38bdf8')}"></div>`;
-  h += `<div class="field"><label>${t('studio_radius')}: <span id="rad-val">${e.r}</span>px</label><input type="range" min="0" max="36" data-dim="r" value="${e.r}"></div>`;
-  box.innerHTML = h;
+  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk', uptime: 'studio_uptime', motion: 'studio_motion' };
+  const label = (en, fa) => lang === 'fa' ? fa : en;
+  const fields = DIMS.map(k => `<label class="field"><span>${t(labels[k])}</span><select data-dim="${k}"><option value="">${esc(t('theme_default'))} · ${esc(optLabel(k, curTheme()[k] || (k === 'motion' ? 'system' : 'kuma')))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></label>`).join('');
+  const colors = colorRoles.map(([key, en, fa], i) => `<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${label(en, fa)}</span></label>`).join('');
+  const sizes = sizeRoles.map(([key, en, fa, min, max, unit]) => `<label class="field"><span>${label(en, fa)} <output id="value-${key}">${e[key]}</output>${unit}</span><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
+  const section = (title, content) => `<fieldset><legend>${title}</legend><div class="studio-fields">${content}</div></fieldset>`;
+  box.innerHTML = section(label('Palette', 'پالت رنگ') + ' · ' + t('mode_' + effMode()), colors)
+    + section(label('Shape and scale', 'اندازه و فرم'), sizes)
+    + section(label('Components and layout', 'اجزا و چیدمان'), fields);
 }
 function onStudio(el) {
-  const k = el.dataset.dim, v = el.value;
-  if (k === 'r') { custom.r = +v; const rv = $('rad-val'); if (rv) rv.textContent = v; }
-  else if (v === '') delete custom[k]; else custom[k] = v;
+  const k = el.dataset.dim;
+  if (el.type === 'range') {
+    custom[k] = el.valueAsNumber;
+    $('value-' + k).textContent = el.value;
+  } else if (el.value === '') delete custom[k];
+  else custom[k] = el.value;
   applyTheme();
+  renderThemes();
 }
 
 /* ═══════════════ language ═══════════════ */
@@ -8361,7 +8435,45 @@ if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key ==
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
-$('btn-reset-custom').onclick = () => { custom = {}; applyTheme(); renderStudio(); };
+$('style-export').onclick = () => {
+  const profile = { format: 'mcontrol-theme', version: 1, themeId, mode, settings: custom };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'mcontrol-' + themeId + '.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+$('style-import').onclick = () => $('style-file').click();
+$('style-file').onchange = async event => {
+  const input = event.currentTarget, file = input.files[0];
+  if (!file) return;
+  try {
+    if (file.size > 32768) throw Error();
+    const data = JSON.parse(await file.text());
+    if (data.format !== 'mcontrol-theme' || data.version !== 1 || !TH.some(th => th.id === data.themeId)
+        || !['auto', 'light', 'dark'].includes(data.mode) || !data.settings
+        || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw Error();
+    const validColors = new Set(['accent', ...colorRoles.flatMap(([k]) => ['light_' + k, 'dark_' + k])]);
+    for (const [k, v] of Object.entries(data.settings)) {
+      const size = sizeRoles.find(([key]) => key === k);
+      if (DIMS.includes(k) && typeof v === 'string' && Object.hasOwn(OPT[k], v)) continue;
+      if (size && Number.isInteger(v) && v >= size[3] && v <= size[4]) continue;
+      if (validColors.has(k) && typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) continue;
+      throw Error();
+    }
+    themeId = data.themeId;
+    mode = data.mode;
+    custom = data.settings;
+    groupFilter = 'all';
+    themeQuery = $('theme-search').value = '';
+    applyTheme();
+    renderStudio();
+    renderThemes();
+  } catch { toast(t('style_invalid'), true); }
+  finally { input.value = ''; }
+};
+$('btn-reset-custom').onclick = () => { custom = {}; applyTheme(); renderStudio(); renderThemes(); };
 $('theme-search').addEventListener('input', e => { themeQuery = e.target.value; renderThemes(); });
 $('btn-upd-check').onclick = () => checkUpdates(true);
 $('btn-zip-upd').onclick = () => $('upd-zip-file').click();
