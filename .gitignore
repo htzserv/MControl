@@ -1,0 +1,7 @@
+dist/
+*.db
+*.db-wal
+*.db-shm
+.secret.key
+frontend/node_modules/
+internal/webui/dist/assets/
