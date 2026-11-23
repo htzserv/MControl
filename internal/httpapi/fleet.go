@@ -142,11 +142,11 @@ func (s *Server) handleTenantServerSpeedtest(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	sr := sshclient.RunSpeedtest(toSSHTarget(srv))
-	if !sr.OK {
+	if sr.Error != "" {
 		fail(w, http.StatusBadGateway, sr.Error)
 		return
 	}
-	summary := fmt.Sprintf("↓ %.1f Mbps · ↑ %.1f Mbps · %.1f ms", sr.DownloadMbps, sr.UploadMbps, sr.PingMs)
+	summary := fmt.Sprintf("↓ %s Mbps · ↑ %s Mbps · %s ms", sr.DownloadMB, sr.UploadMB, sr.PingMs)
 	_ = s.engine.UpdateServerSpeed(r.Context(), claims.UserID, id, summary)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "speed": summary, "result": sr})
 }
