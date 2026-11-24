@@ -203,9 +203,19 @@ jobs:
             done
             return 1
           }
+          # Fallback when sync keeps failing: push each file alone, with ACL first, then without ACL
+          put_each() {
+            dest="$1"; shift
+            for f in dist/*; do
+              b=$(basename "$f")
+              aws --endpoint-url "$EP" s3 cp "$f" "${dest}${b}" --acl public-read --content-type application/octet-stream "$@" \
+                || aws --endpoint-url "$EP" s3 cp "$f" "${dest}${b}" --content-type application/octet-stream "$@" \
+                || echo "::warning::could not upload $b"
+            done
+          }
           rc=0
           echo "Syncing Rolling Beta to ${EP}/${PP_BUCKET}/MControl/beta-latest/ ..."
-          sync_retry dist/ "s3://${PP_BUCKET}/MControl/beta-latest/" --acl public-read || rc=1
+          sync_retry dist/ "s3://${PP_BUCKET}/MControl/beta-latest/" --acl public-read || { put_each "s3://${PP_BUCKET}/MControl/beta-latest/" || true; rc=1; }
           if [ "$MC_MODE" = "release" ]; then
             echo "Syncing Official Release to ${EP}/${PP_BUCKET}/MControl/ ..."
             sync_retry dist/ "s3://${PP_BUCKET}/MControl/" --exclude "beta-meta.json" --acl public-read || rc=1

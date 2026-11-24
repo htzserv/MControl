@@ -603,6 +603,15 @@ if [ -n "$BUSY_PIDS" ]; then
     for pid in $BUSY_PIDS; do
       [ -d "/proc/$pid" ] || continue
       comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+      cmdline=$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+      if echo "$cmdline" | grep -q 'mcontrol-agent' && grep -q 'PEERS_FILE' /usr/local/bin/mcontrol-agent.py 2>/dev/null; then
+        mkdir -p /etc/mcontrol-agent
+        PF="/etc/mcontrol-agent/peers-${AGENT_PORT}.txt"
+        touch "$PF"; chmod 600 "$PF" 2>/dev/null || true
+        grep -qxF "$NEW_CODE" "$PF" 2>/dev/null || echo "$NEW_CODE" >> "$PF"
+        echo "JOINED:${AGENT_PORT}"
+        exit 43
+      fi
       echo "PORT_BUSY:${comm:-unknown}(pid=${pid})"
       exit 42
     done
@@ -629,6 +638,7 @@ if [ -n "$BUSY_PIDS" ]; then
   fi
 fi`
 	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort, agentPort, agentPort, svcName, skipFlag)
+	prepRendered = "NEW_CODE=" + ShQuote(peerCode) + "\n" + prepRendered
 	mirrorFetch := ""
 	if isIran && mirrorClean != "" {
 		mirrorFetch = fmt.Sprintf(`

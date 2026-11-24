@@ -1673,6 +1673,12 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		// Preserve any port already occupied by another panel's agent unless it is this server's own saved port
 		skipBusy := (srv.AgentPort <= 0 || tryPort != srv.AgentPort)
 		res := sshclient.InstallPeerAgentPreserveBusy(target, peerCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
+		joined := false
+		if res.Err != nil && strings.Contains(res.Output, "JOINED:") {
+			// Port is held by another panel's v3 agent: our code was added to its peers file (no restart needed)
+			joined = true
+			res.Err = nil
+		}
 		if res.Err != nil {
 			if idx := strings.Index(res.Output, "PORT_BUSY:"); idx >= 0 {
 				procInfo := strings.TrimSpace(strings.SplitN(res.Output[idx+len("PORT_BUSY:"):], "\n", 2)[0])
@@ -1684,6 +1690,13 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		p = probeWithRetry(tryPort)
+		if !p.Online && joined {
+			// undo: remove only our code from the shared agent, never touch the other panel's service
+			undo := fmt.Sprintf(`F="/etc/mcontrol-agent/peers-%d.txt"; [ -f "$F" ] && { grep -vxF %s "$F" > "$F.tmp" || true; mv -f "$F.tmp" "$F"; }`, tryPort, sshclient.ShQuote(peerCode))
+			_ = sshclient.Run(target, undo, 10*time.Second, 20*time.Second)
+			portNotes = append(portNotes, fmt.Sprintf(":%d joined shared agent but unreachable from panel (%s)", tryPort, p.Error))
+			continue
+		}
 		if !p.Online {
 			svcName := fmt.Sprintf("mcontrol-agent-%d.service", tryPort)
 			chkCmd := fmt.Sprintf(`P=%d; SVC="%s"
