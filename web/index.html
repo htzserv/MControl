@@ -6902,7 +6902,8 @@ function toggleServerRow(id, el) {
 function renderServerCard(s) {
   const id = +s.id, on = s.status === 'online';
   const isOpen = openServerIds.has(id) ? 'open' : '';
-  const role = s.role === 'iran' ? `<span class="badge b-iran">${t('badge_iran')}</span>` : `<span class="badge b-foreign">${t('badge_foreign')}</span>`;
+  const countryLbl = (s.country && String(s.country).trim()) ? String(s.country).trim() : (s.role === 'iran' ? t('badge_iran') : t('badge_foreign'));
+  const role = s.role === 'iran' ? `<span class="badge b-iran">${esc(countryLbl)}</span>` : `<span class="badge b-foreign">${esc(countryLbl)}</span>`;
   const core = s.core_installed ? `<span class="badge b-ok">${t('badge_core')}${s.core_version ? ' ' + esc(s.core_version) : ''}</span>` : `<span class="badge b-miss">${t('badge_notinst')}</span>`;
   const hk = String(s.last_error || '').indexOf('HOST KEY CHANGED') >= 0;
   const err = s.last_error ? `<div class="srv-err">${esc(s.last_error)}${hk ? ` <button class="btn btn-warn btn-sm" data-act="trust" data-id="${id}">${t('btn_trust_key')}</button>` : ''}</div>` : '';

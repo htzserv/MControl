@@ -1686,10 +1686,23 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		p = probeWithRetry(tryPort)
 		if !p.Online {
 			svcName := fmt.Sprintf("mcontrol-agent-%d.service", tryPort)
-			repairCmd := fmt.Sprintf(`P=%d; SVC="%s"
+			chkCmd := fmt.Sprintf(`P=%d; SVC="%s"
 systemctl restart "$SVC" 2>/dev/null || true
-sleep 1.2`, tryPort, svcName)
-			_ = sshclient.Run(target, repairCmd, 10*time.Second, 20*time.Second)
+sleep 1.2
+ACT=$(systemctl is-active "$SVC" 2>/dev/null || echo inactive)
+LST="no"
+if ss -tln 2>/dev/null | grep -q ":${P} "; then LST="yes"; fi
+echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
+			chkRes := sshclient.Run(target, chkCmd, 10*time.Second, 20*time.Second)
+			if strings.Contains(chkRes.Output, "LISTENING=yes") {
+				// Agent is installed & listening on tryPort, but Master cannot reach it directly
+				hintMsg := "blocked by firewall or route (try Via Master Outbound if Iran/Foreign)"
+				if socksPx != "" {
+					hintMsg = "reachable locally on server, but Master Outbound proxy could not connect"
+				}
+				fail(w, http.StatusBadGateway, fmt.Sprintf("agent active on :%d (%s)", tryPort, hintMsg))
+				return
+			}
 			p = probeWithRetry(tryPort)
 		}
 		if p.Online {
