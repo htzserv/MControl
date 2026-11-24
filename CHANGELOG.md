@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.5
+- **Direct Beta & Release Updates from Iran Mirror (ParsPack):**
+  - Added dedicated **`beta_mirror`** update channel in `internal/updater/updater.go`, `internal/api/api.go`, and the Panel Update Center (`#update-modal`) so both **Official Releases** and **Rolling Beta Action Builds** can be checked and installed directly from the Iran Mirror (`MIRROR_URL/beta-latest/`) without touching GitHub.
+- **Consolidated v1.4.5 Release:** Includes 4-page Tunnel Wizard with animated IPv4/IPv6 ping box, Agent-probed Uptime Monitoring, Atelier Pro Theme Engine (12 MDesign presets, live preview, Eco mode, share code, DB & `/status` sync), Per-Tenant White-Label Branding, and automatic ParsPack S3 Mirror sync in GitHub Actions.
+
 ## 1.4.4
 - **CLI Show Settings (Excluding Credentials):** Added `Show Settings (Excluding User/Pass)` to the MDesign terminal menu (`main.sh` & `mcontrol-cli.sh`) displaying panel port, web path, domain/HTTPS status, channel, and SQLite settings without exposing passwords or credentials.
 

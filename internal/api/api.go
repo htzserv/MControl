@@ -1230,7 +1230,7 @@ func (h *Handler) handleUpdateRemote(w http.ResponseWriter, r *http.Request) {
 		Source string `json:"source"` // "github" or "mirror"
 	}
 	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req)
-	if req.Source != "mirror" && req.Source != "beta" {
+	if req.Source != "mirror" && req.Source != "beta" && req.Source != "beta_mirror" {
 		req.Source = "github"
 	}
 	st := h.store.GetSettings()

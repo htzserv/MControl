@@ -3051,7 +3051,7 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.4.4</span>
+      <span class="mono" id="nav-ver-lbl">v1.4.5</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -3649,7 +3649,8 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
         <div class="kv"><span data-i18n="upd_installed">Installed version</span><span id="upd-cur">---</span></div>
         <div class="kv"><span data-i18n="upd_github">Official GitHub</span><span id="upd-gh">---</span></div>
         <div class="kv"><span data-i18n="upd_mirror">Iran mirror</span><span id="upd-ir">---</span></div>
-        <div class="kv" id="upd-beta-row" style="display:none;"><span>Rolling Beta Channel</span><span id="upd-beta">---</span></div>
+        <div class="kv" id="upd-beta-row" style="display:none;"><span>Rolling Beta (GitHub)</span><span id="upd-beta">---</span></div>
+        <div class="kv" id="upd-beta-mirror-row" style="display:none;"><span>Rolling Beta (Iran Mirror)</span><span id="upd-beta-mirror">---</span></div>
 
         <!-- Beta Builds Toggle directly inside Update Modal -->
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; margin:10px 0; border-radius:14px; background:var(--row); border:1px solid var(--border);">
@@ -3669,7 +3670,8 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
           <button class="btn btn-check-box" id="btn-upd-check" data-i18n="btn_check_updates">Check for updates</button>
           <button class="btn btn-sky" data-upd="github" data-i18n="btn_upd_github">Update from GitHub</button>
           <button class="btn btn-sky" data-upd="mirror" data-i18n="btn_upd_mirror">Update from Iran mirror</button>
-          <button class="btn btn-warn" id="btn-upd-beta" data-upd="beta" style="display:none;">Install Rolling Beta</button>
+          <button class="btn btn-warn" id="btn-upd-beta" data-upd="beta" style="display:none;">Install Beta (GitHub)</button>
+          <button class="btn btn-warn" id="btn-upd-beta-mirror" data-upd="beta_mirror" style="display:none;">Install Beta (Iran Mirror)</button>
         </div>
 
         <hr style="margin:14px 0;">
@@ -8508,17 +8510,24 @@ async function checkUpdates(notify) {
     if ($('upd-gh')) $('upd-gh').innerHTML = fmt(c.github);
     if ($('upd-ir')) $('upd-ir').innerHTML = fmt(c.mirror);
     const bRow = $('upd-beta-row'), bBtn = $('btn-upd-beta'), bEl = $('upd-beta');
+    const bmRow = $('upd-beta-mirror-row'), bmBtn = $('btn-upd-beta-mirror'), bmEl = $('upd-beta-mirror');
+    const fmtBeta = b => {
+      if (!b || b.error) return `<span style="color:var(--red);">${esc((b && b.error) || 'Unavailable')}</span>`;
+      if (b.available) return `<span style="color:var(--yellow);">v${esc(b.tag)} (${t('upd_new')})</span>`;
+      return `<span style="color:var(--green);">v${esc(b.tag || c.current_version)} (${t('upd_uptodate')})</span>`;
+    };
     if (c.beta && c.beta.enabled) {
       if (bRow) bRow.style.display = 'flex';
-      if (bBtn) { bBtn.style.display = 'inline-flex'; bBtn.textContent = c.beta.build ? ('Install Beta #' + c.beta.build) : 'Install Rolling Beta'; }
-      if (bEl) {
-        if (c.beta.error) bEl.innerHTML = `<span style="color:var(--red);">${esc(c.beta.error)}</span>`;
-        else if (c.beta.available) bEl.innerHTML = `<span style="color:var(--yellow);">v${esc(c.beta.tag)} (${t('upd_new')})</span>`;
-        else bEl.innerHTML = `<span style="color:var(--green);">v${esc(c.beta.tag || c.current_version)} (${t('upd_uptodate')})</span>`;
-      }
+      if (bBtn) { bBtn.style.display = 'inline-flex'; bBtn.textContent = c.beta.build ? ('Install Beta #' + c.beta.build + ' (GitHub)') : 'Install Beta (GitHub)'; }
+      if (bEl) bEl.innerHTML = fmtBeta(c.beta);
+      if (bmRow) bmRow.style.display = 'flex';
+      if (bmBtn) { bmBtn.style.display = 'inline-flex'; bmBtn.textContent = (c.beta_mirror && c.beta_mirror.build) ? ('Install Beta #' + c.beta_mirror.build + ' (Mirror)') : 'Install Beta (Iran Mirror)'; }
+      if (bmEl) bmEl.innerHTML = fmtBeta(c.beta_mirror);
     } else {
       if (bRow) bRow.style.display = 'none';
       if (bBtn) bBtn.style.display = 'none';
+      if (bmRow) bmRow.style.display = 'none';
+      if (bmBtn) bmBtn.style.display = 'none';
     }
     updAvail = !!c.update_available; renderNav();
     const isBetaNew = !!(c.beta && c.beta.enabled && c.beta.available);

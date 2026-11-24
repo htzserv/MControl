@@ -165,6 +165,7 @@ type CheckResult struct {
 	GitHub          SourceStatus `json:"github"`
 	Mirror          SourceStatus `json:"mirror"`
 	Beta            BetaStatus   `json:"beta"`
+	BetaMirror      BetaStatus   `json:"beta_mirror"`
 	CheckedAt       int64        `json:"checked_at"`
 }
 
@@ -441,14 +442,18 @@ func CheckAll(githubURL, mirrorURL, socksProxy string, betaEnabled bool, install
 		res.Mirror = fetchRemoteVersion(mirrorURL, "")
 	}()
 	if betaEnabled {
-		wg.Add(1)
+		wg.Add(2)
 		go func() {
 			defer wg.Done()
 			res.Beta = fetchBetaStatus(githubURL, mirrorURL, socksProxy, installedBetaBuild)
 		}()
+		go func() {
+			defer wg.Done()
+			res.BetaMirror = fetchBetaStatus("", mirrorURL, "", installedBetaBuild)
+		}()
 	}
 	wg.Wait()
-	res.UpdateAvailable = res.GitHub.Available || res.Mirror.Available || (betaEnabled && res.Beta.Available)
+	res.UpdateAvailable = res.GitHub.Available || res.Mirror.Available || (betaEnabled && (res.Beta.Available || res.BetaMirror.Available))
 	if res.GitHub.Available || res.Mirror.Available {
 		targetVer := res.GitHub.Version
 		if targetVer == "" {
@@ -817,6 +822,14 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 		betaBuildNum := 0
 		if source == "mirror" {
 			baseURL = strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
+		} else if source == "beta_mirror" {
+			bs := fetchBetaStatus("", mirrorURL, "", 0)
+			betaBuildNum = bs.Build
+			if ir := strings.TrimRight(strings.TrimSpace(mirrorURL), "/"); ir != "" {
+				baseURL = ir + "/beta-latest"
+			} else {
+				baseURL = ""
+			}
 		} else if source == "beta" {
 			bs := fetchBetaStatus(githubURL, mirrorURL, socksProxy, 0)
 			betaBuildNum = bs.Build
@@ -835,7 +848,7 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 		}
 
 		activeProxy := socksProxy
-		if source == "mirror" {
+		if source == "mirror" || source == "beta_mirror" {
 			activeProxy = ""
 		}
 		if activeProxy != "" {
@@ -844,9 +857,10 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 		client := MakeHTTPClient(5*time.Minute, activeProxy)
 		restart := func() {
 			if onBetaInstalled != nil {
-				if source == "beta" && betaBuildNum > 0 {
+				isBetaSrc := source == "beta" || source == "beta_mirror"
+				if isBetaSrc && betaBuildNum > 0 {
 					onBetaInstalled(betaBuildNum)
-				} else if source != "beta" {
+				} else if !isBetaSrc {
 					onBetaInstalled(0)
 				}
 			}
@@ -879,7 +893,7 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 				finishJob(false, "Update failed", err.Error())
 				return
 			}
-			if err := applyZipInternal(zipPath, source != "beta"); err != nil {
+			if err := applyZipInternal(zipPath, source != "beta" && source != "beta_mirror"); err != nil {
 				finishJob(false, "Update failed", err.Error())
 				return
 			}
