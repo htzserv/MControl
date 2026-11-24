@@ -2587,6 +2587,68 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+.atelier-head,.atelier-current,.atelier-group summary,.atelier-axis summary,.appearance-modes { display:flex;align-items:center;gap:10px; }
+.atelier-head { justify-content:space-between;flex-wrap:wrap;margin-block:12px 20px; }
+.atelier-current { color:var(--muted);font-size:.85rem; }
+.atelier-current i { width:10px;height:10px;border-radius:50%;background:var(--accent); }
+#studio { gap:8px;margin-block:8px; }
+.atelier-group,.atelier-axis { border:1px solid var(--border);border-radius:14px;background:var(--surface);min-width:0; }
+.atelier-axis { border:0;border-block-start:1px solid var(--border);border-radius:0; }
+.atelier-group summary,.atelier-axis summary { cursor:pointer;list-style:none;min-height:50px;padding:12px 16px; }
+.atelier-group summary::-webkit-details-marker {display:none}
+.atelier-group summary::before {content:'›';color:var(--accent);font:600 20px system-ui; }
+[dir=rtl] .atelier-group summary::before {transform:rotate(180deg)}
+.atelier-group[open]>summary::before,.atelier-axis[open]>summary::before {transform:rotate(90deg)}
+.atelier-group summary strong {font-size:.91rem;}
+.atelier-group summary span { margin-inline-start:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;font-size:.76rem;color:var(--muted); }
+.atelier-content {padding:0 16px 14px;}
+.atelier-axis .atelier-content {padding:0 0 12px;}
+.atelier-tiles {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,138px),1fr));gap:8px;}
+.atelier-tile {position:relative;display:grid;align-content:start;gap:5px;border:1px solid var(--border);border-radius:10px;background:var(--row);color:var(--text);font:inherit;font-size:.78rem;min-width:0;padding:8px;cursor:pointer;text-align:start;}
+.atelier-tile:hover {border-color:var(--accent);}
+.atelier-tile[aria-pressed=true],.appearance-modes [aria-pressed=true] {border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+.atelier-tile[aria-pressed=true]::after,.appearance-modes [aria-pressed=true]::after {content:'';background-color:var(--accent);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='m4 9 3 3 7-7' fill='none' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E");color:var(--on-accent);border-radius:50%;width:18px;height:18px;display:grid;place-items:center;font-weight:800;}
+.atelier-tile[aria-pressed=true]::after {position:absolute;inset-block-start:5px;inset-inline-end:5px;}
+.tile-art {display:flex;align-items:center;justify-content:center;overflow:hidden;height:66px;color:var(--accent);width:100%;background:var(--accent-soft);border-radius:6px;}
+.tile-art svg {width:96%;height:50px;}
+.tile-art .pv {width:100%;height:100%;margin:0;}
+.tile-art .pv svg {height:20px;}
+.appearance-modes {flex-wrap:wrap;margin-block-end:14px;}
+.appearance-modes button {display:flex;align-items:center;gap:6px;}
+.mode-sample {width:24px;height:16px;border:1px solid var(--border);border-radius:4px;}
+.mode-sample.night {background:#232737;} .mode-sample.day {background:#fafafa;} .mode-sample.auto {background:linear-gradient(90deg,#232737 50%,#fafafa 50%);}
+.demo-density,.mini-layout,.mon-layout {display:grid;width:76%;gap:4px;}
+.demo-density i,.mini-layout i,.mon-layout i,.demo-meter i {display:block;background:var(--accent);border-radius:2px;}
+.d-compact {gap:1px;} .d-roomy {gap:10px;}
+.mini-layout i {height:7px;} .lo-grid,.lo-table,.lo-tiles,.lo-ribbon,.lo-bubbles,.lo-unified {grid-template-columns:repeat(3,1fr);}
+.lo-grid i,.lo-tiles i,.lo-bubbles i,.lo-unified i,.lo-ribbon i {height:24px;}
+.lo-bubbles i {border-radius:12px;} .lo-ribbon {gap:1px;} .lo-unified {padding:6px;border:1px solid currentColor;border-radius:5px;}
+.part-btn,.part-chk {display:grid;place-items:center;background:var(--accent);color:var(--on-accent);padding:5px 12px;font-weight:bold;}
+.part-chk {width:22px;height:22px;padding:0;} .part-pill,.part-circle {border-radius:999px;} .part-round {border-radius:6px;} .part-slant {transform:skewX(-12deg);}
+.part-neon {border:1px solid currentColor;box-shadow:0 0 9px var(--accent);} .part-material {border-radius:4px;box-shadow:0 2px 3px var(--shadow);}
+.part-switch {width:36px;border-radius:20px;text-align:end;padding-inline-start:14px;}
+.tile-art .beat-mini {width:80%;} .beat-mini[data-form=dots] i {border-radius:50%;height:10px;} .beat-mini[data-form=pill] i {border-radius:99px;height:20px;} .beat-mini[data-form=line] i {height:4px;} .beat-mini[data-form=block] i {height:10px;}
+.demo-ring {display:grid;place-items:center;border:5px solid var(--border);border-block-start-color:var(--accent);border-inline-end-color:var(--accent);border-radius:50%;width:50px;height:50px;font-size:10px;}
+.demo-meter,.motion-track {width:76%;height:6px;border-radius:4px;background:var(--border);}
+.demo-meter i {width:42%;height:100%;} .motion-track i {display:block;width:10px;height:10px;border-radius:50%;background:var(--accent);}
+@keyframes atelier-motion {to {transform:translateX(42px);} }
+@media(prefers-reduced-motion:no-preference){body:not([data-motion=reduced]) .atelier-tile:hover .motion-track.system i,body:not([data-motion=reduced]) .atelier-tile:focus-visible .motion-track.system i {animation:atelier-motion .9s ease-in-out infinite alternate;}}
+.mon-layout b {display:flex;gap:2px;padding:4px;border:1px solid var(--border);} .mon-layout i {flex:1;height:12px;background:var(--green);} .mon-layout i:nth-child(4){background:var(--red);}
+.ml-grid,.ml-wall {grid-template-columns:repeat(2,1fr);} .ml-wall b {padding:5px 2px;}
+.ml-ledger i {height:3px;} .ml-noc {background:#141b22;} .ml-neon i {box-shadow:0 0 4px var(--accent);} .ml-dots i {height:6px;border-radius:50%;} .ml-prism b {border-radius:10px;background:var(--accent-soft);}
+.ml-mosaic b {display:grid;grid-template-columns:repeat(5,1fr);}
+.tiny-monitor {width:160%;flex-shrink:0;transform:scale(.58);color:var(--text);}
+.atelier-range {display:grid;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px;font-size:.78rem;}
+.atelier-range span {display:flex;justify-content:space-between;gap:4px;} .atelier-range input {width:100%;accent-color:var(--accent);}
+.size-sample {display:grid;place-items:center;background:var(--surface);border:1px solid var(--border);height:36px;color:var(--accent);font:600 15px var(--ff);}
+.ss-r {border-radius:var(--rc);} .ss-bw {border-width:var(--bw);} .ss-scale {font-size:1rem;} .ss-shadow {box-shadow:0 4px 8px var(--shadow);}
+.ss-opacity {background:var(--card);} .ss-blur {position:relative;overflow:hidden;isolation:isolate;} .ss-blur::before {content:'';position:absolute;inset:4px;background:repeating-linear-gradient(60deg,var(--accent) 0 4px,transparent 4px 12px);filter:blur(calc(var(--blur) / 4));opacity:.55;z-index:-1;}
+.studio-color small {display:block;color:var(--muted);font-family:var(--ff-m);}
+@media(max-width:520px){.atelier-content{padding-inline:9px}.atelier-tiles{grid-template-columns:repeat(2,minmax(0,1fr));}.atelier-group summary span{max-width:44%;}.atelier-group summary{padding-inline:10px;}}
+.family-swatches {display:inline-flex;vertical-align:middle;margin-inline-end:5px;}
+.family-swatches i {width:8px;height:8px;border:1px solid var(--surface);border-radius:50%;margin-inline-start:-2px;}
+.atelier-tile[aria-pressed=true]::after,.appearance-modes [aria-pressed=true]::after {background-color:#a7f3d0;}
+.ml-grid b {background:var(--row);} .ml-wall b {align-items:end;height:19px;} .ml-wall b i {height:6px;}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3992,38 +4054,30 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
         </div>
 
         <div id="sub-themes" class="sub-pane">
-<div class="toolbar">
-        <div>
-          <h3 data-i18n="theme_title">Theme studio</h3>
-          <p class="hint" style="margin:4px 0 0;" data-i18n="theme_note">A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.</p>
-        </div>
-        <div class="flexw">
-          <button class="chip" data-mode="dark" id="m-dark" data-i18n="mode_dark">Dark</button>
-          <button class="chip" data-mode="light" id="m-light" data-i18n="mode_light">Light</button>
-          <button class="chip" data-mode="auto" id="m-auto" data-i18n="mode_auto">Auto</button>
-          <button class="btn btn-sky btn-sm" id="btn-rand-theme" data-i18n="btn_random">Random theme</button>
-        </div>
+<header class="atelier-head"><h3 data-i18n="theme_title">Theme studio</h3><div class="atelier-current"><i></i><strong id="atelier-current"></strong></div></header>
+      <details class="atelier-group"><summary><strong data-i18n="gallery_title"></strong><span id="gallery-current"></span></summary>
+      <div class="atelier-content"><div class="appearance-modes">
+        <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
+        <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
+        <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
+        <button class="btn btn-ghost btn-sm" id="btn-rand-theme" data-i18n="btn_random"></button>
       </div>
-
       <div class="flexw sp">
         <input id="theme-search" class="mono" style="padding:8px 13px; border-radius:var(--rb); border:1px solid var(--border); background:color-mix(in srgb, var(--bg) 60%, transparent); color:var(--text); outline:none; min-width:200px;" data-i18n-ph="theme_search" placeholder="Search themes...">
         <span class="hint" style="margin:0;" id="theme-count"></span>
       </div>
       <div class="chips" id="theme-groups"></div>
       <div class="tg" id="theme-grid"></div>
-      <div class="card sp">
-        <div class="toolbar" style="margin-bottom:10px;">
-          <h4 data-i18n="cust_title">Studio: mix your own</h4>
-          <div class="flexw">
+      </div></details>
+      <div class="studio" id="studio"></div>
+      <details class="atelier-group"><summary><strong data-i18n="theme_tools"></strong></summary><div class="atelier-content"><div class="flexw">
             <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
             <button class="btn btn-ghost btn-sm" id="style-export" data-i18n="style_export"></button>
             <button class="btn btn-ghost btn-sm" id="style-import" data-i18n="style_import"></button>
             <input type="file" accept=".json,application/json" id="style-file" hidden>
             <button class="btn btn-warn btn-sm" id="btn-reset-custom" data-i18n="btn_reset">Reset overrides</button>
           </div>
-        </div>
-        <div class="studio" id="studio"></div>
-      </div>
+        </div></details>
 
 
         </div>
@@ -4670,7 +4724,7 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', gallery_title:'Themes and appearance', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
@@ -4724,7 +4778,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', gallery_title:'تم‌ها و حالت نمایش', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -5035,16 +5089,14 @@ function applyTheme() {
   b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   renderMetricDetails();
   refreshMonitorVisuals();
-  renderGaugeSample();
-  document.querySelectorAll('[data-shape-key]').forEach(button => {
-    button.setAttribute('aria-pressed', String(e[button.dataset.shapeKey] === button.dataset.choice));
-  });
+  $('atelier-current').textContent = curTheme().n;
+  $('gallery-current').textContent = curTheme().n + ' · ' + t('mode_' + mode);
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
   if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
   const mb = $('btn-mode'); if (mb) mb.innerHTML = svg(dark ? 'moon' : 'sun');
-  document.querySelectorAll('[data-mode]').forEach(c => c.classList.toggle('on', c.dataset.mode === mode));
+  document.querySelectorAll('[data-mode]').forEach(c => { c.classList.toggle('on', c.dataset.mode === mode); c.setAttribute('aria-pressed', String(c.dataset.mode === mode)); });
 }
 window.addEventListener('resize', () => { document.body.dataset.navx = navxFor(effective()); });
 if (mq && mq.addEventListener) mq.addEventListener('change', () => { if (mode === 'auto') { applyTheme(); renderThemes(); renderStudio(); } });
@@ -5100,7 +5152,9 @@ function pvBg(th, p) {
   switch (th.bg) {
     case 'grid': return `background-image:linear-gradient(${ac}33 1px,transparent 1px),linear-gradient(90deg,${ac}33 1px,transparent 1px);background-size:12px 12px;`;
     case 'dots': return `background-image:radial-gradient(${tx}44 1px,transparent 1.2px);background-size:9px 9px;`;
-    case 'aurora': case 'mesh': return `background-image:radial-gradient(circle at 15% 0%,${ac}66,transparent 55%),radial-gradient(circle at 95% 15%,${ac2}55,transparent 55%);`;
+    case 'noise': return 'background-image:url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'.7\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' opacity=\'.22\' filter=\'url(%23n)\'/%3E%3C/svg%3E");';
+    case 'mesh': return `background-image:radial-gradient(at 30% 80%,${ac}99,transparent 65%),radial-gradient(at 75% 25%,${ac2}99,transparent 55%);`;
+    case 'aurora': return `background-image:radial-gradient(circle at 15% 0%,${ac}66,transparent 55%),radial-gradient(circle at 95% 15%,${ac2}55,transparent 55%);`;
     case 'scan': return 'background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 1px,transparent 1px 3px);';
     case 'diag': return `background-image:linear-gradient(135deg,${ac}44,transparent 50%,${ac2}44);`;
     case 'stripes': return `background-image:repeating-linear-gradient(45deg,${ac}26 0 5px,transparent 5px 10px);`;
@@ -5110,7 +5164,7 @@ function pvBg(th, p) {
   }
 }
 function pvCard(th, p) {
-  const [, sf, , , ac, , bd] = p;
+  const [, sf, , , ac, ac2, bd] = p;
   switch (th.card) {
     case 'glass': return `background:${sf}cc;border:1px solid ${bd};`;
     case 'flat': return `background:${sf};`;
@@ -5121,6 +5175,7 @@ function pvCard(th, p) {
     case 'hud': return `background:${sf};border:1px solid ${ac};`;
     case 'liquid': return 'background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.4);';
     case 'bevel': return `background:${sf};border:2px outset #ddd;`;
+    case 'prism': return `background:linear-gradient(135deg,${sf},${ac}33);box-shadow:inset 0 1px ${ac2}66;`;
     case 'deck': return `background:${sf};border-top:3px solid ${ac};`;
     default: return '';
   }
@@ -5154,7 +5209,11 @@ function pvHTML(th) {
 function renderThemes() {
   const grid = $('theme-grid'); if (!grid) return;
   const gs = ['all'].concat(Array.from(new Set(TH.map(x => x.g))));
-  $('theme-groups').innerHTML = gs.map(g => `<button class="chip${g === groupFilter ? ' on' : ''}" data-grp="${esc(g)}">${esc(t('g_' + g))}</button>`).join('');
+  const familySwatch = g => {
+    const themes = g === 'all' ? TH.filter((th,i)=>TH.findIndex(x=>x.g===th.g)===i) : TH.filter(th=>th.g===g);
+    return '<span class="family-swatches" aria-hidden="true">'+themes.slice(0,4).map(th=>`<i style="background:${(effMode()==='light'?th.l:th.d)[4]}"></i>`).join('')+'</span>';
+  };
+  $('theme-groups').innerHTML = gs.map(g => `<button class="chip${g === groupFilter ? ' on' : ''}" aria-pressed="${g === groupFilter}" data-grp="${esc(g)}">${familySwatch(g)}${esc(t('g_' + g))}</button>`).join('');
   const q = themeQuery.trim().toLowerCase();
   const list = TH.filter(x => (groupFilter === 'all' || x.g === groupFilter) && (!q || (x.n + ' ' + t('g_' + x.g) + ' ' + x.g + ' ' + x.nav + ' ' + x.card).toLowerCase().includes(q)));
   $('theme-count').textContent = list.length + ' / ' + TH.length + ' ' + t('themes_n');
@@ -5221,46 +5280,57 @@ function uptimeRing(value) {
   const percent = valid ? n : 0;
   return `<div class="uptime-ring" style="--uptime-fill:${percent}%"><span><strong>${valid ? n.toLocaleString(lang, {maximumFractionDigits: 2}) + '%' : '—'}</strong><small>${lang === 'fa' ? '۲۴ ساعت' : '24 hours'}</small></span></div>`;
 }
-function shapePicker(key, modes, title) {
-  const current = effective()[key];
-  const buttons = modes.map(mode => {
-    const art = key === 'gauge' ? instrumentPlot(mode,[12,24,20,45,40,76,70,35,50,68],100,'accent')
-      : `<span class="beat-mini" data-form="${mode}" aria-hidden="true">${'<i></i>'.repeat(6)}</span>`;
-    return `<button type="button" data-shape-key="${key}" data-choice="${mode}" aria-pressed="${mode === current}">${art}${esc(optLabel(key,mode))}</button>`;
-  }).join('');
-  return `<details class="shape-picker"><summary>${title}</summary><div class="shape-options">${buttons}</div></details>`;
+const studioLabels = Object.fromEntries(DIMS.map(k=>[k,'studio_'+k]));
+const studioGroups = [
+  ['layout','Navigation and layout','ناوبری و چیدمان',['nav','srv','stat','chart','den']],
+  ['surfaces','Cards and controls','کارت‌ها و کنترل‌ها',['card','corners','frame','btn','chk']],
+  ['telemetry','Metrics and uptime','نمودارها و آپتایم',['gauge','uptime','beat']],
+  ['appearance','Background, type and motion','زمینه، قلم و حرکت',['bg','font','motion']]
+];
+const studioText = (en,fa) => lang === 'fa' ? fa : en;
+function optionArt(key,v,e) {
+  const candidate = {...e,[key]:v};
+  const bar = (w,h=5) => `<i style="width:${w}%;height:${h}px"></i>`;
+  const rows = n => Array.from({length:n},(_,i)=>bar(82-i*10)).join('');
+  const sample = [14,20,18,16,25,38,40,30,48,56,42,50,68,60,70,55,47,58,42,40,51,46,54,48,35,38,41,42];
+  if (['nav','frame','corners','card','bg'].includes(key)) return pvHTML(candidate);
+  if (key==='font') return `<b style="font:700 22px ${FF[v]}">${studioText('Aa 24','آب ۲۴')}</b>`;
+  if (key==='motion') return `<span class="motion-track ${v}"><i></i></span>`;
+  if (key==='btn'||key==='chk') return `<span class="part-${key} part-${v}">${key==='chk'?'✓':studioText('Apply','اعمال')}</span>`;
+  if (key==='beat') return `<span class="beat-mini" data-form="${v}">${'<i></i>'.repeat(5)}</span>`;
+  if (key==='gauge'){
+    if(detailModes.includes(v)) return metricPlot(v,sample,100,'accent');
+    if(v==='ring') return '<span class="demo-ring">42%</span>';
+    if(v==='line') return '<span class="demo-meter"><i></i></span>';
+    return '<svg viewBox="0 0 100 32"><path d="M1 22Q10 9 18 17T36 13T55 14T74 7T98 12" stroke="currentColor" fill="none" stroke-width="2"/></svg>';
+  }
+  if(key==='uptime'){
+    const visual = monitorVisual(monitorSample,v);
+    if(visual) return '<div class="tiny-monitor">'+visual+'</div>';
+    if(v==='orbit') return '<span class="demo-ring">98%</span>';
+    return `<span class="mon-layout ml-${v}">${Array.from({length:v==='grid'||v==='wall'?4:1},()=>`<b>${'<i></i>'.repeat(10)}</b>`).join('')}</span>`;
+  }
+  if(key==='den') return `<span class="demo-density d-${v}">${rows(3)}</span>`;
+  return `<span class="mini-layout lo-${v}">${Array.from({length:v==='table'?9:3},()=>'<i></i>').join('')}</span>`;
 }
 function renderStudio() {
-  const box = $('studio'); if (!box) return;
-  const e = effective();
-  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk', uptime: 'studio_uptime', motion: 'studio_motion', corners: 'studio_corners', frame: 'studio_frame', beat: 'studio_beat' };
-  const label = (en, fa) => lang === 'fa' ? fa : en;
-  const base = effective(curTheme(), {});
-  const fields = keys => keys.map(k => `<label class="field"><span>${t(labels[k])}</span><select data-dim="${k}"><option value="">${esc(t('theme_default'))} · ${esc(optLabel(k, base[k]))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></label>`).join('');
-  const colors = colorRoles.map(([key, en, fa], i) => `<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${label(en, fa)}</span></label>`).join('');
-  const sizes = sizeRoles.map(([key, en, fa, min, max, unit]) => `<label class="field"><span>${label(en, fa)} <output id="value-${key}">${e[key]}</output>${unit}</span><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
-  const section = (title, content) => `<fieldset><legend>${title}</legend><div class="studio-fields">${content}</div></fieldset>`;
-  const detailKeys = ['gauge','corners','frame','uptime','beat'];
-  const demoHistory = monitorSample.beats.map(b=>b.status);
-  const demo = `<div class="mon-card is-up detail-demo"><div class="mon-head"><strong>${label('Monitor preview','پیش‌نمایش مانیتور')}</strong></div>${uptimeRing(98.7)}<div class="mon-visual" id="studio-monitor-visual">${monitorVisual(monitorSample,e.uptime)}</div><div class="mon-hb-bars">${demoHistory.map(state => `<i class="mon-hb ${state}"></i>`).join('')}</div><div class="mon-foot">${label('Sample history','تاریخچهٔ نمونه')} · 24h · 98.7%</div></div>`;
-  box.innerHTML = section(label('Cards and uptime', 'کارت‌ها و آپتایم'), fields(detailKeys))
-    + shapePicker('gauge',instrumentModes,label('Browse new metric gauges','انتخاب تصویری نمایشگر کارت‌ها'))
-    + shapePicker('beat',['diamond','hex','chevron','slash','loop','cross','ecg','beacon'],label('Browse new heartbeat shapes','انتخاب تصویری شکل ضربان‌ها'))
-    + '<div id="std-metric-preview" class="std-metric-preview"></div>' + demo
-    + section(label('Palette', 'پالت رنگ') + ' · ' + t('mode_' + effMode()), colors)
-    + section(label('Shape and scale', 'اندازه و فرم'), sizes)
-    + section(label('Components and layout', 'اجزا و چیدمان'), fields(DIMS.filter(k => !detailKeys.includes(k))));
-  renderGaugeSample();
-}
-function renderGaugeSample() {
-  const box = $('std-metric-preview');
-  if (!box) return;
-  const mode = effective().gauge;
-  box.hidden = !detailModes.includes(mode);
-  if (box.hidden) return;
-  const samples = [12,16,15,20,22,18,26,42,35,30,29,50,68,62,54,37,32,34,43,41,45,51,49,38,43,36,35,42];
-  box.innerHTML = (lang === 'fa' ? 'نمونهٔ CPU' : 'CPU sample') + ' · 42%' +
-    '<div class="metric-channel">' + metricPlot(mode,samples,100,'accent') + '</div>';
+  const box = $('studio'); if(!box) return;
+  const open = new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.section));
+  const e=effective(),base=effective(curTheme(),{});
+  const fold=(id,name,value,body,inner=false)=>`<details class="${inner?'atelier-axis':'atelier-group'}" data-section="${id}" ${open.has(id)?'open':''}><summary><strong>${esc(name)}</strong><span>${esc(value)}</span></summary><div class="atelier-content">${body}</div></details>`;
+  const axis=k=>{
+    const choices=['',...Object.keys(OPT[k])].map(v=>{
+      const active=(custom[k]||'')===v;
+      const title=v?optLabel(k,v):t('theme_default')+' · '+optLabel(k,base[k]);
+      return `<button type="button" class="atelier-tile" data-axis="${k}" data-choice="${v}" aria-pressed="${active}"><span class="tile-art" aria-hidden="true">${optionArt(k,v||base[k],e)}</span><span>${esc(title)}</span></button>`;
+    }).join('');
+    return fold(k,t(studioLabels[k]),optLabel(k,e[k]),'<div class="atelier-tiles">'+choices+'</div>',true);
+  };
+  const sections=studioGroups.map(([id,en,fa,keys])=>fold(id,studioText(en,fa),keys.map(k=>optLabel(k,e[k])).join(' · '),keys.map(axis).join(''))).join('');
+  const colors=colorRoles.map(([key,en,fa],i)=>`<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${studioText(en,fa)}<small dir="ltr">${e.pal[i]}</small></span></label>`).join('');
+  const sizes=sizeRoles.map(([key,en,fa,min,max,unit])=>`<label class="atelier-range"><span>${studioText(en,fa)} <b><output id="value-${key}">${e[key]}</output>${unit}</b></span><i class="size-sample ss-${key}" aria-hidden="true">${studioText('Aa','آب')}</i><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
+  box.innerHTML=sections+fold('palette',studioText('Color palette','پالت رنگ'),t('mode_'+effMode())+' · '+e.pal[4],'<div class="atelier-tiles">'+colors+'</div>')+
+    fold('sizes',studioText('Measurements and effects','اندازه‌ها و جلوه‌ها'),e.r+'px · '+e.scale+'%','<div class="atelier-tiles">'+sizes+'</div>');
 }
 function onStudio(el) {
   const k = el.dataset.dim;
@@ -5271,6 +5341,14 @@ function onStudio(el) {
   else custom[k] = el.value;
   applyTheme();
   renderThemes();
+  if (el.type === 'color') {
+    renderStudio();
+    $('studio').querySelector('[data-dim="'+k+'"]')?.focus({preventScroll:true});
+  } else {
+    const summary = el.closest('details').querySelector('summary span');
+    const e = effective();
+    summary.textContent = e.r+'px · '+e.scale+'%';
+  }
 }
 
 /* ═══════════════ language ═══════════════ */
@@ -8744,11 +8822,12 @@ if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
 $('studio').addEventListener('click', event => {
-  const choice = event.target.closest('[data-shape-key]');
+  const choice = event.target.closest('[data-axis]');
   if (!choice) return;
-  const select = $('studio').querySelector('select[data-dim="' + choice.dataset.shapeKey + '"]');
-  select.value = choice.dataset.choice;
-  onStudio(select);
+  const key=choice.dataset.axis, value=choice.dataset.choice;
+  if (value) custom[key]=value; else delete custom[key];
+  applyTheme(); renderThemes(); renderStudio();
+  $('studio').querySelector(`[data-axis="${key}"][data-choice="${value}"]`)?.focus({preventScroll:true});
 });
 $('style-export').onclick = () => {
   const profile = { format: 'mcontrol-theme', version: 1, themeId, mode, settings: custom };
