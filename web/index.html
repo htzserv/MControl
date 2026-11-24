@@ -2892,6 +2892,240 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
 .chart-mini i:nth-child(3),.atelier-current i {background:var(--accent3);}
 #nav .nav-item.active svg {filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--accent3) 48%,transparent));}
 #apply-colors:disabled {opacity:.5;cursor:default;}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE ENGINE (Ultrawide -> Laptop -> Split-Screen -> Tablet -> Mobile)
+   Eliminates top-bar collisions, horizontal overflow & squished cards
+   ═══════════════════════════════════════════════════════════════════════════ */
+html, body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+.main-inner, .card, .metric-card, .srv-row-wrap, .mon-card, .toolbar > * {
+  min-width: 0;
+}
+#nav::-webkit-scrollbar { display: none; }
+
+/* ── Medium Desktop / Split-Screen (861px – 1340px): Zero-Collision Top Bar ── */
+@media (max-width: 1340px) and (min-width: 861px) {
+  body[data-navx="dock"] #chrome,
+  body[data-navx="float-b"] #chrome {
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  body[data-navx="dock"] .util,
+  body[data-navx="float-b"] .util {
+    position: static !important;
+    flex-shrink: 0;
+  }
+  body[data-navx="dock"] #nav,
+  body[data-navx="float-b"] #nav,
+  body[data-navx="top"] #nav,
+  body[data-navx="top-glass"] #nav,
+  body[data-navx="bubble-bar"] #nav {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex: 0 1 auto;
+  }
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) .ver-bubble {
+    flex-shrink: 0;
+    padding: 0 11px;
+    height: 40px;
+    font-size: .74rem;
+  }
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) .nav-item {
+    padding: 7px 11px;
+    font-size: .79rem;
+    gap: 6px;
+  }
+  .bak-bubble-lbl { display: none; }
+}
+
+/* ── Narrow Split-Screen / Landscape Tablet (861px – 1060px): Compact Icon Nav ── */
+@media (max-width: 1060px) and (min-width: 861px) {
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) #chrome {
+    gap: 6px;
+    padding: 0 10px;
+  }
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) .brand .bt {
+    display: none;
+  }
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) .nav-item:not(.active) .lbl {
+    display: none;
+  }
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) .nav-item {
+    padding: 8px 10px;
+  }
+  body:is([data-navx="dock"],[data-navx="float-b"],[data-navx="top"],[data-navx="top-glass"],[data-navx="bubble-bar"]) .util .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ── Medium Screens (<= 960px): Stats Strip & Bands Layout ── */
+@media (max-width: 960px) {
+  .stats, .stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  body[data-chart="bands"] .metric-card {
+    grid-template-columns: minmax(90px, auto) minmax(0, 1.4fr) minmax(90px, auto);
+    gap: 8px 12px;
+  }
+  body[data-chart="bands"] .mc-toolbox {
+    grid-template-columns: minmax(90px, auto) minmax(0, 1fr);
+  }
+  body[data-chart="bands"] .mc-toolbox .mc-foot {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .master-head-card .flexw,
+  .master-head-card > div {
+    flex-wrap: wrap !important;
+    gap: 6px;
+  }
+  .master-head-card .badge,
+  .master-head-card .mono {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}
+
+/* ── Tablet & Mobile (<= 860px): Clean Bottom Nav + Top Utility Strip ── */
+@media (max-width: 860px) {
+  body[data-navx="bottom"] #chrome {
+    padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
+    gap: 0;
+  }
+  body[data-navx="bottom"] #nav {
+    width: 100%;
+    gap: 2px;
+    justify-content: space-between;
+  }
+  body[data-navx="bottom"] .nav-item {
+    min-width: 0;
+    padding: 6px 2px;
+    font-size: .64rem;
+    gap: 2px;
+  }
+  body[data-navx="bottom"] .nav-item .lbl {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body[data-navx="bottom"] #nav-ver-bubble {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    inset-inline-start: 10px;
+    height: 34px;
+    padding: 0 10px;
+    font-size: .69rem;
+    z-index: 1002;
+  }
+  body[data-navx="bottom"] #nav-bak-bubble {
+    display: none !important;
+  }
+  body[data-navx="bottom"] #nav-saas-bubble {
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    inset-inline-start: 118px;
+    height: 34px;
+    padding: 0 10px;
+    z-index: 1002;
+  }
+  body[data-navx="bottom"] .bak-bubble-lbl { display: none; }
+  body[data-navx="bottom"] .util {
+    top: calc(10px + env(safe-area-inset-top));
+    inset-inline-end: 10px;
+    padding: 3px;
+    gap: 3px;
+    z-index: 1002;
+  }
+  body[data-navx="bottom"] .util .icon-btn {
+    width: 30px;
+    height: 30px;
+  }
+  .main-wrap, body[dir="rtl"] .main-wrap {
+    padding: calc(58px + env(safe-area-inset-top)) 12px calc(86px + env(safe-area-inset-bottom)) 12px !important;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .sub-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tab { flex-shrink: 0; white-space: nowrap; }
+}
+
+/* ── Mobile Phones (<= 680px): Stacked Metric Bands, Modals & Ping Grids ── */
+@media (max-width: 680px) {
+  body[data-chart="bands"] .metric-card,
+  body[data-chart="bands"] .mc-toolbox {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .local-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .row2,
+  .tun-ipbox-btns,
+  .mc-presets-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .ping8-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+  .modal-bg {
+    padding: 8px !important;
+  }
+  .modal-box, .modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 14px !important;
+    max-height: 92vh !important;
+  }
+  .tun-wiz-shell {
+    max-width: 100% !important;
+  }
+  .tun-s1-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .fm-split {
+    grid-template-columns: 1fr !important;
+  }
+  .srv-row-head {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+  .mon-head {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+}
+
+/* ── Compact Phones (<= 440px) ── */
+@media (max-width: 440px) {
+  body[data-navx="bottom"] .nav-item .lbl { display: none; }
+  body[data-navx="bottom"] .nav-item svg { width: 20px; height: 20px; }
+  .stats, .stats-strip { gap: 8px !important; }
+  .tun-s1-grid { grid-template-columns: 1fr !important; }
+  .tb-grid { grid-template-columns: 1fr !important; }
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -5485,7 +5719,7 @@ function effective(th = curTheme(), settings = custom) {
   return e;
 }
 const navBases = {underline:'top',islands:'dock',spine:'side'};
-function navxFor(e) { if(['top-glass','bubble-bar'].includes(e.nav)) return e.nav; return window.innerWidth <= 860 ? 'bottom' : (navBases[e.nav] || e.nav); }
+function navxFor(e) { if (window.innerWidth <= 860) return 'bottom'; if (['top-glass','bubble-bar'].includes(e.nav)) return e.nav; return navBases[e.nav] || e.nav; }
 function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
