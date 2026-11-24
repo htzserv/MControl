@@ -3485,6 +3485,62 @@ body[data-corners="square"] .ob-lin-fill { border-radius: 2px; }
 .ob-kpi small { display: block; font-size: .65rem; color: var(--muted); text-transform: uppercase; }
 .ob-kpi strong { display: block; font-size: .82rem; font-family: var(--ff-m); color: var(--accent); margin-top: 2px; }
 
+
+/* ═══ MDESIGN LISTENING PORTS VIEWER (Replaces Raw Terminal Output) ═══ */
+.fw-list {
+  display: flex; flex-direction: column; gap: 7px;
+  max-height: 290px; overflow-y: auto; padding-inline-end: 2px;
+}
+.fw-port-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; border-radius: min(var(--rc, 14px), 15px);
+  background: var(--row); border: 1px solid var(--border);
+  transition: border-color .16s ease, background .16s ease, transform .14s ease;
+}
+.fw-port-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--row));
+}
+.fw-port-main {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0;
+}
+.fw-port-num {
+  font-family: var(--ff-m); font-weight: 900; font-size: .86rem; color: var(--accent);
+}
+.fw-port-addr {
+  font-family: var(--ff-m); font-size: .72rem; color: var(--muted);
+}
+.fw-proc-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 999px; font-size: .71rem; font-weight: 700;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+}
+.fw-proc-pid {
+  font-family: var(--ff-m); font-size: .67rem; color: var(--muted);
+}
+
+/* ═══ CATEGORIZED SERVER CARD ACTION GROUPS (Clean & Uncluttered) ═══ */
+.srv-act-groups {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;
+}
+.srv-act-grp {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 7px 9px; border-radius: min(var(--rc, 14px), 15px);
+  background: color-mix(in srgb, var(--row) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  flex: 1 1 auto; min-width: 0;
+}
+.srv-act-grp-lbl {
+  font-size: .62rem; font-weight: 800; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); padding-inline-start: 2px;
+}
+.srv-act-grp-btns {
+  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+}
+@media (max-width: 680px) {
+  .srv-act-grp { flex: 1 1 100%; }
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -6706,18 +6762,33 @@ function renderServerCard(s) {
       <div class="srv-tweak-bar" data-srv-tweak-bar="${id}">
         ${renderInlineTweakPills(id)}
       </div>
-      <div class="card-actions" style="margin-top:4px;">
-        <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
-        <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
-        <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
-        <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
-        <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
-        <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
-        <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota &amp; Expiry</button>
-        ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
-        <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
-        <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
-        <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
+      <div class="srv-act-groups">
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">Control</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
+            <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
+            <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
+            <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
+          </div>
+        </div>
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">Network &amp; Peer</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
+            <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
+            ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
+          </div>
+        </div>
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">Lifecycle</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota</button>
+            <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
+            <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
+            <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
+          </div>
+        </div>
       </div>
       ${err}
     </div>
@@ -10596,10 +10667,71 @@ function openFwModal(id) {
   $('fw-modal').classList.add('active');
   refreshFwPorts();
 }
+let _fwPortsData = [];
+
+function switchFwView(v) {
+  document.querySelectorAll('#fw-view-tabs .role-opt').forEach(el => el.classList.toggle('active', el.dataset.fwv === v));
+  if ($('fw-ports-view')) $('fw-ports-view').style.display = v === 'ports' ? 'block' : 'none';
+  if ($('fw-rules-view')) $('fw-rules-view').style.display = v === 'rules' ? 'block' : 'none';
+}
+
+function renderFwPortsList() {
+  const listEl = $('fw-ports-list');
+  if (!listEl) return;
+  const q = (($('fw-search') && $('fw-search').value) || '').trim().toLowerCase();
+  const rows = (_fwPortsData || []).filter(p => {
+    if (!q) return true;
+    return String(p.port).includes(q) || String(p.pid).includes(q) ||
+      String(p.process || '').toLowerCase().includes(q) ||
+      String(p.proto || '').toLowerCase().includes(q) ||
+      String(p.address || '').toLowerCase().includes(q);
+  });
+  if ($('fw-ports-cnt')) $('fw-ports-cnt').textContent = '(' + rows.length + ')';
+  if (!rows.length) {
+    listEl.innerHTML = '<div class="hint" style="text-align:center; padding:18px;">No listening ports match your filter.</div>';
+    return;
+  }
+  listEl.innerHTML = rows.map(p => {
+    const isTcp = p.proto === 'tcp';
+    const isProtected = p.process === 'sshd' || p.process === 'systemd' || p.pid <= 1;
+    const addrDisp = (p.address === '*' || p.address === '0.0.0.0' || p.address === '::') ? '0.0.0.0 (Public)' : p.address;
+    return `<div class="fw-port-row">
+      <div class="fw-port-main">
+        <span class="badge ${isTcp ? 'b-iran' : 'b-foreign'} mono" style="padding:2px 7px; font-size:.66rem;">${esc(p.proto.toUpperCase())}</span>
+        <span class="fw-port-num">:${p.port}</span>
+        <span class="fw-port-addr">${esc(addrDisp)}</span>
+        <span class="fw-proc-pill"><span>${esc(p.process || 'unknown')}</span>${p.pid > 0 ? `<span class="fw-proc-pid">PID ${p.pid}</span>` : ''}</span>
+      </div>
+      <div class="flexw" style="gap:5px; flex-shrink:0;">
+        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="quickBlockPort(${p.port}, '${esc(p.proto)}')" title="Block this port in Firewall">✖ Block</button>
+        ${p.pid > 1 ? `<button type="button" class="btn btn-danger btn-sm" style="padding:4px 8px; font-size:.7rem;" ${isProtected ? 'disabled title="Protected system process"' : `onclick="killServerPortPid(${p.pid}, '${esc(p.process || '')}', ${p.port})"`}>☠ Kill</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function quickBlockPort(port, proto) {
+  if ($('fw-port')) $('fw-port').value = String(port);
+  if ($('fw-proto')) $('fw-proto').value = proto || 'tcp';
+  if (!confirm(`Block port ${port}/${(proto || 'tcp').toUpperCase()} on this server?`)) return;
+  await applyFwRule('deny');
+}
+
+async function killServerPortPid(pid, procName, port) {
+  if (!confirm(`Kill process "${procName || 'PID ' + pid}" (PID ${pid}) listening on port :${port}?`)) return;
+  toast('Killing PID ' + pid + '...');
+  const r = await api('api/servers/' + fwSrvId + '/ports/kill', 'POST', { pid, process: procName });
+  toast((r && (r.message || r.error)) || 'Done', !(r && r.ok));
+  if (r && r.ok) refreshFwPorts();
+}
+
 async function refreshFwPorts() {
-  $('fw-out').textContent = 'Loading listening ports & firewall rules...';
+  if ($('fw-ports-list')) $('fw-ports-list').innerHTML = '<div class="hint" style="text-align:center; padding:18px;">Scanning listening ports...</div>';
+  if ($('fw-out')) $('fw-out').textContent = 'Loading firewall rules...';
   const r = await api('api/servers/' + fwSrvId + '/ports');
-  $('fw-out').textContent = r.output || r.error || 'No output.';
+  _fwPortsData = (r && r.ports) ? r.ports : [];
+  renderFwPortsList();
+  if ($('fw-out')) $('fw-out').textContent = (r && (r.firewall || r.output || r.error)) || 'No firewall output.';
 }
 let _fwConfirmToken = '', _fwConfirmTimer = null, _fwConfirmLeft = 0;
 
@@ -12015,7 +12147,7 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
     setOnboardProgress(100, '✔ Peer Agent با موفقیت نصب و متصل شد!', 'Encrypted TLS Peer Channel Active');
     if ($('ob-peer-stat')) { $('ob-peer-stat').textContent = 'PAIRED ✔'; $('ob-peer-stat').style.color = 'var(--green)'; }
     if ($('ob-src-val')) $('ob-src-val').textContent = (pairRes.source === 'iran_mirror' || isIran) ? 'Iran Mirror' : 'Direct';
-    if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = 'Peer Code: ' + (pairRes.peer_code || 'ACTIVE') + ' (SSH Password Wiped)';
+    if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = 'Peer Code: ' + (pairRes.peer_code || 'ACTIVE') + ' • Port :' + (pairRes.agent_port || 2054) + ' (SSH Password Wiped)';
     if (card) card.className = 'ob-result-card show';
   } else {
     setOnboardProgress(100, '⚠ سرور اضافه شد اما نصب خودکار Peer انجام نشد', (pairRes && pairRes.error) || 'You can retry Pair from server menu');
@@ -12288,7 +12420,19 @@ boot();
         <button type="button" class="btn btn-sky btn-sm" id="btn-fw-confirm" onclick="confirmFwRule()">✔ Confirm Rule (Keep)</button>
       </div>
     </div>
-    <pre class="term" id="fw-out" style="height:240px;">Loading...</pre>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+      <div class="role-picker" id="fw-view-tabs" style="margin:0; width:auto; min-width:220px;">
+        <div class="role-opt active" data-fwv="ports" onclick="switchFwView('ports')">Listening Ports <span class="mono" id="fw-ports-cnt" style="opacity:.75;"></span></div>
+        <div class="role-opt" data-fwv="rules" onclick="switchFwView('rules')">Firewall Rules</div>
+      </div>
+      <input id="fw-search" placeholder="Search port, process, PID..." style="flex:1; min-width:150px; padding:6px 11px; font-size:.77rem;" oninput="renderFwPortsList()">
+    </div>
+    <div id="fw-ports-view">
+      <div class="fw-list" id="fw-ports-list"><div class="hint" style="text-align:center; padding:18px;">Loading listening ports...</div></div>
+    </div>
+    <div id="fw-rules-view" style="display:none;">
+      <pre class="term" id="fw-out" style="height:230px;">Loading firewall status...</pre>
+    </div>
   </div>
 </div>
 

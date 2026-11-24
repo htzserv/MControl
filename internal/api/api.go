@@ -479,6 +479,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/tunnels/{id}/metrics", h.auth(h.handleTunnelMetrics))
 	mux.HandleFunc("POST /api/fleet/exec", h.auth(h.handleFleetExec))
 	mux.HandleFunc("GET /api/servers/{id}/ports", h.auth(h.handleServerPorts))
+	mux.HandleFunc("POST /api/servers/{id}/ports/kill", h.auth(h.handleServerPortKill))
 	mux.HandleFunc("POST /api/servers/{id}/firewall", h.auth(h.handleServerFirewall))
 	mux.HandleFunc("POST /api/servers/{id}/firewall/confirm", h.auth(h.handleServerFirewallConfirm))
 	mux.HandleFunc("GET /api/servers/{id}/services", h.auth(h.handleServerServices))
@@ -1619,23 +1620,88 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, 12)
 	_, _ = rand.Read(b)
 	peerCode := "MC-" + strings.ToUpper(hex.EncodeToString(b))
-	agentPort := srv.AgentPort
-	if agentPort <= 0 {
-		agentPort = 2054
+	// Multi-port fallback list: primary configured port (or 2054), then 2055 & 2056
+	candPorts := []int{}
+	addPort := func(pt int) {
+		if pt <= 0 || pt > 65535 {
+			return
+		}
+		for _, x := range candPorts {
+			if x == pt {
+				return
+			}
+		}
+		candPorts = append(candPorts, pt)
 	}
+	addPort(srv.AgentPort)
+	addPort(2054)
+	addPort(2055)
+	addPort(2056)
+
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	res := sshclient.InstallPeerAgentFromSource(h.targetOfSrv(srv), peerCode, agentPort, stCfg.PanelMirrorURL, isIran)
-	if res.Err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": "agent install failed: " + res.Err.Error(), "output": res.Output})
+	target := h.targetOfSrv(srv)
+	socksPx := h.serverSocksProxy(srv)
+
+	probeWithRetry := func(port int) sshclient.ProbeResult {
+		var pr sshclient.ProbeResult
+		for attempt := 0; attempt < 3; attempt++ {
+			if attempt > 0 {
+				time.Sleep(1100 * time.Millisecond)
+			}
+			pr = sshclient.ProbePeer(srv.Host, port, peerCode, socksPx)
+			if pr.Online {
+				return pr
+			}
+		}
+		return pr
+	}
+
+	chosenPort := 0
+	var p sshclient.ProbeResult
+	var portNotes []string
+
+	for _, tryPort := range candPorts {
+		res := sshclient.InstallPeerAgentFromSource(target, peerCode, tryPort, stCfg.PanelMirrorURL, isIran)
+		if res.Err != nil {
+			if idx := strings.Index(res.Output, "PORT_BUSY_OTHER:"); idx >= 0 {
+				procInfo := strings.TrimSpace(strings.SplitN(res.Output[idx+len("PORT_BUSY_OTHER:"):], "\n", 2)[0])
+				portNotes = append(portNotes, fmt.Sprintf(":%d busy (%s)", tryPort, procInfo))
+				continue
+			}
+			portNotes = append(portNotes, fmt.Sprintf(":%d install err (%s)", tryPort, res.Err.Error()))
+			continue
+		}
+
+		p = probeWithRetry(tryPort)
+		if !p.Online {
+			// Auto-recover: kill stale mcontrol-agent on tryPort, restart, and re-probe once
+			repairCmd := fmt.Sprintf(`P=%d
+systemctl stop mcontrol-agent.service 2>/dev/null || true
+for pid in $(ss -tlnp 2>/dev/null | awk -v pt=":${P}" '$4 ~ pt"$" {print}' | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u); do
+  cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+  if echo "$cmd" | grep -qiE 'mcontrol-agent|mcontrol_agent'; then
+    kill -9 "$pid" 2>/dev/null || true
+  fi
+done
+sleep 0.5
+systemctl restart mcontrol-agent.service
+sleep 1.2`, tryPort)
+			_ = sshclient.Run(target, repairCmd, 10*time.Second, 20*time.Second)
+			p = probeWithRetry(tryPort)
+		}
+		if p.Online {
+			chosenPort = tryPort
+			break
+		}
+		portNotes = append(portNotes, fmt.Sprintf(":%d unreachable (%s)", tryPort, p.Error))
+	}
+
+	if chosenPort == 0 || !p.Online {
+		fail(w, http.StatusBadGateway, fmt.Sprintf("peer agent failed on all ports (%s)", strings.Join(portNotes, " | ")))
 		return
 	}
-	p := sshclient.ProbePeer(srv.Host, agentPort, peerCode)
-	if !p.Online {
-		fail(w, http.StatusBadGateway, fmt.Sprintf("agent installed but port %d unreachable (check firewall): %s", agentPort, p.Error))
-		return
-	}
-	if err := h.store.SetServerPeerMode(id, peerCode, agentPort); err != nil {
+	if err := h.store.SetServerPeerMode(id, peerCode, chosenPort); err != nil {
 		fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -1644,13 +1710,14 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	if isIran {
 		srcUsed = "iran_mirror"
 	}
-	msg := "Paired via Peer Code! SSH password wiped from database."
+	msg := fmt.Sprintf("Paired via Peer Code on port :%d! SSH password wiped from database.", chosenPort)
 	if isIran {
-		msg = "Paired via Peer Code (Iran Mirror)! SSH password wiped from database."
+		msg = fmt.Sprintf("Paired via Peer Code (Iran Mirror · :%d)! SSH password wiped from database.", chosenPort)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":           true,
 		"peer_code":    peerCode,
+		"agent_port":   chosenPort,
 		"source":       srcUsed,
 		"ping_ms":      srv.PingMs,
 		"country":      srv.Country,

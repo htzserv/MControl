@@ -409,6 +409,81 @@ func (h *Handler) handleFleetExec(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "results": results})
 }
 
+type ListeningPort struct {
+	Proto   string `json:"proto"`
+	Address string `json:"address"`
+	Port    int    `json:"port"`
+	Process string `json:"process"`
+	PID     int    `json:"pid"`
+}
+
+func parseListeningPorts(raw string) []ListeningPort {
+	out := []ListeningPort{}
+	seen := map[string]bool{}
+	pidRe := regexp.MustCompile(`pid=(\d+)`)
+	procRe := regexp.MustCompile(`"([^"]+)"`)
+	for _, line := range strings.Split(raw, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "Netid") || strings.HasPrefix(line, "Proto") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 5 {
+			continue
+		}
+		proto := strings.ToLower(fields[0])
+		if !strings.HasPrefix(proto, "tcp") && !strings.HasPrefix(proto, "udp") {
+			continue
+		}
+		protoShort := "tcp"
+		if strings.HasPrefix(proto, "udp") {
+			protoShort = "udp"
+		}
+		// ss -tulpnH: col 4 is Local Address:Port; netstat: col 3
+		localAddr := fields[4]
+		if !strings.Contains(localAddr, ":") && len(fields) > 3 && strings.Contains(fields[3], ":") {
+			localAddr = fields[3]
+		}
+		lastCol := strings.LastIndex(localAddr, ":")
+		if lastCol <= 0 {
+			continue
+		}
+		addr := strings.Trim(localAddr[:lastCol], "[]")
+		portNum, err := strconv.Atoi(localAddr[lastCol+1:])
+		if err != nil || portNum <= 0 || portNum > 65535 {
+			continue
+		}
+		procName := "unknown"
+		pidNum := 0
+		if m := procRe.FindStringSubmatch(line); len(m) > 1 {
+			procName = m[1]
+		}
+		if m := pidRe.FindStringSubmatch(line); len(m) > 1 {
+			pidNum, _ = strconv.Atoi(m[1])
+		}
+		if pidNum == 0 && len(fields) >= 7 && strings.Contains(fields[len(fields)-1], "/") {
+			parts := strings.SplitN(fields[len(fields)-1], "/", 2)
+			pidNum, _ = strconv.Atoi(parts[0])
+			if len(parts) > 1 && parts[1] != "" {
+				procName = parts[1]
+			}
+		}
+		k := fmt.Sprintf("%s:%s:%d:%d", protoShort, addr, portNum, pidNum)
+		if seen[k] {
+			continue
+		}
+		seen[k] = true
+		out = append(out, ListeningPort{
+			Proto:   protoShort,
+			Address: addr,
+			Port:    portNum,
+			Process: procName,
+			PID:     pidNum,
+		})
+	}
+	return out
+}
+
 func (h *Handler) handleServerPorts(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -419,13 +494,64 @@ func (h *Handler) handleServerPorts(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "server not found")
 		return
 	}
-	cmd := `echo "=== LISTENING PORTS ==="
-ss -tulpn 2>/dev/null | head -n 45 || netstat -tulpn 2>/dev/null | head -n 45
-echo ""
-echo "=== FIREWALL STATUS ==="
-if command -v ufw >/dev/null 2>&1; then ufw status numbered 2>/dev/null | head -n 30; else echo "UFW not installed (iptables active)"; fi`
+	cmd := `ss -tulpnH 2>/dev/null | head -n 80 || netstat -tulpn 2>/dev/null | head -n 80
+echo "___MC_FW_SPLIT___"
+if command -v ufw >/dev/null 2>&1; then ufw status numbered 2>/dev/null | head -n 35; elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then firewall-cmd --list-all 2>/dev/null | head -n 35; else iptables -S INPUT 2>/dev/null | head -n 35 || echo "Firewall info unavailable"; fi`
 	res := h.runOnServer(srv, cmd, 20*time.Second)
-	writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "output": res.Output})
+	parts := strings.SplitN(res.Output, "___MC_FW_SPLIT___", 2)
+	portsRaw := parts[0]
+	fwRaw := ""
+	if len(parts) > 1 {
+		fwRaw = strings.TrimSpace(parts[1])
+	}
+	ports := parseListeningPorts(portsRaw)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":       res.Err == nil,
+		"ports":    ports,
+		"firewall": fwRaw,
+		"output":   res.Output,
+	})
+}
+
+func (h *Handler) handleServerPortKill(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		PID     int    `json:"pid"`
+		Process string `json:"process"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if req.PID <= 1 {
+		fail(w, http.StatusBadRequest, "invalid or protected PID")
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	cmd := fmt.Sprintf(`PID=%d
+if [ ! -d "/proc/$PID" ]; then echo "Process $PID is already stopped."; exit 0; fi
+COMM=$(cat "/proc/$PID/comm" 2>/dev/null || true)
+if [ "$COMM" = "sshd" ] || [ "$COMM" = "systemd" ]; then
+  echo "BLOCKED: Refusing to kill critical system process ($COMM)" >&2
+  exit 1
+fi
+kill -TERM "$PID" 2>/dev/null || true
+sleep 0.4
+if [ -d "/proc/$PID" ]; then kill -9 "$PID" 2>/dev/null || true; fi
+echo "Killed PID $PID ($COMM)."`, req.PID)
+	res := h.runOnServer(srv, cmd, 15*time.Second)
+	if res.Err != nil {
+		fail(w, http.StatusBadRequest, strings.TrimSpace(res.Output))
+		return
+	}
+	h.logAudit(r.Header.Get("X-MC-User"), "POST", r.URL.Path, fmt.Sprintf("Killed PID %d (%s) on %s", req.PID, req.Process, srv.Name))
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": strings.TrimSpace(res.Output)})
 }
 
 var safeFwTokRe = regexp.MustCompile(`^[a-zA-Z0-9_-]{4,40}$`)

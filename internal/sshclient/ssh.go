@@ -469,7 +469,7 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 }
 
 func ProbePeer(host string, agentPort int, peerCode string, socksProxy ...string) ProbeResult {
-	resp, err := peerRequest("GET", host, agentPort, "/stats", peerCode, nil, 5*time.Second)
+	resp, err := peerRequest("GET", host, agentPort, "/stats", peerCode, nil, 5*time.Second, socksProxy...)
 	if err != nil {
 		return ProbeResult{Online: false, CPU: "---", RAM: "---", Uptime: "---", Error: "peer agent unreachable"}
 	}
@@ -547,10 +547,50 @@ if ! command -v python3 >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1;
 fi
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then
   ufw allow %d/tcp >/dev/null 2>&1 || true
+elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then
+  firewall-cmd --permanent --add-port=%d/tcp >/dev/null 2>&1 || true
+  firewall-cmd --reload >/dev/null 2>&1 || true
 elif command -v iptables >/dev/null 2>&1; then
   iptables -C INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || true
+fi
+
+# Smart Port Check: stop existing mcontrol-agent & kill leftover MControl processes holding the port
+AGENT_PORT=%d
+systemctl stop mcontrol-agent.service 2>/dev/null || true
+pkill -f "/usr/local/bin/mcontrol-agent.py" 2>/dev/null || true
+sleep 0.3
+
+get_port_pids() {
+  local p="$1"
+  if command -v ss >/dev/null 2>&1; then
+    ss -tlnp 2>/dev/null | awk -v pt=":${p}" '$4 ~ pt"$" {print}' | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u
+  elif command -v lsof >/dev/null 2>&1; then
+    lsof -t -iTCP:"$p" -sTCP:LISTEN 2>/dev/null | sort -u
+  elif command -v fuser >/dev/null 2>&1; then
+    fuser "${p}/tcp" 2>/dev/null | tr ' ' '
+' | grep -E '^[0-9]+$' | sort -u
+  fi
+}
+
+BUSY_PIDS=$(get_port_pids "$AGENT_PORT" || true)
+if [ -n "$BUSY_PIDS" ]; then
+  for pid in $BUSY_PIDS; do
+    [ -d "/proc/$pid" ] || continue
+    cmdline=$(tr ' ' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+    comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+    if echo "$cmdline $comm" | grep -qiE 'mcontrol-agent|mcontrol_agent'; then
+      echo "PORT_BUSY_OWN: killing stale mcontrol-agent pid=$pid"
+      kill -TERM "$pid" 2>/dev/null || true
+      sleep 0.5
+      kill -9 "$pid" 2>/dev/null || true
+    else
+      echo "PORT_BUSY_OTHER:${comm:-unknown}(pid=${pid})"
+      exit 42
+    fi
+  done
+  sleep 0.4
 fi`
-	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort)
+	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort, agentPort, agentPort)
 	mirrorFetch := ""
 	if isIran && mirrorClean != "" {
 		mirrorFetch = fmt.Sprintf(`
@@ -703,7 +743,9 @@ class H(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(200, {"output": "", "exit": 1, "error": str(e)})
 
-srv = http.server.ThreadingHTTPServer(("0.0.0.0", PORT), H)
+class ReusableThreadingHTTPServer(http.server.ThreadingHTTPServer):
+    allow_reuse_address = True
+srv = ReusableThreadingHTTPServer(("0.0.0.0", PORT), H)
 crt, key = "/etc/mcontrol-agent/agent.crt", "/etc/mcontrol-agent/agent.key"
 if os.path.exists(crt) and os.path.exists(key):
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -722,17 +764,24 @@ After=network-online.target
 Type=simple
 Environment="MC_PEER=%s"
 Environment="MC_PORT=%d"
-ExecStart=/usr/bin/python3 /usr/local/bin/mcontrol-agent.py
+ExecStart=__PYBIN__ /usr/local/bin/mcontrol-agent.py
 Restart=always
 RestartSec=2
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
+PYBIN=$(command -v python3 || echo /usr/bin/python3)
+sed -i "s|__PYBIN__|${PYBIN}|g" /etc/systemd/system/mcontrol-agent.service
 systemctl daemon-reload
 systemctl enable mcontrol-agent.service
 systemctl restart mcontrol-agent.service
-sleep 1
+for _i in 1 2 3 4 5 6; do
+  if systemctl is-active --quiet mcontrol-agent.service && ss -tln 2>/dev/null | grep -q ":${AGENT_PORT} "; then
+    break
+  fi
+  sleep 0.5
+done
 systemctl is-active mcontrol-agent.service
 `, mirrorFetch, peerCode, agentPort)
 }
