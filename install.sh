@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MControl v1.4.5 — MTunnel-Style MDesign Interactive Installer (Iran Mirror / Foreign GitHub)
+# MControl v1.4.5 — 2-Step MDesign Interactive Installer (Step 1: Iran/Foreign -> Step 2: Stable/Beta ± Engines)
 MODULE_VERSION="1.4.5"
 set -euo pipefail
 umask 077
@@ -16,7 +16,7 @@ NC='\033[0m'
 FR='\033[1;33m'
 
 if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "  ${R}✖ Run as root: sudo bash install.sh [--wipe] [--mirror|--direct] [--stable|--beta|--full|--bundle] [port]${NC}" >&2
+    echo -e "  ${R}✖ Run as root: sudo bash install.sh [--wipe] [--mirror|--direct] [--stable|--beta|--full|--full-beta|--bundle] [port]${NC}" >&2
     exit 1
 fi
 
@@ -39,20 +39,23 @@ MIRROR_BUNDLE_BASE="${MIRROR_BASE}"
 
 PORT="2053"
 DO_WIPE=0
-MODE=""          # full | stable | beta | bundle
 SOURCE=""        # mirror | direct
+CHANNEL=""       # stable | beta
+WITH_ENGINES=0   # 0 | 1
+BUNDLE_ONLY=0    # 0 | 1
 INTERACTIVE=1
 
 for arg in "$@"; do
     case "$arg" in
-        --wipe|wipe)       DO_WIPE=1 ;;
-        --mirror|iran)     SOURCE="mirror"; INTERACTIVE=0 ;;
+        --wipe|wipe)             DO_WIPE=1 ;;
+        --mirror|iran)           SOURCE="mirror"; INTERACTIVE=0 ;;
         --direct|foreign|github) SOURCE="direct"; INTERACTIVE=0 ;;
-        --full|full)       MODE="full"; INTERACTIVE=0 ;;
-        --stable|stable)   MODE="stable"; INTERACTIVE=0 ;;
-        --beta|beta)       MODE="beta"; INTERACTIVE=0 ;;
-        --bundle|engines)  MODE="bundle"; INTERACTIVE=0 ;;
-        [0-9]*)            PORT="$arg" ;;
+        --stable|stable)         CHANNEL="stable"; WITH_ENGINES=0; INTERACTIVE=0 ;;
+        --full|full-stable)      CHANNEL="stable"; WITH_ENGINES=1; INTERACTIVE=0 ;;
+        --beta|beta)             CHANNEL="beta";   WITH_ENGINES=0; INTERACTIVE=0 ;;
+        --full-beta|beta-full)   CHANNEL="beta";   WITH_ENGINES=1; INTERACTIVE=0 ;;
+        --bundle|engines)        BUNDLE_ONLY=1;    WITH_ENGINES=1; INTERACTIVE=0 ;;
+        [0-9]*)                  PORT="$arg" ;;
     esac
 done
 
@@ -111,51 +114,63 @@ mc_footer() {
         "$FR" "$NC" "$W" "$NC" "$DIM" "$NC" "$DIM" "$1" "$NC"
 }
 
-# ── MTunnel-Style 8-Option Interactive Menu (6 Core + 2 Full) ────────────────
+# ── 2-Step Interactive Wizard (Step 1: Source -> Step 2: Channel & Engines) ──
 if [[ "$INTERACTIVE" -eq 1 ]] && [[ -r /dev/tty ]]; then
+    STEP=1
     while true; do
-        draw_banner "SELECT SOURCE & MODE" "$Y"
+        if [[ "$STEP" -eq 1 ]]; then
+            draw_banner "STEP 1 / 2 · DOWNLOAD SOURCE" "$Y"
 
-        mc_group "FULL INSTALL (PANEL + ENGINES BUNDLE)" first
-        mc_row "1" "Full Install — Iran Mirror"   "$G" " ${DIM}(ParsPack · Panel + Engines)${NC}"
-        mc_row "2" "Full Install — Foreign"       "$C" " ${DIM}(GitHub Direct · Panel + Engines)${NC}"
+            mc_group "SELECT DOWNLOAD SOURCE (IRAN / FOREIGN)" first
+            mc_row "1" "Iran Mirror (ParsPack)"  "$G" " ${DIM}(Direct & Fast inside Iran)${NC}"
+            mc_row "2" "Foreign (GitHub Direct)" "$C" " ${DIM}(Official GitHub Releases)${NC}"
 
-        mc_group "PANEL BUILDS (STABLE & ROLLING BETA)"
-        mc_row "3" "Stable Release — Iran Mirror" "$G" " ${DIM}(ParsPack · Latest Release)${NC}"
-        mc_row "4" "Stable Release — Foreign"     "$C" " ${DIM}(GitHub · Latest Release)${NC}"
-        mc_row "5" "Rolling Beta   — Iran Mirror" "$Y" " ${DIM}(ParsPack · beta-latest)${NC}"
-        mc_row "6" "Rolling Beta   — Foreign"     "$Y" " ${DIM}(GitHub · beta-latest)${NC}"
+            mc_footer "Exit"
 
-        mc_group "STATIC ENGINES & PREREQS BUNDLE"
-        mc_row "7" "Engines Bundle — Iran Mirror" "$M" " ${DIM}(ParsPack · Cache + /usr/local/bin)${NC}"
-        mc_row "8" "Engines Bundle — Foreign"     "$B" " ${DIM}(GitHub · bundle-latest)${NC}"
+            printf "  ${C}Select source [1-2, 0] ❯❯ ${NC}"
+            read -r s_choice < /dev/tty || exit 0
+            case "$s_choice" in
+                1) SOURCE="mirror"; STEP=2 ;;
+                2) SOURCE="direct"; STEP=2 ;;
+                0|q|Q) echo ""; exit 0 ;;
+                *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
+            esac
+        else
+            local_src_lbl="FOREIGN (GITHUB)"; local_src_col="$C"
+            [[ "$SOURCE" == "mirror" ]] && { local_src_lbl="IRAN MIRROR"; local_src_col="$G"; }
 
-        mc_footer "Exit"
+            draw_banner "STEP 2 / 2 · ${local_src_lbl}" "$local_src_col"
 
-        printf "  ${C}Select [1-8, 0] ❯❯ ${NC}"
-        read -r choice < /dev/tty || exit 0
-        case "$choice" in
-            1) MODE="full";   SOURCE="mirror"; break ;;
-            2) MODE="full";   SOURCE="direct"; break ;;
-            3) MODE="stable"; SOURCE="mirror"; break ;;
-            4) MODE="stable"; SOURCE="direct"; break ;;
-            5) MODE="beta";   SOURCE="mirror"; break ;;
-            6) MODE="beta";   SOURCE="direct"; break ;;
-            7) MODE="bundle"; SOURCE="mirror"; break ;;
-            8) MODE="bundle"; SOURCE="direct"; break ;;
-            0|q|Q) echo ""; exit 0 ;;
-            *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
-        esac
+            mc_group "SELECT INSTALL PACKAGE (${local_src_lbl})" first
+            mc_row "1" "Stable"                  "$G" " ${DIM}(Official Release · Panel Only)${NC}"
+            mc_row "2" "Stable + Engines Bundle" "$G" " ${DIM}(Official Release + Static Engines)${NC}"
+            mc_row "3" "Beta"                    "$Y" " ${DIM}(Rolling beta-latest · Panel Only)${NC}"
+            mc_row "4" "Beta + Engines Bundle"   "$Y" " ${DIM}(Rolling beta-latest + Static Engines)${NC}"
+
+            mc_group "NAVIGATION"
+            mc_row "9" "Back to Source Selection" "$DIM" ""
+
+            mc_footer "Exit"
+
+            printf "  ${C}Select package [1-4, 9=Back, 0=Exit] ❯❯ ${NC}"
+            read -r p_choice < /dev/tty || exit 0
+            case "$p_choice" in
+                1) CHANNEL="stable"; WITH_ENGINES=0; break ;;
+                2) CHANNEL="stable"; WITH_ENGINES=1; break ;;
+                3) CHANNEL="beta";   WITH_ENGINES=0; break ;;
+                4) CHANNEL="beta";   WITH_ENGINES=1; break ;;
+                9|b|B) STEP=1 ;;
+                0|q|Q) echo ""; exit 0 ;;
+                *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
+            esac
+        fi
     done
 fi
 
-[[ -n "$MODE" ]]   || MODE="stable"
-[[ -n "$SOURCE" ]] || SOURCE="direct"
+[[ -n "$CHANNEL" ]] || CHANNEL="stable"
+[[ -n "$SOURCE" ]]  || SOURCE="direct"
 
 # ── Resolve Download Bases ───────────────────────────────────────────────────
-CHANNEL="stable"
-[[ "$MODE" == "beta" ]] && CHANNEL="beta"
-
 if [[ "$SOURCE" == "mirror" ]]; then
     SRC_LBL="IRAN MIRROR"
     BUNDLE_BASE="$MIRROR_BUNDLE_BASE"
@@ -176,12 +191,16 @@ fi
 
 [[ -n "${MCONTROL_RELEASE_BASE:-}" ]] && RELEASE_BASE="$MCONTROL_RELEASE_BASE"
 
-draw_banner "${MODE^^} · ${SRC_LBL}" "$( [[ "$SOURCE" == "mirror" ]] && echo "$G" || echo "$C" )"
+PKG_LBL="${CHANNEL^^}"
+[[ "$WITH_ENGINES" -eq 1 ]] && PKG_LBL="${CHANNEL^^} + ENGINES"
+[[ "$BUNDLE_ONLY" -eq 1 ]] && PKG_LBL="ENGINES BUNDLE"
+
+draw_banner "${PKG_LBL} · ${SRC_LBL}" "$( [[ "$SOURCE" == "mirror" ]] && echo "$G" || echo "$C" )"
 echo ""
 echo -e "  ${FR}┌─[ EXECUTION ]${NC}"
 echo -e "  ${FR}│${NC}"
 
-if [[ "$DO_WIPE" -eq 1 && "$MODE" != "bundle" ]]; then
+if [[ "$DO_WIPE" -eq 1 && "$BUNDLE_ONLY" -eq 0 ]]; then
     echo -e "  ${FR}├─${NC} ${Y}Wiping previous MControl binaries, services & databases...${NC}"
     systemctl disable --now mcontrol.service 2>/dev/null || true
     rm -f /etc/systemd/system/mcontrol.service /usr/local/bin/mcontrol /usr/local/bin/mcontrol-menu
@@ -251,14 +270,13 @@ install_engines_bundle() {
     fi
 }
 
-# If Bundle-Only mode (options 7 or 8), install bundle and finish cleanly
-if [[ "$MODE" == "bundle" ]]; then
+if [[ "$BUNDLE_ONLY" -eq 1 ]]; then
     install_engines_bundle
     echo -e "  ${FR}└─${NC} ${G}✓ Static Engines & Prereqs Bundle ready.${NC}\n"
     exit 0
 fi
 
-# ── Panel Installation (Full / Stable / Beta) ────────────────────────────────
+# ── Panel Installation (Stable / Beta, with optional Static Engines Bundle) ──
 TMPD="$(mktemp -d)"
 cleanup() { [[ -n "${TMPD:-}" ]] && rm -rf "$TMPD"; }
 trap cleanup EXIT
@@ -294,9 +312,8 @@ if [[ -n "$CLI_SRC" && -f "$CLI_SRC" ]]; then
     echo -e "  ${FR}├─${NC} ${G}✓ Terminal menu installed (${W}mcontrol${G}).${NC}"
 fi
 
-# If Full Install (options 1 or 2), also install/cache Static Engines Bundle
-if [[ "$MODE" == "full" ]]; then
-    install_engines_bundle || echo -e "  ${FR}├─${NC} ${Y}⚠ Bundle step skipped (can retry later from menu).${NC}"
+if [[ "$WITH_ENGINES" -eq 1 ]]; then
+    install_engines_bundle || echo -e "  ${FR}├─${NC} ${Y}⚠ Bundle step skipped (can retry later).${NC}"
 fi
 
 ENV_LINE=""
@@ -330,7 +347,7 @@ for _ in 1 2 3 4 5 6 7 8; do
     sleep 1
 done
 
-echo -e "  ${FR}├─${NC} ${G}✓ Systemd service active (v${VERSION_TXT} · ${CHANNEL^^} · ${SRC_LBL}).${NC}"
+echo -e "  ${FR}├─${NC} ${G}✓ Systemd service active (v${VERSION_TXT} · ${PKG_LBL} · ${SRC_LBL}).${NC}"
 echo -e "  ${FR}│${NC}"
 echo -e "  ${FR}├─${NC} ${W}Setup URL   :${NC} ${C}http://${IP4}:${PORT}/${NC}"
 if [[ -n "$TOKEN" ]]; then
