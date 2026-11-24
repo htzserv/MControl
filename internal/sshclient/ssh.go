@@ -576,7 +576,7 @@ BUSY_PIDS=$(get_port_pids "$AGENT_PORT" || true)
 if [ -n "$BUSY_PIDS" ]; then
   for pid in $BUSY_PIDS; do
     [ -d "/proc/$pid" ] || continue
-    cmdline=$(tr ' ' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+    cmdline=$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
     comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
     if echo "$cmdline $comm" | grep -qiE 'mcontrol-agent|mcontrol_agent'; then
       echo "PORT_BUSY_OWN: killing stale mcontrol-agent pid=$pid"
@@ -759,14 +759,17 @@ cat <<SVCEOF > /etc/systemd/system/mcontrol-agent.service
 [Unit]
 Description=MControl Peer Agent v2 (TLS)
 After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
 Environment="MC_PEER=%s"
 Environment="MC_PORT=%d"
+ExecStartPre=-/bin/bash -c 'P=${MC_PORT:-2054}; if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then ufw allow ${P}/tcp >/dev/null 2>&1 || true; elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then firewall-cmd --add-port=${P}/tcp >/dev/null 2>&1 || true; elif command -v iptables >/dev/null 2>&1; then iptables -C INPUT -p tcp --dport ${P} -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport ${P} -j ACCEPT 2>/dev/null || true; fi'
 ExecStart=__PYBIN__ /usr/local/bin/mcontrol-agent.py
 Restart=always
-RestartSec=2
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target

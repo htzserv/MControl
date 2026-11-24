@@ -396,16 +396,24 @@ func (h *Handler) StartAutoProbe() {
 	go func() {
 		var last time.Time
 		for {
-			time.Sleep(30 * time.Second)
+			time.Sleep(20 * time.Second)
 			if h.isStopped() {
 				return
 			}
 			iv := h.store.GetSettings().ProbeInterval
-			if iv <= 0 || time.Since(last) < time.Duration(iv)*time.Minute {
+			if iv > 0 && time.Since(last) >= time.Duration(iv)*time.Minute {
+				last = time.Now()
+				h.probeAll()
 				continue
 			}
-			last = time.Now()
-			h.probeAll()
+			// Always auto-recover offline Peer Agent nodes (e.g. after server reboot) every 20s
+			if list, err := h.store.ListServers(); err == nil {
+				for _, item := range list {
+					if item.AuthMode == "peer" && item.Status != "online" {
+						go func(id int64) { _, _ = h.probeServer(id) }(item.ID)
+					}
+				}
+			}
 		}
 	}()
 }
@@ -2321,7 +2329,7 @@ func (h *Handler) handleRotatePeerKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	time.Sleep(3500 * time.Millisecond)
-	p := sshclient.ProbePeer(srv.Host, agentPort, newCode)
+	p := sshclient.ProbePeer(srv.Host, agentPort, newCode, h.serverSocksProxy(srv))
 	if !p.Online {
 		fail(w, http.StatusBadGateway, "key rotated on agent but new key probe failed: "+p.Error)
 		return
@@ -2362,7 +2370,7 @@ func (h *Handler) handleCanaryAgentRollout(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	time.Sleep(3500 * time.Millisecond)
-	if p := sshclient.ProbePeer(canary.Host, canary.AgentPort, canary.PeerCode); !p.Online {
+	if p := sshclient.ProbePeer(canary.Host, canary.AgentPort, canary.PeerCode, h.serverSocksProxy(&canary)); !p.Online {
 		fail(w, http.StatusBadGateway, fmt.Sprintf("Canary node %s failed health check after update — rollout aborted!", canary.Name))
 		return
 	}
