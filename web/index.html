@@ -665,12 +665,14 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
 .util { transition: gap .25s ease, padding .25s ease; }
 .util-items {
   display: flex; gap: 6px; align-items: center;
-  max-width: 240px; max-height: 240px; opacity: 1; overflow: hidden;
-  transition: max-width .28s cubic-bezier(.4,0,.2,1), max-height .28s cubic-bezier(.4,0,.2,1), opacity .2s ease;
+  max-width: 280px; max-height: 280px; opacity: 1;
+  padding: 4px 3px; margin: -4px -3px; overflow: visible;
+  transition: max-width .32s cubic-bezier(.22,1,.36,1), max-height .32s cubic-bezier(.22,1,.36,1), opacity .22s ease, padding .22s ease, margin .22s ease;
 }
+.util-items .icon-btn { flex-shrink: 0; box-sizing: border-box; }
 body[data-navx="rail"] .util-items { flex-direction: column; }
 .util.collapsed { gap: 0 !important; }
-.util.collapsed .util-items { max-width: 0; opacity: 0; pointer-events: none; }
+.util.collapsed .util-items { max-width: 0; opacity: 0; padding: 0; margin: 0; overflow: hidden; pointer-events: none; }
 body[data-navx="rail"] .util.collapsed .util-items { max-width: 44px; max-height: 0; }
 .util-toggle svg { transition: transform .25s ease; }
 .util.collapsed .util-toggle svg { transform: rotate(180deg); }
@@ -3126,6 +3128,206 @@ html, body {
   .tb-grid { grid-template-columns: 1fr !important; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MDESIGN FLOATING ANIMATED SELECT & APPEARANCE POPOVER ENGINE
+   Replaces plain OS-native dropdowns with animated glass floating menus
+   ═══════════════════════════════════════════════════════════════════════════ */
+select:not(#btn-mode):not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: color-mix(in srgb, var(--surface) 84%, var(--bg));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 13px 13px;
+  padding-right: 30px !important;
+  color: var(--text);
+  border: var(--bw, 1px) solid color-mix(in srgb, var(--border) 90%, var(--accent) 16%);
+  border-radius: min(var(--rb, 12px), 14px);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease, transform .14s ease;
+}
+body[dir="rtl"] select:not(#btn-mode):not([multiple]):not([size]) {
+  background-position: left 10px center;
+  padding-right: 12px !important;
+  padding-left: 30px !important;
+}
+select:not(#btn-mode):not([multiple]):not([size]):hover {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+  background-color: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+}
+select:not(#btn-mode):not([multiple]):not([size]):focus,
+select.mc-sel-open {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent), 0 6px 18px -8px color-mix(in srgb, var(--accent) 45%, transparent) !important;
+}
+
+/* Keep #btn-mode hidden cleanly inside .top-mode button so native OS popup never appears */
+.top-mode { position: relative; cursor: pointer; }
+.top-mode select#btn-mode { display: none !important; }
+.top-mode.mc-sel-open {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), 0 0 14px var(--accent-glow) !important;
+}
+
+/* Floating Animated Glass Popover Portal */
+.mc-sel-pop {
+  position: fixed;
+  z-index: 9999;
+  min-width: 158px;
+  max-width: min(340px, calc(100vw - 16px));
+  max-height: min(310px, 52vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px;
+  border-radius: min(var(--rc, 16px), 18px);
+  background: color-mix(in srgb, var(--surface) 91%, transparent);
+  backdrop-filter: blur(var(--blur, 22px)) saturate(175%);
+  -webkit-backdrop-filter: blur(var(--blur, 22px)) saturate(175%);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, .58), 0 0 24px -8px color-mix(in srgb, var(--accent) 28%, transparent), inset 0 1px 0 rgba(255, 255, 255, .10);
+  transform-origin: top center;
+  opacity: 0;
+  transform: translateY(-7px) scale(.95);
+  pointer-events: none;
+  transition: opacity .18s cubic-bezier(.16, 1, .3, 1), transform .22s cubic-bezier(.16, 1, .3, 1);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 40%, transparent) transparent;
+}
+.mc-sel-pop.flip-up {
+  transform-origin: bottom center;
+  transform: translateY(7px) scale(.95);
+}
+.mc-sel-pop.open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+body[data-eco="1"] .mc-sel-pop {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--surface) !important;
+}
+
+.mc-sel-grp {
+  padding: 6px 10px 4px;
+  font-size: .66rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  user-select: none;
+}
+.mc-sel-grp:not(:first-child) {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.mc-sel-opt {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 8px 11px;
+  margin: 1px 0;
+  border: 1px solid transparent;
+  border-radius: min(var(--rb, 11px), 12px);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease, border-color .14s ease, transform .14s ease;
+}
+.mc-sel-opt:hover:not(:disabled),
+.mc-sel-opt.hi:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 13%, var(--row));
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--text);
+  transform: translateX(2px);
+}
+body[dir="rtl"] .mc-sel-opt:hover:not(:disabled),
+body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
+  transform: translateX(-2px);
+}
+.mc-sel-opt.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--row));
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  font-weight: 800;
+}
+.mc-sel-opt:disabled {
+  opacity: .42;
+  cursor: not-allowed;
+}
+.mc-sel-opt-l {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mc-sel-opt-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: .88;
+}
+.mc-sel-opt-ico svg { width: 15px; height: 15px; }
+.mc-sel-chk {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity .16s ease, transform .18s cubic-bezier(.16, 1, .3, 1);
+}
+.mc-sel-opt.active .mc-sel-chk {
+  opacity: 1;
+  transform: scale(1);
+}
+
+
+/* ── Animated Mutually-Exclusive Update Pill (#nav-ver-bubble) & Language Trigger ── */
+.ver-bubble {
+  transition: padding .32s cubic-bezier(.22,1,.36,1), border-color .22s ease, box-shadow .22s ease, background .22s ease, transform .18s ease;
+}
+.ver-bubble .ver-upd-drawer {
+  transition: max-width .34s cubic-bezier(.22,1,.36,1), opacity .26s ease, transform .3s cubic-bezier(.22,1,.36,1);
+}
+.ver-bubble.ver-expanded {
+  padding: 0 18px 0 15px;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 10px 26px -8px var(--shadow), 0 0 16px -4px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.ver-bubble.ver-expanded .ver-upd-drawer {
+  max-width: 150px;
+  opacity: 1;
+  transform: translateX(0);
+}
+#btn-lang.mc-sel-open {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), 0 0 14px var(--accent-glow) !important;
+}
+#btn-lang select#lang-select { display: none !important; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3303,8 +3505,8 @@ html, body {
         <button class="icon-btn" id="btn-theme-quick" data-i18n-title="nav_themes" title="Themes" onclick="openThemesQuick()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 22c-1.5 0-2-1.5-1-2.6.8-.9.4-2.4-1-2.4H8a4 4 0 0 1-4-4"/></svg>
         </button>
-        <label class="icon-btn top-mode"><span id="mode-icon" aria-hidden="true"></span><select id="btn-mode" aria-label="Appearance"><option value="auto" data-i18n="mode_auto"></option><option value="dark" data-i18n="mode_dark"></option><option value="light" data-i18n="mode_light"></option></select></label>
-        <button class="icon-btn" id="btn-lang" data-i18n-title="t_lang" title="Language">FA</button>
+        <button type="button" class="icon-btn top-mode" id="mode-trigger" aria-haspopup="listbox" aria-expanded="false" onclick="openFloatingSelect($('btn-mode'), this)"><span id="mode-icon" aria-hidden="true"></span><select id="btn-mode" aria-label="Appearance" hidden><option value="auto" data-i18n="mode_auto">Auto</option><option value="dark" data-i18n="mode_dark">Dark</option><option value="light" data-i18n="mode_light">Light</option></select></button>
+        <button type="button" class="icon-btn" id="btn-lang" data-i18n-title="t_lang" title="Language" aria-haspopup="listbox" aria-expanded="false" onclick="openFloatingSelect($('lang-select'), this)"><span id="lang-lbl">FA</span><select id="lang-select" aria-label="Language" hidden><option value="en">English (EN)</option><option value="fa">فارسی (FA)</option></select></button>
         <button class="icon-btn" id="btn-logout" data-i18n-title="logout" title="Logout" style="color:var(--red);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
@@ -3510,8 +3712,8 @@ html, body {
               <div class="hint" style="margin:2px 0 0;">5-minute SQLite snapshots of CPU, RAM &amp; Ping.</div>
             </div>
             <div class="flexw" style="gap:6px;">
-              <select id="hist-tgt" style="padding:5px 10px; font-size:.74rem; width:auto;" onchange="loadMetricsHistory()"></select>
-              <select id="hist-rng" style="padding:5px 10px; font-size:.74rem; width:auto;" onchange="loadMetricsHistory()">
+              <select id="hist-tgt" style="padding:6px 12px; font-size:.76rem; width:auto; min-width:132px;" onchange="loadMetricsHistory()"></select>
+              <select id="hist-rng" style="padding:6px 12px; font-size:.76rem; width:auto; min-width:104px;" onchange="loadMetricsHistory()">
                 <option value="24h">24 Hours</option>
                 <option value="7d">7 Days</option>
               </select>
@@ -6085,12 +6287,14 @@ function applyLang() {
   document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });
-  $('btn-lang').textContent = lang === 'fa' ? 'EN' : 'FA';
-  $('login-lang').textContent = lang === 'fa' ? 'EN' : 'FA';
+  if ($('lang-lbl')) $('lang-lbl').textContent = lang === 'fa' ? 'FA' : 'EN';
+  if ($('lang-select')) $('lang-select').value = lang;
+  if ($('login-lang')) $('login-lang').textContent = lang === 'fa' ? 'EN' : 'FA';
   $('srv-modal-title').textContent = editId ? t('modal_edit') : t('modal_add');
   renderNav(); renderThemes(); renderStudio(); renderPresets(); renderServers(); applyTheme();
 }
-function toggleLang() { lang = lang === 'fa' ? 'en' : 'fa'; ls.set('mc_lang', lang); applyLang(); }
+function setLang(l) { lang = (l === 'fa') ? 'fa' : 'en'; ls.set('mc_lang', lang); applyLang(); }
+function toggleLang() { setLang(lang === 'fa' ? 'en' : 'fa'); }
 
 /* ═══════════════ navigation ═══════════════ */
 function renderNav() {
@@ -9025,9 +9229,11 @@ function openThemesQuick() {
   switchSubTab('themes', $('stab-themes'));
 }
 function applyUtilCollapsed() {
+  const isCol = ls.get('mc_util_collapsed', '0') === '1';
   const bar = $('util-bar');
-  if (!bar) return;
-  bar.classList.toggle('collapsed', ls.get('mc_util_collapsed', '0') === '1');
+  if (bar) bar.classList.toggle('collapsed', isCol);
+  const vb = $('nav-ver-bubble');
+  if (vb) vb.classList.toggle('ver-expanded', isCol);
 }
 function toggleUtilBar() {
   const next = ls.get('mc_util_collapsed', '0') === '1' ? '0' : '1';
@@ -9744,7 +9950,7 @@ $('family-tabs').onclick = event => {
   const btn=event.target.closest('[data-family-tab]');
   if(btn){ galleryFamily=btn.dataset.familyTab; renderThemes(); $('family-tabs').querySelector('[aria-pressed=true]').focus({preventScroll:true}); }
 };
-$('btn-lang').onclick = toggleLang;
+if ($('lang-select')) $('lang-select').onchange = e => setLang(e.target.value);
 $('login-lang').onclick = toggleLang;
 $('login-mode').onclick = toggleMode;
 $('btn-logs').onclick = () => { $('logs-modal').classList.add('active'); fetchLogs(); };
@@ -10995,6 +11201,189 @@ async function loadBrandProfile() {
 }
 window.loadBrandProfile = loadBrandProfile;
 
+
+/* ═══════════════ MDesign Floating Animated Select Engine ═══════════════ */
+(function initMDesignFloatingSelects() {
+  let pop = null, activeSel = null, activeAnchor = null, hiIdx = -1;
+
+  const MODE_ICONS = {
+    auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>',
+    dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>'
+  };
+  const LANG_ICONS = {
+    en: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    fa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+  };
+  const CHK_SVG = '<svg class="mc-sel-chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function ensurePop() {
+    if (pop) return pop;
+    pop = document.createElement('div');
+    pop.id = 'mc-select-popover';
+    pop.className = 'mc-sel-pop';
+    pop.setAttribute('role', 'listbox');
+    document.body.appendChild(pop);
+    pop.addEventListener('mousedown', e => e.stopPropagation());
+    pop.addEventListener('click', e => {
+      const btn = e.target.closest('.mc-sel-opt');
+      if (!btn || btn.disabled || !activeSel) return;
+      const val = btn.dataset.val;
+      if (activeSel.value !== val) {
+        activeSel.value = val;
+        activeSel.dispatchEvent(new Event('input', { bubbles: true }));
+        activeSel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      closePop();
+    });
+    return pop;
+  }
+
+  function closePop() {
+    if (activeAnchor) {
+      activeAnchor.classList.remove('mc-sel-open');
+      if (activeAnchor.hasAttribute('aria-expanded')) activeAnchor.setAttribute('aria-expanded', 'false');
+    }
+    if (activeSel) activeSel.classList.remove('mc-sel-open');
+    if (pop) pop.classList.remove('open');
+    activeSel = null;
+    activeAnchor = null;
+    hiIdx = -1;
+  }
+
+  function renderOptionBtn(opt, isMode) {
+    const val = opt.value;
+    const lbl = (opt.textContent || opt.label || val).trim();
+    const isSel = opt.selected;
+    const dis = opt.disabled ? ' disabled' : '';
+    const icoMap = isMode === 'mode' ? MODE_ICONS : (isMode === 'lang' ? LANG_ICONS : null);
+    const ico = (icoMap && icoMap[val]) ? `<span class="mc-sel-opt-ico">${icoMap[val]}</span>` : '';
+    return `<button type="button" class="mc-sel-opt${isSel ? ' active' : ''}" role="option" aria-selected="${isSel}" data-val="${esc(val)}"${dis}><span class="mc-sel-opt-l">${ico}<span>${esc(lbl)}</span></span>${CHK_SVG}</button>`;
+  }
+
+  function openFloatingSelect(sel, anchorEl) {
+    if (!sel || sel.disabled || sel.multiple || (sel.size && sel.size > 1)) return;
+    const anchor = anchorEl || sel;
+    if (activeSel === sel && pop && pop.classList.contains('open')) {
+      closePop();
+      return;
+    }
+    closePop();
+    const box = ensurePop();
+    activeSel = sel;
+    activeAnchor = anchor;
+    anchor.classList.add('mc-sel-open');
+    sel.classList.add('mc-sel-open');
+    if (anchor.hasAttribute('aria-expanded')) anchor.setAttribute('aria-expanded', 'true');
+
+    const isMode = (sel.id === 'btn-mode') ? 'mode' : (sel.id === 'lang-select' ? 'lang' : '');
+    let markup = '';
+    for (const child of sel.children) {
+      if (child.tagName === 'OPTGROUP') {
+        markup += `<div class="mc-sel-grp">${esc(child.label || '')}</div>`;
+        for (const o of child.children) {
+          if (o.tagName === 'OPTION') markup += renderOptionBtn(o, isMode);
+        }
+      } else if (child.tagName === 'OPTION') {
+        markup += renderOptionBtn(child, isMode);
+      }
+    }
+    if (!markup) {
+      markup = '<div class="mc-sel-grp" style="text-align:center; padding:10px;">— Empty —</div>';
+    }
+    box.innerHTML = markup;
+    box.classList.remove('flip-up', 'open');
+
+    const rect = anchor.getBoundingClientRect();
+    const minW = isMode ? 148 : Math.max(rect.width, 156);
+    box.style.minWidth = Math.min(minW, window.innerWidth - 16) + 'px';
+    box.style.left = '-9999px';
+    box.style.top = '0px';
+
+    // Measure popover height & width cleanly
+    const popW = box.offsetWidth;
+    const popH = box.offsetHeight;
+    const spaceBelow = window.innerHeight - rect.bottom - 10;
+    const spaceAbove = rect.top - 10;
+    let topPos = rect.bottom + 6;
+    if (spaceBelow < popH && spaceAbove > spaceBelow) {
+      topPos = Math.max(8, rect.top - popH - 6);
+      box.classList.add('flip-up');
+    } else if (topPos + popH > window.innerHeight - 8) {
+      topPos = Math.max(8, window.innerHeight - popH - 8);
+    }
+
+    const isRtl = document.body.dir === 'rtl';
+    let leftPos = isMode
+      ? (isRtl ? rect.left : rect.right - popW)
+      : (isRtl ? rect.right - popW : rect.left);
+    leftPos = Math.max(8, Math.min(leftPos, window.innerWidth - popW - 8));
+
+    box.style.left = Math.round(leftPos) + 'px';
+    box.style.top = Math.round(topPos) + 'px';
+
+    requestAnimationFrame(() => {
+      box.classList.add('open');
+      const cur = box.querySelector('.mc-sel-opt.active');
+      if (cur) cur.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  window.openFloatingSelect = openFloatingSelect;
+  window.closeFloatingSelect = closePop;
+
+  // Intercept mouse clicks on any <select> globally
+  document.addEventListener('mousedown', e => {
+    const sel = e.target && e.target.tagName === 'SELECT' ? e.target : null;
+    if (sel && !sel.multiple && !(sel.size > 1) && !sel.dataset.nativeSelect && sel.id !== 'btn-mode' && sel.id !== 'lang-select') {
+      e.preventDefault();
+      sel.focus({ preventScroll: true });
+      openFloatingSelect(sel, sel);
+      return;
+    }
+    if (pop && pop.classList.contains('open')) {
+      if (!pop.contains(e.target) && (!activeAnchor || !activeAnchor.contains(e.target))) {
+        closePop();
+      }
+    }
+  }, true);
+
+  // Keyboard navigation (Space/Enter/Arrows/Esc)
+  document.addEventListener('keydown', e => {
+    if (pop && pop.classList.contains('open')) {
+      const opts = [...pop.querySelectorAll('.mc-sel-opt:not(:disabled)')];
+      if (e.key === 'Escape') { e.preventDefault(); closePop(); return; }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!opts.length) return;
+        const curIdx = hiIdx >= 0 ? hiIdx : opts.findIndex(o => o.classList.contains('active'));
+        hiIdx = e.key === 'ArrowDown'
+          ? (curIdx + 1) % opts.length
+          : (curIdx - 1 + opts.length) % opts.length;
+        opts.forEach((o, i) => o.classList.toggle('hi', i === hiIdx));
+        opts[hiIdx].scrollIntoView({ block: 'nearest' });
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        const target = hiIdx >= 0 ? opts[hiIdx] : pop.querySelector('.mc-sel-opt.active');
+        if (target) { e.preventDefault(); target.click(); }
+        return;
+      }
+    } else if (e.target && e.target.tagName === 'SELECT' && !e.target.multiple && !(e.target.size > 1) && !e.target.dataset.nativeSelect) {
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        openFloatingSelect(e.target, e.target);
+      }
+    }
+  }, true);
+
+  window.addEventListener('resize', closePop);
+  window.addEventListener('scroll', e => {
+    if (pop && pop.classList.contains('open') && (!e.target || !pop.contains(e.target))) {
+      closePop();
+    }
+  }, true);
+})();
 
 boot();
 </script>
