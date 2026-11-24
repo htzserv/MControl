@@ -2480,6 +2480,53 @@ body[data-frame="outline"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini,
 body[data-frame="double"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: max(3px,calc(2px + var(--bw))) double var(--accent); }
 body[data-frame="ruled"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: 0; border-block: max(1px,var(--bw)) solid var(--border); }
 body[data-frame="edge"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: var(--bw) solid var(--border); border-inline-start: max(4px,var(--bw)) solid var(--ring-ink,var(--accent)); }
+/* In-card telemetry displays */
+.metric-detail { display:none; min-width:0; margin-block:8px; color:var(--muted); font-size:.75rem; }
+body:is([data-gauge="pulse"],[data-gauge="columns"],[data-gauge="heat"],[data-gauge="peak"]) .metric-detail { display:block; }
+body:is([data-gauge="pulse"],[data-gauge="columns"],[data-gauge="heat"],[data-gauge="peak"]) :is(.mc-bar-wrap,.mc-spark) { display:none !important; }
+.metric-channel { display:flex; align-items:center; gap:6px; direction:ltr; }
+.metric-channel svg { display:block; width:100%; min-width:0; height:44px; overflow:visible; }
+.mc-net .metric-channel svg { height:26px; }
+.metric-channel b { font-size:.8rem; }
+.metric-detail small { display:block; font-variant-numeric:tabular-nums; }
+@keyframes telemetry-ping { from { r:2.5px; opacity:.85; } to { r:7px; opacity:0; } }
+@media (prefers-reduced-motion:no-preference) {
+ body:not([data-motion="reduced"]) .metric-ping { animation:telemetry-ping 1.4s ease-out 1; }
+}
+.metric-ping { opacity:0; }
+.std-metric-preview { max-width:620px; margin-block:8px; color:var(--muted); font-size:.8rem; }
+.std-metric-preview svg { height:52px; }
+/* Monitoring views */
+.mon-visual:empty { display:none; }
+.mon-visual { margin-block:12px; min-width:0; }
+.mon-visual small, .mv-caption { font-size:.74rem; color:var(--muted); }
+.mv-caption { display:flex; justify-content:space-between; gap:8px; margin-block-end:7px; }
+.mv-up { --status-ink:var(--green); } .mv-warn { --status-ink:var(--yellow); }
+.mv-down { --status-ink:var(--red); } .mv-unknown { --status-ink:var(--muted); }
+.mv-latency { display:flex; align-items:end; height:48px; gap:3px; direction:ltr; border-bottom:1px solid var(--border); }
+.mv-latency i { background:var(--status-ink); flex:1; max-width:24px; min-width:0; border-radius:3px 3px 0 0; min-height:2px; }
+.mv-stack { display:flex; height:12px; border-radius:var(--rc); overflow:hidden; gap:2px; }
+.mv-stack i { background:var(--status-ink); }
+.mv-legend { display:flex; gap:6px 16px; flex-wrap:wrap; font-size:.78rem; margin-block-start:8px; }
+.mv-legend span::before { content:''; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--status-ink,var(--muted)); margin-inline-end:5px; }
+.mon-periods { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.mon-periods > div { background:var(--row); padding:9px; border-radius:min(var(--rc),12px); }
+.mon-periods b { display:block; margin:4px 0; font-variant-numeric:tabular-nums; font-size:clamp(.82rem,2vw,1.08rem); }
+.mon-periods i { display:block; height:4px; background:var(--border); }
+.mon-periods em { display:block; height:100%; background:var(--accent); }
+body[data-uptime="periods"] .mon-foot > span:first-child { display:none; }
+.mon-beacon { display:flex; align-items:center; gap:15px; padding:12px 4px; color:var(--status-ink); }
+.mon-beacon i { width:18px; height:18px; border-radius:50%; background:currentColor; box-shadow:0 0 0 6px color-mix(in srgb,currentColor 16%,transparent); }
+body[data-uptime="incidents"] .mon-card.is-down { background:linear-gradient(105deg,color-mix(in srgb,var(--red) 12%,var(--surface)),var(--surface) 75%); }
+body[data-uptime="wall"] .mon-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); align-items:start; }
+body[data-uptime="wall"] .mon-card { padding:14px; min-width:0; }
+body[data-uptime="wall"] .mon-head { align-items:start; flex-direction:column; }
+body[data-uptime="wall"] .mon-card > .mono { overflow-wrap:anywhere; }
+body[data-uptime="mosaic"] .mon-card .mon-hb-bars { display:grid; grid-template-columns:repeat(15,minmax(0,1fr)); grid-auto-flow:row; height:auto; gap:4px; max-width:490px; direction:ltr; }
+body[data-uptime="mosaic"] .mon-card .mon-hb { width:100%; max-width:none; aspect-ratio:1.6; height:auto; }
+@media (max-width:460px) {
+ body[data-uptime="mosaic"] .mon-card .mon-hb-bars { grid-template-columns:repeat(10,minmax(0,1fr)); }
+}
 /* Theme workspace */
 #sub-themes > .toolbar { padding-block: var(--gap); border-bottom: 1px solid var(--border); }
 #sub-themes h3 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.2; }
@@ -2779,6 +2826,7 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
             </div>
           </div>
           <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-cpu" style="width:0%; background:var(--accent);"></div></div>
+          <div class="metric-detail" id="detail-cpu"></div>
           <canvas id="spark-cpu" width="240" height="44" class="mc-spark"></canvas>
           <div class="mc-foot"><span data-i18n="load_avg">Load avg</span><span class="mono" id="loc-load">---</span></div>
         </div>
@@ -2806,6 +2854,7 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
             </div>
           </div>
           <div class="bar-wrap mc-bar-wrap" style="margin-top:6px;"><div class="bar-fill" id="bar-ram" style="width:0%; background:var(--accent2);"></div></div>
+          <div class="metric-detail" id="detail-ram"></div>
           <canvas id="spark-ram" width="240" height="44" class="mc-spark"></canvas>
           <div class="mc-foot"><span data-i18n="used_total">Used / total</span><span class="mono" id="loc-ram-mb">---</span></div>
         </div>
@@ -2835,6 +2884,7 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
               <span class="mc-ring-sub" data-i18n="net_dl_ul">Download / Upload</span>
             </div>
           </div>
+          <div class="metric-detail" id="detail-net"></div>
           <canvas id="spark-net" width="240" height="52" class="mc-spark" style="margin-top:8px;"></canvas>
           <div class="mc-foot"><span data-i18n="total_traffic">Total traffic</span><span class="mono" id="loc-net-tot">---</span></div>
         </div>
@@ -4697,10 +4747,14 @@ const OPT = {
   srv: { grid: ['Cards', 'کارت‌ها'], list: ['List', 'لیست'], table: ['Table', 'جدول'] },
   stat: { tiles: ['Tiles', 'کاشی'], ribbon: ['Ribbon', 'نوار'] },
   chart: { unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
-  gauge: { wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
+  gauge: { pulse: ['Live pulse','پالس متحرک'], columns: ['Sample columns','ستون‌های زمانی'], heat: ['Heat strip','نوار حرارتی'], peak: ['Current and peak','فعلی و اوج'], wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
   chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
   motion: { system: ['System preference', 'تنظیم سیستم'], reduced: ['Reduced', 'حداقل حرکت'] },
-  uptime: { orbit: ['24-hour ring','حلقهٔ ۲۴ ساعته'], ledger: ['Compact ledger','ردیف خطی فشرده'], kuma: ['Kuma Classic', 'کوما کلاسیک'], neon: ['Neon Cyber', 'نئون سایبری'], dots: ['LED Dots', 'نقطه‌ای LED'], grid: ['2-Col Grid', 'کارت ۲ستونه'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], noc: ['NOC Matrix', 'رادار NOC'] }
+  uptime: {
+    wall: ['Service wall','دیوار سرویس‌ها'], latency: ['Response time','زمان پاسخ'],
+    incidents: ['Incident desk','میز رخدادها'], periods: ['Availability windows','مقایسهٔ بازه‌ها'],
+    mosaic: ['Heartbeat mosaic','موزاییک پایش'], mix: ['Check distribution','توزیع وضعیت‌ها'],
+    beacon: ['Status beacon','چراغ وضعیت'], orbit: ['24-hour ring','حلقهٔ ۲۴ ساعته'], ledger: ['Compact ledger','ردیف خطی فشرده'], kuma: ['Kuma Classic', 'کوما کلاسیک'], neon: ['Neon Cyber', 'نئون سایبری'], dots: ['LED Dots', 'نقطه‌ای LED'], grid: ['2-Col Grid', 'کارت ۲ستونه'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], noc: ['NOC Matrix', 'رادار NOC'] }
 };
 let lang = ls.get('mc_lang', '') || ((navigator.language || '').toLowerCase().startsWith('fa') ? 'fa' : 'en');
 function t(key, p) {
@@ -4951,6 +5005,9 @@ function applyTheme() {
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
   b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
   b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
+  renderMetricDetails();
+  refreshMonitorVisuals();
+  renderGaugeSample();
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
@@ -5075,6 +5132,58 @@ function renderThemes() {
     <div class="tmeta"><strong>${esc(x.n)}</strong>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
     <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
 }
+const monitorSample = {
+  status: 'up', uptime_24h: 98.7, uptime_7d: 99.64, uptime_30d: 99.89,
+  beats: ['up','up','up','warn','down','down','up','up','warn','up','up','up'].map((status,i) => ({
+    status, latency_ms: [24,26,22,110,0,0,31,27,92,32,26,24][i]
+  }))
+};
+function monitorVisual(m, view) {
+  const word = (en,fa) => lang === 'fa' ? fa : en;
+  const beats = m.beats || [];
+  const names = { up:word('Up','در دسترس'), warn:word('Warning','هشدار'), down:word('Down','قطع'), unknown:word('Unknown','نامشخص') };
+  const state = value => Object.hasOwn(names,value) ? value : 'unknown';
+  const number = n => n.toLocaleString(lang,{maximumFractionDigits:2});
+  const empty = '<small>' + word('Waiting for checks','در انتظار اولین بررسی') + '</small>';
+  if (view === 'beacon') {
+    const key = state(m.status);
+    return `<div class="mon-beacon mv-${key}"><i aria-hidden="true"></i><strong>${names[key]}</strong></div>`;
+  }
+  if (view === 'periods') {
+    return '<div class="mon-periods">' + [['24h',m.uptime_24h],['7d',m.uptime_7d],['30d',m.uptime_30d]].map(([label,v]) => {
+      const valid = Number.isFinite(v) && v >= 0 && v <= 100;
+      return `<div><small>${label}</small><b>${valid ? number(v)+'%' : '—'}</b><i><em style="width:${valid ? v : 0}%"></em></i></div>`;
+    }).join('') + '</div>';
+  }
+  if (!['latency','incidents','mix'].includes(view)) return '';
+  if (!beats.length) return empty;
+  if (view === 'latency') {
+    const values = beats.map(b => ['up','warn'].includes(b.status) && Number.isFinite(b.latency_ms) && b.latency_ms >= 0 ? b.latency_ms : null);
+    const peak = Math.max(0,...values.filter(v => v !== null));
+    return `<div class="mv-caption">${word('Response time','زمان پاسخ')}<span>${word('Peak','بیشینه')} · ${values.some(v=>v!==null) ? number(peak)+' ms' : '—'}</span></div><div class="mv-latency">${values.map((v,i) => `<i class="mv-${state(beats[i].status)}" title="${v === null ? names[state(beats[i].status)] : number(v)+' ms'}" style="height:${v===null ? 3 : Math.max(4,100*v/(peak||1))}%"></i>`).join('')}</div>`;
+  }
+  const counts = {up:0,warn:0,down:0,unknown:0};
+  beats.forEach(b => counts[state(b.status)]++);
+  if (view === 'mix') {
+    const parts = Object.entries(counts).filter(([,n])=>n);
+    return `<div class="mv-caption">${word('Recent checks','بررسی‌های اخیر')}<span>${number(beats.length)}</span></div><div class="mv-stack">${parts.map(([k,n])=>`<i class="mv-${k}" style="flex:${n}"></i>`).join('')}</div><div class="mv-legend">${parts.map(([k,n])=>`<span class="mv-${k}">${names[k]} · ${number(n)}</span>`).join('')}</div>`;
+  }
+  let longest = 0, run = 0;
+  beats.forEach(b => { run = b.status === 'down' ? run+1 : 0; longest = Math.max(longest,run); });
+  return `<div class="mv-caption">${word('Within recent checks','در بررسی‌های اخیر')}<span>${number(beats.length)}</span></div><div class="mv-legend"><span class="mv-down">${word('Failed','ناموفق')} · ${number(counts.down)}</span><span>${word('Longest failure streak','بیشترین قطعی پیاپی')} · ${number(longest)}</span></div>`;
+}
+function refreshMonitorVisuals() {
+  const view = document.body.dataset.uptime;
+  const preview = $('studio-monitor-visual');
+  if (preview) preview.innerHTML = monitorVisual(monitorSample,view);
+  const boxes = document.querySelectorAll('#mon-list [data-mon-visual]');
+  if (!boxes.length) return;
+  const byId = new Map(MONITORS.map(m=>[String(m.id),m]));
+  boxes.forEach(box=>{
+    const m = byId.get(box.dataset.monVisual);
+    if (m) box.innerHTML = monitorVisual(m,view);
+  });
+}
 function uptimeRing(value) {
   const n = Number(value);
   const valid = value != null && value !== '' && Number.isFinite(n) && n >= 0 && n <= 100;
@@ -5091,13 +5200,24 @@ function renderStudio() {
   const colors = colorRoles.map(([key, en, fa], i) => `<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${label(en, fa)}</span></label>`).join('');
   const sizes = sizeRoles.map(([key, en, fa, min, max, unit]) => `<label class="field"><span>${label(en, fa)} <output id="value-${key}">${e[key]}</output>${unit}</span><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
   const section = (title, content) => `<fieldset><legend>${title}</legend><div class="studio-fields">${content}</div></fieldset>`;
-  const detailKeys = ['corners','frame','uptime','beat'];
-  const demoHistory = ['up','up','up','warn','down','up','up','up','up','up','up','up'];
-  const demo = `<div class="mon-card is-up detail-demo"><div class="mon-head"><strong>${label('Monitor preview','پیش‌نمایش مانیتور')}</strong></div>${uptimeRing(98.7)}<div class="mon-hb-bars">${demoHistory.map(state => `<i class="mon-hb ${state}"></i>`).join('')}</div><div class="mon-foot">${label('Sample history','تاریخچهٔ نمونه')} · 24h · 98.7%</div></div>`;
-  box.innerHTML = section(label('Cards and uptime', 'کارت‌ها و آپتایم'), fields(detailKeys)) + demo
+  const detailKeys = ['gauge','corners','frame','uptime','beat'];
+  const demoHistory = monitorSample.beats.map(b=>b.status);
+  const demo = `<div class="mon-card is-up detail-demo"><div class="mon-head"><strong>${label('Monitor preview','پیش‌نمایش مانیتور')}</strong></div>${uptimeRing(98.7)}<div class="mon-visual" id="studio-monitor-visual">${monitorVisual(monitorSample,e.uptime)}</div><div class="mon-hb-bars">${demoHistory.map(state => `<i class="mon-hb ${state}"></i>`).join('')}</div><div class="mon-foot">${label('Sample history','تاریخچهٔ نمونه')} · 24h · 98.7%</div></div>`;
+  box.innerHTML = section(label('Cards and uptime', 'کارت‌ها و آپتایم'), fields(detailKeys)) + '<div id="std-metric-preview" class="std-metric-preview"></div>' + demo
     + section(label('Palette', 'پالت رنگ') + ' · ' + t('mode_' + effMode()), colors)
     + section(label('Shape and scale', 'اندازه و فرم'), sizes)
     + section(label('Components and layout', 'اجزا و چیدمان'), fields(DIMS.filter(k => !detailKeys.includes(k))));
+  renderGaugeSample();
+}
+function renderGaugeSample() {
+  const box = $('std-metric-preview');
+  if (!box) return;
+  const mode = effective().gauge;
+  box.hidden = !detailModes.includes(mode);
+  if (box.hidden) return;
+  const samples = [12,16,15,20,22,18,26,42,35,30,29,50,68,62,54,37,32,34,43,41,45,51,49,38,43,36,35,42];
+  box.innerHTML = (lang === 'fa' ? 'نمونهٔ CPU' : 'CPU sample') + ' · 42%' +
+    '<div class="metric-channel">' + metricPlot(mode,samples,100,'accent') + '</div>';
 }
 function onStudio(el) {
   const k = el.dataset.dim;
@@ -8165,6 +8285,51 @@ async function fetchLogs() {
 
 /* ═══════════════ local telemetry ═══════════════ */
 const cpuHist = new Array(28).fill(0), ramHist = new Array(28).fill(0), diskHist = new Array(28).fill(0), rxHist = new Array(28).fill(0), txHist = new Array(28).fill(0);
+let metricSamples = 0;
+const detailModes = ['pulse', 'columns', 'heat', 'peak'];
+function metricPlot(mode, values, max, color) {
+  const n = values.length, last = n - 1, w = 200, h = 36, step = w / 28;
+  const ratio = v => Math.min(1, Math.max(0, v / max));
+  const y = v => 31 - ratio(v) * 24;
+  const x = i => w - 4 - (last - i) * step;
+  let marks = '';
+  if (mode === 'peak') {
+    const width = ratio(values[last]) * 192;
+    const peak = 4 + ratio(Math.max(...values)) * 192;
+    marks = `<rect x="4" y="15" width="192" height="6" rx="3" opacity=".15"/><rect x="4" y="15" width="${width}" height="6" rx="3"/><path d="M${peak} 10v16" stroke="currentColor" stroke-width="2"/>`;
+  } else if (mode === 'pulse') {
+    const points = values.map((v,i) => x(i) + ',' + y(v)).join(' ');
+    const cy = y(values[last]);
+    marks = `<path d="M0 31H200 M0 19H200 M0 7H200" stroke="currentColor" opacity=".12"/><polygon points="${x(0)},31 ${points} 196,31" opacity=".12"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="196" cy="${cy}" r="2.5"/><circle class="metric-ping" cx="196" cy="${cy}" r="2.5" fill="none" stroke="currentColor"/>`;
+  } else {
+    marks = values.map((v,i) => {
+      const heat = mode === 'heat', height = heat ? 16 : Math.max(1, ratio(v)*26);
+      return `<rect x="${x(i)-3}" y="${heat ? 10 : 31-height}" width="5.5" height="${height}" rx="${heat ? 2 : 1}" opacity="${heat ? .12 + .88*ratio(v) : .85}"/>`;
+    }).join('');
+  }
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true" style="color:var(--${color});fill:currentColor">${marks}</svg>`;
+}
+function renderMetricDetails() {
+  const mode = document.body.dataset.gauge;
+  if (!detailModes.includes(mode)) return;
+  for (const [id, series] of [
+    ['cpu', [[cpuHist,'accent','CPU']]], ['ram', [[ramHist,'accent2','RAM']]],
+    ['net', [[rxHist,'green','↓'], [txHist,'yellow','↑']]]
+  ]) {
+    const box = $('detail-' + id);
+    if (!metricSamples) {
+      box.textContent = lang === 'fa' ? 'در انتظار نمونه…' : 'Waiting for a sample…';
+      continue;
+    }
+    const limit = id === 'net' ? Math.max(1,...rxHist,...txHist) : 100;
+    box.innerHTML = series.map(([hist,color,label]) => {
+      const values = hist.slice(-metricSamples);
+      const peak = Math.max(...values);
+      const text = id === 'net' ? fmtBytes(peak) + '/s' : peak.toFixed(1) + '%';
+      return `<div class="metric-channel">${id === 'net' ? `<b style="color:var(--${color})">${label}</b>` : ''}${metricPlot(mode,values,limit,color)}</div>${mode === 'peak' ? `<small>${lang === 'fa' ? 'اوج' : 'Peak'} · ${text}</small>` : ''}`;
+    }).join('');
+  }
+}
 let localTimer = null, srvTimer = null, updAutoTimer = null;
 function drawSpark(id, series) {
   const c = $(id); if (!c) return;
@@ -8263,7 +8428,7 @@ async function pollLocalStats() {
     const e6 = $('loc-ipv6'); if (e6) { e6.textContent = 'IPv6: ' + (s.ipv6 || 'N/A'); e6.dataset.ip = s.ipv6 || ''; }
   setT('loc-cpu', (s.cpu_percent || 0).toFixed(1) + '%'); $('bar-cpu').style.width = Math.min(100, s.cpu_percent || 0) + '%'; setT('loc-load', s.load_avg);
   setT('loc-ram', (s.ram_percent || 0).toFixed(1) + '%'); $('bar-ram').style.width = Math.min(100, s.ram_percent || 0) + '%'; setT('loc-ram-mb', s.ram_used_mb + ' / ' + s.ram_total_mb + ' MB');
-  setT('loc-disk', (s.disk_percent || 0).toFixed(1) + '%'); $('bar-disk').style.width = Math.min(100, s.disk_percent || 0) + '%';
+  setT('loc-disk', (s.disk_percent || 0).toFixed(1) + '%'); if ($('bar-disk')) $('bar-disk').style.width = Math.min(100, s.disk_percent || 0) + '%';
   setT('loc-disk-gb', (s.disk_used_gb || 0).toFixed(1) + ' / ' + (s.disk_total_gb || 0).toFixed(1) + ' GB');
   setT('loc-disk-pill', 'Disk: ' + Math.round(s.disk_percent || 0) + '%');
   setT('loc-rx-spd', (lang === 'fa' ? 'دانلود: ' : '↓ ') + fmtBytes(s.net_rx_speed) + '/s'); setT('loc-tx-spd', (lang === 'fa' ? 'آپلود: ' : '↑ ') + fmtBytes(s.net_tx_speed) + '/s');
@@ -8324,11 +8489,13 @@ async function pollLocalStats() {
   setRing('ring-net-rx', rxPct, 0, 'var(--green)');
   setRing('ring-net-tx', txPct, rxPct, 'var(--yellow)');
   setT('ring-net-txt', totS > 0 ? (Math.round(rxPct) + '%/' + Math.round(txPct) + '%') : '0/0%');
+  metricSamples = Math.min(metricSamples + 1, cpuHist.length);
   cpuHist.push(s.cpu_percent || 0); cpuHist.shift();
   ramHist.push(s.ram_percent || 0); ramHist.shift();
   diskHist.push(s.disk_percent || 0); diskHist.shift();
   rxHist.push(s.net_rx_speed || 0); rxHist.shift();
   txHist.push(s.net_tx_speed || 0); txHist.shift();
+  renderMetricDetails();
   const cs = getComputedStyle(document.body);
   drawSpark('spark-cpu', [{ data: cpuHist, color: cs.getPropertyValue('--accent').trim() || '#38bdf8' }]);
   drawSpark('spark-ram', [{ data: ramHist, color: cs.getPropertyValue('--accent2').trim() || '#818cf8' }]);
@@ -8988,6 +9155,7 @@ async function loadMonitorsTab() {
         </div>
         <div class="mono" style="font-size:.73rem; color:var(--muted);">${esc(m.target)}${m.last_error ? ` · <span style="color:var(--red);">${esc(m.last_error)}</span>` : ''}</div>
         ${uptimeRing(m.uptime_24h)}
+        <div class="mon-visual" data-mon-visual="${esc(m.id)}">${monitorVisual(m,document.body.dataset.uptime)}</div>
         <div class="mon-hb-bars">${bars}</div>
         <div class="mon-foot">
           <span>24h: <b style="color:var(--green);">${m.uptime_24h}%</b> · 7d: <b>${m.uptime_7d}%</b> · 30d: <b>${m.uptime_30d}%</b></span>
