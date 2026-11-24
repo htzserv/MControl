@@ -367,10 +367,149 @@ func (m *Manager) handleSaaS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// 3b. Per-User Theme Sync & Public Status White-Label (/api/saas/theme)
+	if p == "/api/saas/theme" {
+		st, _, ok := m.activeStoreForRequest(r)
+		if !ok {
+			fail(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		if r.Method == http.MethodGet {
+			raw := strings.TrimSpace(st.GetSetting("ui_theme_json"))
+			isDefault := false
+			if raw == "" && m.primary != nil && m.primary.Store() != nil {
+				raw = strings.TrimSpace(m.primary.Store().GetSetting("saas_default_theme_json"))
+				if raw != "" {
+					isDefault = true
+				}
+			}
+			var parsed any
+			if raw != "" {
+				_ = json.Unmarshal([]byte(raw), &parsed)
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"ok":         true,
+				"theme":      parsed,
+				"is_default": isDefault,
+			})
+			return
+		}
+		if r.Method == http.MethodPut || r.Method == http.MethodPost {
+			body, err := io.ReadAll(io.LimitReader(r.Body, 48<<10))
+			if err != nil {
+				fail(w, http.StatusBadRequest, "invalid theme payload")
+				return
+			}
+			var req struct {
+				ThemeID    string         `json:"themeId"`
+				Mode       string         `json:"mode"`
+				Settings   map[string]any `json:"settings"`
+				PublicSync bool           `json:"public_sync"`
+				PublicVars map[string]any `json:"public_vars,omitempty"`
+			}
+			if err := json.Unmarshal(body, &req); err != nil || req.ThemeID == "" {
+				fail(w, http.StatusBadRequest, "invalid theme JSON")
+				return
+			}
+			_ = st.SetSetting("ui_theme_json", string(body))
+			if req.PublicSync && len(req.PublicVars) > 0 {
+				if pb, err := json.Marshal(req.PublicVars); err == nil {
+					_ = st.SetSetting("ui_public_theme_json", string(pb))
+				}
+			} else {
+				_ = st.SetSetting("ui_public_theme_json", "")
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+			return
+		}
+	}
+
+	// 3c. Per-User White-Label Branding (Name & Logo) (/api/saas/brand)
+	if p == "/api/saas/brand" {
+		st, _, ok := m.activeStoreForRequest(r)
+		if !ok {
+			fail(w, http.StatusUnauthorized, "unauthorized")
+			return
+		}
+		if r.Method == http.MethodGet {
+			var b struct {
+				BrandName string `json:"brand_name"`
+				BrandLogo string `json:"brand_logo"`
+			}
+			if raw := strings.TrimSpace(st.GetSetting("ui_brand_json")); raw != "" {
+				_ = json.Unmarshal([]byte(raw), &b)
+			}
+			if b.BrandName == "" {
+				b.BrandName = strings.TrimSpace(st.GetSetting("panel_name"))
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"ok":         true,
+				"brand_name": b.BrandName,
+				"brand_logo": b.BrandLogo,
+			})
+			return
+		}
+		if r.Method == http.MethodPut || r.Method == http.MethodPost {
+			var req struct {
+				BrandName string `json:"brand_name"`
+				BrandLogo string `json:"brand_logo"`
+			}
+			if err := json.NewDecoder(io.LimitReader(r.Body, 320<<10)).Decode(&req); err != nil {
+				fail(w, http.StatusBadRequest, "invalid JSON or logo too large (max 240KB)")
+				return
+			}
+			req.BrandName = strings.TrimSpace(req.BrandName)
+			req.BrandLogo = strings.TrimSpace(req.BrandLogo)
+			if len(req.BrandName) > 48 {
+				fail(w, http.StatusBadRequest, "brand name must be 48 characters or fewer")
+				return
+			}
+			if req.BrandLogo != "" {
+				if len(req.BrandLogo) > 260000 {
+					fail(w, http.StatusBadRequest, "logo image is too large (max ~190KB)")
+					return
+				}
+				validLogo := strings.HasPrefix(req.BrandLogo, "data:image/png;base64,") ||
+					strings.HasPrefix(req.BrandLogo, "data:image/jpeg;base64,") ||
+					strings.HasPrefix(req.BrandLogo, "data:image/webp;base64,") ||
+					strings.HasPrefix(req.BrandLogo, "data:image/svg+xml;base64,") ||
+					strings.HasPrefix(req.BrandLogo, "https://") ||
+					strings.HasPrefix(req.BrandLogo, "http://")
+				if !validLogo {
+					fail(w, http.StatusBadRequest, "unsupported logo format (use PNG, JPG, WEBP, SVG or HTTPS URL)")
+					return
+				}
+			}
+			raw, _ := json.Marshal(req)
+			_ = st.SetSetting("ui_brand_json", string(raw))
+			if req.BrandName != "" {
+				_ = st.SetPanelName(req.BrandName)
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"ok": true, "brand_name": req.BrandName, "brand_logo": req.BrandLogo})
+			return
+		}
+	}
+
 	// 4. SuperAdmin-only Tenant Management (/api/saas/tenants...)
 	superUser, ok := m.requireSuperAdmin(r)
 	if !ok {
 		fail(w, http.StatusForbidden, "SuperAdmin access required")
+		return
+	}
+
+	if p == "/api/saas/default-theme" && (r.Method == http.MethodPut || r.Method == http.MethodPost) {
+		body, err := io.ReadAll(io.LimitReader(r.Body, 48<<10))
+		if err != nil {
+			fail(w, http.StatusBadRequest, "invalid payload")
+			return
+		}
+		var check map[string]any
+		if json.Unmarshal(body, &check) != nil {
+			fail(w, http.StatusBadRequest, "invalid JSON")
+			return
+		}
+		_ = m.primary.Store().SetSetting("saas_default_theme_json", string(body))
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Default theme for new tenants saved!"})
 		return
 	}
 

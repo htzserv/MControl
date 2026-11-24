@@ -80,3 +80,23 @@ jobs:
           files: |
             dist/mcontrol-bundle-linux-amd64.tar.gz
             dist/mcontrol-bundle-linux-amd64.tar.gz.sha256
+
+      - name: Upload Static Bundle to ParsPack S3 Mirror
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.PP_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PP_SECRET_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          PP_ENDPOINT: ${{ secrets.PP_ENDPOINT }}
+          PP_BUCKET: ${{ secrets.PP_BUCKET }}
+        run: |
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${PP_ENDPOINT:-}" ] || [ -z "${PP_BUCKET:-}" ]; then
+            echo "ParsPack S3 secrets not configured — skipping bundle mirror upload."
+            exit 0
+          fi
+          EP="${PP_ENDPOINT%/}"
+          echo "Uploading static bundle to ${EP}/${PP_BUCKET}/MControl/ ..."
+          aws --endpoint-url "$EP" s3 cp dist/mcontrol-bundle-linux-amd64.tar.gz "s3://${PP_BUCKET}/MControl/mcontrol-bundle-linux-amd64.tar.gz" --acl public-read
+          aws --endpoint-url "$EP" s3 cp dist/mcontrol-bundle-linux-amd64.tar.gz.sha256 "s3://${PP_BUCKET}/MControl/mcontrol-bundle-linux-amd64.tar.gz.sha256" --acl public-read
+          echo "ParsPack S3 Bundle upload complete!"

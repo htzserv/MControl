@@ -863,6 +863,15 @@ func StartRemoteUpdate(source, githubURL, mirrorURL, socksProxy string, allowUnv
 		}
 		zipURL := baseURL + "/" + zipName
 		zipPath, status, err := downloadTo(client, zipURL, "mcontrol-remote-*.zip")
+		if (err != nil || status != http.StatusOK) && source == "beta" {
+			if ir := strings.TrimRight(strings.TrimSpace(mirrorURL), "/"); ir != "" && validBase.MatchString(ir) {
+				appendLog("[MIRROR] GitHub beta-latest unreachable, falling back to Iran Mirror: " + ir + "/beta-latest")
+				baseURL = ir + "/beta-latest"
+				client = MakeHTTPClient(5*time.Minute, "")
+				zipURL = baseURL + "/" + zipName
+				zipPath, status, err = downloadTo(client, zipURL, "mcontrol-remote-*.zip")
+			}
+		}
 		if err == nil && status == http.StatusOK {
 			defer os.Remove(zipPath)
 			setProgress(18, "Verifying package checksum...")

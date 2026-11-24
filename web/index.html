@@ -2371,6 +2371,78 @@ body[data-navx="top"] .ver-bubble {
   box-shadow: 0 10px 26px -10px var(--shadow);
 }
 .mon-theme-bar.show { display: flex; }
+
+/* ── Eco / Low-Power Mode (Disables heavy blur, glows & continuous animations) ── */
+body[data-eco="1"], body[data-eco="1"] *, body[data-eco="1"] *::before, body[data-eco="1"] *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .05s !important;
+}
+body[data-eco="1"] .card, body[data-eco="1"] .modal-box, body[data-eco="1"] .tun-float-dock {
+  background: var(--surface) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.22) !important;
+}
+
+/* ── Auto-Contrast & Unification with Wizard + SaaS Modal ── */
+.btn-sky { color: var(--on-accent, #ffffff); }
+.tun-ipbox { border-radius: var(--rc, 16px); border-width: var(--bw, 1.5px); }
+.tun-s1-pill, .tun-ip-choice { border-radius: min(var(--rb, 13px), var(--rc, 13px)); }
+body[data-corners="square"] .tun-ipbox, body[data-corners="square"] .tun-s1-pill, body[data-corners="square"] .tun-ip-choice, body[data-corners="square"] .saas-row { border-radius: 3px !important; }
+body[data-corners="capsule"] .tun-s1-pill { border-radius: 999px !important; }
+
+/* ── Atelier Sticky Live Mini-Preview ── */
+.atelier-preview {
+  position: sticky; top: 8px; z-index: 40;
+  margin-bottom: 14px; padding: 12px 15px;
+  border-radius: var(--rc, 16px);
+  border: var(--bw, 1px) solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--surface) var(--glass-opacity, 86%), transparent);
+  backdrop-filter: blur(var(--blur, 14px)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur, 14px)) saturate(150%);
+  box-shadow: 0 10px 26px -14px var(--shadow, rgba(0,0,0,.45));
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto;
+  align-items: center; gap: 12px;
+}
+@media (max-width: 780px) {
+  .atelier-preview { position: static; grid-template-columns: 1fr; gap: 9px; }
+}
+.ap-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ap-bars { display: flex; align-items: flex-end; gap: 3px; height: 22px; }
+.ap-bars i { display: block; width: 6px; border-radius: 3px; background: var(--green); }
+.ap-bars i.w { background: var(--yellow); }
+.ap-bars i.d { background: var(--red); }
+.ap-gauge { height: 7px; border-radius: 999px; background: var(--row); overflow: hidden; margin-top: 6px; }
+.ap-gauge > i { display: block; height: 100%; width: 72%; background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3)); border-radius: inherit; }
+.ap-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* ── 12 Curated MDesign Presets Grid ── */
+.mc-presets-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 8px; margin-bottom: 12px;
+}
+.mc-preset-card {
+  display: flex; flex-direction: column; gap: 6px; padding: 10px 12px;
+  border-radius: min(var(--rc, 14px), 16px); cursor: pointer; text-align: start;
+  background: var(--row); border: 1.5px solid var(--border); color: var(--text);
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.mc-preset-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.mc-preset-card.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--row));
+}
+.mc-preset-swatches { display: flex; gap: 4px; align-items: center; }
+.mc-preset-swatches i { width: 14px; height: 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); display: inline-block; }
+.mc-preset-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.mc-preset-name { font-size: .79rem; font-weight: 800; }
+.mc-preset-sub { font-size: .67rem; color: var(--muted); }
+
 /* ── 4-Page Tunnel Wizard: All-Server Ping Pills & Animated IPv4/IPv6 Box ── */
 .tun-s1-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -4226,12 +4298,97 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
 
         <div id="sub-themes" class="sub-pane">
 <header class="atelier-head"><h3 data-i18n="theme_title">Theme studio</h3><div class="atelier-current"><i></i><strong id="atelier-current"></strong></div></header>
+
+<!-- Live Mini-Preview (reacts immediately to every slider, preset & color) -->
+<div class="atelier-preview" id="atelier-live-preview">
+  <div>
+    <div class="ap-head">
+      <span class="dot online"></span>
+      <strong style="font-size:.82rem;">MDesign Live Preview</strong>
+      <span class="badge b-ok mono" id="ap-contrast-badge" style="font-size:.66rem;">Contrast OK</span>
+      <span class="badge b-foreign mono" id="ap-sync-badge" style="font-size:.66rem;">DB Synced</span>
+    </div>
+    <div class="ap-gauge"><i></i></div>
+  </div>
+  <div style="display:flex; flex-direction:column; gap:4px;">
+    <div style="font-size:.68rem; color:var(--muted);">Uptime Heartbeat &amp; Status</div>
+    <div class="ap-bars" aria-hidden="true">
+      <i style="height:60%"></i><i style="height:75%"></i><i style="height:85%"></i><i class="w" style="height:55%"></i>
+      <i style="height:90%"></i><i style="height:78%"></i><i class="d" style="height:35%"></i><i style="height:82%"></i>
+      <i style="height:95%"></i><i style="height:88%"></i><i style="height:72%"></i><i style="height:92%"></i>
+    </div>
+  </div>
+  <div class="ap-actions">
+    <button type="button" class="btn btn-sky btn-sm" style="pointer-events:none;">Primary</button>
+    <button type="button" class="btn btn-ghost btn-sm" style="pointer-events:none;">Secondary</button>
+  </div>
+</div>
+
 <div class="appearance-modes ink-controls">
         <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
         <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
-        <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="third_ink"></span><input type="color" id="third-accent" data-i18n-title="third_ink"></label><button type="button" class="btn btn-sm btn-sky" id="apply-colors" data-i18n="apply_colors" disabled></button>
-
+        <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
+        <button type="button" class="chip" id="btn-eco-mode" onclick="toggleEcoMode()" title="Low-Power / Eco Mode (disable blur &amp; heavy animations)">⚡ Eco Mode</button>
+        <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
+        <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label>
+        <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="third_ink"></span><input type="color" id="third-accent" data-i18n-title="third_ink"></label>
+        <button type="button" class="btn btn-sm btn-sky" id="apply-colors" data-i18n="apply_colors" disabled></button>
       </div>
+
+      <!-- Cloud Sync, White-Label /status & Share Code Toolbar -->
+      <div class="flexw" style="gap:7px; margin-bottom:12px; align-items:center; justify-content:space-between;">
+        <div class="flexw" style="gap:8px; align-items:center;">
+          <label class="check" style="margin:0; font-size:.76rem;">
+            <input type="checkbox" id="chk-theme-pubsync" onchange="onPublicThemeSyncToggle()">
+            <span>Sync Theme to Public <code>/status</code> (White-Label)</span>
+          </label>
+          <button type="button" class="btn btn-warn btn-sm" id="btn-set-default-theme" style="display:none;" onclick="saveDefaultTenantTheme()">★ Set Default for New Tenants</button>
+        </div>
+        <div class="flexw" style="gap:6px;">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="copyThemeShareCode()">📋 Copy Code</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="pasteThemeShareCode()">📥 Paste Code</button>
+        </div>
+      </div>
+
+      <!-- White-Label Brand Name & Logo (Per-Tenant & Public /status) -->
+      <details name="studio-main" class="atelier-group">
+        <summary><strong>🏷️ White-Label Brand Name &amp; Logo (Panel + /status)</strong></summary>
+        <div class="atelier-content">
+          <div class="row2" style="align-items:end; margin-bottom:10px;">
+            <div class="field" style="margin:0;">
+              <label>Custom Brand / Panel Name</label>
+              <input id="wl-brand-name" maxlength="48" placeholder="e.g. DEDPROXY Cloud">
+            </div>
+            <div class="field" style="margin:0;">
+              <label>Custom Logo (PNG / JPG / WEBP / SVG · max 180KB)</label>
+              <div class="flexw" style="gap:6px; flex-wrap:nowrap;">
+                <input id="wl-brand-logo-url" class="mono" placeholder="https://... or upload image" style="flex:1;">
+                <input type="file" id="wl-brand-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onchange="onBrandLogoFilePick(this)">
+                <button type="button" class="btn btn-ghost btn-sm" onclick="$('wl-brand-file').click()">Upload</button>
+              </div>
+            </div>
+          </div>
+          <div class="flexw" style="justify-content:space-between; align-items:center; gap:8px;">
+            <div class="flexw" style="gap:8px; align-items:center;">
+              <img id="wl-brand-preview" alt="" style="display:none; width:34px; height:34px; object-fit:contain; border-radius:9px; border:1px solid var(--border); background:var(--row); padding:3px;">
+              <span style="font-size:.74rem; color:var(--muted);">Applied to this workspace header &amp; your public <code>/status</code> page.</span>
+            </div>
+            <div class="flexw" style="gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="clearBrandLogo()">Reset Logo</button>
+              <button type="button" class="btn btn-sky btn-sm" onclick="saveBrandProfile()">💾 Save Branding</button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- 12 Curated MDesign Presets -->
+      <details name="studio-main" class="atelier-group" open>
+        <summary><strong>✨ Curated MDesign Presets (12 Ready-to-Use Profiles)</strong></summary>
+        <div class="atelier-content">
+          <div class="mc-presets-grid" id="atelier-presets-grid"></div>
+        </div>
+      </details>
+
       <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
       <div class="chips" id="family-tabs"></div>
       <div class="tg" id="theme-grid"></div>
@@ -5331,7 +5488,18 @@ function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
   colorRoles.forEach(([role], i) => set('--' + role, p[i]));
-  set('--on-accent', lum(p[4]) > 0.179 ? '#000000' : '#ffffff');
+  const inkOn = c => lum(c) > 0.179 ? '#0a0d14' : '#ffffff';
+  set('--on-accent', inkOn(p[4]));
+  set('--on-accent2', inkOn(p[5]));
+  set('--on-accent3', inkOn(p[12] || p[4]));
+  b.dataset.eco = custom.eco ? '1' : '0';
+  if ($('btn-eco-mode')) $('btn-eco-mode').classList.toggle('on', !!custom.eco);
+  if ($('ap-contrast-badge')) {
+    const cr = Math.max(lum(p[4]), lum(inkOn(p[4]))) + 0.05;
+    const crMin = Math.min(lum(p[4]), lum(inkOn(p[4]))) + 0.05;
+    const ratio = (cr / crMin).toFixed(1);
+    $('ap-contrast-badge').textContent = `Contrast ${ratio}:1 ${+ratio >= 4.5 ? 'AAA' : 'AA'}`;
+  }
   set('--blur', e.blur + 'px');
   set('--glass-opacity', e.opacity + '%');
   set('--shadow', 'rgb(0 0 0 / ' + e.shadow + '%)');
@@ -5362,6 +5530,8 @@ function applyTheme() {
   mb.setAttribute('aria-label',modeTitle); mb.title=modeTitle;
   $('mode-icon').innerHTML = mode==='auto' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>' : svg(dark?'moon':'sun');
   document.querySelectorAll('[data-mode]').forEach(c => { c.classList.toggle('on', c.dataset.mode === mode); c.setAttribute('aria-pressed', String(c.dataset.mode === mode)); });
+  if (typeof renderCuratedPresets === 'function') renderCuratedPresets();
+  if (typeof scheduleServerThemeSync === 'function') scheduleServerThemeSync();
 }
 window.addEventListener('resize', () => { document.body.dataset.navx = navxFor(effective()); });
 if (mq && mq.addEventListener) mq.addEventListener('change', () => { if (mode === 'auto') { applyTheme(); renderThemes(); renderStudio(); } });
@@ -10308,6 +10478,280 @@ function toggleMonThemeBar() {
   document.querySelector('[aria-controls="mon-theme-bar"]').setAttribute('aria-expanded',String(shown));
   if(shown) renderStudio();
 }
+
+/* ═══════════════ MDesign Pro: 12 Curated Presets, Eco Mode, Share Code & DB Sync ═══════════════ */
+const MC_CURATED_PRESETS = [
+  { id: 'mdesign-gold', name: 'MDesign Gold', sub: 'Signature Obsidian & Gold', themeId: 'mdesign', mode: 'dark',
+    settings: { nav: 'dock', card: 'glass', corners: 'soft', frame: 'outline', uptime: 'kuma', beat: 'pill', dark_bg: '#0c0b09', dark_surface: '#171410', dark_accent: '#f5b82e', dark_accent2: '#f97316', dark_accent3: '#38bdf8', dark_border: '#3a3020', r: 16 } },
+  { id: 'mdesign-neon', name: 'MDesign Neon', sub: 'Signature Cyan & Pink Aurora', themeId: 'mdesign', mode: 'dark',
+    settings: { nav: 'dock', card: 'glass', bg: 'aurora', corners: 'soft', uptime: 'neon', beat: 'ecg', r: 16 } },
+  { id: 'cyber-minimal', name: 'Cyber Minimal', sub: 'Clean Electric Dark', themeId: 'slate', mode: 'dark',
+    settings: { nav: 'top-glass', card: 'flat', bg: 'solid', corners: 'soft', frame: 'outline', uptime: 'latency', beat: 'line', dark_bg: '#0b0f17', dark_surface: '#131926', dark_accent: '#22d3ee', dark_accent2: '#818cf8', dark_accent3: '#34d399', r: 12 } },
+  { id: 'clean-daylight', name: 'Clean Daylight', sub: 'Crisp Light Studio', themeId: 'slate', mode: 'light',
+    settings: { nav: 'top', card: 'paper', bg: 'solid', corners: 'soft', frame: 'outline', uptime: 'periods', beat: 'pill', light_bg: '#f4f6fb', light_surface: '#ffffff', light_accent: '#2563eb', light_accent2: '#0d9488', light_accent3: '#7c3aed', r: 14 } },
+  { id: 'high-contrast-noc', name: 'High-Contrast NOC', sub: 'Operator Radar Matrix', themeId: 'terminal', mode: 'dark',
+    settings: { nav: 'top', card: 'outline', bg: 'solid', font: 'mono', den: 'compact', corners: 'square', frame: 'ruled', uptime: 'noc', beat: 'block', dark_bg: '#060a07', dark_surface: '#0d150f', dark_accent: '#4ade80', dark_accent2: '#facc15', dark_accent3: '#22d3ee', r: 4 } },
+  { id: 'emerald-pulse', name: 'Emerald Pulse', sub: 'Kuma Dark Emerald', themeId: 'ion', mode: 'dark',
+    settings: { nav: 'rail', card: 'deck', bg: 'aurora', corners: 'soft', frame: 'edge', uptime: 'kuma', beat: 'dots', dark_bg: '#071510', dark_surface: '#0d241c', dark_accent: '#10b981', dark_accent2: '#34d399', dark_accent3: '#fbbf24', r: 14 } },
+  { id: 'royal-amethyst', name: 'Royal Amethyst', sub: 'Deep Violet Prism Ring', themeId: 'prism-ring', mode: 'dark',
+    settings: { nav: 'side-float', card: 'prism', bg: 'mesh', corners: 'capsule', uptime: 'orbit', beat: 'diamond', dark_bg: '#140c21', dark_surface: '#211436', dark_accent: '#c084fc', dark_accent2: '#f472b6', dark_accent3: '#38bdf8', r: 22 } },
+  { id: 'arctic-frost', name: 'Arctic Frost', sub: 'iOS Liquid Glass Light', themeId: 'ios-air', mode: 'light',
+    settings: { nav: 'top-glass', card: 'liquid', bg: 'mesh', corners: 'capsule', uptime: 'prism', beat: 'loop', light_bg: '#eef4fc', light_surface: '#ffffff', light_accent: '#0284c7', light_accent2: '#6366f1', light_accent3: '#14b8a6', blur: 24, r: 20 } },
+  { id: 'crimson-ops', name: 'Crimson Ops', sub: 'Tactical Red & Carbon', themeId: 'terminal', mode: 'dark',
+    settings: { nav: 'side', card: 'flat', bg: 'solid', corners: 'square', frame: 'edge', uptime: 'incidents', beat: 'chevron', dark_bg: '#12090b', dark_surface: '#1d1013', dark_accent: '#f43f5e', dark_accent2: '#f59e0b', dark_accent3: '#fb7185', r: 8 } },
+  { id: 'sunset-copper', name: 'Sunset Copper', sub: 'Warm Espresso & Amber', themeId: 'espresso', mode: 'dark',
+    settings: { nav: 'side', card: 'paper', bg: 'aurora', corners: 'petal', frame: 'outline', uptime: 'beacon', beat: 'pill', dark_bg: '#1c130d', dark_surface: '#2b1d14', dark_accent: '#f97316', dark_accent2: '#fbbf24', dark_accent3: '#fb7185', r: 16 } },
+  { id: 'oceanic-deep', name: 'Oceanic Deep', sub: 'Abyssal Blue & Teal', themeId: 'lagoon', mode: 'dark',
+    settings: { nav: 'islands', card: 'glass', bg: 'mesh', gauge: 'tank', corners: 'soft', uptime: 'wall', beat: 'hex', dark_bg: '#071422', dark_surface: '#0e2238', dark_accent: '#38bdf8', dark_accent2: '#2dd4bf', dark_accent3: '#818cf8', r: 16 } },
+  { id: 'monochrome-ink', name: 'Monochrome Ink', sub: 'Ultra-Clean Minimalist', themeId: 'slate', mode: 'dark',
+    settings: { nav: 'underline', card: 'outline', bg: 'solid', corners: 'square', frame: 'outline', uptime: 'ledger', beat: 'slash', dark_bg: '#0b0b0c', dark_surface: '#141416', dark_accent: '#e4e4e7', dark_accent2: '#a1a1aa', dark_accent3: '#71717a', dark_border: '#2b2b30', r: 6 } }
+];
+
+let activeCuratedPresetId = ls.get('mc_curated_preset', '');
+let _themeSyncTimer = null;
+let _suppressThemeSync = false;
+
+function renderCuratedPresets() {
+  const box = $('atelier-presets-grid');
+  if (!box) return;
+  box.innerHTML = MC_CURATED_PRESETS.map(p => {
+    const s = p.settings || {};
+    const m = p.mode === 'light' ? 'light' : 'dark';
+    const baseTh = TH.find(x => x.id === p.themeId) || TH[0];
+    const pal = m === 'light' ? baseTh.l : baseTh.d;
+    const c1 = s[m + '_accent'] || pal[4];
+    const c2 = s[m + '_accent2'] || pal[5];
+    const c3 = s[m + '_accent3'] || pal[12] || c1;
+    const bg = s[m + '_bg'] || pal[0];
+    const isOn = activeCuratedPresetId === p.id ? ' on' : '';
+    return `<button type="button" class="mc-preset-card${isOn}" onclick="applyCuratedPreset('${p.id}')">
+      <div class="mc-preset-meta">
+        <span class="mc-preset-name">${esc(p.name)}</span>
+        <span class="badge ${m === 'light' ? 'b-foreign' : 'b-ok'} mono" style="font-size:.6rem; padding:1px 5px;">${m.toUpperCase()}</span>
+      </div>
+      <div class="mc-preset-sub">${esc(p.sub)}</div>
+      <div class="mc-preset-swatches">
+        <i style="background:${bg}" title="Background"></i>
+        <i style="background:${c1}" title="Accent 1"></i>
+        <i style="background:${c2}" title="Accent 2"></i>
+        <i style="background:${c3}" title="Accent 3"></i>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function applyCuratedPreset(pid) {
+  const p = MC_CURATED_PRESETS.find(x => x.id === pid);
+  if (!p) return;
+  const keepEco = custom && custom.eco ? 1 : 0;
+  colorDraft = null;
+  themeId = TH.some(x => x.id === p.themeId) ? p.themeId : 'mdesign';
+  mode = p.mode || 'dark';
+  custom = Object.assign({}, p.settings);
+  if (keepEco) custom.eco = 1;
+  activeCuratedPresetId = pid;
+  ls.set('mc_curated_preset', pid);
+  applyTheme(); renderThemes(); renderStudio();
+  toast('Applied preset: ' + p.name);
+}
+
+function toggleEcoMode() {
+  if (custom.eco) delete custom.eco;
+  else custom.eco = 1;
+  applyTheme();
+  toast(custom.eco ? 'Eco / Low-Power Mode enabled (blur & animations off)' : 'Eco Mode disabled');
+}
+
+function copyThemeShareCode() {
+  const payload = { v: 1, t: themeId, m: mode, s: custom };
+  try {
+    const json = JSON.stringify(payload);
+    const bytes = new TextEncoder().encode(json);
+    let bin = '';
+    bytes.forEach(b => { bin += String.fromCharCode(b); });
+    const code = 'MC-THEME:' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    copyText(code, 'Theme Share Code');
+  } catch (e) {
+    toast('Failed to generate theme code', true);
+  }
+}
+
+function pasteThemeShareCode() {
+  const raw = prompt('Paste MControl Theme Code (MC-THEME:...):');
+  if (!raw) return;
+  const trimmed = raw.trim();
+  if (!trimmed.startsWith('MC-THEME:')) { toast('Invalid theme code format', true); return; }
+  try {
+    let b64 = trimmed.slice(9).replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const bin = atob(b64);
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    const data = JSON.parse(new TextDecoder().decode(bytes));
+    if (!data || !TH.some(th => th.id === data.t) || !['auto', 'light', 'dark'].includes(data.m)) throw new Error();
+    colorDraft = null;
+    themeId = data.t;
+    mode = data.m;
+    custom = (data.s && typeof data.s === 'object' && !Array.isArray(data.s)) ? data.s : {};
+    activeCuratedPresetId = '';
+    applyTheme(); renderThemes(); renderStudio();
+    toast('Theme code applied & synced!');
+  } catch (e) {
+    toast('Invalid or corrupted theme code', true);
+  }
+}
+
+function buildPublicThemeVars() {
+  const e = effective();
+  const p = e.pal;
+  return {
+    bg: p[0], surface: p[1], text: p[2], muted: p[3],
+    accent: p[4], accent2: p[5], border: p[6],
+    green: p[7], red: p[8], yellow: p[9]
+  };
+}
+
+function onPublicThemeSyncToggle() {
+  ls.set('mc_theme_pubsync', $('chk-theme-pubsync')?.checked ? '1' : '0');
+  scheduleServerThemeSync(true);
+}
+
+function scheduleServerThemeSync(immediate) {
+  if (_suppressThemeSync || !token) return;
+  if (_themeSyncTimer) clearTimeout(_themeSyncTimer);
+  _themeSyncTimer = setTimeout(async () => {
+    const pubSync = ls.get('mc_theme_pubsync', '0') === '1';
+    const r = await api('api/saas/theme', 'PUT', {
+      themeId,
+      mode,
+      settings: custom,
+      public_sync: pubSync,
+      public_vars: pubSync ? buildPublicThemeVars() : {}
+    });
+    if ($('ap-sync-badge')) {
+      $('ap-sync-badge').textContent = (r && r.ok) ? (pubSync ? 'DB + /status Synced' : 'DB Synced') : 'Local Only';
+    }
+  }, immediate ? 80 : 750);
+}
+
+async function loadServerThemeProfile() {
+  if (!token) return;
+  const r = await api('api/saas/theme');
+  if (r && r.ok && r.theme && r.theme.themeId && TH.some(x => x.id === r.theme.themeId)) {
+    _suppressThemeSync = true;
+    try {
+      themeId = r.theme.themeId;
+      mode = ['auto', 'light', 'dark'].includes(r.theme.mode) ? r.theme.mode : 'dark';
+      custom = (r.theme.settings && typeof r.theme.settings === 'object') ? r.theme.settings : {};
+      const ps = !!r.theme.public_sync;
+      ls.set('mc_theme_pubsync', ps ? '1' : '0');
+      if ($('chk-theme-pubsync')) $('chk-theme-pubsync').checked = ps;
+      applyTheme(); renderThemes(); renderStudio();
+    } finally {
+      _suppressThemeSync = false;
+    }
+  } else {
+    if ($('chk-theme-pubsync')) $('chk-theme-pubsync').checked = ls.get('mc_theme_pubsync', '0') === '1';
+  }
+  renderCuratedPresets();
+}
+
+async function saveDefaultTenantTheme() {
+  const r = await api('api/saas/default-theme', 'PUT', {
+    themeId, mode, settings: custom, public_sync: false
+  });
+  toast((r && r.message) || (r && r.error) || 'Saved!', !(r && r.ok));
+}
+
+window.loadServerThemeProfile = loadServerThemeProfile;
+
+/* ═══════════════ Per-Tenant White-Label Branding (Name & Logo) ═══════════════ */
+let _wlLogoData = '';
+
+function applyBrandToChrome(name, logo) {
+  const bWrap = document.querySelector('#chrome .brand');
+  if (bWrap) {
+    const bt = bWrap.querySelector('.bt');
+    if (bt) bt.textContent = name || 'MControl';
+    const defSvg = bWrap.querySelector('.mc-brand-svg');
+    let img = document.getElementById('mc-custom-brand-img');
+    if (logo) {
+      if (!img) {
+        img = document.createElement('img');
+        img.id = 'mc-custom-brand-img';
+        img.style.cssText = 'width:28px;height:28px;object-fit:contain;border-radius:8px;flex-shrink:0;';
+        bWrap.insertBefore(img, bWrap.firstChild);
+      }
+      img.src = logo;
+      img.style.display = 'block';
+      if (defSvg) defSvg.style.display = 'none';
+    } else {
+      if (img) img.style.display = 'none';
+      if (defSvg) defSvg.style.display = '';
+    }
+  }
+  if (name) document.title = name;
+}
+
+function updateBrandPreview(logo) {
+  const prev = $('wl-brand-preview');
+  if (!prev) return;
+  if (logo) { prev.src = logo; prev.style.display = 'block'; }
+  else { prev.removeAttribute('src'); prev.style.display = 'none'; }
+}
+
+function onBrandLogoFilePick(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  if (f.size > 190 * 1024) {
+    toast('Logo file must be under 190 KB', true);
+    input.value = '';
+    return;
+  }
+  const rd = new FileReader();
+  rd.onload = () => {
+    _wlLogoData = String(rd.result || '');
+    if ($('wl-brand-logo-url')) $('wl-brand-logo-url').value = '[Uploaded Image: ' + f.name + ']';
+    updateBrandPreview(_wlLogoData);
+  };
+  rd.readAsDataURL(f);
+  input.value = '';
+}
+
+function clearBrandLogo() {
+  _wlLogoData = '';
+  if ($('wl-brand-logo-url')) $('wl-brand-logo-url').value = '';
+  updateBrandPreview('');
+}
+
+async function saveBrandProfile() {
+  const name = ($('wl-brand-name') ? $('wl-brand-name').value.trim() : '');
+  const urlVal = ($('wl-brand-logo-url') ? $('wl-brand-logo-url').value.trim() : '');
+  const logo = _wlLogoData || (urlVal.startsWith('http://') || urlVal.startsWith('https://') || urlVal.startsWith('data:image/') ? urlVal : '');
+  const r = await api('api/saas/brand', 'PUT', { brand_name: name, brand_logo: logo });
+  if (r && r.ok) {
+    applyBrandToChrome(r.brand_name, r.brand_logo);
+    updateBrandPreview(r.brand_logo);
+    toast('Branding saved & applied!');
+  } else {
+    toast((r && r.error) || 'Failed to save branding', true);
+  }
+}
+
+async function loadBrandProfile() {
+  if (!token) return;
+  const r = await api('api/saas/brand');
+  if (r && r.ok) {
+    _wlLogoData = (r.brand_logo && r.brand_logo.startsWith('data:image/')) ? r.brand_logo : '';
+    if ($('wl-brand-name')) $('wl-brand-name').value = r.brand_name || '';
+    if ($('wl-brand-logo-url')) {
+      $('wl-brand-logo-url').value = _wlLogoData ? '[Uploaded Image]' : (r.brand_logo || '');
+    }
+    applyBrandToChrome(r.brand_name, r.brand_logo);
+    updateBrandPreview(r.brand_logo);
+  }
+}
+window.loadBrandProfile = loadBrandProfile;
+
 
 boot();
 </script>

@@ -834,13 +834,27 @@ func (h *Handler) ServePublicStatus(w http.ResponseWriter, r *http.Request) {
 				Beats:         pb,
 			})
 		}
+		var customTheme map[string]any
+		if rawCT := strings.TrimSpace(h.store.GetSetting("ui_public_theme_json")); rawCT != "" {
+			_ = json.Unmarshal([]byte(rawCT), &customTheme)
+		}
+		var brandCfg struct {
+			BrandName string `json:"brand_name"`
+			BrandLogo string `json:"brand_logo"`
+		}
+		if rawBr := strings.TrimSpace(h.store.GetSetting("ui_brand_json")); rawBr != "" {
+			_ = json.Unmarshal([]byte(rawBr), &brandCfg)
+		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"ok":         true,
-			"title":      cfg.PublicStatusTitle,
-			"theme":      cfg.PublicStatusTheme,
-			"all_up":     allUp,
-			"updated_at": time.Now().Unix(),
-			"monitors":   items,
+			"ok":           true,
+			"title":        cfg.PublicStatusTitle,
+			"theme":        cfg.PublicStatusTheme,
+			"custom_theme": customTheme,
+			"brand_name":   brandCfg.BrandName,
+			"brand_logo":   brandCfg.BrandLogo,
+			"all_up":       allUp,
+			"updated_at":   time.Now().Unix(),
+			"monitors":     items,
 		})
 		return
 	}
@@ -891,7 +905,7 @@ const publicStatusHTML = `<!DOCTYPE html>
 <body data-pt="mdesign-dark">
 <div class="wrap">
   <div class="hdr">
-    <h2 id="st-title">Service Status</h2>
+    <div style="display:flex;align-items:center;gap:10px;"><img id="st-logo" alt="" style="display:none;height:30px;width:30px;object-fit:contain;border-radius:8px;"><h2 id="st-title">Service Status</h2></div>
     <div class="hdr-r">
       <select class="th-sel" id="pt-sel" onchange="setPT(this.value)" title="Switch Theme">
         <option value="mdesign-dark">🎨 MDesign Dark</option>
@@ -916,7 +930,23 @@ async function load(){
   const th = userPickedPT || r.theme || 'mdesign-dark';
   document.body.dataset.pt = th;
   document.getElementById('pt-sel').value = th;
-  document.getElementById('st-title').textContent = r.title || 'Service Status';
+  if (r.custom_theme && !userPickedPT) {
+    const ct = r.custom_theme, rs = document.documentElement.style;
+    if (ct.bg) { rs.setProperty('--bg1', ct.surface || ct.bg); rs.setProperty('--bg2', ct.bg); }
+    if (ct.surface) rs.setProperty('--card', ct.surface);
+    if (ct.border) rs.setProperty('--bdr', ct.border);
+    if (ct.text) rs.setProperty('--txt', ct.text);
+    if (ct.muted) rs.setProperty('--mut', ct.muted);
+    if (ct.accent) rs.setProperty('--acc', ct.accent);
+    if (ct.green) rs.setProperty('--g', ct.green);
+    if (ct.yellow) rs.setProperty('--y', ct.yellow);
+    if (ct.red) rs.setProperty('--r', ct.red);
+  }
+  const finalTitle = (r.title && r.title !== 'MControl Service Status') ? r.title : (r.brand_name ? (r.brand_name + ' — Status') : (r.title || 'Service Status'));
+  document.getElementById('st-title').textContent = finalTitle;
+  document.title = finalTitle;
+  const lg = document.getElementById('st-logo');
+  if (lg) { if (r.brand_logo) { lg.src = r.brand_logo; lg.style.display = 'block'; } else { lg.style.display = 'none'; } }
   document.getElementById('st-upd').textContent = 'Updated: ' + new Date(r.updated_at*1000).toLocaleTimeString();
   const b = document.getElementById('st-banner'), d = document.getElementById('st-bdot'), t = document.getElementById('st-btxt');
   b.className = 'banner ' + (r.all_up ? 'ok' : 'deg');

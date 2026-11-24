@@ -23,9 +23,9 @@
       '.mc-dnd-handle:hover{opacity:1;color:var(--accent,#6366f1);}',
       '.mc-dnd-dragging{opacity:.42 !important;transform:scale(.99);}',
       '.mc-dnd-over{outline:2px dashed var(--accent,#6366f1) !important;outline-offset:2px;}',
-      '.saas-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 14px;border-radius:14px;background:var(--row,rgba(255,255,255,.04));border:1px solid var(--border,rgba(148,163,184,.18));}',
+      '.saas-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 14px;border-radius:min(var(--rc,14px),18px);background:var(--row,rgba(255,255,255,.04));border:var(--bw,1px) solid var(--border,rgba(148,163,184,.18));}',
       '.saas-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;}',
-      '.saas-stat-box{padding:11px 14px;border-radius:14px;background:var(--row,rgba(255,255,255,.04));border:1px solid var(--border,rgba(148,163,184,.18));}'
+      '.saas-stat-box{padding:11px 14px;border-radius:min(var(--rc,14px),18px);background:var(--row,rgba(255,255,255,.04));border:var(--bw,1px) solid var(--border,rgba(148,163,184,.18));}'
     ].join('\n');
     document.head.appendChild(st);
   }
@@ -101,6 +101,8 @@
     if (!SAAS_ME) return;
     var isSuper = SAAS_ME.role === 'superadmin' && !SAAS_ME.impersonating;
     if (saasBtn) saasBtn.style.display = isSuper ? 'inline-flex' : 'none';
+    var defThBtn = document.getElementById('btn-set-default-theme');
+    if (defThBtn) defThBtn.style.display = isSuper ? 'inline-flex' : 'none';
 
     // Hide host-level system controls for tenants (keep everything else 100% intact)
     if (!isSuper) {
@@ -131,6 +133,8 @@
     if (r && r.ok) {
       SAAS_ME = r;
       applyRoleChrome();
+      if (typeof window.loadServerThemeProfile === 'function') window.loadServerThemeProfile();
+      if (typeof window.loadBrandProfile === 'function') window.loadBrandProfile();
       var ord = await api('api/saas/order');
       if (ord && ord.ok) {
         SAAS_ORDER.servers = Array.isArray(ord.servers) ? ord.servers : [];
