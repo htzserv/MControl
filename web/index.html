@@ -2725,6 +2725,14 @@ body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
 @media(max-width:560px){
  body[data-navx="top-glass"] .nav-item .lbl,body[data-navx="top-glass"] .bak-bubble-lbl {display:none;}
 }
+.top-mode {position:relative;cursor:pointer;} .top-mode select {position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+.top-mode:focus-within {outline:2px solid var(--accent);} #mode-icon {display:flex;}
+.family-cover {width:100%;border:0;padding:0;background:transparent;color:inherit;font:inherit;text-align:start;cursor:pointer;}
+.family-colors {display:flex;gap:5px;flex-wrap:wrap;margin-top:9px;}
+.variant-choice {display:inline-flex;gap:4px;align-items:center;font:inherit;font-size:.72rem;padding:4px 6px;border-radius:8px;color:var(--text);background:var(--row);border:1px solid transparent;cursor:pointer;}
+.variant-choice i {width:10px;height:10px;border-radius:50%;}
+.variant-choice[aria-pressed=true] {border-color:var(--accent);background:var(--accent-soft);}
+#family-tabs {margin-bottom:10px;}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -2902,7 +2910,7 @@ body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
         <button class="icon-btn" id="btn-theme-quick" data-i18n-title="nav_themes" title="Themes" onclick="openThemesQuick()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 22c-1.5 0-2-1.5-1-2.6.8-.9.4-2.4-1-2.4H8a4 4 0 0 1-4-4"/></svg>
         </button>
-        <button class="icon-btn" id="btn-mode" data-i18n-title="t_mode" title="Dark / Light"></button>
+        <label class="icon-btn top-mode"><span id="mode-icon" aria-hidden="true"></span><select id="btn-mode" aria-label="Appearance"><option value="auto" data-i18n="mode_auto"></option><option value="dark" data-i18n="mode_dark"></option><option value="light" data-i18n="mode_light"></option></select></label>
         <button class="icon-btn" id="btn-lang" data-i18n-title="t_lang" title="Language">FA</button>
         <button class="icon-btn" id="btn-logout" data-i18n-title="logout" title="Logout" style="color:var(--red);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -4138,6 +4146,7 @@ body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
 <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
       </div>
       <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
+      <div class="chips" id="family-tabs"></div>
       <div class="tg" id="theme-grid"></div>
       </div></details>
       <div class="studio" id="studio"></div>
@@ -4949,6 +4958,23 @@ T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles
 T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#141e15 #202e20 #f1f6da #c1ceb1 #b9ec79 #f6ce7e #475b3d', '#f0efd9 #fbfbea #25301d #586344 #476724 #865b11 #d0d3b5');
 T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
 
+// Variants inherit the exact layout of their base style. Each palette has its own profile.
+const themeColors = [
+  ['ruby','Ruby','یاقوتی','#29151e #40202e #fff1f4 #d8b6c2 #ff91aa #ffc486 #6c394c','#ffebee #fff9fa #371722 #744958 #a42045 #974f17 #edc3cc'],
+  ['ocean','Ocean','اقیانوسی','#101e30 #192e45 #eff7ff #b6cade #7bbfff #8de6dc #355878','#e7f2ff #f7fbff #152d49 #4c627c #155b9f #076b69 #bed3ea'],
+  ['jade','Jade','یشمی','#10251e #19392d #edfff3 #b6d7c5 #70e3ae #ebd882 #365d4b','#e6f5e9 #f7fff7 #183421 #46634f #116c4e #786013 #bfdbc9'],
+  ['amber','Amber','کهربایی','#291e12 #3b2b19 #fff5dc #d8c4a5 #ffbf67 #ff9e89 #634b31','#fff0d6 #fffaee #382915 #6b5638 #8f510e #9a402a #e5cfaa']
+];
+const baseThemes = TH.slice();
+function familyOf(th) {
+  return (th.base || th.id).startsWith('ios') ? 'iOS' : th.g;
+}
+for(const base of baseThemes.filter(th=>['Prism','Neon','iOS'].includes(familyOf(th)))) {
+  for(const [key,en,fa,d,l] of themeColors) {
+    TH.push({...base, base:base.id, id:base.id+'-'+key, n:base.n+' · '+en, colorName:[en,fa], d:d.split(' '), l:l.split(' ')});
+  }
+}
+let galleryFamily = '';
 /* ═══════════════ icons ═══════════════ */
 const IC = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
@@ -5168,7 +5194,11 @@ function applyTheme() {
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
   if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
-  const mb = $('btn-mode'); if (mb) mb.innerHTML = svg(dark ? 'moon' : 'sun');
+  const mb = $('btn-mode');
+  mb.value=mode;
+  const modeTitle=(lang==='fa'?'حالت نمایش':'Appearance')+' · '+t('mode_'+mode);
+  mb.setAttribute('aria-label',modeTitle); mb.title=modeTitle;
+  $('mode-icon').innerHTML = mode==='auto' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>' : svg(dark?'moon':'sun');
   document.querySelectorAll('[data-mode]').forEach(c => { c.classList.toggle('on', c.dataset.mode === mode); c.setAttribute('aria-pressed', String(c.dataset.mode === mode)); });
 }
 window.addEventListener('resize', () => { document.body.dataset.navx = navxFor(effective()); });
@@ -5190,13 +5220,14 @@ function toggleLoginThemeDrawer() {
 function renderLoginSwatches() {
   const box = $('login-swatches');
   if (!box) return;
-  box.innerHTML = TH.map(th => {
+  box.innerHTML = baseThemes.map(base => {
+    const th = curTheme().base === base.id ? curTheme() : base;
     const pal = effective(th, th.id === themeId ? custom : readThemeSettings(th.id)).pal;
     return `<button type="button" class="l-swatch${th.id === themeId ? ' on' : ''}" onclick="setTheme('${th.id}'); renderLoginSwatches();"><i style="background:${pal[4]};"></i><span>${esc(th.n)}</span></button>`;
   }).join('');
 }
 
-function setTheme(id) { themeId = id; custom = readThemeSettings(id); applyTheme(); renderThemes(); renderStudio(); }
+function setTheme(id) { themeId = id; galleryFamily = familyOf(curTheme()); custom = readThemeSettings(id); applyTheme(); renderThemes(); renderStudio(); }
 function setMode(m) { mode = m; applyTheme(); renderThemes(); renderStudio(); }
 function toggleMode() { mode = effMode() === 'dark' ? 'light' : 'dark'; applyTheme(); renderThemes(); renderStudio(); }
 function hsl2hex(h, s, l) {
@@ -5282,10 +5313,22 @@ function pvHTML(th) {
 }
 function renderThemes() {
   const grid = $('theme-grid'); if (!grid) return;
-  const profiles = TH.map(x => effective(x, x.id === themeId ? custom : readThemeSettings(x.id)));
-  grid.innerHTML = profiles.map(x => `<button type="button" aria-pressed="${x.id === themeId}" class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
-    <div class="tmeta"><strong>${esc(x.n)}</strong><span class="theme-inks" aria-hidden="true"><i style="background:${x.pal[4]}"></i><i style="background:${x.pal[5]}"></i></span>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
-    <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
+  if (!galleryFamily) galleryFamily = familyOf(curTheme());
+  $('family-tabs').innerHTML = [...new Set(baseThemes.map(familyOf))].map(f =>
+    `<button type="button" class="chip ${f===galleryFamily?'on':''}" data-family-tab="${f}" aria-pressed="${f===galleryFamily}">${f}</button>`).join('');
+  grid.innerHTML = baseThemes.filter(base=>familyOf(base)===galleryFamily).map(base=>{
+    const selected = themeId===base.id || curTheme().base===base.id;
+    const th = selected ? curTheme() : base;
+    const profile = effective(th,selected?custom:readThemeSettings(th.id));
+    const variants = TH.filter(x=>x.id===base.id || x.base===base.id);
+    const swatches = variants.length===1 ? '' : '<div class="family-colors">'+variants.map(x=>{
+      const name=x.colorName?x.colorName[lang==='fa'?1:0]:studioText('Original','اصلی');
+      const ink=effective(x,x.id===themeId?custom:readThemeSettings(x.id)).pal[4];
+      return `<button type="button" class="variant-choice" data-theme-id="${x.id}" aria-label="${esc(base.n+' · '+name)}" aria-pressed="${x.id===themeId}"><i style="background:${ink}"></i>${name}</button>`;
+    }).join('')+'</div>';
+    return `<div class="card tcard ${selected?'sel':''}"><button type="button" class="family-cover" data-theme-id="${th.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><strong>${esc(base.n)}</strong>${selected?`<span class="badge b-ok">${t('theme_active')}</span>`:''}</span></button>${swatches}</div>`;
+  }).join('');
+
 }
 const monitorSample = {
   status: 'up', uptime_24h: 98.7, uptime_7d: 99.64, uptime_30d: 99.89,
@@ -8876,7 +8919,11 @@ $('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') $('l-pass'
 $('btn-setup-go').onclick = completeSetup;
 $('btn-rand-path').onclick = randPath;
 $('btn-logout').onclick = logout;
-$('btn-mode').onclick = toggleMode;
+$('btn-mode').onchange = event => setMode(event.target.value);
+$('family-tabs').onclick = event => {
+  const btn=event.target.closest('[data-family-tab]');
+  if(btn){ galleryFamily=btn.dataset.familyTab; renderThemes(); $('family-tabs').querySelector('[aria-pressed=true]').focus({preventScroll:true}); }
+};
 $('btn-lang').onclick = toggleLang;
 $('login-lang').onclick = toggleLang;
 $('login-mode').onclick = toggleMode;
@@ -8938,7 +8985,7 @@ $('style-file').onchange = async event => {
       if (validColors.has(k) && typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) continue;
       throw Error();
     }
-    themeId = data.themeId;
+    themeId = data.themeId; galleryFamily = familyOf(curTheme());
     mode = data.mode;
     custom = data.settings;
 
