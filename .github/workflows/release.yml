@@ -177,6 +177,7 @@ jobs:
             dist/mcontrol-linux-arm64.sha256
 
       - name: Sync Release & Rolling Beta to ParsPack S3 Mirror
+        continue-on-error: true
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PP_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PP_SECRET_KEY }}
@@ -192,10 +193,22 @@ jobs:
             exit 0
           fi
           EP="${PP_ENDPOINT%/}"
+          # ParsPack returns sporadic 403 under parallel uploads: go sequential and retry the whole sync
+          aws configure set default.s3.max_concurrent_requests 1
+          aws configure set default.s3.multipart_threshold 64MB
+          sync_retry() {
+            for i in 1 2 3 4; do
+              if aws --endpoint-url "$EP" s3 sync "$@"; then return 0; fi
+              echo "sync attempt $i failed, retrying..."; sleep $((i * 5))
+            done
+            return 1
+          }
+          rc=0
           echo "Syncing Rolling Beta to ${EP}/${PP_BUCKET}/MControl/beta-latest/ ..."
-          aws --endpoint-url "$EP" s3 sync dist/ "s3://${PP_BUCKET}/MControl/beta-latest/" --acl public-read
+          sync_retry dist/ "s3://${PP_BUCKET}/MControl/beta-latest/" --acl public-read || rc=1
           if [ "$MC_MODE" = "release" ]; then
             echo "Syncing Official Release to ${EP}/${PP_BUCKET}/MControl/ ..."
-            aws --endpoint-url "$EP" s3 sync dist/ "s3://${PP_BUCKET}/MControl/" --exclude "beta-meta.json" --acl public-read
+            sync_retry dist/ "s3://${PP_BUCKET}/MControl/" --exclude "beta-meta.json" --acl public-read || rc=1
           fi
+          if [ "$rc" != "0" ]; then echo "::warning::ParsPack mirror sync incomplete (GitHub release is already published)"; exit 1; fi
           echo "ParsPack S3 Mirror sync complete!"
