@@ -31,7 +31,13 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("Content-Security-Policy", csp)
-		h.Set("Cache-Control", "no-store")
+		if strings.HasSuffix(r.URL.Path, "/sw.js") || r.URL.Path == "/sw.js" {
+			h.Set("Cache-Control", "no-cache")
+		} else if strings.HasSuffix(r.URL.Path, ".png") || strings.HasSuffix(r.URL.Path, "manifest.json") {
+			h.Set("Cache-Control", "public, max-age=86400")
+		} else {
+			h.Set("Cache-Control", "no-store")
+		}
 		h.Set("X-Robots-Tag", "noindex, nofollow")
 		next.ServeHTTP(w, r)
 	})

@@ -1,16 +1,64 @@
 {
-  "name": "MControl Panel",
+  "id": "./",
+  "name": "MControl — MDesign Panel",
   "short_name": "MControl",
-  "description": "Central Server, Tunnel & DNS Management Panel (MDesign)",
-  "start_url": "./",
+  "description": "Enterprise Server, Tunnel, Uptime & DNS Management Panel (MDesign)",
+  "start_url": "./?source=pwa",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#090f1d",
-  "theme_color": "#6366f1",
+  "theme_color": "#090f1d",
+  "categories": ["utilities", "developer", "productivity"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23090f1d'/%3E%3Cpath d='M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32' fill='none' stroke='%236366f1' stroke-width='7.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Overview",
+      "short_name": "Overview",
+      "description": "Live Master & Fleet Telemetry",
+      "url": "./?tab=overview",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Servers",
+      "short_name": "Servers",
+      "description": "Manage Iran & Foreign Nodes",
+      "url": "./?tab=servers",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Tunnels",
+      "short_name": "Tunnels",
+      "description": "Manage Backhaul, Rathole, GRE & VXLAN Tunnels",
+      "url": "./?tab=tunnels",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Uptime Monitor",
+      "short_name": "Uptime",
+      "description": "Live Uptime & Incident Timeline",
+      "url": "./?tab=monitor",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
