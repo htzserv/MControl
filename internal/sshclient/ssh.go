@@ -711,7 +711,8 @@ if os.path.exists(crt) and os.path.exists(key):
     srv.socket = ctx.wrap_socket(srv.socket, server_side=True)
 srv.serve_forever()
 PYEOF
-chmod 755 /usr/local/bin/mcontrol-agent.py` + mirrorFetch + `
+chmod 755 /usr/local/bin/mcontrol-agent.py
+%s
 cat <<SVCEOF > /etc/systemd/system/mcontrol-agent.service
 [Unit]
 Description=MControl Peer Agent v2 (TLS)
@@ -733,7 +734,7 @@ systemctl enable mcontrol-agent.service
 systemctl restart mcontrol-agent.service
 sleep 1
 systemctl is-active mcontrol-agent.service
-`, peerCode, agentPort)
+`, mirrorFetch, peerCode, agentPort)
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {

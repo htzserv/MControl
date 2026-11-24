@@ -331,7 +331,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=${INSTALL_DIR}/mcontrol -port ${PORT} -data ${DATA_DIR}
-ExecStopPost=/bin/bash -c 'if [ "\$SERVICE_RESULT" != "success" ] && [ -f ${DATA_DIR}/.update_pending ] && [ -f ${INSTALL_DIR}/mcontrol.old ]; then mv -f ${INSTALL_DIR}/mcontrol.old ${INSTALL_DIR}/mcontrol && chmod 0755 ${INSTALL_DIR}/mcontrol && rm -f ${DATA_DIR}/.update_pending; fi'
+ExecStopPost=/bin/bash -c 'if [ "\$\$SERVICE_RESULT" != "success" ] && [ -f ${DATA_DIR}/.update_pending ] && [ -f ${INSTALL_DIR}/mcontrol.old ]; then mv -f ${INSTALL_DIR}/mcontrol.old ${INSTALL_DIR}/mcontrol && chmod 0755 ${INSTALL_DIR}/mcontrol && rm -f ${DATA_DIR}/.update_pending; fi'
 Restart=always
 RestartSec=2
 LimitNOFILE=65535

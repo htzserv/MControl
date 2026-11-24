@@ -10325,7 +10325,7 @@ $('btn-save-settings').onclick = saveSettings;
 $('btn-pw').onclick = changePass;
 $('btn-backup').onclick = downloadBackup;
 $('btn-db-restore').onclick = restoreBackup;
-document.addEventListener('mousedown', e => { if (e.target && e.target.classList && e.target.classList.contains('modal-bg')) e.target.classList.remove('active'); });
+document.addEventListener('mousedown', e => { if (e.target && e.target.classList && e.target.classList.contains('modal-bg') && e.target.id !== 'srv-onboard-modal') e.target.classList.remove('active'); });
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
