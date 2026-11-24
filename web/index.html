@@ -2733,6 +2733,20 @@ body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
 .variant-choice i {width:10px;height:10px;border-radius:50%;}
 .variant-choice[aria-pressed=true] {border-color:var(--accent);background:var(--accent-soft);}
 #family-tabs {margin-bottom:10px;}
+.palette-panel {margin-block:8px;}
+#palette-options .variant-choice i {width:22px;height:14px;border-radius:6px;}
+#sub-themes .ink-controls {margin:12px 0 0;}
+.ink-controls .accent-shortcut:last-child i {background:var(--accent2);}
+body {--accent-blend:color-mix(in srgb,var(--accent) 55%,var(--accent2));}
+.metric-card .mc-ico-pill {box-shadow:0 3px 12px -6px var(--accent-blend);}
+body[data-family="Android"] .nav-item.active {background:var(--accent-soft);border-radius:18px;}
+body[data-family="Android"][data-card="flat"] .card {background:color-mix(in srgb,var(--surface) 96%,var(--accent));box-shadow:0 1px 3px var(--shadow);}
+#theme-grid {align-items:start;}
+#theme-grid details summary {padding:7px 0;cursor:pointer;color:var(--muted);font-size:.78rem;}
+#theme-grid .color-collection {margin-block:6px 12px;}
+#theme-grid .color-collection strong {font-size:.74rem;color:var(--muted);}
+#theme-grid .family-colors {margin-top:4px;}
+#theme-grid .variant-choice i {width:18px;height:12px;flex-shrink:0;border-radius:5px;}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4143,11 +4157,12 @@ body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
         <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
         <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
         <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
-<label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
+
       </div>
       <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
       <div class="chips" id="family-tabs"></div>
       <div class="tg" id="theme-grid"></div>
+<div class="appearance-modes ink-controls"><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label></div>
       </div></details>
       <div class="studio" id="studio"></div>
       <div id="studio-actions" hidden>            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
@@ -4803,7 +4818,7 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', quick_accent:'Accent color', gallery_title:'Choose a theme', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', quick_accent:'Accent color', palette_title:'Color palette', second_ink:'Secondary accent', gallery_title:'Interface style', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
@@ -4857,7 +4872,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', quick_accent:'رنگ اکسنت', gallery_title:'انتخاب تم', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', quick_accent:'رنگ اکسنت', palette_title:'رنگ‌بندی', second_ink:'اکسنت مکمل', gallery_title:'استایل رابط', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -4959,19 +4974,28 @@ T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compac
 T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
 
 // Variants inherit the exact layout of their base style. Each palette has its own profile.
+T('android-minimal', 'Android 17 Minimal', 'Android', 'bottom flat round solid sans cozy list ribbon 16 1 unified line material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
+T('prism-terrace', 'Prism Terrace', 'Prism', 'islands prism round solid sans cozy list ribbon 14 1 bento columns circle', '#171c30 #252d47 #f1f2ff #c1c7df #adb3ff #8fe2cc #414d72', '#edf0fa #fafaff #202841 #57627b #52429c #12645d #c6cde3');
+T('android-index', 'Android Index', 'Android', 'rail deck square solid sans compact table ribbon 8 1 bands line switch', '#15201f #22302c #f1f7ee #bfcfc2 #9cdab7 #f2c589 #445b50', '#eaf2ec #f8fcf8 #1a3025 #4d6357 #236b4a #855314 #bed5c8');
 const themeColors = [
   ['ruby','Ruby','یاقوتی','#29151e #40202e #fff1f4 #d8b6c2 #ff91aa #ffc486 #6c394c','#ffebee #fff9fa #371722 #744958 #a42045 #974f17 #edc3cc'],
   ['ocean','Ocean','اقیانوسی','#101e30 #192e45 #eff7ff #b6cade #7bbfff #8de6dc #355878','#e7f2ff #f7fbff #152d49 #4c627c #155b9f #076b69 #bed3ea'],
   ['jade','Jade','یشمی','#10251e #19392d #edfff3 #b6d7c5 #70e3ae #ebd882 #365d4b','#e6f5e9 #f7fff7 #183421 #46634f #116c4e #786013 #bfdbc9'],
-  ['amber','Amber','کهربایی','#291e12 #3b2b19 #fff5dc #d8c4a5 #ffbf67 #ff9e89 #634b31','#fff0d6 #fffaee #382915 #6b5638 #8f510e #9a402a #e5cfaa']
+  ['amber','Amber','کهربایی','#291e12 #3b2b19 #fff5dc #d8c4a5 #ffbf67 #ff9e89 #634b31','#fff0d6 #fffaee #382915 #6b5638 #8f510e #9a402a #e5cfaa'],
+  ['royal-lapis','Royal Lapis','لاجورد شاهی','#101a35 #1c2b4b #f4f4ff #becbea #91b7ff #f4cd75 #384b70','#eaf0ff #fafaff #172445 #516080 #284da0 #865c12 #c3cfe8'],
+  ['royal-turquoise','Nishapur Turquoise','فیروزهٔ نیشابور','#092523 #103c37 #edfff9 #b5d8cf #57e4ce #f1bd77 #306359','#e0f6f1 #f6fffb #10362f #44675e #006e62 #875322 #b5ddd2'],
+  ['royal-carmine','Persian Carmine','قرمز لاکی','#2b111c #451d2a #fff0ee #e0bcc3 #ff93a5 #eac688 #703746','#fae7e5 #fff8f3 #3c1824 #77515b #a12543 #7b591e #e6c4c5'],
+  ['royal-saffron','Khorasan Saffron','زعفران خراسان','#281c0d #402c16 #fff5de #dcc7a8 #ffbd47 #f59890 #665032','#fff0d1 #fffaf0 #382819 #725a41 #8d5008 #a03c42 #e4cfaa'],
+  ['royal-aubergine','Court Aubergine','بادمجانی درباری','#23132a #39203e #fff1fd #d9bedb #dfa4ea #ebc07c #634069','#f5e9f5 #fff9ff #331d37 #6e5072 #793487 #83591c #dec9df'],
+  ['royal-cypress','Shiraz Cypress','سرو شیراز','#11251c #1d3929 #f1faec #bfd4bc #8cd6a6 #dfb87c #3d5c41','#e8f1e1 #f9fcf3 #213320 #50634a #346942 #835920 #c6d7b9']
 ];
 const baseThemes = TH.slice();
 function familyOf(th) {
   return (th.base || th.id).startsWith('ios') ? 'iOS' : th.g;
 }
-for(const base of baseThemes.filter(th=>['Prism','Neon','iOS'].includes(familyOf(th)))) {
+for(const base of baseThemes) {
   for(const [key,en,fa,d,l] of themeColors) {
-    TH.push({...base, base:base.id, id:base.id+'-'+key, n:base.n+' · '+en, colorName:[en,fa], d:d.split(' '), l:l.split(' ')});
+    TH.push({...base, base:base.id, paletteKey:key, id:base.id+'-'+key, n:base.n+' · '+en, colorName:[en,fa], d:d.split(' '), l:l.split(' ')});
   }
 }
 let galleryFamily = '';
@@ -5187,12 +5211,14 @@ function applyTheme() {
   b.dataset.navstyle = e.nav; b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   renderMetricDetails();
   refreshMonitorVisuals();
-  $('quick-accent').value=p[4];
+  $('quick-accent').value=p[4]; $('secondary-accent').value=p[5];
   $('atelier-current').textContent = curTheme().n;
 
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
+  ls.set('mc_last_color_'+(e.base||e.id),themeId);
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
+  ls.set('mc_layout_'+(e.base || e.id),JSON.stringify(Object.fromEntries(Object.entries(custom).filter(([key])=>layoutKey(key)))));
   if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
   const mb = $('btn-mode');
   mb.value=mode;
@@ -5221,13 +5247,28 @@ function renderLoginSwatches() {
   const box = $('login-swatches');
   if (!box) return;
   box.innerHTML = baseThemes.map(base => {
-    const th = curTheme().base === base.id ? curTheme() : base;
+    const th = TH.find(x=>x.base===base.id && x.paletteKey===curTheme().paletteKey) || base;
     const pal = effective(th, th.id === themeId ? custom : readThemeSettings(th.id)).pal;
     return `<button type="button" class="l-swatch${th.id === themeId ? ' on' : ''}" onclick="setTheme('${th.id}'); renderLoginSwatches();"><i style="background:${pal[4]};"></i><span>${esc(th.n)}</span></button>`;
   }).join('');
 }
 
-function setTheme(id) { themeId = id; galleryFamily = familyOf(curTheme()); custom = readThemeSettings(id); applyTheme(); renderThemes(); renderStudio(); }
+function layoutKey(key) {return DIMS.includes(key) || sizeRoles.some(([name])=>name===key);}
+function profileFor(th) {
+  if(th.id===themeId) return custom;
+  const saved=readThemeSettings(th.id);
+  const layout=ls.get('mc_layout_'+(th.base||th.id),'');
+  if(!layout) return saved;
+  try {
+    return {...Object.fromEntries(Object.entries(saved).filter(([key])=>!layoutKey(key))),...JSON.parse(layout)};
+  } catch { return saved; }
+}
+function setTheme(id) {
+  const th=TH.find(x=>x.id===id);
+  if(!th) return;
+  custom=profileFor(th); themeId=id; galleryFamily=familyOf(th);
+  applyTheme(); renderThemes(); renderStudio();
+}
 function setMode(m) { mode = m; applyTheme(); renderThemes(); renderStudio(); }
 function toggleMode() { mode = effMode() === 'dark' ? 'light' : 'dark'; applyTheme(); renderThemes(); renderStudio(); }
 function hsl2hex(h, s, l) {
@@ -5316,17 +5357,25 @@ function renderThemes() {
   if (!galleryFamily) galleryFamily = familyOf(curTheme());
   $('family-tabs').innerHTML = [...new Set(baseThemes.map(familyOf))].map(f =>
     `<button type="button" class="chip ${f===galleryFamily?'on':''}" data-family-tab="${f}" aria-pressed="${f===galleryFamily}">${f}</button>`).join('');
+  const opened = new Set([...grid.querySelectorAll('details[open]')].map(d=>d.dataset.colorsFor));
+  const swatch=(th,base)=>{
+    const name=th.colorName?th.colorName[lang==='fa'?1:0]:studioText('Original','اصلی');
+    const pal=effective(th,profileFor(th)).pal;
+    return `<button type="button" class="variant-choice" data-theme-id="${th.id}" aria-label="${esc(base.n+' · '+name)}" aria-pressed="${th.id===themeId}"><i style="background:linear-gradient(90deg,${pal[4]} 50%,${pal[5]} 50%)"></i>${esc(name)}</button>`;
+  };
   grid.innerHTML = baseThemes.filter(base=>familyOf(base)===galleryFamily).map(base=>{
     const selected = themeId===base.id || curTheme().base===base.id;
-    const th = selected ? curTheme() : base;
-    const profile = effective(th,selected?custom:readThemeSettings(th.id));
-    const variants = TH.filter(x=>x.id===base.id || x.base===base.id);
-    const swatches = variants.length===1 ? '' : '<div class="family-colors">'+variants.map(x=>{
-      const name=x.colorName?x.colorName[lang==='fa'?1:0]:studioText('Original','اصلی');
-      const ink=effective(x,x.id===themeId?custom:readThemeSettings(x.id)).pal[4];
-      return `<button type="button" class="variant-choice" data-theme-id="${x.id}" aria-label="${esc(base.n+' · '+name)}" aria-pressed="${x.id===themeId}"><i style="background:${ink}"></i>${name}</button>`;
-    }).join('')+'</div>';
-    return `<div class="card tcard ${selected?'sel':''}"><button type="button" class="family-cover" data-theme-id="${th.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><strong>${esc(base.n)}</strong>${selected?`<span class="badge b-ok">${t('theme_active')}</span>`:''}</span></button>${swatches}</div>`;
+    const variants=TH.filter(x=>x.base===base.id);
+    const remembered=ls.get('mc_last_color_'+base.id,base.id);
+    const th=selected?curTheme():(variants.find(x=>x.id===remembered)||base);
+    const profile=effective(th,profileFor(th));
+    const colors=(label,items)=>`<div class="color-collection"><strong>${label}</strong><div class="family-colors">${items.map(x=>swatch(x,base)).join('')}</div></div>`;
+    const classic=[base,...variants.filter(x=>!x.paletteKey.startsWith('royal-'))];
+    const royal=variants.filter(x=>x.paletteKey.startsWith('royal-'));
+    const name=th.colorName?th.colorName[lang==='fa'?1:0]:studioText('Original','اصلی');
+    return `<div class="card tcard ${selected?'sel':''}"><button type="button" class="family-cover" data-theme-id="${th.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><strong>${esc(base.n)}</strong>${selected?`<span class="badge b-ok">${t('theme_active')}</span>`:''}</span></button>
+      <details data-colors-for="${base.id}" ${opened.has(base.id)?'open':''}><summary>${studioText('Colors','رنگ‌ها')} · ${esc(name)}</summary>
+      ${colors(studioText('Classic','کلاسیک'),classic)}${colors(studioText('Persian Royal','شاهانهٔ ایرانی'),royal)}</details></div>`;
   }).join('');
 
 }
@@ -8937,8 +8986,8 @@ if ($('btn-core-install')) $('btn-core-install').onclick = () => { const id = $(
 if ($('btn-core-run')) $('btn-core-run').onclick = runCmd;
 if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
-$('quick-accent').addEventListener('input', event=>{
-  custom[effMode()+'_accent']=event.target.value;
+for(const [id,role] of [['quick-accent','accent'],['secondary-accent','accent2']]) $(id).addEventListener('input', event=>{
+  custom[effMode()+'_'+role]=event.target.value;
   applyTheme(); renderThemes(); renderStudio();
 });
 $('btn-rand-theme').onclick = randTheme;
