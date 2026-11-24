@@ -2371,7 +2371,68 @@ body[data-navx="top"] .ver-bubble {
   box-shadow: 0 10px 26px -10px var(--shadow);
 }
 .mon-theme-bar.show { display: flex; }
-.mon-th-pills { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+/* ── 4-Page Tunnel Wizard: All-Server Ping Pills & Animated IPv4/IPv6 Box ── */
+.tun-s1-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 7px; margin-top: 8px;
+}
+.tun-s1-pill {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 8px 11px; border-radius: min(var(--rb), 13px); cursor: pointer;
+  background: var(--row); border: 1.5px solid var(--border); color: var(--text);
+  font-size: .76rem; font-weight: 700; text-align: start;
+  transition: transform .18s cubic-bezier(.16,1,.3,1), border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.tun-s1-pill:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  transform: translateY(-2px);
+}
+.tun-s1-pill.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--row));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.tun-s1-pill-l { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.tun-s1-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tun-ipbox {
+  display: none; margin-top: 10px; padding: 12px 14px;
+  border-radius: min(var(--rc), 16px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 11%, var(--row)), color-mix(in srgb, var(--accent2) 7%, var(--row)));
+  border: 1.5px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 12px 26px -12px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+  transform-origin: top center;
+}
+.tun-ipbox.open {
+  display: block;
+  animation: tunIpBoxPop .28s cubic-bezier(.16, 1, .3, 1);
+}
+@keyframes tunIpBoxPop {
+  0%   { opacity: 0; transform: translateY(-8px) scale(.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tun-ipbox-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  flex-wrap: wrap; margin-bottom: 10px;
+}
+.tun-ipbox-btns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.tun-ip-choice {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 10px 12px; border-radius: min(var(--rb), 13px); cursor: pointer;
+  background: var(--surface); border: 1.5px solid var(--border); color: var(--text);
+  font-weight: 800; font-size: .8rem;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.tun-ip-choice:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.tun-ip-choice:disabled { opacity: .42; cursor: not-allowed; }
+.tun-ip-choice small { font-family: var(--ff-m); font-size: .68rem; color: var(--muted); font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mon-th-pill {
   padding: 6px 13px; border-radius: 999px; cursor: pointer;
   background: var(--row); color: var(--text); border: 1.3px solid var(--border);
@@ -3580,6 +3641,7 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
         <div class="flexw" style="gap:7px;">
           <button class="btn btn-ghost btn-sm" aria-controls="mon-theme-bar" aria-expanded="false" onclick="toggleMonThemeBar()">🎨 Uptime Theme</button>
           <button class="btn btn-warn btn-sm" onclick="openMonConfigModal()">🔔 Notify Bot &amp; Status Page</button>
+          <select id="mon-import-probe" style="width:auto; padding:5px 9px; font-size:.74rem; max-width:210px;" title="Select which Agent/Server IP should perform pings for imported server monitors"><option value="master">Probe: Master Server</option></select>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('servers')">+ Import Servers</button>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('tunnels')">+ Import Tunnels</button>
           <button class="btn btn-ghost btn-sm" onclick="loadMonitorsTab()">Refresh</button>
@@ -4335,107 +4397,159 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
 <!-- NEW TUNNEL MODAL (MDesign Paginated Wizard + Floating Summary Bubble) -->
 <div class="modal-bg" id="tun-modal">
   <div class="tun-wiz-shell">
-    <!-- Floating Summary Bubble (auto-appears on Pages 2 & 3 showing prior selections) -->
+    <!-- Floating Summary Bubble (auto-appears on Pages 2, 3 & 4 showing prior selections) -->
     <div id="tun-float-dock" class="tun-float-dock"></div>
 
     <div class="card modal-box" style="max-width:780px; width:100%; overflow-x:hidden;">
       <div class="toolbar" style="margin-bottom:12px;">
         <div style="display:flex; align-items:center; gap:9px; flex-wrap:wrap;">
           <h3 style="color:var(--accent);">+ New 2-Sided Tunnel</h3>
-          <span class="tun-step-badge" id="tun-step-lbl">Step 1 / 3 • Name &amp; Servers</span>
+          <span class="tun-step-badge" id="tun-step-lbl">Step 1 / 4 • Name &amp; Server 1</span>
         </div>
         <button class="btn btn-danger btn-sm" data-close="tun-modal">Close</button>
       </div>
 
-      <!-- PAGE 1: Tunnel Name + Servers & Route -->
+      <!-- PAGE 1: Tunnel Name + Server 1 (Entry) + Ping Any Server (Animated IPv4/IPv6 Box) -->
       <div class="tun-step-pane active" id="tun-step-1">
         <div class="field" style="margin-bottom:12px;">
           <label>Tunnel Name</label>
-          <input id="t-name" placeholder="e.g. IR1-to-DE1" oninput="updateTunFloatDock()">
+          <input id="t-name" placeholder="e.g. IR1-to-DE1" oninput="syncTunNameInput(this.value)">
         </div>
 
-        <div class="tun-sec" style="margin-bottom:0;">
-          <div class="tun-sec-title"><span>Route (Entry ⇄ Exit)</span></div>
-          <div class="row2">
-            <!-- Entry Server (Server 1): Pings Opposite Server (Server 2) IPv4 / IPv6 -->
-            <div class="tun-route-col">
-              <div class="tun-route-lbl">Entry Server (Iran)</div>
-              <div class="tun-rb rb-flag" id="t-iran-flag-b">
-                <span class="tun-rb-flag-left"><span class="dot"></span><span class="tun-rb-country">—</span></span>
-                <span class="tun-rb-cc">—</span>
-              </div>
-              <div class="tun-rb rb-sel">
+        <div class="tun-sec" style="margin-bottom:12px;">
+          <div class="tun-sec-title"><span>Server 1 — Entry Server (Iran)</span></div>
+          <div class="tun-route-col">
+            <div class="tun-rb rb-flag" id="t-iran-flag-b">
+              <span class="tun-rb-flag-left"><span class="dot"></span><span class="tun-rb-country">—</span></span>
+              <span class="tun-rb-cc">—</span>
+            </div>
+            <div class="row2">
+              <div class="tun-rb rb-sel" style="margin:0;">
                 <select id="t-iran" onchange="onTunnelServersChange()"></select>
               </div>
-              <div class="tun-rb rb-ip">
-                <select id="t-iran-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock()">
+              <div class="tun-rb rb-ip" style="margin:0;">
+                <select id="t-iran-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock(); renderStep2AutoPing();">
                   <option value="v4">IPv4</option>
                   <option value="v6">IPv6</option>
                 </select>
                 <span class="tun-rb-ip-flag" id="t-iran-ip-flag"></span>
               </div>
-              <div class="tun-ping-row">
-                <select id="t-iran-ping-ver" class="tun-ping-ver" title="Target IP version on opposite server">
-                  <option value="v4">Peer IPv4</option>
-                  <option value="v6">Peer IPv6</option>
-                </select>
-                <button type="button" class="tun-side-ping-btn" id="btn-ping8-iran" onclick="runTunnelPing8('iran_to_foreign')" title="Ping opposite Exit Server IPv4/IPv6 from this Entry Server">
-                  <span>📡 Ping Peer</span>
-                </button>
-              </div>
-              <div class="tun-ping-res" id="t-iran-ping-res"></div>
             </div>
+          </div>
+        </div>
 
-            <!-- Exit Server (Server 2): Pings Opposite Server (Server 1) IPv4 / IPv6 -->
-            <div class="tun-route-col">
-              <div class="tun-route-lbl">Exit Server (Foreign)</div>
-              <div class="tun-rb rb-flag" id="t-for-flag-b">
-                <span class="tun-rb-flag-left"><span class="dot"></span><span class="tun-rb-country">—</span></span>
-                <span class="tun-rb-cc">—</span>
+        <div class="tun-sec" style="margin-bottom:0;">
+          <div class="tun-sec-title">
+            <span>📡 Ping Test from Server 1 (Select Any Server)</span>
+          </div>
+          <div style="font-size:.73rem; color:var(--muted);">Click any server below to choose <b>IPv4</b> or <b>IPv6</b> ping from Server 1:</div>
+          <div class="tun-s1-grid" id="t-s1-ping-list"></div>
+
+          <!-- Animated IPv4 / IPv6 Chooser Box -->
+          <div class="tun-ipbox" id="t-s1-ipbox">
+            <div class="tun-ipbox-head">
+              <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+                <span style="font-size:.8rem; font-weight:800; color:var(--accent);" id="t-s1-ipbox-title">Ping Target</span>
+                <span class="badge b-foreign mono" id="t-s1-ipbox-sub">Select IPv4 or IPv6</span>
               </div>
-              <div class="tun-rb rb-sel">
+              <button type="button" class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:.7rem;" onclick="closeStep1IpBox()">✕</button>
+            </div>
+            <div class="tun-ipbox-btns">
+              <button type="button" class="tun-ip-choice" id="btn-s1-ping-v4" onclick="runWizardPing8('s1', 'v4')">
+                <span>📡 Ping IPv4</span>
+                <small id="t-s1-v4-addr">—</small>
+              </button>
+              <button type="button" class="tun-ip-choice" id="btn-s1-ping-v6" onclick="runWizardPing8('s1', 'v6')">
+                <span>📡 Ping IPv6</span>
+                <small id="t-s1-v6-addr">—</small>
+              </button>
+            </div>
+            <div class="tun-ping-res" id="t-iran-ping-res" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div id="t-s1-ping8-card" class="ping8-card" style="display:none; margin-top:10px; margin-bottom:0;">
+          <div class="ping8-head">
+            <strong style="font-size:.8rem; color:var(--accent);" id="p8-s1-title">Live 8-Ping Test</strong>
+            <span class="mono" style="font-size:.72rem; color:var(--muted);" id="p8-s1-target"></span>
+          </div>
+          <div class="ping8-grid" id="p8-s1-grid"></div>
+          <div class="ping8-sum" id="p8-s1-sum"></div>
+        </div>
+      </div>
+
+      <!-- PAGE 2: Tunnel Name (Synced) + Server 2 (Exit) + Auto-Ping Server 1 (IPv4 & IPv6) -->
+      <div class="tun-step-pane" id="tun-step-2">
+        <div class="field" style="margin-bottom:12px;">
+          <label>Tunnel Name <span style="color:var(--muted); font-weight:400;">(Synced with Page 1)</span></label>
+          <input id="t-name-2" placeholder="e.g. IR1-to-DE1" oninput="syncTunNameInput(this.value)">
+        </div>
+
+        <div class="tun-sec" style="margin-bottom:12px;">
+          <div class="tun-sec-title"><span>Server 2 — Exit Server (Foreign)</span></div>
+          <div class="tun-route-col">
+            <div class="tun-rb rb-flag" id="t-for-flag-b">
+              <span class="tun-rb-flag-left"><span class="dot"></span><span class="tun-rb-country">—</span></span>
+              <span class="tun-rb-cc">—</span>
+            </div>
+            <div class="row2">
+              <div class="tun-rb rb-sel" style="margin:0;">
                 <select id="t-foreign" onchange="onTunnelServersChange()"></select>
               </div>
-              <div class="tun-rb rb-ip">
+              <div class="tun-rb rb-ip" style="margin:0;">
                 <select id="t-for-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock()">
                   <option value="v4">IPv4</option>
                   <option value="v6">IPv6</option>
                 </select>
                 <span class="tun-rb-ip-flag" id="t-for-ip-flag"></span>
               </div>
-              <div class="tun-ping-row">
-                <select id="t-for-ping-ver" class="tun-ping-ver" title="Target IP version on opposite server">
-                  <option value="v4">Peer IPv4</option>
-                  <option value="v6">Peer IPv6</option>
-                </select>
-                <button type="button" class="tun-side-ping-btn" id="btn-ping8-for" onclick="runTunnelPing8('foreign_to_iran')" title="Ping opposite Entry Server IPv4/IPv6 from this Exit Server">
-                  <span>📡 Ping Peer</span>
-                </button>
-              </div>
-              <div class="tun-ping-res" id="t-for-ping-res"></div>
             </div>
+          </div>
+        </div>
+
+        <div class="tun-sec" style="margin-bottom:0;">
+          <div class="tun-sec-title"><span>📡 Auto-Ping Server 1 from Server 2</span></div>
+          <div class="tun-ipbox open" id="t-s2-auto-box" style="margin-top:4px;">
+            <div class="tun-ipbox-head">
+              <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+                <span style="font-size:.8rem; font-weight:800; color:var(--accent);" id="t-s2-target-name">Target: Server 1</span>
+                <span class="badge b-iran mono" id="t-s2-target-role">AUTO</span>
+              </div>
+              <span class="mono" style="font-size:.72rem; color:var(--muted);" id="t-s2-src-hint">From Server 2 ➔ Server 1</span>
+            </div>
+            <div class="tun-ipbox-btns">
+              <button type="button" class="tun-ip-choice" id="btn-s2-ping-v4" onclick="runWizardPing8('s2', 'v4')">
+                <span>📡 Ping Server 1 (IPv4)</span>
+                <small id="t-s2-v4-addr">—</small>
+              </button>
+              <button type="button" class="tun-ip-choice" id="btn-s2-ping-v6" onclick="runWizardPing8('s2', 'v6')">
+                <span>📡 Ping Server 1 (IPv6)</span>
+                <small id="t-s2-v6-addr">—</small>
+              </button>
+            </div>
+            <div class="tun-ping-res" id="t-for-ping-res" style="margin-top:8px;"></div>
           </div>
 
           <div id="t-check-proto-wrap" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:.74rem; color:var(--muted);">Compare all tunnel protocols between these two servers:</span>
+            <span style="font-size:.74rem; color:var(--muted);">Compare all tunnel protocols between Server 1 &amp; Server 2:</span>
             <div class="flexw" style="gap:6px;">
               <button type="button" class="btn btn-warn btn-sm" onclick="openProtoCheckerFromTunnel()">⚡ Check Protocols</button>
             </div>
           </div>
         </div>
 
-        <div id="t-ping8-card" class="ping8-card" style="display:none; margin-top:12px; margin-bottom:0;">
+        <div id="t-s2-ping8-card" class="ping8-card" style="display:none; margin-top:10px; margin-bottom:0;">
           <div class="ping8-head">
-            <strong style="font-size:.8rem; color:var(--accent);" id="p8-title">Live 8-Ping Test</strong>
-            <span class="mono" style="font-size:.72rem; color:var(--muted);" id="p8-target"></span>
+            <strong style="font-size:.8rem; color:var(--accent);" id="p8-s2-title">Live 8-Ping Test</strong>
+            <span class="mono" style="font-size:.72rem; color:var(--muted);" id="p8-s2-target"></span>
           </div>
-          <div class="ping8-grid" id="p8-grid"></div>
-          <div class="ping8-sum" id="p8-sum"></div>
+          <div class="ping8-grid" id="p8-s2-grid"></div>
+          <div class="ping8-sum" id="p8-s2-sum"></div>
         </div>
       </div>
 
-      <!-- PAGE 2: Engine + Carrier Underlay + Transport & Control Port -->
-      <div class="tun-step-pane" id="tun-step-2">
+      <!-- PAGE 3: Engine + Carrier Underlay + Transport & Control Port -->
+      <div class="tun-step-pane" id="tun-step-3">
         <div class="tun-sec-title" style="margin-bottom:6px;"><span>Tunnel Engine</span></div>
         <input type="hidden" id="t-engine" value="backhaul">
         <div class="eng-pills" id="t-eng-pills">
@@ -4473,7 +4587,7 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
                 <option value="udp">UDP</option>
               </select>
             </div>
-            <div class="field" id="t-ipmode-wrap" style="display:none; margin-bottom:0;"><label>Kernel IP Mode</label>
+            <div class="field" id="t-ipmode-wrap" style="margin-bottom:0;"><label>Kernel IP Mode</label>
               <select id="t-ipmode" onchange="updateTunFloatDock()">
                 <option value="v4">GRE 4-to-4 (IPv4 over IPv4)</option>
                 <option value="6to4">GRE 6-to-4 (IPv4 over IPv6)</option>
@@ -4486,8 +4600,8 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
         </div>
       </div>
 
-      <!-- PAGE 3: Forward Ports + Secret Token & Kernel VIP Options -->
-      <div class="tun-step-pane" id="tun-step-3">
+      <!-- PAGE 4: Forward Ports + Secret Token & Kernel VIP Options -->
+      <div class="tun-step-pane" id="tun-step-4">
         <div class="tun-sec">
           <div class="tun-sec-title"><span>Forward Ports</span></div>
           <div class="row2">
@@ -4524,14 +4638,15 @@ body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);
         </div>
       </div>
 
-      <!-- Bottom Navigation Footer with Dot Pagination -->
+      <!-- Bottom Navigation Footer with 4-Dot Pagination -->
       <div class="tun-wiz-footer">
         <button type="button" class="btn btn-ghost" id="btn-tun-prev" onclick="tunWizPrev()">Cancel</button>
 
         <div class="tun-dots" id="tun-wiz-dots" aria-label="Steps">
-          <button type="button" class="tun-dot active" data-step="1" title="Step 1: Name & Servers" onclick="setTunStep(1)"></button>
-          <button type="button" class="tun-dot" data-step="2" title="Step 2: Engine & Transport" onclick="setTunStep(2)"></button>
-          <button type="button" class="tun-dot" data-step="3" title="Step 3: Ports & Deploy" onclick="setTunStep(3)"></button>
+          <button type="button" class="tun-dot active" data-step="1" title="Step 1: Name & Server 1" onclick="setTunStep(1)"></button>
+          <button type="button" class="tun-dot" data-step="2" title="Step 2: Server 2 & Auto-Ping" onclick="setTunStep(2)"></button>
+          <button type="button" class="tun-dot" data-step="3" title="Step 3: Engine & Transport" onclick="setTunStep(3)"></button>
+          <button type="button" class="tun-dot" data-step="4" title="Step 4: Ports & Deploy" onclick="setTunStep(4)"></button>
         </div>
 
         <div class="flexw" style="gap:6px;">
@@ -6260,7 +6375,10 @@ function onTunnelServersChange() {
   const ir = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
   const fr = parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
   wrap.style.display = (ir > 0 && fr > 0 && ir !== fr) ? 'flex' : 'none';
-  if ($('t-ping8-card')) $('t-ping8-card').style.display = 'none';
+  if ($('t-s1-ping8-card')) $('t-s1-ping8-card').style.display = 'none';
+  if ($('t-s2-ping8-card')) $('t-s2-ping8-card').style.display = 'none';
+  renderStep1PingList();
+  renderStep2AutoPing();
   updateTunFloatDock();
 }
 
@@ -6391,7 +6509,179 @@ function openProtoCheckerFromTunnel() {
 
 
 let tunWizStep = 1;
-const TUN_STEP_NAMES = ['', 'Step 1 / 3 • Name & Servers', 'Step 2 / 3 • Engine & Underlay', 'Step 3 / 3 • Ports & Deploy'];
+let s1PingTargetId = 0;
+const TUN_STEP_NAMES = [
+  '',
+  'Step 1 / 4 • Name & Server 1',
+  'Step 2 / 4 • Server 2 & Auto-Ping',
+  'Step 3 / 4 • Engine & Underlay',
+  'Step 4 / 4 • Ports & Deploy'
+];
+
+function syncTunNameInput(val) {
+  if ($('t-name') && $('t-name').value !== val) $('t-name').value = val;
+  if ($('t-name-2') && $('t-name-2').value !== val) $('t-name-2').value = val;
+  updateTunFloatDock();
+}
+
+function closeStep1IpBox() {
+  s1PingTargetId = 0;
+  const box = $('t-s1-ipbox');
+  if (box) box.classList.remove('open');
+  document.querySelectorAll('#t-s1-ping-list .tun-s1-pill').forEach(p => p.classList.remove('selected'));
+}
+
+function renderStep1PingList() {
+  const listEl = $('t-s1-ping-list');
+  if (!listEl) return;
+  const srcId = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
+  const others = (SERVERS || []).filter(s => +s.id !== srcId);
+  if (!others.length) {
+    listEl.innerHTML = '<div style="font-size:.75rem; color:var(--muted); grid-column:1/-1;">Add at least one more server to test ping.</div>';
+    closeStep1IpBox();
+    return;
+  }
+  if (s1PingTargetId && !others.some(s => +s.id === s1PingTargetId)) {
+    closeStep1IpBox();
+  }
+  listEl.innerHTML = others.map(s => {
+    const sel = (+s.id === s1PingTargetId) ? ' selected' : '';
+    const v6Tag = (s.ipv6 && s.ipv6 !== 'N/A') ? 'v4/v6' : 'v4';
+    return `<button type="button" class="tun-s1-pill${sel}" onclick="pickStep1PingTarget(${s.id})">
+      <span class="tun-s1-pill-l">${flagSVG(s.country_code)}<span class="tun-s1-pill-name">${esc(s.name)}</span></span>
+      <span class="badge b-foreign mono" style="font-size:.62rem; padding:1px 5px;">${v6Tag}</span>
+    </button>`;
+  }).join('');
+}
+
+function pickStep1PingTarget(targetId) {
+  const s = (SERVERS || []).find(x => +x.id === +targetId);
+  if (!s) return;
+  if (s1PingTargetId === +targetId && $('t-s1-ipbox')?.classList.contains('open')) {
+    closeStep1IpBox();
+    return;
+  }
+  s1PingTargetId = +targetId;
+  document.querySelectorAll('#t-s1-ping-list .tun-s1-pill').forEach(p => p.classList.remove('selected'));
+  renderStep1PingList();
+
+  const srcId = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
+  const src = (SERVERS || []).find(x => +x.id === srcId);
+  const hasV6 = !!(s.ipv6 && s.ipv6 !== 'N/A');
+
+  if ($('t-s1-ipbox-title')) $('t-s1-ipbox-title').textContent = `${src ? src.name : 'Server 1'} ➔ ${s.name}`;
+  if ($('t-s1-ipbox-sub')) $('t-s1-ipbox-sub').textContent = 'Choose IPv4 or IPv6';
+  if ($('t-s1-v4-addr')) $('t-s1-v4-addr').textContent = s.host || 'N/A';
+  if ($('t-s1-v6-addr')) $('t-s1-v6-addr').textContent = hasV6 ? s.ipv6 : 'No IPv6';
+  if ($('btn-s1-ping-v6')) $('btn-s1-ping-v6').disabled = !hasV6;
+  if ($('t-iran-ping-res')) { $('t-iran-ping-res').className = 'tun-ping-res'; $('t-iran-ping-res').innerHTML = ''; }
+
+  const box = $('t-s1-ipbox');
+  if (box) {
+    box.classList.remove('open');
+    void box.offsetWidth; // trigger smooth re-animation
+    box.classList.add('open');
+  }
+}
+
+function renderStep2AutoPing() {
+  const irId = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
+  const frId = parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
+  const s1 = (SERVERS || []).find(x => +x.id === irId);
+  const s2 = (SERVERS || []).find(x => +x.id === frId);
+  const hasV6 = !!(s1 && s1.ipv6 && s1.ipv6 !== 'N/A');
+
+  if ($('t-s2-target-name')) $('t-s2-target-name').textContent = s1 ? `Auto Target: ${s1.name} (Server 1)` : 'Select Server 1 first';
+  if ($('t-s2-src-hint')) $('t-s2-src-hint').textContent = `${s2 ? s2.name : 'Server 2'} ➔ ${s1 ? s1.name : 'Server 1'}`;
+  if ($('t-s2-v4-addr')) $('t-s2-v4-addr').textContent = s1 ? (s1.host || 'N/A') : '—';
+  if ($('t-s2-v6-addr')) $('t-s2-v6-addr').textContent = hasV6 ? s1.ipv6 : 'No IPv6';
+  if ($('btn-s2-ping-v4')) $('btn-s2-ping-v4').disabled = (!s1 || !s2 || irId === frId);
+  if ($('btn-s2-ping-v6')) $('btn-s2-ping-v6').disabled = (!s1 || !s2 || irId === frId || !hasV6);
+}
+
+async function runWizardPing8(stage, ver) {
+  const isS1 = (stage === 's1');
+  const srcId = isS1
+    ? parseInt(($('t-iran') && $('t-iran').value) || '0', 10)
+    : parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
+  const dstId = isS1
+    ? s1PingTargetId
+    : parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
+
+  if (!srcId || !dstId || srcId === dstId) {
+    toast('Select two distinct servers first', true);
+    return;
+  }
+  const srcSrv = (SERVERS || []).find(x => +x.id === srcId);
+  const dstSrv = (SERVERS || []).find(x => +x.id === dstId);
+  const srcName = srcSrv ? srcSrv.name : 'Source';
+  const dstName = dstSrv ? dstSrv.name : 'Target';
+  const verLabel = ver === 'v6' ? 'IPv6' : 'IPv4';
+
+  const card = $(isS1 ? 't-s1-ping8-card' : 't-s2-ping8-card');
+  const titleEl = $(isS1 ? 'p8-s1-title' : 'p8-s2-title');
+  const targetEl = $(isS1 ? 'p8-s1-target' : 'p8-s2-target');
+  const grid = $(isS1 ? 'p8-s1-grid' : 'p8-s2-grid');
+  const sum = $(isS1 ? 'p8-s1-sum' : 'p8-s2-sum');
+  const resBox = $(isS1 ? 't-iran-ping-res' : 't-for-ping-res');
+  const btn = $(isS1 ? ('btn-s1-ping-' + ver) : ('btn-s2-ping-' + ver));
+  const origHtml = btn ? btn.innerHTML : '';
+
+  if (btn) { btn.disabled = true; btn.innerHTML = `<span>⏳ Pinging ${verLabel}...</span><small>8 packets</small>`; }
+  if (resBox) {
+    resBox.className = 'tun-ping-res show';
+    resBox.innerHTML = `<span style="color:var(--muted);">Pinging ${verLabel} of <b>${esc(dstName)}</b> from ${esc(srcName)}...</span>`;
+  }
+  if (card) card.style.display = 'block';
+  if (titleEl) titleEl.textContent = `${srcName} ➔ ${dstName} (${verLabel})...`;
+  if (targetEl) targetEl.textContent = `Target ${verLabel}`;
+  if (grid) grid.innerHTML = Array.from({ length: 8 }, (_, i) => `<div class="ping8-cell wait"><span class="p8-seq">#${i+1}</span>...</div>`).join('');
+  if (sum) sum.innerHTML = '<span style="color:var(--muted);">Sending 8 ICMP packets...</span>';
+
+  try {
+    const r = await api('api/tunnels/ping8', 'POST', {
+      iran_server_id: srcId,
+      foreign_server_id: dstId,
+      iran_ip_ver: 'v4',
+      foreign_ip_ver: ver,
+      direction: 'iran_to_foreign'
+    });
+    if (!r.ok) {
+      if (titleEl) titleEl.textContent = 'Ping Test Failed';
+      if (sum) sum.innerHTML = `<span style="color:var(--red);">${esc(r.error || 'Error')}</span>`;
+      if (resBox) {
+        resBox.className = 'tun-ping-res show bad';
+        resBox.innerHTML = `<span style="color:var(--red);">✖ ${verLabel} (${esc(dstName)}): ${esc(r.error || 'Failed')}</span>`;
+      }
+      return;
+    }
+    if (titleEl) titleEl.textContent = `${esc(r.source || srcName)} ➔ ${esc(r.dest || dstName)} (${verLabel})`;
+    if (targetEl) targetEl.textContent = r.target || '';
+    const pings = r.pings || [];
+    if (grid) {
+      grid.innerHTML = Array.from({ length: 8 }, (_, i) => {
+        const ms = pings[i];
+        if (ms > 0) {
+          const cls = ms < 90 ? 'ok' : (ms < 180 ? 'warn' : 'bad');
+          return `<div class="ping8-cell ${cls}"><span class="p8-seq">#${i+1}</span>${ms.toFixed(1)}ms</div>`;
+        }
+        return `<div class="ping8-cell bad"><span class="p8-seq">#${i+1}</span>LOSS</div>`;
+      }).join('');
+    }
+    const loss = typeof r.loss_pct === 'number' ? r.loss_pct : 100;
+    const avg = typeof r.avg_ms === 'number' ? r.avg_ms : 0;
+    const good = loss < 50 && avg > 0;
+    if (sum) {
+      sum.innerHTML = `<span style="color:${good ? 'var(--green)' : 'var(--red)'}; font-weight:700;">Avg: ${avg > 0 ? avg.toFixed(1) + ' ms' : 'Timeout'} • Loss: ${loss.toFixed(0)}%</span>`;
+    }
+    if (resBox) {
+      resBox.className = 'tun-ping-res show ' + (good ? 'ok' : 'bad');
+      resBox.innerHTML = `<span style="color:${good ? 'var(--green)' : 'var(--red)'};">${good ? '✔' : '✖'} ${verLabel} (${esc(dstName)}): <b>${avg > 0 ? avg.toFixed(1) + ' ms' : 'Timeout'}</b> · Loss ${loss.toFixed(0)}%</span>`;
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+  }
+}
 
 function updateTunFloatDock() {
   const dock = $('tun-float-dock');
@@ -6406,22 +6696,30 @@ function updateTunFloatDock() {
   const frId = parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
   const irSrv = SERVERS.find(x => +x.id === irId);
   const frSrv = SERVERS.find(x => +x.id === frId);
-  const irName = irSrv ? irSrv.name : 'Entry';
-  const frName = frSrv ? frSrv.name : 'Exit';
+  const irName = irSrv ? irSrv.name : 'Server 1';
+  const frName = frSrv ? frSrv.name : 'Server 2';
   const irVer = (($('t-iran-ipver') && $('t-iran-ipver').value) || 'v4').toUpperCase();
   const frVer = (($('t-for-ipver') && $('t-for-ipver').value) || 'v4').toUpperCase();
 
   let chips = `
-    <span class="tun-fchip" onclick="setTunStep(1)" title="Edit Name (Step 1)">
+    <span class="tun-fchip" onclick="setTunStep(1)" title="Edit Name & Server 1 (Step 1)">
       <span class="fc-k">Tunnel</span>
       <span class="fc-v">${esc(name)}</span>
     </span>
-    <span class="tun-fchip" onclick="setTunStep(1)" title="Edit Route (Step 1)">
-      <span class="fc-k">Route</span>
-      <span class="fc-v">${esc(irName)} (${irVer}) ⇄ ${esc(frName)} (${frVer})</span>
+    <span class="tun-fchip" onclick="setTunStep(1)" title="Edit Server 1 (Step 1)">
+      <span class="fc-k">Srv 1</span>
+      <span class="fc-v">${esc(irName)} (${irVer})</span>
     </span>`;
 
   if (tunWizStep >= 3) {
+    chips += `
+      <span class="tun-fchip" onclick="setTunStep(2)" title="Edit Server 2 (Step 2)">
+        <span class="fc-k">Srv 2</span>
+        <span class="fc-v">${esc(frName)} (${frVer})</span>
+      </span>`;
+  }
+
+  if (tunWizStep >= 4) {
     const eng = (($('t-engine') && $('t-engine').value) || 'backhaul').toUpperCase();
     const isKernel = (eng === 'GRE' || eng === 'IP6GRE' || eng === 'VXLAN');
     const ul = (($('t-underlay') && $('t-underlay').value) || 'ip').toUpperCase();
@@ -6431,7 +6729,7 @@ function updateTunFloatDock() {
     const ulTxt = (!isKernel && ul !== 'IP') ? (' over ' + ul) : '';
     const port = ($('t-port') && $('t-port').value) || '3080';
     chips += `
-      <span class="tun-fchip" onclick="setTunStep(2)" title="Edit Engine & Underlay (Step 2)">
+      <span class="tun-fchip" onclick="setTunStep(3)" title="Edit Engine & Underlay (Step 3)">
         <span class="fc-k">Protocol</span>
         <span class="fc-v">${esc(eng)} • ${esc(trans)}${esc(ulTxt)} :${esc(port)}</span>
       </span>`;
@@ -6442,8 +6740,8 @@ function updateTunFloatDock() {
 }
 
 function setTunStep(n) {
-  tunWizStep = Math.max(1, Math.min(3, n));
-  for (let i = 1; i <= 3; i++) {
+  tunWizStep = Math.max(1, Math.min(4, n));
+  for (let i = 1; i <= 4; i++) {
     const pane = $('tun-step-' + i);
     if (pane) pane.classList.toggle('active', i === tunWizStep);
   }
@@ -6454,8 +6752,13 @@ function setTunStep(n) {
   });
   if ($('tun-step-lbl')) $('tun-step-lbl').textContent = TUN_STEP_NAMES[tunWizStep] || '';
   if ($('btn-tun-prev')) $('btn-tun-prev').textContent = tunWizStep === 1 ? 'Cancel' : '← Back';
-  if ($('btn-tun-next')) $('btn-tun-next').style.display = tunWizStep < 3 ? 'inline-flex' : 'none';
-  if ($('btn-tun-deploy')) $('btn-tun-deploy').style.display = tunWizStep === 3 ? 'inline-flex' : 'none';
+  if ($('btn-tun-next')) $('btn-tun-next').style.display = tunWizStep < 4 ? 'inline-flex' : 'none';
+  if ($('btn-tun-deploy')) $('btn-tun-deploy').style.display = tunWizStep === 4 ? 'inline-flex' : 'none';
+  if (tunWizStep === 1) renderStep1PingList();
+  if (tunWizStep === 2) {
+    if ($('t-name-2') && $('t-name')) $('t-name-2').value = $('t-name').value;
+    renderStep2AutoPing();
+  }
   updateTunFloatDock();
 }
 
@@ -6467,9 +6770,13 @@ function tunWizPrev() {
 function tunWizNext() {
   if (tunWizStep === 1) {
     const ir = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
+    if (!ir) { toast('Select Server 1 (Entry) first', true); return; }
+  }
+  if (tunWizStep === 2) {
+    const ir = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
     const fr = parseInt(($('t-foreign') && $('t-foreign').value) || '0', 10);
     if (!ir || !fr || ir === fr) {
-      toast('Select two distinct servers (Entry & Exit) first', true);
+      toast('Select a distinct Server 2 (Exit) first', true);
       return;
     }
   }
@@ -6478,14 +6785,18 @@ function tunWizNext() {
 
 function openNewTunnelModal() {
   msFromTunnelModal = false;
+  s1PingTargetId = 0;
   populateServerSelects('t-iran', 't-foreign');
   const pp = $('t-port-prof');
   if (pp) {
     pp.innerHTML = '<option value="">— Custom Ports —</option>' +
       PORT_PROFILES.map(p => `<option value="${esc(p.ports)}">${esc(p.name)} (${esc(p.ports)})</option>`).join('');
   }
-  $('t-name').value = '';
+  syncTunNameInput('');
   $('t-token').value = '';
+  closeStep1IpBox();
+  if ($('t-s1-ping8-card')) $('t-s1-ping8-card').style.display = 'none';
+  if ($('t-s2-ping8-card')) $('t-s2-ping8-card').style.display = 'none';
   onTunnelEngineChange();
   onTunnelServersChange();
   setTunStep(1);
@@ -6751,7 +7062,7 @@ function deployWinner(engine, transport, ipMode, underlay, iranId, forId) {
   } else {
     pickTunnelUnderlay('ip');
   }
-  setTunStep(3);
+  setTunStep(4);
   toast(fromForm ? 'Protocol & Underlay selected in tunnel form!' : 'Winner pre-filled! Pick a Port Profile and click Deploy.');
 }
 
@@ -9504,7 +9815,36 @@ function renderIncidentRow(inc) {
 }
 
 /* ── Uptime Monitor Tab (Kuma-Style) ── */
+function buildProbeSelectOptions() {
+  const srvs = SERVERS || [];
+  const agents = srvs.filter(s => s.auth_mode === 'peer');
+  const sshOnly = srvs.filter(s => s.auth_mode !== 'peer');
+  let opts = '<option value="master">Master Server (Local IP)</option><option value="outbound">Master Outbound (Xray)</option>';
+  if (agents.length) {
+    opts += '<optgroup label="⚡ Agent Nodes (Recommended for Iran)">' +
+      agents.map(s => `<option value="server:${s.id}">⚡ Agent: ${esc(s.name)} (${esc(s.role)} · ${esc(s.host)})</option>`).join('') +
+      '</optgroup>';
+  }
+  if (sshOnly.length) {
+    opts += '<optgroup label="SSH Nodes">' +
+      sshOnly.map(s => `<option value="server:${s.id}">SSH: ${esc(s.name)} (${esc(s.role)} · ${esc(s.host)})</option>`).join('') +
+      '</optgroup>';
+  }
+  return opts;
+}
+function formatProbeLabel(pf) {
+  if (!pf || pf === 'master') return 'Master';
+  if (pf === 'outbound') return 'Outbound (Xray)';
+  if (pf.startsWith('server:')) {
+    const sid = parseInt(pf.slice(7), 10);
+    const s = (SERVERS || []).find(x => +x.id === sid);
+    if (s) return (s.auth_mode === 'peer' ? '⚡ Agent: ' : 'SSH: ') + s.name;
+  }
+  return pf;
+}
+
 async function loadMonitorsTab() {
+  if ($('mon-import-probe')) { const curP = $('mon-import-probe').value || 'master'; $('mon-import-probe').innerHTML = buildProbeSelectOptions(); $('mon-import-probe').value = curP; }
   const r = await api('api/monitors');
   if (!r.ok) return;
   MONITORS = r.monitors || [];
@@ -9534,7 +9874,7 @@ async function loadMonitorsTab() {
             <strong>${esc(m.name)}</strong>
             <span class="badge b-ok mono">${esc(m.type.toUpperCase())}</span>
             <span class="badge ${stBadge} mono">${esc((m.status||'pending').toUpperCase())}</span>
-            <span class="badge b-foreign mono">via ${esc(m.probe_from || 'master')}</span>
+            <span class="badge ${(m.probe_from||'').startsWith('server:') ? 'b-ok' : 'b-foreign'} mono">via ${esc(formatProbeLabel(m.probe_from || 'master'))}</span>
             ${sslBadge}
             ${m.is_public ? '<span class="badge b-iran mono">PUBLIC</span>' : ''}
             ${m.auto_heal === 'restart_tunnel' ? '<span class="badge b-ok mono">AUTO-HEAL</span>' : ''}
@@ -9580,8 +9920,7 @@ function openMonEditModal(id) {
   $('mn-lat').value = m ? (m.latency_warn_ms || 0) : 0;
   $('mn-pubname').value = m ? (m.public_name || '') : '';
   $('mn-pub').checked = m ? !!m.is_public : true;
-  $('mn-probe').innerHTML = '<option value="master">Master Server</option><option value="outbound">Master Outbound (Xray)</option>' +
-    (SERVERS || []).map(s => `<option value="server:${s.id}">Node: ${esc(s.name)} (${esc(s.role)})</option>`).join('');
+  $('mn-probe').innerHTML = buildProbeSelectOptions();
   $('mn-probe').value = m ? (m.probe_from || 'master') : 'master';
   $('mn-tun').innerHTML = '<option value="0">— None —</option>' +
     (TUNNELS || []).map(t => `<option value="${t.id}">Restart Tunnel: ${esc(t.name)}</option>`).join('');
@@ -9624,7 +9963,8 @@ async function deleteMonitor(id) {
   loadMonitorsTab();
 }
 async function importMonitors(kind) {
-  const r = await api('api/monitors/import', 'POST', { kind });
+  const probe_from = (kind === 'servers' && $('mon-import-probe')) ? $('mon-import-probe').value : '';
+  const r = await api('api/monitors/import', 'POST', { kind, probe_from });
   toast(r.message || 'Done!', !r.ok);
   setTimeout(loadMonitorsTab, 500);
 }

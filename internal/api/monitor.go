@@ -181,9 +181,17 @@ func (h *Handler) runMonitorProbe(m *db.Monitor) probeOutcome {
 		default: // http
 			cmd = fmt.Sprintf(`curl -skL -o /dev/null -w "HTTP_CODE=%%{http_code} TIME_MS=%%{time_total}" --max-time %d %s 2>&1`, m.TimeoutSec, sshclient.ShQuote(m.Target))
 		}
+		viaTag := srv.Name + " [SSH]"
+		if srv.AuthMode == "peer" {
+			viaTag = srv.Name + " [Agent]"
+		}
 		res := h.runOnServer(srv, cmd, timeout+6*time.Second)
 		elapsed := int(time.Since(start).Milliseconds())
 		out.LatencyMs = elapsed
+		if res.Err != nil && strings.TrimSpace(res.Output) == "" {
+			out.Msg = fmt.Sprintf("Probe node %s unreachable", viaTag)
+			return out
+		}
 		switch m.Type {
 		case "ping":
 			if res.Err == nil {
@@ -193,16 +201,16 @@ func (h *Handler) runMonitorProbe(m *db.Monitor) probeOutcome {
 						out.LatencyMs = int(v + 0.5)
 					}
 				}
-				out.Msg = fmt.Sprintf("OK via %s (%dms)", srv.Name, out.LatencyMs)
+				out.Msg = fmt.Sprintf("OK via %s (%dms)", viaTag, out.LatencyMs)
 			} else {
-				out.Msg = fmt.Sprintf("Ping failed via %s", srv.Name)
+				out.Msg = fmt.Sprintf("Ping failed via %s", viaTag)
 			}
 		case "tcp":
 			if strings.Contains(res.Output, "TCP_OK") {
 				out.Up = true
-				out.Msg = fmt.Sprintf("TCP open via %s", srv.Name)
+				out.Msg = fmt.Sprintf("TCP open via %s", viaTag)
 			} else {
-				out.Msg = fmt.Sprintf("TCP unreachable via %s", srv.Name)
+				out.Msg = fmt.Sprintf("TCP unreachable via %s", viaTag)
 			}
 		case "dns":
 			if res.Err == nil && strings.TrimSpace(res.Output) != "" {
@@ -640,7 +648,8 @@ func (h *Handler) handleMonitorCheckNow(w http.ResponseWriter, r *http.Request) 
 
 func (h *Handler) handleMonitorImport(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Kind string `json:"kind"` // servers | tunnels
+		Kind      string `json:"kind"`       // servers | tunnels
+		ProbeFrom string `json:"probe_from"` // master | outbound | server:<id>
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -691,6 +700,10 @@ func (h *Handler) handleMonitorImport(w http.ResponseWriter, r *http.Request) {
 			if hasTarget["ping|"+s.Host] {
 				continue
 			}
+			pf := strings.TrimSpace(req.ProbeFrom)
+			if pf == "" || pf == fmt.Sprintf("server:%d", s.ID) {
+				pf = "master"
+			}
 			m := &db.Monitor{
 				Name:           "Server: " + s.Name,
 				Type:           "ping",
@@ -698,7 +711,7 @@ func (h *Handler) handleMonitorImport(w http.ResponseWriter, r *http.Request) {
 				IntervalSec:    60,
 				TimeoutSec:     8,
 				Retries:        2,
-				ProbeFrom:      "master",
+				ProbeFrom:      pf,
 				LinkedServerID: s.ID,
 				IsPublic:       true,
 				PublicName:     s.Name,
