@@ -71,11 +71,27 @@ mc_get_channel() {
     echo "stable"
 }
 
+mc_get_mirror() {
+    local m
+    m=$(db_get panel_mirror_url)
+    [[ -n "$m" ]] || m="${MCONTROL_MIRROR_BASE:-https://c107328.parspack.net/c107328/MControl}"
+    echo "${m%/}"
+}
+
 mc_channel_base() {
-    if [[ "$1" == "beta" ]]; then
-        echo "https://github.com/${REPO}/releases/download/beta-latest"
+    local ch="$1" src="${2:-}"
+    if [[ -z "$src" && -f "${DATA_DIR}/.source" ]]; then
+        src=$(tr -d '[:space:]' < "${DATA_DIR}/.source" 2>/dev/null || true)
+    fi
+    if [[ "$src" == "mirror" ]]; then
+        local mb; mb=$(mc_get_mirror)
+        if [[ "$ch" == "beta" ]]; then echo "${mb}/beta-latest"; else echo "${mb}"; fi
     else
-        echo "https://github.com/${REPO}/releases/latest/download"
+        if [[ "$ch" == "beta" ]]; then
+            echo "https://github.com/${REPO}/releases/download/beta-latest"
+        else
+            echo "https://github.com/${REPO}/releases/latest/download"
+        fi
     fi
 }
 
