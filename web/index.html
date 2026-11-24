@@ -2482,8 +2482,8 @@ body[data-frame="ruled"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .
 body[data-frame="edge"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: var(--bw) solid var(--border); border-inline-start: max(4px,var(--bw)) solid var(--ring-ink,var(--accent)); }
 /* In-card telemetry displays */
 .metric-detail { display:none; min-width:0; margin-block:8px; color:var(--muted); font-size:.75rem; }
-body:is([data-gauge="pulse"],[data-gauge="columns"],[data-gauge="heat"],[data-gauge="peak"]) .metric-detail { display:block; }
-body:is([data-gauge="pulse"],[data-gauge="columns"],[data-gauge="heat"],[data-gauge="peak"]) :is(.mc-bar-wrap,.mc-spark) { display:none !important; }
+body:is([data-gauge="dial"],[data-gauge="drum"],[data-gauge="tank"],[data-gauge="matrix"],[data-gauge="steps"],[data-gauge="ribbon"],[data-gauge="pulse"],[data-gauge="columns"],[data-gauge="heat"],[data-gauge="peak"]) .metric-detail { display:block; }
+body:is([data-gauge="dial"],[data-gauge="drum"],[data-gauge="tank"],[data-gauge="matrix"],[data-gauge="steps"],[data-gauge="ribbon"],[data-gauge="pulse"],[data-gauge="columns"],[data-gauge="heat"],[data-gauge="peak"]) :is(.mc-bar-wrap,.mc-spark) { display:none !important; }
 .metric-channel { display:flex; align-items:center; gap:6px; direction:ltr; }
 .metric-channel svg { display:block; width:100%; min-width:0; height:44px; overflow:visible; }
 .mc-net .metric-channel svg { height:26px; }
@@ -2527,6 +2527,34 @@ body[data-uptime="mosaic"] .mon-card .mon-hb { width:100%; max-width:none; aspec
 @media (max-width:460px) {
  body[data-uptime="mosaic"] .mon-card .mon-hb-bars { grid-template-columns:repeat(10,minmax(0,1fr)); }
 }
+
+.metric-channel .instrument { height:78px; }
+.mc-net .metric-channel .instrument { height:44px; }
+.shape-picker { padding:10px; border:1px solid var(--border); border-radius:12px; }
+.shape-picker summary { cursor:pointer; font-weight:650; }
+.shape-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr)); gap:7px; margin-top:8px; }
+.shape-options button { min-width:0; padding:8px; background:var(--row); border:1px solid var(--border); border-radius:8px; color:var(--text); font:inherit; cursor:pointer; }
+.shape-options button[aria-pressed=true] { border-color:var(--accent); }
+.shape-options svg { display:block; width:100%; height:42px; }
+.beat-mini { height:42px; display:flex; align-items:center; justify-content:center; gap:4px; }
+.beat-mini i { width:11px; height:14px; background:var(--green); }
+.beat-mini i:nth-child(3) { background:var(--yellow); }
+.beat-mini i:nth-child(4) { background:var(--red); }
+body[data-beat="diamond"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="diamond"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);}
+body[data-beat="hex"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="hex"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:0;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);}
+body[data-beat="chevron"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="chevron"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:0;clip-path:polygon(0 0,55% 0,100% 50%,55% 100%,0 100%,45% 50%);}
+body[data-beat="slash"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="slash"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:0;clip-path:polygon(65% 0,100% 0,35% 100%,0 100%);}
+body[data-beat="loop"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="loop"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:50%;mask-image:radial-gradient(ellipse,transparent 43%,#000 47%);}
+body[data-beat="cross"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="cross"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:0;clip-path:polygon(35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%);}
+body[data-beat="ecg"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="ecg"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:0;clip-path:polygon(0 49%,25% 49%,38% 15%,53% 73%,65% 36%,77% 49%,100% 49%,100% 58%,72% 58%,66% 53%,52% 92%,38% 37%,30% 58%,0 58%);}
+body[data-beat="beacon"] .mon-card .mon-hb-bars > .mon-hb, .beat-mini[data-form="beacon"] i {width:100%;max-width:18px;height:auto;aspect-ratio:1;justify-self:center;border-radius:50%;}
+@keyframes heartbeat-beacon { 50% {filter:brightness(1.25);transform:scale(.75);} }
+@keyframes level-wave { to {transform:translateX(-16px);} }
+@media (prefers-reduced-motion:no-preference) {
+ body:not([data-motion="reduced"])[data-beat="beacon"] .mon-hb:last-child:is(.up,.down,.warn) { animation:heartbeat-beacon 2.2s ease-in-out infinite; }
+ body:not([data-motion="reduced"]) .instrument-wave { animation:level-wave 2s ease-in-out infinite alternate; }
+}
+
 /* Theme workspace */
 #sub-themes > .toolbar { padding-block: var(--gap); border-bottom: 1px solid var(--border); }
 #sub-themes h3 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.2; }
@@ -4737,7 +4765,7 @@ fa: {
 const OPT = {
   corners: { inherit: ['Theme shape','فرم تم'], square: ['Square','چهارگوش'], soft: ['Rounded','گرد'], capsule: ['Extra rounded','بسیار گرد'], petal: ['Opposite corners','دو گوشهٔ مورب'], arch: ['Arched top','بالا قوسی'] },
   frame: { inherit: ['Theme frame','قاب تم'], outline: ['Hairline outline','دورخط ظریف'], double: ['Double outline','دوخط'], edge: ['Leading accent','نوار کناری'], ruled: ['Horizontal rules','خط بالا و پایین'] },
-  beat: { inherit: ['Monitor default','پیش‌فرض مانیتور'], line: ['Segmented line','خط بخش‌بندی‌شده'], dots: ['Signal dots','نقطه‌ای'], pill: ['Capsules','کپسولی'], block: ['Blocks','بلوک مربعی'] },
+  beat: { diamond: ['Diamonds','لوزی'], hex: ['Honeycomb','لانه‌زنبوری'], chevron: ['Chevrons','پیکان'], slash: ['Slanted ticks','خطوط مورب'], loop: ['Hollow rings','حلقه‌های توخالی'], cross: ['Crosses','علامت مثبت'], ecg: ['ECG trace','ضربان قلب'], beacon: ['Live beacon','فانوس متحرک'], inherit: ['Monitor default','پیش‌فرض مانیتور'], line: ['Segmented line','خط بخش‌بندی‌شده'], dots: ['Signal dots','نقطه‌ای'], pill: ['Capsules','کپسولی'], block: ['Blocks','بلوک مربعی'] },
   nav: { dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
   card: { glass: ['Glass', 'شیشه‌ای'], flat: ['Flat', 'تخت'], outline: ['Outline', 'خطی'], paper: ['Paper', 'کاغذی'], deck: ['Accent deck', 'نوار تأکید'], brutal: ['Brutalist', 'بروتالیست'], neu: ['Neumorphic', 'نئومورفیک'], hud: ['HUD', 'اچ‌یو‌دی'], liquid: ['Liquid glass', 'شیشه مایع'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], bevel: ['Retro bevel', 'برجسته رترو'] },
   btn: { pill: ['Pill', 'کپسولی'], round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], slant: ['Slanted', 'مایل'] },
@@ -4747,7 +4775,7 @@ const OPT = {
   srv: { grid: ['Cards', 'کارت‌ها'], list: ['List', 'لیست'], table: ['Table', 'جدول'] },
   stat: { tiles: ['Tiles', 'کاشی'], ribbon: ['Ribbon', 'نوار'] },
   chart: { unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
-  gauge: { pulse: ['Live pulse','پالس متحرک'], columns: ['Sample columns','ستون‌های زمانی'], heat: ['Heat strip','نوار حرارتی'], peak: ['Current and peak','فعلی و اوج'], wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
+  gauge: { dial: ['Needle dial','عقربه‌ای'], drum: ['Segment dial','صفحهٔ مدرج'], tank: ['Liquid level','مخزن موج‌دار'], matrix: ['Dot matrix','ماتریس نقطه‌ای'], steps: ['Staircase','نمودار پله‌ای'], ribbon: ['Signal ribbon','روبان سیگنال'], pulse: ['Live pulse','پالس متحرک'], columns: ['Sample columns','ستون‌های زمانی'], heat: ['Heat strip','نوار حرارتی'], peak: ['Current and peak','فعلی و اوج'], wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
   chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
   motion: { system: ['System preference', 'تنظیم سیستم'], reduced: ['Reduced', 'حداقل حرکت'] },
   uptime: {
@@ -5008,6 +5036,9 @@ function applyTheme() {
   renderMetricDetails();
   refreshMonitorVisuals();
   renderGaugeSample();
+  document.querySelectorAll('[data-shape-key]').forEach(button => {
+    button.setAttribute('aria-pressed', String(e[button.dataset.shapeKey] === button.dataset.choice));
+  });
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
@@ -5190,6 +5221,15 @@ function uptimeRing(value) {
   const percent = valid ? n : 0;
   return `<div class="uptime-ring" style="--uptime-fill:${percent}%"><span><strong>${valid ? n.toLocaleString(lang, {maximumFractionDigits: 2}) + '%' : '—'}</strong><small>${lang === 'fa' ? '۲۴ ساعت' : '24 hours'}</small></span></div>`;
 }
+function shapePicker(key, modes, title) {
+  const current = effective()[key];
+  const buttons = modes.map(mode => {
+    const art = key === 'gauge' ? instrumentPlot(mode,[12,24,20,45,40,76,70,35,50,68],100,'accent')
+      : `<span class="beat-mini" data-form="${mode}" aria-hidden="true">${'<i></i>'.repeat(6)}</span>`;
+    return `<button type="button" data-shape-key="${key}" data-choice="${mode}" aria-pressed="${mode === current}">${art}${esc(optLabel(key,mode))}</button>`;
+  }).join('');
+  return `<details class="shape-picker"><summary>${title}</summary><div class="shape-options">${buttons}</div></details>`;
+}
 function renderStudio() {
   const box = $('studio'); if (!box) return;
   const e = effective();
@@ -5203,7 +5243,10 @@ function renderStudio() {
   const detailKeys = ['gauge','corners','frame','uptime','beat'];
   const demoHistory = monitorSample.beats.map(b=>b.status);
   const demo = `<div class="mon-card is-up detail-demo"><div class="mon-head"><strong>${label('Monitor preview','پیش‌نمایش مانیتور')}</strong></div>${uptimeRing(98.7)}<div class="mon-visual" id="studio-monitor-visual">${monitorVisual(monitorSample,e.uptime)}</div><div class="mon-hb-bars">${demoHistory.map(state => `<i class="mon-hb ${state}"></i>`).join('')}</div><div class="mon-foot">${label('Sample history','تاریخچهٔ نمونه')} · 24h · 98.7%</div></div>`;
-  box.innerHTML = section(label('Cards and uptime', 'کارت‌ها و آپتایم'), fields(detailKeys)) + '<div id="std-metric-preview" class="std-metric-preview"></div>' + demo
+  box.innerHTML = section(label('Cards and uptime', 'کارت‌ها و آپتایم'), fields(detailKeys))
+    + shapePicker('gauge',instrumentModes,label('Browse new metric gauges','انتخاب تصویری نمایشگر کارت‌ها'))
+    + shapePicker('beat',['diamond','hex','chevron','slash','loop','cross','ecg','beacon'],label('Browse new heartbeat shapes','انتخاب تصویری شکل ضربان‌ها'))
+    + '<div id="std-metric-preview" class="std-metric-preview"></div>' + demo
     + section(label('Palette', 'پالت رنگ') + ' · ' + t('mode_' + effMode()), colors)
     + section(label('Shape and scale', 'اندازه و فرم'), sizes)
     + section(label('Components and layout', 'اجزا و چیدمان'), fields(DIMS.filter(k => !detailKeys.includes(k))));
@@ -8286,13 +8329,44 @@ async function fetchLogs() {
 /* ═══════════════ local telemetry ═══════════════ */
 const cpuHist = new Array(28).fill(0), ramHist = new Array(28).fill(0), diskHist = new Array(28).fill(0), rxHist = new Array(28).fill(0), txHist = new Array(28).fill(0);
 let metricSamples = 0;
-const detailModes = ['pulse', 'columns', 'heat', 'peak'];
+const instrumentModes = ['dial','drum','tank','matrix','steps','ribbon'];
+const detailModes = [...instrumentModes,'pulse', 'columns', 'heat', 'peak'];
+function instrumentPlot(mode, values, max, color) {
+  const clamp = v => Math.max(0,Math.min(1,v/max));
+  const level = clamp(values[values.length-1]);
+  const svg = marks => `<svg class="instrument" viewBox="0 0 150 66" aria-hidden="true" style="color:var(--${color});fill:currentColor">${marks}</svg>`;
+  if (mode === 'dial' || mode === 'drum') {
+    const point = (t,r) => {
+      const a = Math.PI*(1+t);
+      return [75+r*Math.cos(a),59+r*Math.sin(a)].join(' ');
+    };
+    const ticks = Array.from({length:25},(_,i) => `<path d="M${point(i/24,50)} L${point(i/24,mode==='drum'?36:i%4===0?41:46)}" opacity="${mode==='dial'||(i+.5)/25<=level?1:.14}"/>`).join('');
+    const hand = mode==='drum' ? '' : `<path d="M75 59 L${point(level,38)}" stroke-width="3"/><circle cx="75" cy="59" r="4"/>`;
+    return svg(`<g stroke="currentColor" stroke-width="${mode==='drum'?3:1.4}" stroke-linecap="round">${ticks}${hand}</g>`);
+  }
+  if (mode === 'tank') {
+    const y = 61-56*level;
+    return svg(`<svg x="19" y="3" width="112" height="58" viewBox="19 3 112 58" overflow="hidden"><rect x="19" y="3" width="112" height="58" fill="currentColor" opacity=".08"/>${level>0?`<path class="instrument-wave" opacity=".65" d="M-10 ${y} q8 -3 16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 t16 0 v70 H-10Z"/>`:''}</svg><rect x="19" y="3" width="112" height="58" rx="2" stroke="currentColor" fill="none"/><path d="M20 17h9 M20 32h14 M20 47h9" stroke="currentColor"/>`);
+  }
+  if (mode === 'matrix') {
+    return svg(Array.from({length:100},(_,i)=>`<circle cx="${9+(i%20)*7}" cy="${54-Math.floor(i/20)*10}" r="2.8" opacity="${i<Math.round(100*level)?1:.14}"/>`).join(''));
+  }
+  const points = values.map((v,i)=>[146-(values.length-1-i)*5,32-25*clamp(v)]);
+  if (mode === 'steps') {
+    const path = points.map(([x,y],i)=>i?`H${x} V${2*y-2}`:`M${x} ${2*y-2}`).join(' ');
+    return svg(`<path d="M8 61H146 M8 33H146" opacity=".18" fill="none" stroke="currentColor"/><path d="${path}" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="146" cy="${2*points.at(-1)[1]-2}" r="2.5"/>`);
+  }
+  const top = points.map(([x,y])=>`${x},${y}`).join(' ');
+  const bottom = points.slice().reverse().map(([x,y])=>`${x},${66-y}`).join(' ');
+  return svg(`<polygon points="${top} ${bottom}" opacity=".45"/><polyline points="${top}" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 33H146" opacity=".35" stroke="currentColor"/>`);
+}
 function metricPlot(mode, values, max, color) {
   const n = values.length, last = n - 1, w = 200, h = 36, step = w / 28;
   const ratio = v => Math.min(1, Math.max(0, v / max));
   const y = v => 31 - ratio(v) * 24;
   const x = i => w - 4 - (last - i) * step;
   let marks = '';
+  if (instrumentModes.includes(mode)) return instrumentPlot(mode, values, max, color);
   if (mode === 'peak') {
     const width = ratio(values[last]) * 192;
     const peak = 4 + ratio(Math.max(...values)) * 192;
@@ -8669,6 +8743,13 @@ if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key ==
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
+$('studio').addEventListener('click', event => {
+  const choice = event.target.closest('[data-shape-key]');
+  if (!choice) return;
+  const select = $('studio').querySelector('select[data-dim="' + choice.dataset.shapeKey + '"]');
+  select.value = choice.dataset.choice;
+  onStudio(select);
+});
 $('style-export').onclick = () => {
   const profile = { format: 'mcontrol-theme', version: 1, themeId, mode, settings: custom };
   const url = URL.createObjectURL(new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' }));
