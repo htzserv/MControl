@@ -2661,13 +2661,6 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 #theme-grid .ttags {display:none;}
 .theme-inks {display:inline-flex;gap:3px;margin-inline-start:auto;} .theme-inks i {width:9px;height:9px;border-radius:50%;}
 
-/* Accent color reaches the working surfaces in each preset. */
-body { --row:color-mix(in srgb,var(--accent2) 9%,transparent); }
-.master-head-card {background:linear-gradient(108deg,color-mix(in srgb,var(--accent) 15%,var(--surface)),var(--surface) 68%,color-mix(in srgb,var(--accent2) 14%,var(--surface)));}
-.mc-cpu {--metric-ink:var(--accent);} .mc-ram {--metric-ink:var(--accent2);}
-.mc-net {--metric-ink:var(--green);} .mc-toolbox {--metric-ink:var(--pink);}
-body .local-grid .metric-card {background-image:linear-gradient(145deg,color-mix(in srgb,var(--metric-ink) 14%,transparent),transparent 70%) !important;}
-body .nav-item.active {background:color-mix(in srgb,var(--accent) 16%,var(--surface));}
 body[data-navstyle="underline"] .nav-item {border-radius:0;border:0;border-bottom:3px solid transparent;}
 body[data-navstyle="underline"] .nav-item.active {border-color:var(--accent);background:transparent;}
 body[data-navstyle="islands"] .nav {gap:5px;}
@@ -2705,6 +2698,33 @@ body[data-chk="seal"] input[type=checkbox],.part-seal {border-radius:50%;border:
 body[data-chk="seal"] input[type=checkbox]:checked,.part-seal {box-shadow:inset 0 0 0 2px var(--surface);}
 body[data-chk="ticket"] input[type=checkbox],.part-ticket {width:25px;border-radius:4px;border-inline-end:5px double var(--accent);}
 body[data-chk="ticket"] input[type=checkbox]:checked,.part-ticket {border-inline-end-color:var(--on-accent);}
+
+.accent-shortcut {position:relative;display:inline-flex;align-items:center;gap:6px;cursor:pointer;overflow:hidden;}
+.accent-shortcut i {width:13px;height:13px;background:var(--accent);border-radius:50%;}
+.accent-shortcut input {position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+.accent-shortcut:focus-within {outline:2px solid var(--accent);outline-offset:2px;}
+body[data-navx="top-glass"] {--top:84px;}
+body[data-navx="top-glass"] #chrome {
+ top:calc(env(safe-area-inset-top) + 8px);inset-inline:0; margin-inline:auto;
+ width:max-content;max-width:calc(100% - 16px);display:flex;align-items:center;gap:6px;padding:6px;
+ border:1px solid var(--border);border-radius:20px;background:color-mix(in srgb,var(--surface) 89%,transparent);
+ backdrop-filter:blur(var(--blur)) saturate(145%);box-shadow:0 5px 22px -9px var(--shadow);
+}
+body[data-navx="top-glass"] .nav-item.active {background:var(--accent-soft);color:var(--accent);}
+body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
+@media(max-width:1150px){
+ body[data-navx="top-glass"] #chrome {display:grid;grid-template-columns:auto 1fr auto;gap:3px 6px;width:min(540px,calc(100% - 16px));}
+ body[data-navx="top-glass"] #nav {grid-column:1/-1;grid-row:2;justify-content:space-around;}
+ body[data-navx="top-glass"] .nav-item {padding:8px;min-width:0;justify-content:center;}
+ body[data-navx="top-glass"] #chrome .ver-bubble {height:26px;padding:2px 6px;}
+ body[data-navx="top-glass"] #util-bar {justify-self:end;gap:2px;}
+ body[data-navx="top-glass"] #util-bar .icon-btn {width:26px;height:26px;}
+ body[data-navx="top-glass"] #chrome .brand {display:none;}
+ body[data-navx="top-glass"] .main-wrap {padding-top:calc(100px + env(safe-area-inset-top)) !important;}
+}
+@media(max-width:560px){
+ body[data-navx="top-glass"] .nav-item .lbl,body[data-navx="top-glass"] .bak-bubble-lbl {display:none;}
+}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4115,7 +4135,8 @@ body[data-chk="ticket"] input[type=checkbox]:checked,.part-ticket {border-inline
         <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
         <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
         <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
-</div>
+<label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
+      </div>
       <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
       <div class="tg" id="theme-grid"></div>
       </div></details>
@@ -4773,7 +4794,7 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', gallery_title:'Choose a theme', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', quick_accent:'Accent color', gallery_title:'Choose a theme', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
@@ -4827,7 +4848,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', gallery_title:'انتخاب تم', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', quick_accent:'رنگ اکسنت', gallery_title:'انتخاب تم', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -4869,7 +4890,7 @@ const OPT = {
   corners: { inherit: ['Theme shape','فرم تم'], square: ['Square','چهارگوش'], soft: ['Rounded','گرد'], capsule: ['Extra rounded','بسیار گرد'], petal: ['Opposite corners','دو گوشهٔ مورب'], arch: ['Arched top','بالا قوسی'] },
   frame: { inherit: ['Theme frame','قاب تم'], outline: ['Hairline outline','دورخط ظریف'], double: ['Double outline','دوخط'], edge: ['Leading accent','نوار کناری'], ruled: ['Horizontal rules','خط بالا و پایین'] },
   beat: { diamond: ['Diamonds','لوزی'], hex: ['Honeycomb','لانه‌زنبوری'], chevron: ['Chevrons','پیکان'], slash: ['Slanted ticks','خطوط مورب'], loop: ['Hollow rings','حلقه‌های توخالی'], cross: ['Crosses','علامت مثبت'], ecg: ['ECG trace','ضربان قلب'], beacon: ['Live beacon','فانوس متحرک'], inherit: ['Monitor default','پیش‌فرض مانیتور'], line: ['Segmented line','خط بخش‌بندی‌شده'], dots: ['Signal dots','نقطه‌ای'], pill: ['Capsules','کپسولی'], block: ['Blocks','بلوک مربعی'] },
-  nav: { underline: ['Underline tabs','تب خط‌دار'], islands: ['Island dock','داک جزیره‌ای'], spine: ['Side timeline','مسیر عمودی'], dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
+  nav: { 'top-glass': ['Floating glass bar','نوار شیشه‌ای شناور بالا'], underline: ['Underline tabs','تب خط‌دار'], islands: ['Island dock','داک جزیره‌ای'], spine: ['Side timeline','مسیر عمودی'], dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
   card: { glass: ['Glass', 'شیشه‌ای'], flat: ['Flat', 'تخت'], outline: ['Outline', 'خطی'], paper: ['Paper', 'کاغذی'], deck: ['Accent deck', 'نوار تأکید'], brutal: ['Brutalist', 'بروتالیست'], neu: ['Neumorphic', 'نئومورفیک'], hud: ['HUD', 'اچ‌یو‌دی'], liquid: ['Liquid glass', 'شیشه مایع'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], bevel: ['Retro bevel', 'برجسته رترو'] },
   btn: { pill: ['Pill', 'کپسولی'], round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], slant: ['Slanted', 'مایل'] },
   bg: { solid: ['Solid', 'ساده'], grid: ['Grid', 'شبکه'], dots: ['Dots', 'نقطه‌ای'], aurora: ['Aurora', 'شفق'], mesh: ['Mesh', 'مش گرادیان'], scan: ['Scanlines', 'خطوط اسکن'], noise: ['Grain', 'دانه‌دار'], diag: ['Diagonal', 'مورب'], stripes: ['Stripes', 'راه‌راه'], stars: ['Stars', 'ستاره‌ای'], horizon: ['Horizon', 'افق'] },
@@ -4914,18 +4935,19 @@ function T(id, n, g, s, d, l) {
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
-T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#321734 #462344 #fff1fa #d9bcd6 #ff9cdb #ffc179 #62446a', '#ffe3ee #fff5f6 #35152f #744f6c #9b206b #a54814 #e6c6dd');
+T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
 
-T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#2b1622 #3f2030 #fff5f7 #cab9d3 #ff9b70 #ffc855 #594463', '#ffe6cf #fff5e8 #2c1b30 #705564 #b33a16 #8e4d00 #e5c7bd');
-T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#321139 #481846 #fff2fc #deb9df #ff86df #ffb855 #77426e', '#ffe0f1 #fff2f8 #370e34 #754968 #a41680 #a24410 #e7bfdb');
-T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#202411 #333b19 #f2ffdf #b8d9bd #d9f669 #ffae51 #41634d', '#f6edc8 #fff9df #1a3016 #506044 #596207 #a3450b #ccd8ac');
-T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#35151e #49202b #fff3e7 #e4c3b9 #ff8d87 #ffc35a #764b4e', '#ffdfd3 #fff4e8 #381d24 #79534c #b42f4a #934c00 #e7c4b6');
-T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#122a22 #203e30 #ecfff2 #b2d6c8 #85ecc0 #ffa16b #36635a', '#f2edce #fff9e6 #153129 #426859 #116c4e #ac401e #b9d8c7');
-T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#2f1a12 #48281b #fff2d8 #dfc9ac #ffb65f #ff9a84 #65503a', '#f9dfbd #fff2dc #352417 #705944 #a04b0b #a33636 #dac3a5');
-T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#292022 #392b2c #f5f2e7 #c2c8c9 #ffb576 #bccfee #485965', '#f7e4d4 #fff7eb #202b30 #506166 #9a4b1b #425e89 #cccfc6');
-T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#32192b #472337 #fff4ee #dac0cf #ffa3c0 #ffd299 #66516d', '#ffdfdf #fff4ed #35222d #745662 #ac345d #875019 #e6cbd0');
-T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#25210f #363119 #f1f6da #c1ceb1 #f9d874 #b8e889 #475b3d', '#f7ebbe #fdf7da #25301d #586344 #7d5910 #416328 #d0d3b5');
-T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#231a1c #342629 #f8f1e7 #c9beb8 #fbc393 #e9a6bc #53484b', '#f3dfd4 #fff6ef #2d2626 #655a57 #8c4e2f #93425e #d8cabe');
+T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
+T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#24102c #391842 #fff2fc #deb9df #ef9dff #ffbd73 #77426e', '#fae7f7 #fff8fc #370e34 #754968 #93129d #a74312 #e7bfdb');
+T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#0b211b #15382a #f2ffdf #b8d9bd #99ed73 #ffce70 #41634d', '#eef4d9 #fcfff0 #1a3016 #506044 #356918 #93600a #ccd8ac');
+T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
+T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#082321 #103a36 #ecfff2 #b2d6c8 #60e8c2 #ffb18f #36635a', '#e0f2e5 #f7fff4 #153129 #426859 #006d59 #aa4428 #b9d8c7');
+T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#241911 #39281e #fff2d8 #dfc9ac #ffc278 #ec9e83 #65503a', '#f6e7cf #fff7e9 #352417 #705944 #924c18 #964438 #dac3a5');
+T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
+T('ios-air', 'iOS Air', 'Studio', 'top-glass liquid pill solid round cozy grid tiles 18 1 bubbles ring switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
+T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#231829 #392a40 #fff4ee #dac0cf #f4aec4 #a1d9f7 #66516d', '#fae8e6 #fffafa #35222d #745662 #a73463 #286998 #e6cbd0');
+T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#141e15 #202e20 #f1f6da #c1ceb1 #b9ec79 #f6ce7e #475b3d', '#f0efd9 #fbfbea #25301d #586344 #476724 #865b11 #d0d3b5');
+T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
 
 /* ═══════════════ icons ═══════════════ */
 const IC = {
@@ -5118,7 +5140,7 @@ function effective(th = curTheme(), settings = custom) {
   return e;
 }
 const navBases = {underline:'top',islands:'dock',spine:'side'};
-function navxFor(e) { return window.innerWidth <= 860 ? 'bottom' : (navBases[e.nav] || e.nav); }
+function navxFor(e) { if(e.nav==='top-glass') return 'top-glass'; return window.innerWidth <= 860 ? 'bottom' : (navBases[e.nav] || e.nav); }
 function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
@@ -5139,6 +5161,7 @@ function applyTheme() {
   b.dataset.navstyle = e.nav; b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   renderMetricDetails();
   refreshMonitorVisuals();
+  $('quick-accent').value=p[4];
   $('atelier-current').textContent = curTheme().n;
 
   b.classList.toggle('light-mode', !dark);
@@ -5238,6 +5261,7 @@ function pvHTML(th) {
   let nav = '';
   const bars = (vert) => [0, 1, 2].map(i => `<b style="display:${vert ? 'block' : 'inline-block'};width:${vert ? '60%' : '9px'};height:3px;margin:${vert ? '7px 5px 0' : '3px 2px'};background:${i === 0 ? ac : tx + '66'};border-radius:2px"></b>`).join('');
   switch (navBases[th.nav] || th.nav) {
+    case 'top-glass': nav = `<div class="pn" style="--pc:${sf};top:4px;left:8%;right:8%;height:13px;border-radius:12px;text-align:center;line-height:8px">${bars(false)}</div>`; ins.t=21; break;
     case 'dock': nav = `<div class="pn" style="--pc:${sf};top:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.t = 24; break;
     case 'float-b': nav = `<div class="pn" style="--pc:${sf};bottom:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.b = 24; break;
     case 'top': nav = `<div class="pn" style="--pc:${sf};top:0;left:0;right:0;height:12px;border-width:0 0 1px 0">${bars(false)}</div>`; ins.t = 19; break;
@@ -8866,6 +8890,10 @@ if ($('btn-core-install')) $('btn-core-install').onclick = () => { const id = $(
 if ($('btn-core-run')) $('btn-core-run').onclick = runCmd;
 if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
+$('quick-accent').addEventListener('input', event=>{
+  custom[effMode()+'_accent']=event.target.value;
+  applyTheme(); renderThemes(); renderStudio();
+});
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
 $('studio').addEventListener('change', event=>{
