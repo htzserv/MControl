@@ -399,7 +399,7 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
 }
 .login-card::before {
   content: ''; position: absolute; top: 0; left: 12%; right: 12%; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent3), transparent);
 }
 .login-emblem {
   width: 62px; height: 62px; margin: 0 auto 14px; border-radius: 18px;
@@ -1480,7 +1480,7 @@ body[data-card="prism"] .stats .stat {
   border-color: color-mix(in srgb, var(--tile-ink) 26%, var(--border));
 }
 body[data-card="prism"] .stats .stat:nth-child(2) { --tile-ink: var(--green); }
-body[data-card="prism"] .stats .stat:nth-child(3) { --tile-ink: var(--accent2); }
+body[data-card="prism"] .stats .stat:nth-child(3) { --tile-ink: var(--accent3); }
 body[data-card="prism"] .stats .stat:nth-child(4) { --tile-ink: var(--pink); }
 body[data-card="prism"] .stats .stat .sv { color: var(--tile-ink); }
 body[data-card="prism"] .srv-row-wrap {
@@ -2655,7 +2655,7 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 #sub-themes .appearance-modes .mode-sample {display:none;}
 #sub-themes .appearance-modes .chip {padding:6px 13px;}
 #sub-themes .appearance-modes .chip::after {display:none;}
-#studio select[data-pick] {width:min(100%,280px);padding:8px 12px;margin:0 0 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font:inherit;}
+:is(#studio,#mon-theme-bar) select[data-pick] {width:min(100%,280px);padding:8px 12px;margin:0 0 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font:inherit;}
 #studio-actions:not([hidden]) {display:flex;flex-wrap:wrap;gap:6px;}
 #theme-grid {margin-block-end:0;}
 #theme-grid .ttags {display:none;}
@@ -2703,27 +2703,27 @@ body[data-chk="ticket"] input[type=checkbox]:checked,.part-ticket {border-inline
 .accent-shortcut i {width:13px;height:13px;background:var(--accent);border-radius:50%;}
 .accent-shortcut input {position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
 .accent-shortcut:focus-within {outline:2px solid var(--accent);outline-offset:2px;}
-body[data-navx="top-glass"] {--top:84px;}
-body[data-navx="top-glass"] #chrome {
+body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) {--top:84px;}
+body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #chrome {
  top:calc(env(safe-area-inset-top) + 8px);inset-inline:0; margin-inline:auto;
  width:max-content;max-width:calc(100% - 16px);display:flex;align-items:center;gap:6px;padding:6px;
  border:1px solid var(--border);border-radius:20px;background:color-mix(in srgb,var(--surface) 89%,transparent);
  backdrop-filter:blur(var(--blur)) saturate(145%);box-shadow:0 5px 22px -9px var(--shadow);
 }
-body[data-navx="top-glass"] .nav-item.active {background:var(--accent-soft);color:var(--accent);}
-body[data-navx="top-glass"] #chrome .ver-bubble {height:32px;box-shadow:none;}
+body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) .nav-item.active {background:var(--accent-soft);color:var(--accent);}
+body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #chrome .ver-bubble {height:32px;box-shadow:none;}
 @media(max-width:1150px){
- body[data-navx="top-glass"] #chrome {display:grid;grid-template-columns:auto 1fr auto;gap:3px 6px;width:min(540px,calc(100% - 16px));}
- body[data-navx="top-glass"] #nav {grid-column:1/-1;grid-row:2;justify-content:space-around;}
- body[data-navx="top-glass"] .nav-item {padding:8px;min-width:0;justify-content:center;}
- body[data-navx="top-glass"] #chrome .ver-bubble {height:26px;padding:2px 6px;}
- body[data-navx="top-glass"] #util-bar {justify-self:end;gap:2px;}
- body[data-navx="top-glass"] #util-bar .icon-btn {width:26px;height:26px;}
- body[data-navx="top-glass"] #chrome .brand {display:none;}
- body[data-navx="top-glass"] .main-wrap {padding-top:calc(100px + env(safe-area-inset-top)) !important;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #chrome {display:grid;grid-template-columns:auto 1fr auto;gap:3px 6px;width:min(540px,calc(100% - 16px));}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #nav {grid-column:1/-1;grid-row:2;justify-content:space-around;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) .nav-item {padding:8px;min-width:0;justify-content:center;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #chrome .ver-bubble {height:26px;padding:2px 6px;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #util-bar {justify-self:end;gap:2px;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #util-bar .icon-btn {width:26px;height:26px;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) #chrome .brand {display:none;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) .main-wrap {padding-top:calc(100px + env(safe-area-inset-top)) !important;}
 }
 @media(max-width:560px){
- body[data-navx="top-glass"] .nav-item .lbl,body[data-navx="top-glass"] .bak-bubble-lbl {display:none;}
+ body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) .nav-item .lbl,body:is([data-navx="top-glass"],[data-navx="bubble-bar"]) .bak-bubble-lbl {display:none;}
 }
 .top-mode {position:relative;cursor:pointer;} .top-mode select {position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
 .top-mode:focus-within {outline:2px solid var(--accent);} #mode-icon {display:flex;}
@@ -2747,6 +2747,16 @@ body[data-family="Android"][data-card="flat"] .card {background:color-mix(in srg
 #theme-grid .color-collection strong {font-size:.74rem;color:var(--muted);}
 #theme-grid .family-colors {margin-top:4px;}
 #theme-grid .variant-choice i {width:18px;height:12px;flex-shrink:0;border-radius:5px;}
+body[data-navx="bubble-bar"] :is(#chrome,#nav,#util-bar,#util-items) {background:transparent;border:0;box-shadow:none;backdrop-filter:none;}
+body[data-navx="bubble-bar"] #nav {gap:5px;}
+body[data-navx="bubble-bar"] #chrome :is(.nav-item,.icon-btn,.ver-bubble) {border:1px solid var(--border);border-radius:999px;background:var(--surface);box-shadow:0 2px 8px var(--shadow);}
+body[data-navx="bubble-bar"] #chrome .nav-item.active {background:var(--accent);color:var(--on-accent);}
+#mon-theme-bar.show {display:block;}
+#mon-theme-bar select {margin-block:0 10px;}
+#sub-themes>.ink-controls {margin-block:10px 16px;}
+.chart-mini i:nth-child(3),.atelier-current i {background:var(--accent3);}
+#nav .nav-item.active svg {filter:drop-shadow(0 1px 2px color-mix(in srgb,var(--accent3) 48%,transparent));}
+#apply-colors:disabled {opacity:.5;cursor:default;}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3566,7 +3576,7 @@ body[data-family="Android"][data-card="flat"] .card {background:color-mix(in srg
           <div class="hint" style="margin:2px 0 0;">Multi-point HTTP/SSL, TCP, Ping &amp; DNS monitoring with dedicated Telegram notifications &amp; Public Status Page.</div>
         </div>
         <div class="flexw" style="gap:7px;">
-          <button class="btn btn-ghost btn-sm" onclick="toggleMonThemeBar()">🎨 Uptime Theme</button>
+          <button class="btn btn-ghost btn-sm" aria-controls="mon-theme-bar" aria-expanded="false" onclick="toggleMonThemeBar()">🎨 Uptime Theme</button>
           <button class="btn btn-warn btn-sm" onclick="openMonConfigModal()">🔔 Notify Bot &amp; Status Page</button>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('servers')">+ Import Servers</button>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('tunnels')">+ Import Tunnels</button>
@@ -3576,8 +3586,7 @@ body[data-family="Android"][data-card="flat"] .card {background:color-mix(in srg
       </div>
 
             <div class="mon-theme-bar" id="mon-theme-bar">
-        <div class="mon-th-pills" id="mon-th-pills"></div>
-        <button type="button" class="btn btn-sky btn-sm" onclick="openThemesQuick()">✨ Full MDesign Studio</button>
+
       </div>
 
       <div id="mon-list" class="mon-grid"></div>
@@ -4153,16 +4162,16 @@ body[data-family="Android"][data-card="flat"] .card {background:color-mix(in srg
 
         <div id="sub-themes" class="sub-pane">
 <header class="atelier-head"><h3 data-i18n="theme_title">Theme studio</h3><div class="atelier-current"><i></i><strong id="atelier-current"></strong></div></header>
-<div class="appearance-modes">
+<div class="appearance-modes ink-controls">
         <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
         <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
-        <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
+        <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="third_ink"></span><input type="color" id="third-accent" data-i18n-title="third_ink"></label><button type="button" class="btn btn-sm btn-sky" id="apply-colors" data-i18n="apply_colors" disabled></button>
 
       </div>
       <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
       <div class="chips" id="family-tabs"></div>
       <div class="tg" id="theme-grid"></div>
-<div class="appearance-modes ink-controls"><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label><label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label></div>
+
       </div></details>
       <div class="studio" id="studio"></div>
       <div id="studio-actions" hidden>            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
@@ -4818,7 +4827,7 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', quick_accent:'Accent color', palette_title:'Color palette', second_ink:'Secondary accent', gallery_title:'Interface style', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', quick_accent:'Accent color', palette_title:'Color palette', third_ink:'Third accent', apply_colors:'Apply colors', second_ink:'Secondary accent', gallery_title:'Interface style', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
@@ -4872,7 +4881,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', quick_accent:'رنگ اکسنت', palette_title:'رنگ‌بندی', second_ink:'اکسنت مکمل', gallery_title:'استایل رابط', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', third_ink:'اکسنت سوم', apply_colors:'اعمال رنگ‌ها', quick_accent:'رنگ اکسنت', palette_title:'رنگ‌بندی', second_ink:'اکسنت مکمل', gallery_title:'استایل رابط', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -4914,7 +4923,7 @@ const OPT = {
   corners: { inherit: ['Theme shape','فرم تم'], square: ['Square','چهارگوش'], soft: ['Rounded','گرد'], capsule: ['Extra rounded','بسیار گرد'], petal: ['Opposite corners','دو گوشهٔ مورب'], arch: ['Arched top','بالا قوسی'] },
   frame: { inherit: ['Theme frame','قاب تم'], outline: ['Hairline outline','دورخط ظریف'], double: ['Double outline','دوخط'], edge: ['Leading accent','نوار کناری'], ruled: ['Horizontal rules','خط بالا و پایین'] },
   beat: { diamond: ['Diamonds','لوزی'], hex: ['Honeycomb','لانه‌زنبوری'], chevron: ['Chevrons','پیکان'], slash: ['Slanted ticks','خطوط مورب'], loop: ['Hollow rings','حلقه‌های توخالی'], cross: ['Crosses','علامت مثبت'], ecg: ['ECG trace','ضربان قلب'], beacon: ['Live beacon','فانوس متحرک'], inherit: ['Monitor default','پیش‌فرض مانیتور'], line: ['Segmented line','خط بخش‌بندی‌شده'], dots: ['Signal dots','نقطه‌ای'], pill: ['Capsules','کپسولی'], block: ['Blocks','بلوک مربعی'] },
-  nav: { 'top-glass': ['Floating glass bar','نوار شیشه‌ای شناور بالا'], underline: ['Underline tabs','تب خط‌دار'], islands: ['Island dock','داک جزیره‌ای'], spine: ['Side timeline','مسیر عمودی'], dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
+  nav: { 'bubble-bar':['Floating bubbles','حباب‌های شناور'], 'top-glass': ['Floating glass bar','نوار شیشه‌ای شناور بالا'], underline: ['Underline tabs','تب خط‌دار'], islands: ['Island dock','داک جزیره‌ای'], spine: ['Side timeline','مسیر عمودی'], dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
   card: { glass: ['Glass', 'شیشه‌ای'], flat: ['Flat', 'تخت'], outline: ['Outline', 'خطی'], paper: ['Paper', 'کاغذی'], deck: ['Accent deck', 'نوار تأکید'], brutal: ['Brutalist', 'بروتالیست'], neu: ['Neumorphic', 'نئومورفیک'], hud: ['HUD', 'اچ‌یو‌دی'], liquid: ['Liquid glass', 'شیشه مایع'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], bevel: ['Retro bevel', 'برجسته رترو'] },
   btn: { pill: ['Pill', 'کپسولی'], round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], slant: ['Slanted', 'مایل'] },
   bg: { solid: ['Solid', 'ساده'], grid: ['Grid', 'شبکه'], dots: ['Dots', 'نقطه‌ای'], aurora: ['Aurora', 'شفق'], mesh: ['Mesh', 'مش گرادیان'], scan: ['Scanlines', 'خطوط اسکن'], noise: ['Grain', 'دانه‌دار'], diag: ['Diagonal', 'مورب'], stripes: ['Stripes', 'راه‌راه'], stars: ['Stars', 'ستاره‌ای'], horizon: ['Horizon', 'افق'] },
@@ -4977,17 +4986,27 @@ T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact tab
 T('android-minimal', 'Android 17 Minimal', 'Android', 'bottom flat round solid sans cozy list ribbon 16 1 unified line material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
 T('prism-terrace', 'Prism Terrace', 'Prism', 'islands prism round solid sans cozy list ribbon 14 1 bento columns circle', '#171c30 #252d47 #f1f2ff #c1c7df #adb3ff #8fe2cc #414d72', '#edf0fa #fafaff #202841 #57627b #52429c #12645d #c6cde3');
 T('android-index', 'Android Index', 'Android', 'rail deck square solid sans compact table ribbon 8 1 bands line switch', '#15201f #22302c #f1f7ee #bfcfc2 #9cdab7 #f2c589 #445b50', '#eaf2ec #f8fcf8 #1a3025 #4d6357 #236b4a #855314 #bed5c8');
+T('prism-facet', 'Prism Facet', 'Prism', 'rail deck slant diag sans compact table ribbon 8 1 quadrant drum jewel', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
+T('neon-scope', 'Neon Scope', 'Neon', 'top hud square grid mono compact list ribbon 6 1 bands matrix neon', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
+T('material-folio', 'Material Folio', 'Material', 'underline paper round solid serif roomy list tiles 12 1 bento steps ticket', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
+T('studio-proof', 'Studio Proof', 'Studio', 'side-r outline square dots serif roomy grid ribbon 4 1 quadrant dial seal', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
+T('ios-pebble', 'iOS Pebble', 'iOS', 'bubble-bar liquid pill solid round cozy grid tiles 24 1 bubbles tank switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
+T('android-tile', 'Android Tile', 'Android', 'bottom deck round solid sans cozy grid tiles 16 1 quadrant columns material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
 const themeColors = [
   ['ruby','Ruby','یاقوتی','#29151e #40202e #fff1f4 #d8b6c2 #ff91aa #ffc486 #6c394c','#ffebee #fff9fa #371722 #744958 #a42045 #974f17 #edc3cc'],
   ['ocean','Ocean','اقیانوسی','#101e30 #192e45 #eff7ff #b6cade #7bbfff #8de6dc #355878','#e7f2ff #f7fbff #152d49 #4c627c #155b9f #076b69 #bed3ea'],
   ['jade','Jade','یشمی','#10251e #19392d #edfff3 #b6d7c5 #70e3ae #ebd882 #365d4b','#e6f5e9 #f7fff7 #183421 #46634f #116c4e #786013 #bfdbc9'],
   ['amber','Amber','کهربایی','#291e12 #3b2b19 #fff5dc #d8c4a5 #ffbf67 #ff9e89 #634b31','#fff0d6 #fffaee #382915 #6b5638 #8f510e #9a402a #e5cfaa'],
-  ['royal-lapis','Royal Lapis','لاجورد شاهی','#101a35 #1c2b4b #f4f4ff #becbea #91b7ff #f4cd75 #384b70','#eaf0ff #fafaff #172445 #516080 #284da0 #865c12 #c3cfe8'],
-  ['royal-turquoise','Nishapur Turquoise','فیروزهٔ نیشابور','#092523 #103c37 #edfff9 #b5d8cf #57e4ce #f1bd77 #306359','#e0f6f1 #f6fffb #10362f #44675e #006e62 #875322 #b5ddd2'],
+  ['royal-lapis','Persian Royal Lapis','لاجورد شاهی','#101a35 #1c2b4b #f4f4ff #becbea #91b7ff #f4cd75 #384b70','#eaf0ff #fafaff #172445 #516080 #284da0 #865c12 #c3cfe8'],
+  ['royal-turquoise','Persian Nishapur Turquoise','فیروزهٔ نیشابور','#092523 #103c37 #edfff9 #b5d8cf #57e4ce #f1bd77 #306359','#e0f6f1 #f6fffb #10362f #44675e #006e62 #875322 #b5ddd2'],
   ['royal-carmine','Persian Carmine','قرمز لاکی','#2b111c #451d2a #fff0ee #e0bcc3 #ff93a5 #eac688 #703746','#fae7e5 #fff8f3 #3c1824 #77515b #a12543 #7b591e #e6c4c5'],
-  ['royal-saffron','Khorasan Saffron','زعفران خراسان','#281c0d #402c16 #fff5de #dcc7a8 #ffbd47 #f59890 #665032','#fff0d1 #fffaf0 #382819 #725a41 #8d5008 #a03c42 #e4cfaa'],
-  ['royal-aubergine','Court Aubergine','بادمجانی درباری','#23132a #39203e #fff1fd #d9bedb #dfa4ea #ebc07c #634069','#f5e9f5 #fff9ff #331d37 #6e5072 #793487 #83591c #dec9df'],
-  ['royal-cypress','Shiraz Cypress','سرو شیراز','#11251c #1d3929 #f1faec #bfd4bc #8cd6a6 #dfb87c #3d5c41','#e8f1e1 #f9fcf3 #213320 #50634a #346942 #835920 #c6d7b9']
+  ['royal-saffron','Persian Khorasan Saffron','زعفران خراسان','#281c0d #402c16 #fff5de #dcc7a8 #ffbd47 #f59890 #665032','#fff0d1 #fffaf0 #382819 #725a41 #8d5008 #a03c42 #e4cfaa'],
+  ['royal-aubergine','Persian Court Aubergine','بادمجانی درباری','#23132a #39203e #fff1fd #d9bedb #dfa4ea #ebc07c #634069','#f5e9f5 #fff9ff #331d37 #6e5072 #793487 #83591c #dec9df'],
+  ['royal-cypress','Persian Shiraz Cypress','سرو شیراز','#11251c #1d3929 #f1faec #bfd4bc #8cd6a6 #dfb87c #3d5c41','#e8f1e1 #f9fcf3 #213320 #50634a #346942 #835920 #c6d7b9'],
+  ['royal-green','Persian Deep Green','سبز پرشینِ سیر','#061e19 #11372b #eefff3 #accdbd #47d693 #dfbb76 #305c49','#dfefe5 #f6fcf7 #132e20 #486653 #005331 #895b1e #b8d4c2'],
+  ['royal-blue','Persian Blue','آبی پرشین','#101637 #202953 #f2f2ff #c1c7e6 #929fff #eab86a #414a76','#e9ecff #fafaff #202541 #525c80 #253ea8 #895b12 #c2c9e9'],
+  ['royal-rose','Persian Rose','گل‌سرخی پرشین','#291425 #42213a #fff1fb #dcbcd3 #fa9bd2 #a9d8bb #683958','#f9e7f1 #fff8fc #361a2e #78546a #9a286a #326348 #e4c5d9'],
+  ['burgundy','Apple Burgundy','شرابی اپل','#22141b #39232e #fff3f6 #d9bdc9 #d998ad #d8b392 #593748','#f2e6ea #fff9fa #341d28 #715460 #722f49 #795632 #dcc5cf']
 ];
 const baseThemes = TH.slice();
 function familyOf(th) {
@@ -5160,7 +5179,7 @@ const colorRoles = [
   ['bg', 'Canvas', 'زمینه'], ['surface', 'Surface', 'سطح کارت'], ['text', 'Text', 'متن'],
   ['muted', 'Secondary text', 'متن فرعی'], ['accent', 'Accent', 'تأکید'], ['accent2', 'Secondary accent', 'تأکید دوم'],
   ['border', 'Border', 'حاشیه'], ['green', 'Success', 'موفقیت'], ['red', 'Error', 'خطا'],
-  ['yellow', 'Warning', 'هشدار'], ['purple', 'Chart violet', 'بنفش نمودار'], ['pink', 'Chart pink', 'صورتی نمودار']
+  ['yellow', 'Warning', 'هشدار'], ['purple', 'Chart violet', 'بنفش نمودار'], ['pink', 'Chart pink', 'صورتی نمودار'], ['accent3','Third accent','اکسنت سوم']
 ];
 const sizeRoles = [
   ['r', 'Card radius', 'گردی کارت', 0, 36, 'px'],
@@ -5181,8 +5200,8 @@ function effective(th = curTheme(), settings = custom) {
   }
   const light = effMode() === 'light';
   const defaults = light
-    ? [...th.l, '#047857', '#b91c1c', '#92400e', '#7e22ce', '#be185d']
-    : [...th.d, '#56dbac', '#ff8895', '#f4c56f', '#c4a2ff', '#f59bc7'];
+    ? [...th.l, '#047857', '#b91c1c', '#92400e', '#7e22ce', '#be185d', '#97631d']
+    : [...th.d, '#56dbac', '#ff8895', '#f4c56f', '#c4a2ff', '#f59bc7', '#eec582'];
   e.pal = colorRoles.map(([key], i) => {
     const value = settings[effMode() + '_' + key] || (key === 'accent' && settings.accent);
     return /^#[0-9a-f]{6}$/i.test(value) ? value : defaults[i];
@@ -5190,7 +5209,7 @@ function effective(th = curTheme(), settings = custom) {
   return e;
 }
 const navBases = {underline:'top',islands:'dock',spine:'side'};
-function navxFor(e) { if(e.nav==='top-glass') return 'top-glass'; return window.innerWidth <= 860 ? 'bottom' : (navBases[e.nav] || e.nav); }
+function navxFor(e) { if(['top-glass','bubble-bar'].includes(e.nav)) return e.nav; return window.innerWidth <= 860 ? 'bottom' : (navBases[e.nav] || e.nav); }
 function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
@@ -5211,7 +5230,7 @@ function applyTheme() {
   b.dataset.navstyle = e.nav; b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   renderMetricDetails();
   refreshMonitorVisuals();
-  $('quick-accent').value=p[4]; $('secondary-accent').value=p[5];
+  syncColorInputs();
   $('atelier-current').textContent = curTheme().n;
 
   b.classList.toggle('light-mode', !dark);
@@ -5263,10 +5282,32 @@ function profileFor(th) {
     return {...Object.fromEntries(Object.entries(saved).filter(([key])=>!layoutKey(key))),...JSON.parse(layout)};
   } catch { return saved; }
 }
+let colorDraft=null;
+const accentInputs=[['quick-accent','accent',4],['secondary-accent','accent2',5],['third-accent','accent3',12]];
+function previewColors(th) {
+  const settings=profileFor(th);
+  return effective(th,colorDraft?.id===th.id?{...settings,...colorDraft.edits}:settings);
+}
+function syncColorInputs() {
+  const th=TH.find(x=>x.id===colorDraft?.id)||curTheme();
+  const pal=previewColors(th).pal;
+  for(const [id,,index] of accentInputs) {
+    const input=$(id);
+    input.value=pal[index];
+    input.parentElement.querySelector('i').style.background=pal[index];
+  }
+  $('apply-colors').disabled=!colorDraft;
+}
+function stageColor(key,value) {
+  if(!colorDraft) colorDraft={id:themeId,edits:{}};
+  colorDraft.edits[key]=value;
+  syncColorInputs();
+  renderThemes();
+}
 function setTheme(id) {
   const th=TH.find(x=>x.id===id);
   if(!th) return;
-  custom=profileFor(th); themeId=id; galleryFamily=familyOf(th);
+  colorDraft=null; custom=profileFor(th); themeId=id; galleryFamily=familyOf(th);
   applyTheme(); renderThemes(); renderStudio();
 }
 function setMode(m) { mode = m; applyTheme(); renderThemes(); renderStudio(); }
@@ -5282,6 +5323,7 @@ function randTheme() {
   setTheme(n.id);
 }
 function randMix() {
+  colorDraft=null;
   const pick = a => a[Math.floor(Math.random() * a.length)];
   const c = {};
   DIMS.forEach(k => { c[k] = pick(Object.keys(OPT[k])); });
@@ -5333,6 +5375,7 @@ function pvHTML(th) {
   let nav = '';
   const bars = (vert) => [0, 1, 2].map(i => `<b style="display:${vert ? 'block' : 'inline-block'};width:${vert ? '60%' : '9px'};height:3px;margin:${vert ? '7px 5px 0' : '3px 2px'};background:${i === 0 ? ac : tx + '66'};border-radius:2px"></b>`).join('');
   switch (navBases[th.nav] || th.nav) {
+    case 'bubble-bar': nav = `<div style="position:absolute;inset:4px 0 auto;display:flex;justify-content:center;gap:3px">${[ac,sf,sf,sf].map(c=>`<i style="width:15px;height:9px;border-radius:9px;background:${c};border:1px solid ${bd}"></i>`).join('')}</div>`; ins.t=20; break;
     case 'top-glass': nav = `<div class="pn" style="--pc:${sf};top:4px;left:8%;right:8%;height:13px;border-radius:12px;text-align:center;line-height:8px">${bars(false)}</div>`; ins.t=21; break;
     case 'dock': nav = `<div class="pn" style="--pc:${sf};top:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.t = 24; break;
     case 'float-b': nav = `<div class="pn" style="--pc:${sf};bottom:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.b = 24; break;
@@ -5357,25 +5400,23 @@ function renderThemes() {
   if (!galleryFamily) galleryFamily = familyOf(curTheme());
   $('family-tabs').innerHTML = [...new Set(baseThemes.map(familyOf))].map(f =>
     `<button type="button" class="chip ${f===galleryFamily?'on':''}" data-family-tab="${f}" aria-pressed="${f===galleryFamily}">${f}</button>`).join('');
-  const opened = new Set([...grid.querySelectorAll('details[open]')].map(d=>d.dataset.colorsFor));
   const swatch=(th,base)=>{
     const name=th.colorName?th.colorName[lang==='fa'?1:0]:studioText('Original','اصلی');
-    const pal=effective(th,profileFor(th)).pal;
-    return `<button type="button" class="variant-choice" data-theme-id="${th.id}" aria-label="${esc(base.n+' · '+name)}" aria-pressed="${th.id===themeId}"><i style="background:linear-gradient(90deg,${pal[4]} 50%,${pal[5]} 50%)"></i>${esc(name)}</button>`;
+    const pal=previewColors(th).pal;
+    return `<button type="button" class="variant-choice" data-theme-id="${th.id}" aria-label="${esc(base.n+' · '+name)}" aria-pressed="${th.id===(colorDraft?.id||themeId)}"><i style="background:linear-gradient(90deg,${pal[4]} 33%,${pal[5]} 33% 67%,${pal[12]} 67%)"></i>${esc(name)}</button>`;
   };
   grid.innerHTML = baseThemes.filter(base=>familyOf(base)===galleryFamily).map(base=>{
     const selected = themeId===base.id || curTheme().base===base.id;
     const variants=TH.filter(x=>x.base===base.id);
     const remembered=ls.get('mc_last_color_'+base.id,base.id);
-    const th=selected?curTheme():(variants.find(x=>x.id===remembered)||base);
-    const profile=effective(th,profileFor(th));
+    const th=[base,...variants].find(x=>x.id===colorDraft?.id)||(selected?curTheme():(variants.find(x=>x.id===remembered)||base));
+    const profile=previewColors(th);
     const colors=(label,items)=>`<div class="color-collection"><strong>${label}</strong><div class="family-colors">${items.map(x=>swatch(x,base)).join('')}</div></div>`;
     const classic=[base,...variants.filter(x=>!x.paletteKey.startsWith('royal-'))];
     const royal=variants.filter(x=>x.paletteKey.startsWith('royal-'));
-    const name=th.colorName?th.colorName[lang==='fa'?1:0]:studioText('Original','اصلی');
     return `<div class="card tcard ${selected?'sel':''}"><button type="button" class="family-cover" data-theme-id="${th.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><strong>${esc(base.n)}</strong>${selected?`<span class="badge b-ok">${t('theme_active')}</span>`:''}</span></button>
-      <details data-colors-for="${base.id}" ${opened.has(base.id)?'open':''}><summary>${studioText('Colors','رنگ‌ها')} · ${esc(name)}</summary>
-      ${colors(studioText('Classic','کلاسیک'),classic)}${colors(studioText('Persian Royal','شاهانهٔ ایرانی'),royal)}</details></div>`;
+      <div data-colors-for="${base.id}">
+      ${colors(studioText('Classic','کلاسیک'),classic)}${colors(studioText('Persian Royal','شاهانهٔ ایرانی'),royal)}</div></div>`;
   }).join('');
 
 }
@@ -5438,8 +5479,9 @@ function uptimeRing(value) {
   return `<div class="uptime-ring" style="--uptime-fill:${percent}%"><span><strong>${valid ? n.toLocaleString(lang, {maximumFractionDigits: 2}) + '%' : '—'}</strong><small>${lang === 'fa' ? '۲۴ ساعت' : '24 hours'}</small></span></div>`;
 }
 const studioLabels = Object.fromEntries(DIMS.map(k=>[k,'studio_'+k]));
-const studioPicks = { quick:'nav', advanced:'bg' };
-const quickAxes = ['nav','chart','chk','gauge','beat','uptime','card','corners','frame'];
+const studioPicks = { quick:'nav', advanced:'bg', monitor:'uptime' };
+const monitorAxes=['uptime','beat'];
+const quickAxes = ['nav','chart','chk','gauge','card','corners','frame'];
 const studioText = (en,fa) => lang === 'fa' ? fa : en;
 function optionArt(key,v,e) {
   const candidate = {...e,[key]:v};
@@ -5479,7 +5521,8 @@ function renderStudio() {
     }).join('');
     return '<div class="atelier-tiles">'+choices+'</div>';
   };
-  const colors=colorRoles.map(([key,en,fa],i)=>`<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${studioText(en,fa)}<small dir="ltr">${e.pal[i]}</small></span></label>`).join('');
+  const palette=previewColors(TH.find(x=>x.id===colorDraft?.id)||curTheme()).pal;
+  const colors=colorRoles.map(([key,en,fa],i)=>`<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${palette[i]}"><span>${studioText(en,fa)}<small dir="ltr">${palette[i]}</small></span></label>`).join('');
   const sizes=sizeRoles.map(([key,en,fa,min,max,unit])=>`<label class="atelier-range"><span>${studioText(en,fa)} <b><output id="value-${key}">${e[key]}</output>${unit}</b></span><i class="size-sample ss-${key}" aria-hidden="true">${studioText('Aa','آب')}</i><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
   const label=k=>k==='palette'?studioText('Colors','رنگ‌ها'):k==='sizes'?studioText('Sizes and effects','اندازه و جلوه‌ها'):k==='tools'?studioText('Manage settings','مدیریت تنظیمات'):t(studioLabels[k]);
   const actions = $('studio-actions');
@@ -5492,26 +5535,24 @@ function renderStudio() {
     const options=keys.map(key=>`<option value="${key}" ${key===k?'selected':''}>${esc(label(key))}</option>`).join('');
     return `<details name="studio-main" class="atelier-group" data-section="${id}" ${open.has(id)?'open':''}><summary><strong>${title}</strong></summary><div class="atelier-content"><select aria-label="${title}" data-pick="${id}">${options}</select><div class="${k==='palette'||k==='sizes'?'atelier-tiles':''}">${content}</div></div></details>`;
   };
-  box.innerHTML=panel('quick',studioText('Main settings','تنظیمات اصلی'),quickAxes)+panel('advanced',studioText('More settings','تنظیمات بیشتر'),[...DIMS.filter(k=>!quickAxes.includes(k)),'palette','sizes','tools']);
+  box.innerHTML=panel('quick',studioText('Main settings','تنظیمات اصلی'),quickAxes)+panel('advanced',studioText('More settings','تنظیمات بیشتر'),[...DIMS.filter(k=>!quickAxes.includes(k) && !monitorAxes.includes(k)),'palette','sizes','tools']);
+  const monitorKey=studioPicks.monitor;
+  $('mon-theme-bar').innerHTML=`<select data-pick="monitor" aria-label="${studioText('Uptime appearance','ظاهر آپتایم')}">${monitorAxes.map(k=>`<option value="${k}" ${k===monitorKey?'selected':''}>${esc(label(k))}</option>`).join('')}</select>${axis(monitorKey)}`;
   const slot=$('studio-tools-slot');
   if(slot){slot.append(actions); actions.hidden=false;}
 
 }
 function onStudio(el) {
   const k = el.dataset.dim;
-  if (el.type === 'range') {
-    custom[k] = el.valueAsNumber;
-    $('value-' + k).textContent = el.value;
-  } else if (el.value === '') delete custom[k];
-  else custom[k] = el.value;
-  applyTheme();
-  renderThemes();
-  if (el.type === 'color') {
-    renderStudio();
+  if(el.type==='color') {
+    stageColor(k,el.value); renderStudio();
     $('studio').querySelector('[data-dim="'+k+'"]')?.focus({preventScroll:true});
-  } else {
-    // Slider output and the live sample already reflect the selected value.
+    return;
   }
+  custom[k]=el.valueAsNumber;
+  $('value-'+k).textContent=el.value;
+  applyTheme(); renderThemes();
+
 }
 
 /* ═══════════════ language ═══════════════ */
@@ -8957,7 +8998,11 @@ document.addEventListener('click', e => {
   else if (d.mode) setMode(d.mode);
   else if (d.preset !== undefined) { $('core-cmd').value = PRESETS[+d.preset] || ''; $('core-cmd').focus(); }
 
-  else if (d.themeId) setTheme(d.themeId);
+  else if (d.themeId && (el.classList.contains('variant-choice') || colorDraft?.id===d.themeId)) {
+    if(colorDraft?.id!==d.themeId) colorDraft=d.themeId===themeId?null:{id:d.themeId,edits:{}};
+    syncColorInputs(); renderThemes(); renderStudio();
+    $('theme-grid').querySelector('.variant-choice[data-theme-id="'+d.themeId+'"]')?.focus({preventScroll:true});
+  } else if(d.themeId) setTheme(d.themeId);
 });
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.dim && e.target.type === 'range') onStudio(e.target); });
 document.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.dim && e.target.type !== 'range') onStudio(e.target); });
@@ -8986,27 +9031,36 @@ if ($('btn-core-install')) $('btn-core-install').onclick = () => { const id = $(
 if ($('btn-core-run')) $('btn-core-run').onclick = runCmd;
 if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
-for(const [id,role] of [['quick-accent','accent'],['secondary-accent','accent2']]) $(id).addEventListener('input', event=>{
-  custom[effMode()+'_'+role]=event.target.value;
+for(const [id,role] of accentInputs) $(id).oninput=event=>{
+  stageColor(effMode()+'_'+role,event.target.value);
+  renderStudio();
+};
+$('apply-colors').onclick=()=>{
+  if(!colorDraft) return;
+  const th=TH.find(x=>x.id===colorDraft.id);
+  custom={...profileFor(th),...colorDraft.edits};
+  themeId=th.id; galleryFamily=familyOf(th); colorDraft=null;
   applyTheme(); renderThemes(); renderStudio();
-});
+};
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
-$('studio').addEventListener('change', event=>{
+for(const studioBox of [$('studio'),$('mon-theme-bar')]) {
+studioBox.addEventListener('change', event=>{
   const pick=event.target.dataset.pick;
   if(!pick) return;
   studioPicks[pick]=event.target.value;
   renderStudio();
-  $('studio').querySelector('[data-pick="'+pick+'"]').focus({preventScroll:true});
+  studioBox.querySelector('[data-pick="'+pick+'"]').focus({preventScroll:true});
 });
-$('studio').addEventListener('click', event => {
+studioBox.addEventListener('click', event => {
   const choice = event.target.closest('[data-axis]');
   if (!choice) return;
   const key=choice.dataset.axis, value=choice.dataset.choice;
   if (value) custom[key]=value; else delete custom[key];
   applyTheme(); renderThemes(); renderStudio();
-  $('studio').querySelector(`[data-axis="${key}"][data-choice="${value}"]`)?.focus({preventScroll:true});
+  studioBox.querySelector(`[data-axis="${key}"][data-choice="${value}"]`)?.focus({preventScroll:true});
 });
+}
 $('style-export').onclick = () => {
   const profile = { format: 'mcontrol-theme', version: 1, themeId, mode, settings: custom };
   const url = URL.createObjectURL(new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' }));
@@ -9034,7 +9088,7 @@ $('style-file').onchange = async event => {
       if (validColors.has(k) && typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) continue;
       throw Error();
     }
-    themeId = data.themeId; galleryFamily = familyOf(curTheme());
+    colorDraft=null; themeId = data.themeId; galleryFamily = familyOf(curTheme());
     mode = data.mode;
     custom = data.settings;
 
@@ -9044,7 +9098,7 @@ $('style-file').onchange = async event => {
   } catch { toast(t('style_invalid'), true); }
   finally { input.value = ''; }
 };
-$('btn-reset-custom').onclick = () => { custom = {}; applyTheme(); renderStudio(); renderThemes(); };
+$('btn-reset-custom').onclick = () => { colorDraft=null; custom = {}; applyTheme(); renderStudio(); renderThemes(); };
 
 $('btn-upd-check').onclick = () => checkUpdates(true);
 $('btn-zip-upd').onclick = () => $('upd-zip-file').click();
@@ -9907,26 +9961,10 @@ function fmCloseEditor() {
   if ($('fm-editor-wrap')) $('fm-editor-wrap').style.display = 'none';
   if ($('fm-split')) $('fm-split').classList.remove('has-editor');
 }
-function renderMonThemePills() {
-  const box = $('mon-th-pills');
-  if (!box || !OPT.uptime) return;
-  const cur = (custom && custom.uptime) || (effective().uptime) || 'kuma';
-  box.innerHTML = Object.keys(OPT.uptime).map(k =>
-    `<button type="button" class="mon-th-pill ${cur===k?'active':''}" onclick="setUptimeStyle('${k}')">${esc(optLabel('uptime', k))}</button>`
-  ).join('');
-}
 function toggleMonThemeBar() {
-  const bar = $('mon-theme-bar');
-  if (!bar) return;
-  bar.classList.toggle('show');
-  renderMonThemePills();
-}
-function setUptimeStyle(styleKey) {
-  custom.uptime = styleKey;
-  applyTheme();
-  renderStudio();
-  renderMonThemePills();
-  toast('Uptime style: ' + optLabel('uptime', styleKey));
+  const shown=$('mon-theme-bar').classList.toggle('show');
+  document.querySelector('[aria-controls="mon-theme-bar"]').setAttribute('aria-expanded',String(shown));
+  if(shown) renderStudio();
 }
 
 boot();
