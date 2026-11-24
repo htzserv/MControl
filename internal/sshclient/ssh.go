@@ -471,7 +471,14 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 func ProbePeer(host string, agentPort int, peerCode string, socksProxy ...string) ProbeResult {
 	resp, err := peerRequest("GET", host, agentPort, "/stats", peerCode, nil, 5*time.Second, socksProxy...)
 	if err != nil {
-		return ProbeResult{Online: false, CPU: "---", RAM: "---", Uptime: "---", Error: "peer agent unreachable"}
+		reason := "peer agent unreachable"
+		es := strings.ToLower(err.Error())
+		if strings.Contains(es, "timeout") || strings.Contains(es, "deadline exceeded") {
+			reason = "timeout (check cloud/server firewall)"
+		} else if strings.Contains(es, "connection refused") {
+			reason = "connection refused"
+		}
+		return ProbeResult{Online: false, CPU: "---", RAM: "---", Uptime: "---", Error: reason}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -526,14 +533,27 @@ func PeerExec(host string, agentPort int, peerCode, command string, timeout time
 }
 
 func PeerAgentInstallScript(peerCode string, agentPort int) string {
-	return PeerAgentInstallScriptWithSource(peerCode, agentPort, "", false)
+	return PeerAgentInstallScriptOpts(peerCode, agentPort, "", false, false)
 }
 
 func PeerAgentInstallScriptWithSource(peerCode string, agentPort int, mirrorURL string, isIran bool) string {
+	return PeerAgentInstallScriptOpts(peerCode, agentPort, mirrorURL, isIran, false)
+}
+
+// PeerAgentInstallScriptOpts installs a per-port systemd service (mcontrol-agent-<port>.service)
+// so multiple MControl panels can connect to the same server on different ports simultaneously.
+// When skipIfPortBusy is true, any port already actively listening (including another panel's agent)
+// is left untouched and exits 42 with PORT_BUSY:<process> so the caller tries the next port.
+func PeerAgentInstallScriptOpts(peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
+	svcName := fmt.Sprintf("mcontrol-agent-%d.service", agentPort)
 	mirrorClean := strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
+	skipFlag := "0"
+	if skipIfPortBusy {
+		skipFlag = "1"
+	}
 	prepDeps := `
 if ! command -v python3 >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1; then
   if command -v apt-get >/dev/null 2>&1; then
@@ -554,18 +574,9 @@ elif command -v iptables >/dev/null 2>&1; then
   iptables -C INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || true
 fi
 
-# Smart Port Check: stop existing mcontrol-agent & kill leftover MControl processes holding the port
 AGENT_PORT=%d
-systemctl stop mcontrol-agent.service 2>/dev/null || true
-for _p in /proc/[0-9]*; do
-  _pid="${_p#/proc/}"
-  [ "$_pid" = "$$" ] || [ "$_pid" = "$PPID" ] && continue
-  _cmd=$(tr '\000' ' ' < "$_p/cmdline" 2>/dev/null || true)
-  case "$_cmd" in
-    *python*/usr/local/bin/mcontrol-agent.py*) kill -TERM "$_pid" 2>/dev/null || true ;;
-  esac
-done
-sleep 0.3
+SVC_NAME="%s"
+SKIP_BUSY=%s
 
 get_port_pids() {
   local p="$1"
@@ -574,34 +585,45 @@ get_port_pids() {
   elif command -v lsof >/dev/null 2>&1; then
     lsof -t -iTCP:"$p" -sTCP:LISTEN 2>/dev/null | sort -u
   elif command -v fuser >/dev/null 2>&1; then
-    fuser "${p}/tcp" 2>/dev/null | tr ' ' '
-' | grep -E '^[0-9]+$' | sort -u
+    fuser "${p}/tcp" 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+$' | sort -u
   fi
 }
 
 BUSY_PIDS=$(get_port_pids "$AGENT_PORT" || true)
 if [ -n "$BUSY_PIDS" ]; then
-  for pid in $BUSY_PIDS; do
-    [ -d "/proc/$pid" ] || continue
-    cmdline=$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
-    comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
-    if echo "$cmdline $comm" | grep -qiE 'mcontrol-agent|mcontrol_agent'; then
-      echo "PORT_BUSY_OWN: killing stale mcontrol-agent pid=$pid"
-      kill -TERM "$pid" 2>/dev/null || true
-      sleep 0.5
-      kill -9 "$pid" 2>/dev/null || true
-    else
-      echo "PORT_BUSY_OTHER:${comm:-unknown}(pid=${pid})"
+  if [ "$SKIP_BUSY" = "1" ]; then
+    for pid in $BUSY_PIDS; do
+      [ -d "/proc/$pid" ] || continue
+      comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+      echo "PORT_BUSY:${comm:-unknown}(pid=${pid})"
       exit 42
-    fi
-  done
-  sleep 0.4
+    done
+  else
+    systemctl stop "$SVC_NAME" 2>/dev/null || true
+    [ "$AGENT_PORT" = "2054" ] && systemctl stop mcontrol-agent.service 2>/dev/null || true
+    sleep 0.3
+    BUSY_PIDS=$(get_port_pids "$AGENT_PORT" || true)
+    for pid in $BUSY_PIDS; do
+      [ -d "/proc/$pid" ] || continue
+      [ "$pid" = "$$" ] || [ "$pid" = "$PPID" ] && continue
+      cmdline=$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+      comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+      if echo "$cmdline $comm" | grep -qiE 'mcontrol-agent|mcontrol_agent'; then
+        kill -TERM "$pid" 2>/dev/null || true
+        sleep 0.4
+        kill -9 "$pid" 2>/dev/null || true
+      else
+        echo "PORT_BUSY:${comm:-unknown}(pid=${pid})"
+        exit 42
+      fi
+    done
+    sleep 0.3
+  fi
 fi`
-	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort, agentPort, agentPort)
+	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort, agentPort, agentPort, svcName, skipFlag)
 	mirrorFetch := ""
 	if isIran && mirrorClean != "" {
 		mirrorFetch = fmt.Sprintf(`
-# Iran node detected: prefer Iran Mirror (ParsPack) if mcontrol-agent.py is published there
 if command -v curl >/dev/null 2>&1; then
   if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "AGENT_VER" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
     mv -f /usr/local/bin/mcontrol-agent.py.dl /usr/local/bin/mcontrol-agent.py
@@ -762,9 +784,9 @@ srv.serve_forever()
 PYEOF
 chmod 755 /usr/local/bin/mcontrol-agent.py
 %s
-cat <<SVCEOF > /etc/systemd/system/mcontrol-agent.service
+cat <<SVCEOF > /etc/systemd/system/%s
 [Unit]
-Description=MControl Peer Agent v2 (TLS)
+Description=MControl Peer Agent v2 (TLS · Port %d)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=0
@@ -782,18 +804,18 @@ RestartSec=3
 WantedBy=multi-user.target
 SVCEOF
 PYBIN=$(command -v python3 || echo /usr/bin/python3)
-sed -i "s|__PYBIN__|${PYBIN}|g" /etc/systemd/system/mcontrol-agent.service
+sed -i "s|__PYBIN__|${PYBIN}|g" "/etc/systemd/system/%s"
 systemctl daemon-reload
-systemctl enable mcontrol-agent.service
-systemctl restart mcontrol-agent.service
+systemctl enable "%s"
+systemctl restart "%s"
 for _i in 1 2 3 4 5 6; do
-  if systemctl is-active --quiet mcontrol-agent.service && ss -tln 2>/dev/null | grep -q ":${AGENT_PORT} "; then
+  if systemctl is-active --quiet "%s" && ss -tln 2>/dev/null | grep -q ":${AGENT_PORT} "; then
     break
   fi
   sleep 0.5
 done
-systemctl is-active mcontrol-agent.service
-`, mirrorFetch, peerCode, agentPort)
+systemctl is-active "%s"
+`, mirrorFetch, svcName, agentPort, peerCode, agentPort, svcName, svcName, svcName, svcName, svcName)
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
@@ -801,5 +823,9 @@ func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
 }
 
 func InstallPeerAgentFromSource(t Target, peerCode string, agentPort int, mirrorURL string, isIran bool) Result {
-	return Run(t, PeerAgentInstallScriptWithSource(peerCode, agentPort, mirrorURL, isIran), 10*time.Second, 45*time.Second)
+	return Run(t, PeerAgentInstallScriptOpts(peerCode, agentPort, mirrorURL, isIran, false), 10*time.Second, 45*time.Second)
+}
+
+func InstallPeerAgentPreserveBusy(t Target, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
+	return Run(t, PeerAgentInstallScriptOpts(peerCode, agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 45*time.Second)
 }

@@ -1670,11 +1670,13 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	var portNotes []string
 
 	for _, tryPort := range candPorts {
-		res := sshclient.InstallPeerAgentFromSource(target, peerCode, tryPort, stCfg.PanelMirrorURL, isIran)
+		// Preserve any port already occupied by another panel's agent unless it is this server's own saved port
+		skipBusy := (srv.AgentPort <= 0 || tryPort != srv.AgentPort)
+		res := sshclient.InstallPeerAgentPreserveBusy(target, peerCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
 		if res.Err != nil {
-			if idx := strings.Index(res.Output, "PORT_BUSY_OTHER:"); idx >= 0 {
-				procInfo := strings.TrimSpace(strings.SplitN(res.Output[idx+len("PORT_BUSY_OTHER:"):], "\n", 2)[0])
-				portNotes = append(portNotes, fmt.Sprintf(":%d busy (%s)", tryPort, procInfo))
+			if idx := strings.Index(res.Output, "PORT_BUSY:"); idx >= 0 {
+				procInfo := strings.TrimSpace(strings.SplitN(res.Output[idx+len("PORT_BUSY:"):], "\n", 2)[0])
+				portNotes = append(portNotes, fmt.Sprintf(":%d in use (%s)", tryPort, procInfo))
 				continue
 			}
 			portNotes = append(portNotes, fmt.Sprintf(":%d install err (%s)", tryPort, res.Err.Error()))
@@ -1683,18 +1685,10 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 
 		p = probeWithRetry(tryPort)
 		if !p.Online {
-			// Auto-recover: kill stale mcontrol-agent on tryPort, restart, and re-probe once
-			repairCmd := fmt.Sprintf(`P=%d
-systemctl stop mcontrol-agent.service 2>/dev/null || true
-for pid in $(ss -tlnp 2>/dev/null | awk -v pt=":${P}" '$4 ~ pt"$" {print}' | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u); do
-  cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
-  if echo "$cmd" | grep -qiE 'mcontrol-agent|mcontrol_agent'; then
-    kill -9 "$pid" 2>/dev/null || true
-  fi
-done
-sleep 0.5
-systemctl restart mcontrol-agent.service
-sleep 1.2`, tryPort)
+			svcName := fmt.Sprintf("mcontrol-agent-%d.service", tryPort)
+			repairCmd := fmt.Sprintf(`P=%d; SVC="%s"
+systemctl restart "$SVC" 2>/dev/null || true
+sleep 1.2`, tryPort, svcName)
 			_ = sshclient.Run(target, repairCmd, 10*time.Second, 20*time.Second)
 			p = probeWithRetry(tryPort)
 		}

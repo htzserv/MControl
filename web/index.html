@@ -6768,33 +6768,18 @@ function renderServerCard(s) {
       <div class="srv-tweak-bar" data-srv-tweak-bar="${id}">
         ${renderInlineTweakPills(id)}
       </div>
-      <div class="srv-act-groups">
-        <div class="srv-act-grp">
-          <span class="srv-act-grp-lbl">Control</span>
-          <div class="srv-act-grp-btns">
-            <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
-            <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
-            <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
-            <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
-          </div>
-        </div>
-        <div class="srv-act-grp">
-          <span class="srv-act-grp-lbl">Network &amp; Peer</span>
-          <div class="srv-act-grp-btns">
-            <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
-            <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
-            ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
-          </div>
-        </div>
-        <div class="srv-act-grp">
-          <span class="srv-act-grp-lbl">Lifecycle</span>
-          <div class="srv-act-grp-btns">
-            <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota</button>
-            <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
-            <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
-            <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
-          </div>
-        </div>
+      <div class="card-actions" style="margin-top:4px;">
+        <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
+        <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
+        <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
+        <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
+        <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
+        <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
+        <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota &amp; Expiry</button>
+        ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
+        <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
+        <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
+        <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
       </div>
       ${err}
     </div>
