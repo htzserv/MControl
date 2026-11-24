@@ -2649,6 +2649,16 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 .family-swatches i {width:8px;height:8px;border:1px solid var(--surface);border-radius:50%;margin-inline-start:-2px;}
 .atelier-tile[aria-pressed=true]::after,.appearance-modes [aria-pressed=true]::after {background-color:#a7f3d0;}
 .ml-grid b {background:var(--row);} .ml-wall b {align-items:end;height:19px;} .ml-wall b i {height:6px;}
+#sub-themes {max-width:780px;margin-inline:auto;}
+#sub-themes .atelier-head {margin-block:12px;}
+#sub-themes .appearance-modes {gap:4px;margin-block:10px 20px;}
+#sub-themes .appearance-modes .mode-sample {display:none;}
+#sub-themes .appearance-modes .chip {padding:6px 13px;}
+#sub-themes .appearance-modes .chip::after {display:none;}
+#studio select[data-pick] {width:min(100%,280px);padding:8px 12px;margin:0 0 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font:inherit;}
+#studio-actions:not([hidden]) {display:flex;flex-wrap:wrap;gap:6px;}
+#theme-grid {margin-block-end:0;}
+#theme-grid .ttags {display:none;}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4055,29 +4065,22 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 
         <div id="sub-themes" class="sub-pane">
 <header class="atelier-head"><h3 data-i18n="theme_title">Theme studio</h3><div class="atelier-current"><i></i><strong id="atelier-current"></strong></div></header>
-      <details class="atelier-group"><summary><strong data-i18n="gallery_title"></strong><span id="gallery-current"></span></summary>
-      <div class="atelier-content"><div class="appearance-modes">
+<div class="appearance-modes">
         <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
         <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
         <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
-        <button class="btn btn-ghost btn-sm" id="btn-rand-theme" data-i18n="btn_random"></button>
-      </div>
-      <div class="flexw sp">
-        <input id="theme-search" class="mono" style="padding:8px 13px; border-radius:var(--rb); border:1px solid var(--border); background:color-mix(in srgb, var(--bg) 60%, transparent); color:var(--text); outline:none; min-width:200px;" data-i18n-ph="theme_search" placeholder="Search themes...">
-        <span class="hint" style="margin:0;" id="theme-count"></span>
-      </div>
-      <div class="chips" id="theme-groups"></div>
+</div>
+      <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
       <div class="tg" id="theme-grid"></div>
       </div></details>
       <div class="studio" id="studio"></div>
-      <details class="atelier-group"><summary><strong data-i18n="theme_tools"></strong></summary><div class="atelier-content"><div class="flexw">
-            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
+      <div id="studio-actions" hidden>            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
             <button class="btn btn-ghost btn-sm" id="style-export" data-i18n="style_export"></button>
             <button class="btn btn-ghost btn-sm" id="style-import" data-i18n="style_import"></button>
             <input type="file" accept=".json,application/json" id="style-file" hidden>
             <button class="btn btn-warn btn-sm" id="btn-reset-custom" data-i18n="btn_reset">Reset overrides</button>
-          </div>
-        </div></details>
+<button class="btn btn-ghost btn-sm" id="btn-rand-theme" data-i18n="btn_random"></button></div>
+
 
 
         </div>
@@ -4724,7 +4727,7 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', gallery_title:'Themes and appearance', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', gallery_title:'Choose a theme', theme_tools:'Manage settings', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
@@ -4778,7 +4781,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', gallery_title:'تم‌ها و حالت نمایش', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', gallery_title:'انتخاب تم', theme_tools:'مدیریت تنظیمات', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -4944,7 +4947,7 @@ function readThemeSettings(id, fallback = '{}') {
   return {};
 }
 custom = readThemeSettings(themeId, ls.get('mc_custom', '{}'));
-let groupFilter = 'all', themeQuery = '';
+
 let PRESETS = [];
 
 /* ═══════════════ api & toast ═══════════════ */
@@ -5090,7 +5093,7 @@ function applyTheme() {
   renderMetricDetails();
   refreshMonitorVisuals();
   $('atelier-current').textContent = curTheme().n;
-  $('gallery-current').textContent = curTheme().n + ' · ' + t('mode_' + mode);
+
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
@@ -5208,16 +5211,7 @@ function pvHTML(th) {
 }
 function renderThemes() {
   const grid = $('theme-grid'); if (!grid) return;
-  const gs = ['all'].concat(Array.from(new Set(TH.map(x => x.g))));
-  const familySwatch = g => {
-    const themes = g === 'all' ? TH.filter((th,i)=>TH.findIndex(x=>x.g===th.g)===i) : TH.filter(th=>th.g===g);
-    return '<span class="family-swatches" aria-hidden="true">'+themes.slice(0,4).map(th=>`<i style="background:${(effMode()==='light'?th.l:th.d)[4]}"></i>`).join('')+'</span>';
-  };
-  $('theme-groups').innerHTML = gs.map(g => `<button class="chip${g === groupFilter ? ' on' : ''}" aria-pressed="${g === groupFilter}" data-grp="${esc(g)}">${familySwatch(g)}${esc(t('g_' + g))}</button>`).join('');
-  const q = themeQuery.trim().toLowerCase();
-  const list = TH.filter(x => (groupFilter === 'all' || x.g === groupFilter) && (!q || (x.n + ' ' + t('g_' + x.g) + ' ' + x.g + ' ' + x.nav + ' ' + x.card).toLowerCase().includes(q)));
-  $('theme-count').textContent = list.length + ' / ' + TH.length + ' ' + t('themes_n');
-  const profiles = list.map(x => effective(x, x.id === themeId ? custom : readThemeSettings(x.id)));
+  const profiles = TH.map(x => effective(x, x.id === themeId ? custom : readThemeSettings(x.id)));
   grid.innerHTML = profiles.map(x => `<button type="button" aria-pressed="${x.id === themeId}" class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
     <div class="tmeta"><strong>${esc(x.n)}</strong>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
     <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
@@ -5281,12 +5275,8 @@ function uptimeRing(value) {
   return `<div class="uptime-ring" style="--uptime-fill:${percent}%"><span><strong>${valid ? n.toLocaleString(lang, {maximumFractionDigits: 2}) + '%' : '—'}</strong><small>${lang === 'fa' ? '۲۴ ساعت' : '24 hours'}</small></span></div>`;
 }
 const studioLabels = Object.fromEntries(DIMS.map(k=>[k,'studio_'+k]));
-const studioGroups = [
-  ['layout','Navigation and layout','ناوبری و چیدمان',['nav','srv','stat','chart','den']],
-  ['surfaces','Cards and controls','کارت‌ها و کنترل‌ها',['card','corners','frame','btn','chk']],
-  ['telemetry','Metrics and uptime','نمودارها و آپتایم',['gauge','uptime','beat']],
-  ['appearance','Background, type and motion','زمینه، قلم و حرکت',['bg','font','motion']]
-];
+const studioPicks = { quick:'gauge', advanced:'nav' };
+const quickAxes = ['gauge','beat','uptime','card','corners','frame'];
 const studioText = (en,fa) => lang === 'fa' ? fa : en;
 function optionArt(key,v,e) {
   const candidate = {...e,[key]:v};
@@ -5317,20 +5307,31 @@ function renderStudio() {
   const box = $('studio'); if(!box) return;
   const open = new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.section));
   const e=effective(),base=effective(curTheme(),{});
-  const fold=(id,name,value,body,inner=false)=>`<details class="${inner?'atelier-axis':'atelier-group'}" data-section="${id}" ${open.has(id)?'open':''}><summary><strong>${esc(name)}</strong><span>${esc(value)}</span></summary><div class="atelier-content">${body}</div></details>`;
   const axis=k=>{
     const choices=['',...Object.keys(OPT[k])].map(v=>{
       const active=(custom[k]||'')===v;
       const title=v?optLabel(k,v):t('theme_default')+' · '+optLabel(k,base[k]);
       return `<button type="button" class="atelier-tile" data-axis="${k}" data-choice="${v}" aria-pressed="${active}"><span class="tile-art" aria-hidden="true">${optionArt(k,v||base[k],e)}</span><span>${esc(title)}</span></button>`;
     }).join('');
-    return fold(k,t(studioLabels[k]),optLabel(k,e[k]),'<div class="atelier-tiles">'+choices+'</div>',true);
+    return '<div class="atelier-tiles">'+choices+'</div>';
   };
-  const sections=studioGroups.map(([id,en,fa,keys])=>fold(id,studioText(en,fa),keys.map(k=>optLabel(k,e[k])).join(' · '),keys.map(axis).join(''))).join('');
   const colors=colorRoles.map(([key,en,fa],i)=>`<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${studioText(en,fa)}<small dir="ltr">${e.pal[i]}</small></span></label>`).join('');
   const sizes=sizeRoles.map(([key,en,fa,min,max,unit])=>`<label class="atelier-range"><span>${studioText(en,fa)} <b><output id="value-${key}">${e[key]}</output>${unit}</b></span><i class="size-sample ss-${key}" aria-hidden="true">${studioText('Aa','آب')}</i><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
-  box.innerHTML=sections+fold('palette',studioText('Color palette','پالت رنگ'),t('mode_'+effMode())+' · '+e.pal[4],'<div class="atelier-tiles">'+colors+'</div>')+
-    fold('sizes',studioText('Measurements and effects','اندازه‌ها و جلوه‌ها'),e.r+'px · '+e.scale+'%','<div class="atelier-tiles">'+sizes+'</div>');
+  const label=k=>k==='palette'?studioText('Colors','رنگ‌ها'):k==='sizes'?studioText('Sizes and effects','اندازه و جلوه‌ها'):k==='tools'?studioText('Manage settings','مدیریت تنظیمات'):t(studioLabels[k]);
+  const actions = $('studio-actions');
+  // Move the existing action buttons intact to retain file input and event handlers.
+  document.getElementById('sub-themes').append(actions);
+  actions.hidden=true;
+  const panel=(id,title,keys)=>{
+    const k=studioPicks[id];
+    const content=k==='palette'?colors:k==='sizes'?sizes:k==='tools'?'<div id="studio-tools-slot"></div>':axis(k);
+    const options=keys.map(key=>`<option value="${key}" ${key===k?'selected':''}>${esc(label(key))}</option>`).join('');
+    return `<details name="studio-main" class="atelier-group" data-section="${id}" ${open.has(id)?'open':''}><summary><strong>${title}</strong></summary><div class="atelier-content"><select aria-label="${title}" data-pick="${id}">${options}</select><div class="${k==='palette'||k==='sizes'?'atelier-tiles':''}">${content}</div></div></details>`;
+  };
+  box.innerHTML=panel('quick',studioText('Cards and charts','کارت‌ها و نمودارها'),quickAxes)+panel('advanced',studioText('More settings','تنظیمات بیشتر'),[...DIMS.filter(k=>!quickAxes.includes(k)),'palette','sizes','tools']);
+  const slot=$('studio-tools-slot');
+  if(slot){slot.append(actions); actions.hidden=false;}
+
 }
 function onStudio(el) {
   const k = el.dataset.dim;
@@ -5345,9 +5346,7 @@ function onStudio(el) {
     renderStudio();
     $('studio').querySelector('[data-dim="'+k+'"]')?.focus({preventScroll:true});
   } else {
-    const summary = el.closest('details').querySelector('summary span');
-    const e = effective();
-    summary.textContent = e.r+'px · '+e.scale+'%';
+    // Slider output and the live sample already reflect the selected value.
   }
 }
 
@@ -8793,7 +8792,7 @@ document.addEventListener('click', e => {
   else if (d.upd) runRemoteUpdate(d.upd);
   else if (d.mode) setMode(d.mode);
   else if (d.preset !== undefined) { $('core-cmd').value = PRESETS[+d.preset] || ''; $('core-cmd').focus(); }
-  else if (d.grp) { groupFilter = d.grp; renderThemes(); }
+
   else if (d.themeId) setTheme(d.themeId);
 });
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.dim && e.target.type === 'range') onStudio(e.target); });
@@ -8821,6 +8820,13 @@ if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key ==
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
+$('studio').addEventListener('change', event=>{
+  const pick=event.target.dataset.pick;
+  if(!pick) return;
+  studioPicks[pick]=event.target.value;
+  renderStudio();
+  $('studio').querySelector('[data-pick="'+pick+'"]').focus({preventScroll:true});
+});
 $('studio').addEventListener('click', event => {
   const choice = event.target.closest('[data-axis]');
   if (!choice) return;
@@ -8859,8 +8865,7 @@ $('style-file').onchange = async event => {
     themeId = data.themeId;
     mode = data.mode;
     custom = data.settings;
-    groupFilter = 'all';
-    themeQuery = $('theme-search').value = '';
+
     applyTheme();
     renderStudio();
     renderThemes();
@@ -8868,7 +8873,7 @@ $('style-file').onchange = async event => {
   finally { input.value = ''; }
 };
 $('btn-reset-custom').onclick = () => { custom = {}; applyTheme(); renderStudio(); renderThemes(); };
-$('theme-search').addEventListener('input', e => { themeQuery = e.target.value; renderThemes(); });
+
 $('btn-upd-check').onclick = () => checkUpdates(true);
 $('btn-zip-upd').onclick = () => $('upd-zip-file').click();
 $('btn-save-settings').onclick = saveSettings;
