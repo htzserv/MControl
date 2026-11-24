@@ -12104,28 +12104,53 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
   const s = (SERVERS || []).find(x => +x.id === +id) || srvObj || {};
   const isIran = (s.role === 'iran') || String(s.country_code || '').toUpperCase() === 'IR';
 
+  const isFa = (typeof lang !== 'undefined' && lang === 'fa');
+  const L = isFa ? {
+    connecting: 'در حال اتصال به سرور...',
+    sshSub: 'برقراری نشست SSH با ' + (s.host || ''),
+    irDetect: 'لوکیشن ایران تشخیص داده شد — انتخاب میرور پارس‌پک...',
+    forDetect: 'در حال بررسی موقعیت و پیش‌نیازهای سرور...',
+    installing: 'در حال نصب Peer Agent v2 و پیش‌نیازها...',
+    tlsSetup: 'در حال تنظیم TLS و باز کردن پورت ارتباطی...',
+    okTitle: '✔ Peer Agent با موفقیت نصب و متصل شد!',
+    okSub: 'کانال رمزنگاری‌شده TLS Peer فعال است',
+    failTitle: '⚠ سرور اضافه شد اما نصب خودکار Peer انجام نشد',
+    failSub: 'می‌توانید از منوی سرور دوباره Pair را بزنید',
+    confirmBtn: '✔ تایید و ادامه'
+  } : {
+    connecting: 'Connecting to server...',
+    sshSub: 'Establishing SSH session to ' + (s.host || ''),
+    irDetect: 'Iran node detected — selecting ParsPack Mirror...',
+    forDetect: 'Checking location & server prerequisites...',
+    installing: 'Installing Peer Agent v2 & dependencies...',
+    tlsSetup: 'Configuring TLS & opening agent port...',
+    okTitle: '✔ Peer Agent installed & connected!',
+    okSub: 'Encrypted TLS Peer Channel Active',
+    failTitle: '⚠ Server added, but auto-Peer setup failed',
+    failSub: 'You can retry Pair from the server menu',
+    confirmBtn: '✔ Confirm & Continue'
+  };
+
   if ($('ob-srv-title')) $('ob-srv-title').textContent = s.name || ('Server #' + id);
   if ($('ob-srv-host')) $('ob-srv-host').textContent = s.host || '';
+  if ($('btn-ob-confirm')) $('btn-ob-confirm').textContent = L.confirmBtn;
   if ($('ob-result-card')) { $('ob-result-card').className = 'ob-result-card'; }
   if ($('btn-ob-migrate')) $('btn-ob-migrate').style.display = _obHasLegacy ? 'inline-flex' : 'none';
 
-  setOnboardProgress(14, 'در حال اتصال به سرور (Connecting)...', 'Establishing SSH session to ' + (s.host || ''));
+  setOnboardProgress(14, L.connecting, L.sshSub);
   $('srv-onboard-modal').classList.add('active');
 
   await new Promise(r => setTimeout(r, 380));
   setOnboardProgress(38,
-    isIran ? 'لوکیشن ایران تشخیص داده شد — انتخاب میرور پارس‌پک...' : 'در حال بررسی موقعیت و پیش‌نیازهای سرور...',
-    isIran ? '🇮🇷 Iran Node → Using ParsPack Mirror Source' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source')
+    isIran ? L.irDetect : L.forDetect,
+    isIran ? '🇮🇷 Iran Node → ParsPack Mirror' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source')
   );
 
   let cur = 42;
   const tick = setInterval(() => {
     if (cur < 88) {
       cur += 3;
-      const msg = cur < 68
-        ? 'در حال نصب Peer Agent v2 و پیش‌نیازها...'
-        : 'در حال تنظیم TLS و باز کردن پورت ارتباطی...';
-      setOnboardProgress(cur, msg);
+      setOnboardProgress(cur, cur < 68 ? L.installing : L.tlsSetup);
     }
   }, 650);
 
@@ -12150,13 +12175,13 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
 
   const card = $('ob-result-card');
   if (pairRes && pairRes.ok) {
-    setOnboardProgress(100, '✔ Peer Agent با موفقیت نصب و متصل شد!', 'Encrypted TLS Peer Channel Active');
+    setOnboardProgress(100, L.okTitle, L.okSub);
     if ($('ob-peer-stat')) { $('ob-peer-stat').textContent = 'PAIRED ✔'; $('ob-peer-stat').style.color = 'var(--green)'; }
     if ($('ob-src-val')) $('ob-src-val').textContent = (pairRes.source === 'iran_mirror' || isIran) ? 'Iran Mirror' : 'Direct';
     if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = 'Peer Code: ' + (pairRes.peer_code || 'ACTIVE') + ' • Port :' + (pairRes.agent_port || 2054) + ' (SSH Password Wiped)';
     if (card) card.className = 'ob-result-card show';
   } else {
-    setOnboardProgress(100, '⚠ سرور اضافه شد اما نصب خودکار Peer انجام نشد', (pairRes && pairRes.error) || 'You can retry Pair from server menu');
+    setOnboardProgress(100, L.failTitle, (pairRes && pairRes.error) || L.failSub);
     if ($('ob-peer-stat')) { $('ob-peer-stat').textContent = 'SSH MODE'; $('ob-peer-stat').style.color = 'var(--yellow)'; }
     if ($('ob-src-val')) $('ob-src-val').textContent = isIran ? 'Iran Mirror' : 'Direct';
     if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = (pairRes && pairRes.error) || 'Fallback to SSH mode';
@@ -12720,7 +12745,7 @@ boot();
       <div class="mono" style="font-size:.71rem; color:var(--muted); margin-top:10px;" id="ob-peer-code-lbl"></div>
       <div class="flexw" style="justify-content:center; gap:8px; margin-top:14px;">
         <button type="button" class="btn btn-warn" id="btn-ob-migrate" style="display:none;" onclick="confirmOnboardAndMigrate()">⚡ Migrate MTunnel</button>
-        <button type="button" class="btn btn-sky" id="btn-ob-confirm" style="min-width:160px; justify-content:center;" onclick="confirmServerOnboarding()">✔ تایید و ادامه (Confirm)</button>
+        <button type="button" class="btn btn-sky" id="btn-ob-confirm" style="min-width:160px; justify-content:center;" onclick="confirmServerOnboarding()">✔ Confirm &amp; Continue</button>
       </div>
     </div>
   </div>

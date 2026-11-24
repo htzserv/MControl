@@ -557,7 +557,14 @@ fi
 # Smart Port Check: stop existing mcontrol-agent & kill leftover MControl processes holding the port
 AGENT_PORT=%d
 systemctl stop mcontrol-agent.service 2>/dev/null || true
-pkill -f "/usr/local/bin/mcontrol-agent.py" 2>/dev/null || true
+for _p in /proc/[0-9]*; do
+  _pid="${_p#/proc/}"
+  [ "$_pid" = "$$" ] || [ "$_pid" = "$PPID" ] && continue
+  _cmd=$(tr '\000' ' ' < "$_p/cmdline" 2>/dev/null || true)
+  case "$_cmd" in
+    *python*/usr/local/bin/mcontrol-agent.py*) kill -TERM "$_pid" 2>/dev/null || true ;;
+  esac
+done
 sleep 0.3
 
 get_port_pids() {
