@@ -390,13 +390,17 @@ func (h *Handler) handleServerTags(w http.ResponseWriter, r *http.Request) {
 // ── 7. Bandwidth Quota Guard ─────────────────────────────────────────────────
 
 type ServerQuota struct {
-	ServerID   int64   `json:"server_id"`
-	LimitGB    float64 `json:"limit_gb"`
-	UsedGB     float64 `json:"used_gb"`
-	ResetDay   int     `json:"reset_day"`
-	LastMonth  int     `json:"last_month"`
-	Alerted80  bool    `json:"alerted_80"`
-	Alerted95  bool    `json:"alerted_95"`
+	ServerID      int64   `json:"server_id"`
+	Provider      string  `json:"provider"`
+	ExpiryDate    string  `json:"expiry_date"` // YYYY-MM-DD
+	WarnDays      int     `json:"warn_days"`
+	LimitGB       float64 `json:"limit_gb"`
+	UsedGB        float64 `json:"used_gb"`
+	ResetDay      int     `json:"reset_day"`
+	LastMonth     int     `json:"last_month"`
+	Alerted80     bool    `json:"alerted_80"`
+	Alerted95     bool    `json:"alerted_95"`
+	AlertedExpiry bool    `json:"alerted_expiry"`
 }
 
 func (h *Handler) loadQuotas() map[string]ServerQuota {
@@ -424,17 +428,25 @@ func (h *Handler) handleQuotas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := strconv.FormatInt(req.ServerID, 10)
-	if req.LimitGB <= 0 {
+	req.Provider = strings.TrimSpace(req.Provider)
+	req.ExpiryDate = strings.TrimSpace(req.ExpiryDate)
+	if req.LimitGB <= 0 && req.ExpiryDate == "" && req.Provider == "" {
 		delete(m, key)
 	} else {
 		if req.ResetDay < 1 || req.ResetDay > 28 {
 			req.ResetDay = 1
 		}
+		if req.WarnDays <= 0 {
+			req.WarnDays = 3
+		}
 		if cur, ok := m[key]; ok {
-			if req.UsedGB <= 0 {
+			if req.UsedGB <= 0 && cur.UsedGB > 0 && req.LimitGB > 0 {
 				req.UsedGB = cur.UsedGB
 			}
 			req.LastMonth = cur.LastMonth
+			if cur.ExpiryDate == req.ExpiryDate {
+				req.AlertedExpiry = cur.AlertedExpiry
+			}
 		}
 		m[key] = req
 	}
@@ -717,27 +729,45 @@ func (h *Handler) StartProMetricsDaemon() {
 			for _, s := range srvs {
 				_ = h.store.AddMetricPoint(fmt.Sprintf("srv:%d", s.ID), parsePct(s.CPU), parsePct(s.RAM), parseMs(s.PingMs), 0, 0)
 				key := strconv.FormatInt(s.ID, 10)
-				if q, ok := quotas[key]; ok && q.LimitGB > 0 {
-					if q.LastMonth != curMonth && time.Now().Day() >= q.ResetDay {
-						q.UsedGB = 0
-						q.LastMonth = curMonth
-						q.Alerted80 = false
-						q.Alerted95 = false
-						qChanged = true
+				if q, ok := quotas[key]; ok {
+					if q.LimitGB > 0 {
+						if q.LastMonth != curMonth && time.Now().Day() >= q.ResetDay {
+							q.UsedGB = 0
+							q.LastMonth = curMonth
+							q.Alerted80 = false
+							q.Alerted95 = false
+							qChanged = true
+						}
+						pct := (q.UsedGB / q.LimitGB) * 100.0
+						if pct >= 95 && !q.Alerted95 {
+							q.Alerted95 = true
+							qChanged = true
+							msg := fmt.Sprintf("🚨 Bandwidth Quota 95%% reached on %s (%.1f / %.1f GB)", s.Name, q.UsedGB, q.LimitGB)
+							_ = h.store.AddIncident(0, s.Name, "quota", msg, 0)
+							h.sendOpsAlert(msg)
+						} else if pct >= 80 && !q.Alerted80 {
+							q.Alerted80 = true
+							qChanged = true
+							msg := fmt.Sprintf("⚠️ Bandwidth Quota 80%% reached on %s (%.1f / %.1f GB)", s.Name, q.UsedGB, q.LimitGB)
+							_ = h.store.AddIncident(0, s.Name, "quota", msg, 0)
+							h.sendOpsAlert(msg)
+						}
 					}
-					pct := (q.UsedGB / q.LimitGB) * 100.0
-					if pct >= 95 && !q.Alerted95 {
-						q.Alerted95 = true
-						qChanged = true
-						msg := fmt.Sprintf("🚨 Bandwidth Quota 95%% reached on %s (%.1f / %.1f GB)", s.Name, q.UsedGB, q.LimitGB)
-						_ = h.store.AddIncident(0, s.Name, "quota", msg, 0)
-						h.sendOpsAlert(msg)
-					} else if pct >= 80 && !q.Alerted80 {
-						q.Alerted80 = true
-						qChanged = true
-						msg := fmt.Sprintf("⚠️ Bandwidth Quota 80%% reached on %s (%.1f / %.1f GB)", s.Name, q.UsedGB, q.LimitGB)
-						_ = h.store.AddIncident(0, s.Name, "quota", msg, 0)
-						h.sendOpsAlert(msg)
+					if q.ExpiryDate != "" && !q.AlertedExpiry {
+						if expT, err := time.Parse("2006-01-02", q.ExpiryDate); err == nil {
+							daysLeft := int(time.Until(expT).Hours() / 24)
+							warn := q.WarnDays
+							if warn <= 0 {
+								warn = 3
+							}
+							if daysLeft <= warn {
+								q.AlertedExpiry = true
+								qChanged = true
+								msg := fmt.Sprintf("📅 VPS Expiry Alert: %s (%s) expires on %s (%d days left)", s.Name, q.Provider, q.ExpiryDate, daysLeft)
+								_ = h.store.AddIncident(0, s.Name, "expiry", msg, 0)
+								h.sendOpsAlert(msg)
+							}
+						}
 					}
 					quotas[key] = q
 				}

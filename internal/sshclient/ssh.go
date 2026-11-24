@@ -526,10 +526,47 @@ func PeerExec(host string, agentPort int, peerCode, command string, timeout time
 }
 
 func PeerAgentInstallScript(peerCode string, agentPort int) string {
+	return PeerAgentInstallScriptWithSource(peerCode, agentPort, "", false)
+}
+
+func PeerAgentInstallScriptWithSource(peerCode string, agentPort int, mirrorURL string, isIran bool) string {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
-	return fmt.Sprintf(`mkdir -p /etc/mcontrol-agent
+	mirrorClean := strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
+	prepDeps := `
+if ! command -v python3 >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1; then
+  if command -v apt-get >/dev/null 2>&1; then
+    DEBIAN_FRONTEND=noninteractive apt-get update -qq >/dev/null 2>&1 || true
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 openssl >/dev/null 2>&1 || true
+  elif command -v dnf >/dev/null 2>&1; then
+    dnf install -y -q python3 openssl >/dev/null 2>&1 || true
+  elif command -v yum >/dev/null 2>&1; then
+    yum install -y -q python3 openssl >/dev/null 2>&1 || true
+  fi
+fi
+if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then
+  ufw allow %d/tcp >/dev/null 2>&1 || true
+elif command -v iptables >/dev/null 2>&1; then
+  iptables -C INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport %d -j ACCEPT 2>/dev/null || true
+fi`
+	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort)
+	mirrorFetch := ""
+	if isIran && mirrorClean != "" {
+		mirrorFetch = fmt.Sprintf(`
+# Iran node detected: prefer Iran Mirror (ParsPack) if mcontrol-agent.py is published there
+if command -v curl >/dev/null 2>&1; then
+  if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "AGENT_VER" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
+    mv -f /usr/local/bin/mcontrol-agent.py.dl /usr/local/bin/mcontrol-agent.py
+    chmod 755 /usr/local/bin/mcontrol-agent.py
+    echo "AGENT_SOURCE=iran_mirror"
+  else
+    rm -f /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null || true
+    echo "AGENT_SOURCE=iran_mirror_embedded"
+  fi
+fi`, ShQuote(mirrorClean+"/beta-latest/mcontrol-agent.py"))
+	}
+	return prepRendered + "\n" + fmt.Sprintf(`mkdir -p /etc/mcontrol-agent
 if command -v openssl >/dev/null 2>&1; then
   if [ ! -f /etc/mcontrol-agent/agent.crt ] || [ ! -f /etc/mcontrol-agent/agent.key ]; then
     openssl req -x509 -newkey rsa:2048 -keyout /etc/mcontrol-agent/agent.key -out /etc/mcontrol-agent/agent.crt -days 3650 -nodes -subj "/CN=mcontrol-agent" 2>/dev/null || true
@@ -674,7 +711,7 @@ if os.path.exists(crt) and os.path.exists(key):
     srv.socket = ctx.wrap_socket(srv.socket, server_side=True)
 srv.serve_forever()
 PYEOF
-chmod 755 /usr/local/bin/mcontrol-agent.py
+chmod 755 /usr/local/bin/mcontrol-agent.py` + mirrorFetch + `
 cat <<SVCEOF > /etc/systemd/system/mcontrol-agent.service
 [Unit]
 Description=MControl Peer Agent v2 (TLS)
@@ -700,5 +737,9 @@ systemctl is-active mcontrol-agent.service
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
-	return Run(t, PeerAgentInstallScript(peerCode, agentPort), 10*time.Second, 35*time.Second)
+	return Run(t, PeerAgentInstallScript(peerCode, agentPort), 10*time.Second, 45*time.Second)
+}
+
+func InstallPeerAgentFromSource(t Target, peerCode string, agentPort int, mirrorURL string, isIran bool) Result {
+	return Run(t, PeerAgentInstallScriptWithSource(peerCode, agentPort, mirrorURL, isIran), 10*time.Second, 45*time.Second)
 }

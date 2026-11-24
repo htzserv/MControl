@@ -435,6 +435,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/unpair", h.auth(h.handleUnpairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/agent/update", h.auth(h.handleUpdatePeerAgent))
+	mux.HandleFunc("POST /api/servers/{id}/agent/rotate-key", h.auth(h.handleRotatePeerKey))
+	mux.HandleFunc("POST /api/agents/canary-rollout", h.auth(h.handleCanaryAgentRollout))
 	mux.HandleFunc("POST /api/servers/{id}/speedtest", h.auth(h.handleServerSpeedtest))
 	mux.HandleFunc("POST /api/servers/{id}/service", h.auth(h.handleService))
 	mux.HandleFunc("POST /api/servers/{id}/exec", h.auth(h.handleExec))
@@ -473,6 +475,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/legacy/kernel-action", h.auth(h.handleLegacyKernelAction))
 	mux.HandleFunc("DELETE /api/legacy/tunnels/{id}", h.auth(h.handleLegacyDelete))
 	mux.HandleFunc("PUT /api/tunnels/{id}", h.auth(h.handleUpdateTunnel))
+	mux.HandleFunc("POST /api/tunnels/{id}/confirm", h.auth(h.handleConfirmTunnelUpdate))
 	mux.HandleFunc("GET /api/tunnels/{id}/metrics", h.auth(h.handleTunnelMetrics))
 	mux.HandleFunc("POST /api/fleet/exec", h.auth(h.handleFleetExec))
 	mux.HandleFunc("GET /api/servers/{id}/ports", h.auth(h.handleServerPorts))
@@ -1620,7 +1623,9 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
-	res := sshclient.InstallPeerAgent(targetOf(srv), peerCode, agentPort)
+	stCfg := h.store.GetSettings()
+	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
+	res := sshclient.InstallPeerAgentFromSource(targetOf(srv), peerCode, agentPort, stCfg.PanelMirrorURL, isIran)
 	if res.Err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"ok": false, "error": "agent install failed: " + res.Err.Error(), "output": res.Output})
 		return
@@ -1635,7 +1640,24 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.applyProbe(srv, p)
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "peer_code": peerCode, "message": "Paired via Peer Code! SSH password wiped from database."})
+	srcUsed := "direct"
+	if isIran {
+		srcUsed = "iran_mirror"
+	}
+	msg := "Paired via Peer Code! SSH password wiped from database."
+	if isIran {
+		msg = "Paired via Peer Code (Iran Mirror)! SSH password wiped from database."
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":           true,
+		"peer_code":    peerCode,
+		"source":       srcUsed,
+		"ping_ms":      srv.PingMs,
+		"country":      srv.Country,
+		"country_code": srv.CountryCode,
+		"datacenter":   srv.Datacenter,
+		"message":      msg,
+	})
 }
 
 func (h *Handler) handleTestServer(w http.ResponseWriter, r *http.Request) {
@@ -2174,17 +2196,18 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 		fail(w, http.StatusBadRequest, "server is not paired with Peer Code")
 		return
 	}
-	script := sshclient.PeerAgentInstallScript(srv.PeerCode, srv.AgentPort)
+	stCfg := h.store.GetSettings()
+	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
+	script := sshclient.PeerAgentInstallScriptWithSource(srv.PeerCode, srv.AgentPort, stCfg.PanelMirrorURL, isIran)
 	var res sshclient.Result
 	if srv.AuthMode == "peer" {
-		// Run upgrade in background so current HTTP response returns cleanly before agent restarts
 		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v2 upgrade triggered.'", sshclient.ShQuote(script))
 		res = sshclient.PeerExec(srv.Host, srv.AgentPort, srv.PeerCode, bgCmd, 15*time.Second)
 		if res.Err != nil && srv.Password != "" {
-			res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 35*time.Second)
+			res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 45*time.Second)
 		}
 	} else if srv.Password != "" {
-		res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 35*time.Second)
+		res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 45*time.Second)
 	} else {
 		fail(w, http.StatusBadRequest, "cannot upgrade agent (old agent lacks /exec and no SSH password stored; Edit server to set SSH password once, then Pair again)")
 		return
@@ -2194,6 +2217,101 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Peer Agent v2 (TLS + Exec) updated!"})
+}
+
+func (h *Handler) handleRotatePeerKey(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	if srv.AuthMode != "peer" || srv.PeerCode == "" {
+		fail(w, http.StatusBadRequest, "server must be in Peer Mode to rotate key")
+		return
+	}
+	b := make([]byte, 12)
+	_, _ = rand.Read(b)
+	newCode := "MC-" + strings.ToUpper(hex.EncodeToString(b))
+	agentPort := srv.AgentPort
+	if agentPort <= 0 {
+		agentPort = 2054
+	}
+	stCfg := h.store.GetSettings()
+	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
+	script := sshclient.PeerAgentInstallScriptWithSource(newCode, agentPort, stCfg.PanelMirrorURL, isIran)
+	bgCmd := fmt.Sprintf("nohup bash -c 'sleep 1; %s' >/tmp/mc-agent-rot.log 2>&1 & echo 'ROTATE_STARTED'", strings.ReplaceAll(script, "'", "'\''"))
+	res := sshclient.PeerExec(srv.Host, agentPort, srv.PeerCode, bgCmd, 15*time.Second)
+	if res.Err != nil {
+		fail(w, http.StatusBadGateway, "failed to reach agent for key rotation: "+res.Err.Error())
+		return
+	}
+	time.Sleep(3500 * time.Millisecond)
+	p := sshclient.ProbePeer(srv.Host, agentPort, newCode)
+	if !p.Online {
+		fail(w, http.StatusBadGateway, "key rotated on agent but new key probe failed: "+p.Error)
+		return
+	}
+	if err := h.store.SetServerPeerMode(id, newCode, agentPort); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.logAudit(r.Header.Get("X-MC-User"), "POST", r.URL.Path, "Rotated Peer Agent key for "+srv.Name)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "peer_code": newCode, "message": "Peer Agent key rotated & verified!"})
+}
+
+func (h *Handler) handleCanaryAgentRollout(w http.ResponseWriter, r *http.Request) {
+	srvs, err := h.store.ListServers()
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	var peers []db.Server
+	for _, s := range srvs {
+		if s.AuthMode == "peer" {
+			if full, e := h.store.GetServerWithSecret(s.ID); e == nil && full.PeerCode != "" {
+				peers = append(peers, *full)
+			}
+		}
+	}
+	if len(peers) == 0 {
+		fail(w, http.StatusBadRequest, "no paired Peer Agent nodes found")
+		return
+	}
+	stCfg := h.store.GetSettings()
+	canary := peers[0]
+	isIranC := canary.Role == "iran" || strings.EqualFold(canary.CountryCode, "IR")
+	cScript := sshclient.PeerAgentInstallScriptWithSource(canary.PeerCode, canary.AgentPort, stCfg.PanelMirrorURL, isIranC)
+	cBg := fmt.Sprintf("nohup bash -c 'sleep 1; %s' >/tmp/mc-agent-upd.log 2>&1 & echo 'CANARY_OK'", strings.ReplaceAll(cScript, "'", "'\''"))
+	if res := sshclient.PeerExec(canary.Host, canary.AgentPort, canary.PeerCode, cBg, 15*time.Second); res.Err != nil {
+		fail(w, http.StatusBadGateway, fmt.Sprintf("Canary node %s failed before rollout: %s", canary.Name, res.Err.Error()))
+		return
+	}
+	time.Sleep(3500 * time.Millisecond)
+	if p := sshclient.ProbePeer(canary.Host, canary.AgentPort, canary.PeerCode); !p.Online {
+		fail(w, http.StatusBadGateway, fmt.Sprintf("Canary node %s failed health check after update — rollout aborted!", canary.Name))
+		return
+	}
+	updated := 1
+	for _, s := range peers[1:] {
+		isIran := s.Role == "iran" || strings.EqualFold(s.CountryCode, "IR")
+		sc := sshclient.PeerAgentInstallScriptWithSource(s.PeerCode, s.AgentPort, stCfg.PanelMirrorURL, isIran)
+		bg := fmt.Sprintf("nohup bash -c 'sleep 1; %s' >/tmp/mc-agent-upd.log 2>&1 & echo 'OK'", strings.ReplaceAll(sc, "'", "'\''"))
+		if r2 := sshclient.PeerExec(s.Host, s.AgentPort, s.PeerCode, bg, 15*time.Second); r2.Err == nil {
+			updated++
+		}
+	}
+	h.logAudit(r.Header.Get("X-MC-User"), "POST", r.URL.Path, fmt.Sprintf("Canary agent rollout succeeded (%d/%d nodes)", updated, len(peers)))
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"canary":  canary.Name,
+		"updated": updated,
+		"total":   len(peers),
+		"message": fmt.Sprintf("Canary (%s) verified healthy! Rolled out to %d/%d agent nodes.", canary.Name, updated, len(peers)),
+	})
 }
 
 func (h *Handler) handleLocalTweak(w http.ResponseWriter, r *http.Request) {

@@ -157,17 +157,19 @@ func (h *Handler) handleUpdateTunnel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Name       string `json:"name"`
-		Transport  string `json:"transport"`
-		TunnelPort int    `json:"tunnel_port"`
-		Token      string `json:"token"`
-		Ports      string `json:"ports"`
-		LBMode     string `json:"lb_mode"`
-		VIPTargets string `json:"vip_targets"`
+		Name            string `json:"name"`
+		Transport       string `json:"transport"`
+		TunnelPort      int    `json:"tunnel_port"`
+		Token           string `json:"token"`
+		Ports           string `json:"ports"`
+		LBMode          string `json:"lb_mode"`
+		VIPTargets      string `json:"vip_targets"`
+		CommitConfirmed bool   `json:"commit_confirmed"`
 	}
 	if !readJSON(w, r, &req) {
 		return
 	}
+	prevTun := *tun
 	if strings.TrimSpace(req.Name) != "" {
 		if !safeLegacyName.MatchString(strings.TrimSpace(req.Name)) {
 			fail(w, http.StatusBadRequest, "invalid tunnel name")
@@ -237,11 +239,73 @@ func (h *Handler) handleUpdateTunnel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = h.store.UpdateTunnelStatus(id, "active", "")
+	confirmTok := ""
+	if req.CommitConfirmed {
+		confirmTok = fmt.Sprintf("tun_%d_%d", id, time.Now().UnixNano())
+		storePendingTunRollback(confirmTok, prevTun, h)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":      true,
-		"message": "Tunnel updated & redeployed on both servers!",
-		"output":  "=== IRAN ===\n" + rIran.Output + "\n=== FOREIGN ===\n" + rFor.Output,
+		"ok":               true,
+		"message":          "Tunnel updated & redeployed on both servers!",
+		"output":           "=== IRAN ===\n" + rIran.Output + "\n=== FOREIGN ===\n" + rFor.Output,
+		"confirm_token":    confirmTok,
+		"rollback_seconds": func() int { if req.CommitConfirmed { return 60 }; return 0 }(),
 	})
+}
+
+var (
+	pendingTunMu        sync.Mutex
+	pendingTunRollbacks = map[string]db.Tunnel{}
+)
+
+func storePendingTunRollback(tok string, prev db.Tunnel, h *Handler) {
+	pendingTunMu.Lock()
+	pendingTunRollbacks[tok] = prev
+	pendingTunMu.Unlock()
+	time.AfterFunc(60*time.Second, func() {
+		pendingTunMu.Lock()
+		saved, exists := pendingTunRollbacks[tok]
+		if exists {
+			delete(pendingTunRollbacks, tok)
+		}
+		pendingTunMu.Unlock()
+		if !exists {
+			return
+		}
+		_ = h.store.UpdateTunnelFull(&saved)
+		ports := parseOpsPorts(saved.Ports)
+		if len(ports) == 0 {
+			ports = []int{443}
+		}
+		irS, e1 := h.store.GetServerWithSecret(saved.IranServerID)
+		frS, e2 := h.store.GetServerWithSecret(saved.ForeignServerID)
+		if e1 == nil && e2 == nil {
+			ic, fc := buildTunnelDeployScripts(&saved, irS, frS, ports)
+			go h.runOnServer(irS, ic, 45*time.Second)
+			go h.runOnServer(frS, fc, 45*time.Second)
+		}
+	})
+}
+
+func (h *Handler) handleConfirmTunnelUpdate(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Token string `json:"token"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	tok := strings.TrimSpace(req.Token)
+	pendingTunMu.Lock()
+	_, ok := pendingTunRollbacks[tok]
+	if ok {
+		delete(pendingTunRollbacks, tok)
+	}
+	pendingTunMu.Unlock()
+	if !ok {
+		fail(w, http.StatusGone, "60s window already expired — previous tunnel config was auto-restored")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Tunnel changes confirmed & locked in!"})
 }
 
 func (h *Handler) handleTunnelMetrics(w http.ResponseWriter, r *http.Request) {

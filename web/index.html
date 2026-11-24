@@ -3368,6 +3368,123 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
 }
 .ssh-save-ask.show { display: block; }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO-PEER SERVER ONBOARDING OVERLAY (Theme-Adaptive Progress + Flag Reveal)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ob-box {
+  max-width: 480px; width: 100%; text-align: center;
+  padding: 28px 26px !important;
+  border-radius: var(--rc, 20px);
+  border: var(--bw, 1.5px) solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: 0 24px 60px -14px rgba(0, 0, 0, .65), 0 0 36px -10px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.ob-vis-wrap {
+  display: flex; align-items: center; justify-content: center;
+  margin: 14px auto 16px; min-height: 112px;
+}
+
+/* Variant 1: Circular Ring (when theme gauge is ring / dial / drum) */
+.ob-ring-box { display: none; position: relative; width: 124px; height: 124px; align-items: center; justify-content: center; }
+body:is([data-gauge="ring"],[data-gauge="dial"],[data-gauge="drum"]) .ob-ring-box { display: flex; }
+body:is([data-gauge="ring"],[data-gauge="dial"],[data-gauge="drum"]) .ob-linear-box,
+body:is([data-gauge="ring"],[data-gauge="dial"],[data-gauge="drum"]) .ob-tank-box { display: none !important; }
+.ob-ring-svg { width: 124px; height: 124px; transform: rotate(-90deg); }
+.ob-ring-bg { fill: none; stroke: var(--row); stroke-width: 9; }
+.ob-ring-fg {
+  fill: none; stroke: url(#obRingGrad); stroke-width: 9; stroke-linecap: round;
+  stroke-dasharray: 326.73; stroke-dashoffset: 326.73;
+  transition: stroke-dashoffset .45s cubic-bezier(.22, 1, .36, 1);
+}
+.ob-ring-pct {
+  position: absolute; font-family: var(--ff-m); font-size: 1.25rem; font-weight: 900; color: var(--accent);
+}
+
+/* Variant 2: Liquid Tank (when theme gauge is tank) */
+.ob-tank-box {
+  display: none; position: relative; width: 118px; height: 118px;
+  border-radius: min(var(--rc, 26px), 32px);
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--row); overflow: hidden; align-items: center; justify-content: center;
+}
+body[data-gauge="tank"] .ob-tank-box { display: flex; }
+body[data-gauge="tank"] .ob-linear-box { display: none !important; }
+.ob-tank-fill {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 0%;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent2) 72%, transparent));
+  transition: height .45s cubic-bezier(.22, 1, .36, 1);
+}
+.ob-tank-pct { position: relative; z-index: 2; font-family: var(--ff-m); font-size: 1.22rem; font-weight: 900; color: var(--text); }
+
+/* Variant 3: Default MDesign Linear Track (adapts to corners & card style) */
+.ob-linear-box { width: 100%; }
+.ob-lin-head { display: flex; justify-content: space-between; align-items: center; font-size: .78rem; font-weight: 800; margin-bottom: 8px; }
+.ob-lin-track {
+  width: 100%; height: 12px; background: var(--row); overflow: hidden;
+  border-radius: 999px; border: 1px solid var(--border);
+}
+body[data-corners="square"] .ob-lin-track,
+body[data-corners="square"] .ob-lin-fill { border-radius: 2px; }
+.ob-lin-fill {
+  height: 100%; width: 0%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3, var(--green)));
+  transition: width .42s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Animated Status Text Under Progress Bar */
+.ob-status-txt {
+  min-height: 26px; font-size: .88rem; font-weight: 800; color: var(--text);
+  animation: obTextIn .32s cubic-bezier(.16, 1, .3, 1);
+}
+.ob-sub-txt {
+  font-size: .75rem; color: var(--muted); margin-top: 4px; font-family: var(--ff-m);
+}
+@keyframes obTextIn {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+/* Final Result Reveal Card with Animated Country Flag & Ping */
+.ob-result-card {
+  display: none; margin-top: 14px; padding: 16px;
+  border-radius: min(var(--rc, 16px), 18px);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--green) 11%, var(--row)), color-mix(in srgb, var(--accent) 8%, var(--row)));
+  border: 1.5px solid color-mix(in srgb, var(--green) 42%, var(--border));
+  animation: obResultPop .42s cubic-bezier(.16, 1, .3, 1);
+}
+.ob-result-card.is-warn {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--yellow) 11%, var(--row)), var(--row));
+  border-color: color-mix(in srgb, var(--yellow) 45%, var(--border));
+}
+.ob-result-card.show { display: block; }
+@keyframes obResultPop {
+  0%   { opacity: 0; transform: scale(.92) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.ob-flag-hero {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 8px 16px; border-radius: 999px;
+  background: var(--surface); border: 1.5px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  box-shadow: 0 8px 22px -10px var(--shadow);
+  margin-bottom: 12px;
+  animation: obFlagBounce .55s cubic-bezier(.22, 1.4, .36, 1) .1s both;
+}
+.ob-flag-hero svg { width: 26px !important; height: 19px !important; border-radius: 4px; }
+@keyframes obFlagBounce {
+  0%   { opacity: 0; transform: scale(.7); }
+  70%  { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.ob-kpi-row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  margin-top: 8px;
+}
+.ob-kpi {
+  padding: 8px 6px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+}
+.ob-kpi small { display: block; font-size: .65rem; color: var(--muted); text-transform: uppercase; }
+.ob-kpi strong { display: block; font-size: .82rem; font-family: var(--ff-m); color: var(--accent); margin-top: 2px; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3812,6 +3929,7 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
         <h3 data-i18n="nav_servers">Servers</h3>
         <div class="flexw">
           <button class="btn btn-sky" id="btn-live-srv" onclick="toggleLiveServers()">LIVE: ON</button>
+          <button class="btn btn-ghost" id="btn-canary-rollout" onclick="runCanaryRollout()" title="Update 1 canary Peer Agent first, verify health, then roll out to all nodes">🐤 Canary Rollout</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
         </div>
@@ -6595,7 +6713,8 @@ function renderServerCard(s) {
         <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
         <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
         <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
-        ${s.auth_mode !== 'peer' ? `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota &amp; Expiry</button>
+        ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
         <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
         <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
         <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
@@ -6893,12 +7012,9 @@ async function saveServer() {
       await loadServers();
       if (res.probe_error) toast(res.probe_error, true);
       const finishAfterSave = () => {
-        if (wasNew && res.id && res.legacy && res.legacy.found) {
-          toast('MTunnel detected! Step 3 (Migrator) unlocked.');
-          enterSrvWizardMigrator(res.id);
-        } else {
-          closeModal('srv-modal');
-          if (wasNew && res.id) setTimeout(() => openSetupModal(res.id), 250);
+        closeModal('srv-modal');
+        if (wasNew && res.id) {
+          startServerOnboarding(res.id, res.server || { id: res.id, name: payload.name, host: payload.host, role: payload.role }, res.legacy);
         }
       };
       if (enteredPass && !_lastSavedSSHKey[enteredUser + ':' + enteredPort + ':' + enteredPass]) {
@@ -10258,18 +10374,76 @@ function openEditTunnelModal(id) {
   $('te-ports').value = t.ports || '';
   $('tun-edit-modal').classList.add('active');
 }
+let _teConfirmToken = '', _teConfirmTimer = null, _teConfirmLeft = 0;
+
+function stopTunConfirmCountdown() {
+  if (_teConfirmTimer) { clearInterval(_teConfirmTimer); _teConfirmTimer = null; }
+  _teConfirmToken = '';
+  if ($('te-confirm-banner')) $('te-confirm-banner').classList.remove('show');
+}
+
+function startTunConfirmCountdown(tok, secs) {
+  stopTunConfirmCountdown();
+  _teConfirmToken = tok;
+  _teConfirmLeft = secs || 60;
+  const ban = $('te-confirm-banner'), lbl = $('te-confirm-lbl');
+  if (!ban || !lbl) return;
+  ban.classList.add('show');
+  lbl.textContent = `⏳ Auto-rollback in ${_teConfirmLeft}s — click Confirm Tunnel to keep!`;
+  _teConfirmTimer = setInterval(() => {
+    _teConfirmLeft--;
+    if (_teConfirmLeft <= 0) {
+      stopTunConfirmCountdown();
+      toast('60s elapsed without confirmation — previous tunnel settings auto-restored!', true);
+      loadTunnels();
+    } else if ($('te-confirm-lbl')) {
+      $('te-confirm-lbl').textContent = `⏳ Auto-rollback in ${_teConfirmLeft}s — click Confirm Tunnel to keep!`;
+    }
+  }, 1000);
+}
+
+async function confirmEditedTunnel() {
+  if (!_teConfirmToken) return;
+  const id = $('te-id').value;
+  const btn = $('btn-te-confirm');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirming...'; }
+  try {
+    const r = await api('api/tunnels/' + id + '/confirm', 'POST', { token: _teConfirmToken });
+    if (r && r.ok) {
+      toast(r.message || 'Tunnel changes confirmed!');
+      stopTunConfirmCountdown();
+      closeModal('tun-edit-modal');
+    } else {
+      toast((r && r.error) || 'Confirmation window expired', true);
+      stopTunConfirmCountdown();
+      loadTunnels();
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✔ Confirm Tunnel'; }
+  }
+}
+
 async function saveEditedTunnel() {
   const id = $('te-id').value;
+  const commit_confirmed = !!($('te-commit-conf') && $('te-commit-conf').checked);
   const btn = $('btn-te-save'); btn.disabled = true; btn.textContent = 'Redeploying...';
   try {
     const r = await api('api/tunnels/' + id, 'PUT', {
       name: $('te-name').value.trim(),
       tunnel_port: parseInt($('te-tport').value || '0', 10),
       token: $('te-tok').value.trim(),
-      ports: $('te-ports').value.trim()
+      ports: $('te-ports').value.trim(),
+      commit_confirmed
     });
-    if (r.ok) { toast(r.message || 'Updated!'); closeModal('tun-edit-modal'); loadTunnels(); }
-    else toast(r.error || 'Update failed', true);
+    if (r.ok) {
+      toast(r.message || 'Updated!');
+      loadTunnels();
+      if (r.confirm_token) {
+        startTunConfirmCountdown(r.confirm_token, r.rollback_seconds || 60);
+      } else {
+        closeModal('tun-edit-modal');
+      }
+    } else toast(r.error || 'Update failed', true);
   } finally { btn.disabled = false; btn.textContent = 'Save & Redeploy Both Sides'; }
 }
 async function checkTunnelMetrics(id, name) {
@@ -10600,10 +10774,22 @@ async function loadProMeta() {
 
 function renderServerQuotaMini(id) {
   const q = SRV_QUOTAS[String(id)];
-  if (!q || !q.limit_gb) return '';
-  const pct = Math.min(100, Math.round((q.used_gb / q.limit_gb) * 100));
-  const col = pct >= 95 ? 'var(--red)' : (pct >= 80 ? 'var(--yellow)' : 'var(--accent)');
-  return `<div class="srv-quota-bar"><div style="display:flex;justify-content:space-between;"><span>Quota</span><span class="mono">${q.used_gb}/${q.limit_gb} GB (${pct}%)</span></div><div class="srv-quota-track"><div class="srv-quota-fill" style="width:${pct}%;background:${col};"></div></div></div>`;
+  if (!q) return '';
+  let expHtml = '';
+  if (q.expiry_date) {
+    const msLeft = new Date(q.expiry_date + 'T23:59:59').getTime() - Date.now();
+    const dLeft = Math.ceil(msLeft / 86400000);
+    const eCls = dLeft <= 0 ? 'b-miss' : (dLeft <= (q.warn_days || 3) ? 'b-foreign' : 'b-ok');
+    const eTxt = dLeft <= 0 ? 'EXPIRED' : (dLeft + 'd left');
+    expHtml = `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;font-size:.7rem;"><span style="color:var(--muted);">📅 ${esc(q.provider || 'Expiry')}: ${esc(q.expiry_date)}</span><span class="badge ${eCls} mono" style="padding:1px 6px;font-size:.63rem;">${eTxt}</span></div>`;
+  }
+  let barHtml = '';
+  if (q.limit_gb > 0) {
+    const pct = Math.min(100, Math.round((q.used_gb / q.limit_gb) * 100));
+    const col = pct >= 95 ? 'var(--red)' : (pct >= 80 ? 'var(--yellow)' : 'var(--accent)');
+    barHtml = `<div class="srv-quota-bar"><div style="display:flex;justify-content:space-between;"><span>Quota</span><span class="mono">${q.used_gb}/${q.limit_gb} GB (${pct}%)</span></div><div class="srv-quota-track"><div class="srv-quota-fill" style="width:${pct}%;background:${col};"></div></div></div>`;
+  }
+  return barHtml + expHtml;
 }
 
 function renderTagFilterBar() {
@@ -11752,6 +11938,172 @@ function startSSLProgress(boxId, pctId, lblId, barId, stages) {
   };
 }
 
+/* ═══════════════ Auto-Peer Onboarding, Quota/Expiry & Key Rotation ═══════════════ */
+let _obSrvId = 0, _obHasLegacy = false;
+
+function setOnboardProgress(pct, statusText, subText) {
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  if ($('ob-lin-pct')) $('ob-lin-pct').textContent = p + '%';
+  if ($('ob-lin-fill')) $('ob-lin-fill').style.width = p + '%';
+  if ($('ob-ring-pct')) $('ob-ring-pct').textContent = p + '%';
+  if ($('ob-ring-fg')) $('ob-ring-fg').style.strokeDashoffset = String(326.73 * (1 - p / 100));
+  if ($('ob-tank-pct')) $('ob-tank-pct').textContent = p + '%';
+  if ($('ob-tank-fill')) $('ob-tank-fill').style.height = p + '%';
+
+  const stEl = $('ob-status-txt');
+  if (stEl && statusText && stEl.textContent !== statusText) {
+    stEl.textContent = statusText;
+    stEl.style.animation = 'none';
+    void stEl.offsetWidth;
+    stEl.style.animation = 'obTextIn .32s cubic-bezier(.16, 1, .3, 1)';
+  }
+  if ($('ob-sub-txt') && subText !== undefined) $('ob-sub-txt').textContent = subText;
+}
+
+async function startServerOnboarding(id, srvObj, legacyInfo) {
+  _obSrvId = +id;
+  _obHasLegacy = !!(legacyInfo && legacyInfo.found);
+  const s = (SERVERS || []).find(x => +x.id === +id) || srvObj || {};
+  const isIran = (s.role === 'iran') || String(s.country_code || '').toUpperCase() === 'IR';
+
+  if ($('ob-srv-title')) $('ob-srv-title').textContent = s.name || ('Server #' + id);
+  if ($('ob-srv-host')) $('ob-srv-host').textContent = s.host || '';
+  if ($('ob-result-card')) { $('ob-result-card').className = 'ob-result-card'; }
+  if ($('btn-ob-migrate')) $('btn-ob-migrate').style.display = _obHasLegacy ? 'inline-flex' : 'none';
+
+  setOnboardProgress(14, 'در حال اتصال به سرور (Connecting)...', 'Establishing SSH session to ' + (s.host || ''));
+  $('srv-onboard-modal').classList.add('active');
+
+  await new Promise(r => setTimeout(r, 380));
+  setOnboardProgress(38,
+    isIran ? 'لوکیشن ایران تشخیص داده شد — انتخاب میرور پارس‌پک...' : 'در حال بررسی موقعیت و پیش‌نیازهای سرور...',
+    isIran ? '🇮🇷 Iran Node → Using ParsPack Mirror Source' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source')
+  );
+
+  let cur = 42;
+  const tick = setInterval(() => {
+    if (cur < 88) {
+      cur += 3;
+      const msg = cur < 68
+        ? 'در حال نصب Peer Agent v2 و پیش‌نیازها...'
+        : 'در حال تنظیم TLS و باز کردن پورت ارتباطی...';
+      setOnboardProgress(cur, msg);
+    }
+  }, 650);
+
+  let pairRes = null;
+  try {
+    pairRes = await api('api/servers/' + id + '/pair', 'POST');
+  } catch (e) {
+    pairRes = { ok: false, error: 'Network error during Peer Agent install' };
+  } finally {
+    clearInterval(tick);
+  }
+
+  await loadServers();
+  const updatedSrv = (SERVERS || []).find(x => +x.id === +id) || s;
+  const cc = (pairRes && pairRes.country_code) || updatedSrv.country_code || '';
+  const cname = (pairRes && pairRes.country) || updatedSrv.country || (isIran ? 'Iran' : 'Unknown');
+  const ping = (pairRes && pairRes.ping_ms) || updatedSrv.ping_ms || '—';
+
+  if ($('ob-flag-svg')) $('ob-flag-svg').innerHTML = flagSVG(cc);
+  if ($('ob-country-name')) $('ob-country-name').textContent = cname + (updatedSrv.datacenter ? (' · ' + updatedSrv.datacenter) : '');
+  if ($('ob-ping-val')) $('ob-ping-val').textContent = ping;
+
+  const card = $('ob-result-card');
+  if (pairRes && pairRes.ok) {
+    setOnboardProgress(100, '✔ Peer Agent با موفقیت نصب و متصل شد!', 'Encrypted TLS Peer Channel Active');
+    if ($('ob-peer-stat')) { $('ob-peer-stat').textContent = 'PAIRED ✔'; $('ob-peer-stat').style.color = 'var(--green)'; }
+    if ($('ob-src-val')) $('ob-src-val').textContent = (pairRes.source === 'iran_mirror' || isIran) ? 'Iran Mirror' : 'Direct';
+    if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = 'Peer Code: ' + (pairRes.peer_code || 'ACTIVE') + ' (SSH Password Wiped)';
+    if (card) card.className = 'ob-result-card show';
+  } else {
+    setOnboardProgress(100, '⚠ سرور اضافه شد اما نصب خودکار Peer انجام نشد', (pairRes && pairRes.error) || 'You can retry Pair from server menu');
+    if ($('ob-peer-stat')) { $('ob-peer-stat').textContent = 'SSH MODE'; $('ob-peer-stat').style.color = 'var(--yellow)'; }
+    if ($('ob-src-val')) $('ob-src-val').textContent = isIran ? 'Iran Mirror' : 'Direct';
+    if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = (pairRes && pairRes.error) || 'Fallback to SSH mode';
+    if (card) card.className = 'ob-result-card is-warn show';
+  }
+}
+
+function confirmServerOnboarding() {
+  closeModal('srv-onboard-modal');
+  if (_obSrvId) {
+    const id = _obSrvId;
+    _obSrvId = 0;
+    setTimeout(() => openSetupModal(id), 220);
+  }
+}
+
+function confirmOnboardAndMigrate() {
+  const id = _obSrvId;
+  _obSrvId = 0;
+  closeModal('srv-onboard-modal');
+  if (id) openLegacyModal(id);
+}
+
+function openQuotaModal(id) {
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  const q = SRV_QUOTAS[String(id)] || {};
+  if ($('qm-srv-id')) $('qm-srv-id').value = String(id);
+  if ($('qm-title')) $('qm-title').textContent = '📊 Quota & Expiry — ' + (s ? s.name : id);
+  if ($('qm-prov')) $('qm-prov').value = q.provider || '';
+  if ($('qm-exp')) $('qm-exp').value = q.expiry_date || '';
+  if ($('qm-lim')) $('qm-lim').value = q.limit_gb || '';
+  if ($('qm-used')) $('qm-used').value = q.used_gb || '';
+  if ($('qm-rday')) $('qm-rday').value = q.reset_day || 1;
+  if ($('qm-warn')) $('qm-warn').value = q.warn_days || 3;
+  $('quota-modal').classList.add('active');
+}
+
+async function saveServerQuota() {
+  const server_id = parseInt(($('qm-srv-id') && $('qm-srv-id').value) || '0', 10);
+  if (!server_id) return;
+  const payload = {
+    server_id,
+    provider: ($('qm-prov') && $('qm-prov').value.trim()) || '',
+    expiry_date: ($('qm-exp') && $('qm-exp').value.trim()) || '',
+    limit_gb: parseFloat(($('qm-lim') && $('qm-lim').value) || '0') || 0,
+    used_gb: parseFloat(($('qm-used') && $('qm-used').value) || '0') || 0,
+    reset_day: parseInt(($('qm-rday') && $('qm-rday').value) || '1', 10) || 1,
+    warn_days: parseInt(($('qm-warn') && $('qm-warn').value) || '3', 10) || 3
+  };
+  const r = await api('api/pro/quotas', 'POST', payload);
+  if (r && r.ok) {
+    SRV_QUOTAS = r.quotas || SRV_QUOTAS;
+    renderServers();
+    closeModal('quota-modal');
+    toast('Quota & VPS expiry saved!');
+  } else {
+    toast((r && r.error) || 'Failed to save quota', true);
+  }
+}
+
+async function rotateServerPeerKey(id) {
+  if (!confirm('Generate a new Peer Code, rotate it on the remote agent over TLS, and verify connection?')) return;
+  toast('Rotating Peer Agent key...');
+  const r = await api('api/servers/' + id + '/agent/rotate-key', 'POST');
+  if (r && r.ok) {
+    toast(r.message || 'Peer Agent key rotated!');
+    loadServers();
+  } else {
+    toast((r && r.error) || 'Key rotation failed', true);
+  }
+}
+
+async function runCanaryRollout() {
+  if (!confirm('Canary Rollout: Update 1 Peer Agent node first, verify health, and then roll out to all remaining nodes?')) return;
+  const btn = $('btn-canary-rollout');
+  if (btn) { btn.disabled = true; btn.textContent = '🐤 Rolling out...'; }
+  try {
+    const r = await api('api/agents/canary-rollout', 'POST');
+    toast((r && r.message) || (r && r.error) || 'Done', !(r && r.ok));
+    loadServers();
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🐤 Canary Rollout'; }
+  }
+}
+
 boot();
 </script>
 
@@ -11775,8 +12127,18 @@ boot();
       <div class="field"><label>Token</label><input id="te-tok" class="mono"></div>
     </div>
     <div class="field"><div style="display:flex; justify-content:space-between; align-items:center;"><label style="margin:0;">Forwarded Ports (comma-separated)</label><button type="button" class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:.66rem;" onclick="openPanelSyncModal('te-ports')">⚡ Sync 3x-ui / Marzban</button></div><input id="te-ports" class="mono" placeholder="443,8443,2053" style="margin-top:5px;"></div>
-    <div class="flexw" style="justify-content:flex-end; margin-top:10px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-top:10px;">
+      <label class="check" style="margin:0; font-size:.75rem;" title="Automatically rolls back tunnel changes after 60 seconds unless you click Confirm">
+        <input type="checkbox" id="te-commit-conf" checked>
+        <span>Commit-Confirmed (60s Auto-Rollback)</span>
+      </label>
       <button class="btn btn-sky" id="btn-te-save" onclick="saveEditedTunnel()">Save &amp; Redeploy Both Sides</button>
+    </div>
+    <div class="ssh-save-ask" id="te-confirm-banner">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:.78rem; font-weight:700; color:var(--yellow);" id="te-confirm-lbl">⏳ Auto-rollback in 60s unless confirmed...</span>
+        <button type="button" class="btn btn-sky btn-sm" id="btn-te-confirm" onclick="confirmEditedTunnel()">✔ Confirm Tunnel</button>
+      </div>
     </div>
   </div>
 </div>
@@ -12137,6 +12499,106 @@ boot();
       </div>
     </div>
     <pre class="term" id="mkt-out" style="height:220px;">Loading...</pre>
+  </div>
+</div>
+
+
+<!-- POST-ADD-SERVER AUTO-PEER ONBOARDING & PROGRESS MODAL (Theme-Adaptive) -->
+<div class="modal-bg" id="srv-onboard-modal" style="z-index:1180;">
+  <div class="card modal-box ob-box">
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:4px;">
+      <span class="dot online"></span>
+      <h3 style="color:var(--accent); margin:0;" id="ob-srv-title">Setting Up Server</h3>
+    </div>
+    <div class="mono" style="font-size:.75rem; color:var(--muted);" id="ob-srv-host">—</div>
+
+    <!-- Theme-Adaptive Progress Indicator (Ring / Liquid Tank / Linear Bar) -->
+    <div class="ob-vis-wrap">
+      <div class="ob-ring-box">
+        <svg class="ob-ring-svg" viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="obRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--accent)"/>
+              <stop offset="55%" stop-color="var(--accent2)"/>
+              <stop offset="100%" stop-color="var(--green)"/>
+            </linearGradient>
+          </defs>
+          <circle class="ob-ring-bg" cx="60" cy="60" r="52"/>
+          <circle class="ob-ring-fg" id="ob-ring-fg" cx="60" cy="60" r="52"/>
+        </svg>
+        <span class="ob-ring-pct" id="ob-ring-pct">0%</span>
+      </div>
+
+      <div class="ob-tank-box">
+        <div class="ob-tank-fill" id="ob-tank-fill"></div>
+        <span class="ob-tank-pct" id="ob-tank-pct">0%</span>
+      </div>
+
+      <div class="ob-linear-box">
+        <div class="ob-lin-head">
+          <span style="color:var(--muted);">Auto-Peer Provisioning</span>
+          <span class="mono" style="color:var(--accent);" id="ob-lin-pct">0%</span>
+        </div>
+        <div class="ob-lin-track"><div class="ob-lin-fill" id="ob-lin-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- Animated Live Step Status -->
+    <div class="ob-status-txt" id="ob-status-txt">Connecting to server...</div>
+    <div class="ob-sub-txt" id="ob-sub-txt">Initializing SSH &amp; GeoIP detection</div>
+
+    <!-- Final Result Reveal (Stays on screen until user clicks Confirm!) -->
+    <div class="ob-result-card" id="ob-result-card">
+      <div class="ob-flag-hero" id="ob-flag-hero">
+        <span id="ob-flag-svg"></span>
+        <strong id="ob-country-name" style="font-size:.92rem;">—</strong>
+      </div>
+      <div class="ob-kpi-row">
+        <div class="ob-kpi">
+          <small>Peer Agent</small>
+          <strong id="ob-peer-stat" style="color:var(--green);">INSTALLED</strong>
+        </div>
+        <div class="ob-kpi">
+          <small>Ping (RTT)</small>
+          <strong id="ob-ping-val">—</strong>
+        </div>
+        <div class="ob-kpi">
+          <small>Source</small>
+          <strong id="ob-src-val">—</strong>
+        </div>
+      </div>
+      <div class="mono" style="font-size:.71rem; color:var(--muted); margin-top:10px;" id="ob-peer-code-lbl"></div>
+      <div class="flexw" style="justify-content:center; gap:8px; margin-top:14px;">
+        <button type="button" class="btn btn-warn" id="btn-ob-migrate" style="display:none;" onclick="confirmOnboardAndMigrate()">⚡ Migrate MTunnel</button>
+        <button type="button" class="btn btn-sky" id="btn-ob-confirm" style="min-width:160px; justify-content:center;" onclick="confirmServerOnboarding()">✔ تایید و ادامه (Confirm)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VPS QUOTA & EXPIRY MODAL -->
+<div class="modal-bg" id="quota-modal" style="z-index:1155;">
+  <div class="card modal-box" style="max-width:480px;">
+    <div class="toolbar" style="margin-bottom:12px;">
+      <h3 style="color:var(--accent);" id="qm-title">📊 Server Quota &amp; Expiry</h3>
+      <button class="btn btn-danger btn-sm" data-close="quota-modal">Close</button>
+    </div>
+    <input type="hidden" id="qm-srv-id">
+    <div class="row2">
+      <div class="field"><label>Hosting Provider (optional)</label><input id="qm-prov" placeholder="e.g. Hetzner / ArvanCloud"></div>
+      <div class="field"><label>VPS Expiry / Renewal Date</label><input id="qm-exp" type="date"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Monthly Traffic Limit (GB, 0 = off)</label><input id="qm-lim" type="number" step="1" min="0" placeholder="1000"></div>
+      <div class="field"><label>Current Used Traffic (GB)</label><input id="qm-used" type="number" step="0.1" min="0" placeholder="0"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Monthly Reset Day (1-28)</label><input id="qm-rday" type="number" min="1" max="28" value="1"></div>
+      <div class="field"><label>Alert Days Before Expiry</label><input id="qm-warn" type="number" min="1" max="30" value="3"></div>
+    </div>
+    <div class="flexw" style="justify-content:flex-end; gap:8px; margin-top:10px;">
+      <button type="button" class="btn btn-sky" onclick="saveServerQuota()">Save Quota &amp; Expiry</button>
+    </div>
   </div>
 </div>
 
