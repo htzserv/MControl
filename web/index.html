@@ -3328,6 +3328,47 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
 }
 #btn-lang select#lang-select { display: none !important; }
 
+
+/* ── SSL Issuance Percentage Progress Bar ── */
+.mc-prog-box {
+  display: none;
+  margin-top: 10px;
+  padding: 11px 13px;
+  border-radius: min(var(--rc, 14px), 16px);
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--border));
+  animation: fadeUp .22s ease;
+}
+.mc-prog-box.show { display: block; }
+.mc-prog-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: .76rem; font-weight: 700; margin-bottom: 7px;
+}
+.mc-prog-pct {
+  font-family: var(--ff-m); font-weight: 800; color: var(--accent);
+}
+.mc-prog-track {
+  width: 100%; height: 8px; border-radius: 999px;
+  background: var(--row); overflow: hidden;
+}
+.mc-prog-fill {
+  height: 100%; width: 0%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--green));
+  transition: width .35s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ── Inline Save SSH Profile Prompt Card (Add Server & Web Terminal) ── */
+.ssh-save-ask {
+  display: none;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: min(var(--rc, 14px), 16px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--row)), color-mix(in srgb, var(--accent2) 7%, var(--row)));
+  border: 1.5px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  animation: fadeUp .22s ease;
+}
+.ssh-save-ask.show { display: block; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3355,11 +3396,40 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
       <label>Panel Domain / Address <span style="color:var(--muted); font-weight:400;">(Optional — e.g. panel.example.com)</span></label>
       <input id="su-domain" class="mono" placeholder="panel.example.com" autocomplete="off">
     </div>
-    <div class="field" id="su-ssl-wrap" style="display:none;">
-      <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:.82rem;">
-        <input type="checkbox" id="su-ssl" style="width:auto;">
-        <span>Auto-issue Free SSL Certificate (Let's Encrypt — Port 80 must be free)</span>
-      </label>
+    <div class="field" id="su-ssl-mode-wrap">
+      <label>HTTPS / SSL Certificate (Optional)</label>
+      <input type="hidden" id="su-ssl-mode" value="none">
+      <div class="role-picker" id="su-ssl-picker">
+        <div class="role-opt active" data-sussl="none" onclick="pickSetupSSLMode('none')">None (HTTP)</div>
+        <div class="role-opt" data-sussl="acme" onclick="pickSetupSSLMode('acme')">Auto SSL (Domain)</div>
+        <div class="role-opt" data-sussl="upload" onclick="pickSetupSSLMode('upload')">Upload Cert &amp; Key</div>
+      </div>
+    </div>
+    <div id="su-ssl-acme-note" class="hint" style="display:none; margin:-4px 0 10px;">
+      Point your domain's DNS A record to this server IP and ensure port 80 is free.
+    </div>
+    <div id="su-ssl-upload-wrap" style="display:none; margin-bottom:12px; padding:11px 12px; border-radius:14px; background:var(--row); border:1px solid var(--border);">
+      <div class="row2">
+        <div class="field" style="margin:0;">
+          <label>Certificate File (.crt / .pem)</label>
+          <input type="file" id="su-cert-file" accept=".crt,.pem,.cer,text/plain" hidden onchange="readPemFile(this, 'su-cert-data', 'su-cert-lbl')">
+          <button type="button" class="btn btn-ghost btn-sm" style="width:100%; justify-content:center;" onclick="$('su-cert-file').click()">📁 <span id="su-cert-lbl">Choose tls.crt</span></button>
+          <textarea id="su-cert-data" hidden></textarea>
+        </div>
+        <div class="field" style="margin:0;">
+          <label>Private Key File (.key / .pem)</label>
+          <input type="file" id="su-key-file" accept=".key,.pem,text/plain" hidden onchange="readPemFile(this, 'su-key-data', 'su-key-lbl')">
+          <button type="button" class="btn btn-ghost btn-sm" style="width:100%; justify-content:center;" onclick="$('su-key-file').click()">🔑 <span id="su-key-lbl">Choose tls.key</span></button>
+          <textarea id="su-key-data" hidden></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="mc-prog-box" id="su-ssl-prog" style="margin-bottom:12px;">
+      <div class="mc-prog-top">
+        <span id="su-ssl-prog-lbl">Preparing SSL certificate...</span>
+        <span class="mc-prog-pct" id="su-ssl-prog-pct">0%</span>
+      </div>
+      <div class="mc-prog-track"><div class="mc-prog-fill" id="su-ssl-prog-bar"></div></div>
     </div>
     <button class="btn btn-sky" id="btn-setup-go" style="width:100%; justify-content:center;" data-i18n="btn_setup">Save &amp; launch panel</button>
     <div id="setup-result" style="display:none; margin-top:16px; text-align:center;">
@@ -4229,11 +4299,36 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
               <button class="btn btn-ghost btn-sm" onclick="enableSelfSignedTLS()">Self-Signed SSL (IP)</button>
               <button class="btn btn-danger btn-sm" id="btn-tls-off" style="display:none;" onclick="disableTLS()">Disable HTTPS</button>
             </div>
+            <div class="mc-prog-box" id="acme-prog" style="margin-bottom:12px;">
+              <div class="mc-prog-top">
+                <span id="acme-prog-lbl">Contacting Let's Encrypt...</span>
+                <span class="mc-prog-pct" id="acme-prog-pct">0%</span>
+              </div>
+              <div class="mc-prog-track"><div class="mc-prog-fill" id="acme-prog-bar"></div></div>
+            </div>
             <pre class="term" id="acme-out" style="display:none; max-height:140px; margin-bottom:14px;"></pre>
             <hr style="margin:14px 0;">
-            <div class="field"><label>Manual Certificate (tls.crt — PEM)</label><textarea id="tls-cert" placeholder="-----BEGIN CERTIFICATE-----" style="min-height:64px;"></textarea></div>
-            <div class="field"><label>Manual Private Key (tls.key — PEM)</label><textarea id="tls-key" placeholder="-----BEGIN PRIVATE KEY-----" style="min-height:64px;"></textarea></div>
-            <button class="btn btn-ghost btn-sm" onclick="saveCustomTLS()">Save Custom SSL &amp; Restart</button>
+            <div class="field">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <label style="margin:0;">Manual Certificate (tls.crt — PEM)</label>
+                <div>
+                  <input type="file" id="tls-cert-file" accept=".crt,.pem,.cer,text/plain" hidden onchange="readPemFile(this, 'tls-cert', 'tls-cert-flbl')">
+                  <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 9px; font-size:.7rem;" onclick="$('tls-cert-file').click()">📁 <span id="tls-cert-flbl">Upload .crt / .pem</span></button>
+                </div>
+              </div>
+              <textarea id="tls-cert" placeholder="-----BEGIN CERTIFICATE-----" style="min-height:64px;"></textarea>
+            </div>
+            <div class="field">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                <label style="margin:0;">Manual Private Key (tls.key — PEM)</label>
+                <div>
+                  <input type="file" id="tls-key-file" accept=".key,.pem,text/plain" hidden onchange="readPemFile(this, 'tls-key', 'tls-key-flbl')">
+                  <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 9px; font-size:.7rem;" onclick="$('tls-key-file').click()">🔑 <span id="tls-key-flbl">Upload .key / .pem</span></button>
+                </div>
+              </div>
+              <textarea id="tls-key" placeholder="-----BEGIN PRIVATE KEY-----" style="min-height:64px;"></textarea>
+            </div>
+            <button class="btn btn-sky btn-sm" onclick="saveCustomTLS()">Save Custom SSL &amp; Restart</button>
           </div>
 <div style="height:14px;"></div>
 <div class="card">
@@ -4896,8 +4991,14 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
           </div>
         </div>
         <div class="field" id="s-prof-wrap" style="display:none;">
-          <label>Select Saved SSH Profile</label>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
+            <label style="margin:0;">Select Saved SSH Profile</label>
+            <button type="button" class="btn btn-sky btn-sm" style="padding:3px 9px; font-size:.71rem;" onclick="startQuickSSHProfile('server')">+ Create Profile</button>
+          </div>
           <select id="s-prof-sel"></select>
+          <div id="s-prof-empty-hint" class="hint" style="display:none; margin-top:6px; color:var(--yellow);">
+            No saved SSH profiles yet. Click <b>+ Create Profile</b> above to enter user &amp; password and save it directly here.
+          </div>
         </div>
         <div id="s-custom-fields">
           <div class="row2">
@@ -4912,6 +5013,25 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
         </div>
         <div class="hint" id="s-keep" style="display:none;" data-i18n="ph_keep_secret">Leave the secret empty to keep the stored one.</div>
         <div id="srv-test-res" class="hint mono" style="display:none; margin-bottom:4px;"></div>
+
+        <!-- Ask to save entered SSH credentials as a reusable profile -->
+        <div class="ssh-save-ask" id="srv-save-prof-ask">
+          <div id="srv-save-prof-step1" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:.78rem; font-weight:700; color:var(--text);">💾 Save this username &amp; password to SSH Profiles?</span>
+            <div class="flexw" style="gap:6px;">
+              <button type="button" class="btn btn-sky btn-sm" onclick="revealSSHProfileNameInput('srv')">Yes, Save</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="dismissSSHProfileAsk('srv')">No</button>
+            </div>
+          </div>
+          <div id="srv-save-prof-step2" style="display:none;">
+            <label style="display:block; font-size:.73rem; color:var(--muted); margin-bottom:5px;">Enter a name for this SSH Profile:</label>
+            <div class="flexw" style="gap:6px; flex-wrap:nowrap;">
+              <input id="srv-new-prof-name" placeholder="e.g. Hetzner Root" style="flex:1; padding:7px 10px; font-size:.8rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmSaveSSHProfile('srv');}">
+              <button type="button" class="btn btn-sky btn-sm" id="btn-srv-prof-save" onclick="confirmSaveSSHProfile('srv')">Save Profile</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="dismissSSHProfileAsk('srv')">Cancel</button>
+            </div>
+          </div>
+        </div>
 
         <!-- Remote OS Root Login & Password Management (Shown only when Editing a Server) -->
         <div id="srv-edit-pw-sec" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
@@ -5562,7 +5682,7 @@ en: {
   modal_add: '+ Add server', modal_edit: 'Edit server', lbl_srv_name: 'Server name', lbl_srv_role: 'Role', role_iran: '[IR] Iran server', role_foreign: '[GL] Foreign server (Kharej)',
   lbl_host: 'IP address / host', lbl_ssh_port: 'SSH port', lbl_ssh_user: 'SSH user', lbl_auth: 'Authentication', auth_pass: 'Password', auth_key: 'SSH private key',
   lbl_ssh_pass: 'SSH password', lbl_ssh_key: 'Private key (PEM / OpenSSH, no passphrase)', ph_keep_secret: 'Leave the secret empty to keep the stored one.',
-  btn_cancel: 'Cancel', btn_connect_save: 'Connect & save', btn_save: 'Save', connecting: 'Connecting...',
+  btn_cancel: 'Cancel', btn_test: 'Test', btn_connect_save: 'Connect & save', btn_save: 'Save', connecting: 'Connecting...',
   toast_added: 'Server added!', toast_saved: 'Server saved.', toast_removed: 'Server removed.', toast_probing: 'Probing via SSH...', toast_probing_all: 'Probing all servers...',
   confirm_delete: 'Delete this server from MControl?', confirm_trust: 'Trust the NEW host key of this server? Only do this if you reinstalled it or changed its keys.',
   no_servers: 'No servers yet. Click "+ Add server" to connect via SSH.',
@@ -5616,7 +5736,7 @@ fa: {
   modal_add: '+ افزودن سرور', modal_edit: 'ویرایش سرور', lbl_srv_name: 'نام سرور', lbl_srv_role: 'نقش', role_iran: '[IR] سرور ایران', role_foreign: '[GL] سرور خارج',
   lbl_host: 'آدرس IP / دامنه', lbl_ssh_port: 'پورت SSH', lbl_ssh_user: 'کاربر SSH', lbl_auth: 'روش احراز هویت', auth_pass: 'رمز عبور', auth_key: 'کلید خصوصی SSH',
   lbl_ssh_pass: 'رمز SSH', lbl_ssh_key: 'کلید خصوصی (PEM / OpenSSH، بدون پسفرز)', ph_keep_secret: 'برای حفظ مقدار ذخیره‌شده، این بخش را خالی بگذارید.',
-  btn_cancel: 'انصراف', btn_connect_save: 'اتصال و ذخیره', btn_save: 'ذخیره', connecting: 'در حال اتصال...',
+  btn_cancel: 'انصراف', btn_test: 'تست اتصال', btn_connect_save: 'اتصال و ذخیره', btn_save: 'ذخیره', connecting: 'در حال اتصال...',
   toast_added: 'سرور اضافه شد!', toast_saved: 'سرور ذخیره شد.', toast_removed: 'سرور حذف شد.', toast_probing: 'در حال بررسی از طریق SSH...', toast_probing_all: 'در حال بررسی همه‌ی سرورها...',
   confirm_delete: 'این سرور از MControl حذف شود؟', confirm_trust: 'به کلید میزبان «جدید» این سرور اعتماد شود؟ فقط اگر سرور را دوباره نصب کرده یا کلیدهایش را عوض کرده‌اید این کار را بکنید.',
   no_servers: 'هنوز سروری اضافه نشده است. روی «+ افزودن سرور» بزنید تا با SSH متصل شود.',
@@ -6550,6 +6670,9 @@ async function testServerModal() {
     const res = await api('api/servers/test', 'POST', payload);
     if (res.ok) {
       box.style.color = 'var(--green)';
+      if (credMode === 'custom' && auth === 'password' && $('s-pass').value) {
+        promptSaveSSHProfile('srv', $('s-user').value.trim() || 'root', $('s-pass').value, parseInt($('s-port').value || '22', 10), $('s-name').value.trim() || $('s-host').value.trim());
+      }
       box.textContent = `✔ Connected! Ping from Master: ${res.ping_ms} • CPU: ${res.cpu} • RAM: ${res.ram}`;
       toast('Connection OK! Ping: ' + res.ping_ms);
     } else {
@@ -6763,15 +6886,26 @@ async function saveServer() {
     const res = editId ? await api('api/servers/' + editId, 'PUT', payload) : await api('api/servers', 'POST', payload);
     if (res.ok) {
       const wasNew = !editId;
+      const enteredPass = (credMode === 'custom' && auth === 'password') ? $('s-pass').value : '';
+      const enteredUser = $('s-user').value.trim() || 'root';
+      const enteredPort = parseInt($('s-port').value || '22', 10);
+      const suggestedName = $('s-name').value.trim() || $('s-host').value.trim();
       toast(editId ? t('toast_saved') : t('toast_added'));
       await loadServers();
       if (res.probe_error) toast(res.probe_error, true);
-      if (wasNew && res.id && res.legacy && res.legacy.found) {
-        toast('MTunnel detected! Step 3 (Migrator) unlocked.');
-        enterSrvWizardMigrator(res.id);
+      const finishAfterSave = () => {
+        if (wasNew && res.id && res.legacy && res.legacy.found) {
+          toast('MTunnel detected! Step 3 (Migrator) unlocked.');
+          enterSrvWizardMigrator(res.id);
+        } else {
+          closeModal('srv-modal');
+          if (wasNew && res.id) setTimeout(() => openSetupModal(res.id), 250);
+        }
+      };
+      if (enteredPass && !_lastSavedSSHKey[enteredUser + ':' + enteredPort + ':' + enteredPass]) {
+        promptSaveSSHProfile('srv', enteredUser, enteredPass, enteredPort, suggestedName, finishAfterSave);
       } else {
-        closeModal('srv-modal');
-        if (wasNew && res.id) setTimeout(() => openSetupModal(res.id), 250);
+        finishAfterSave();
       }
     } else toast(res.error || 'Failed', true);
   } finally { btn.disabled = false; btn.textContent = label; }
@@ -9260,18 +9394,27 @@ async function issueDomainSSL() {
   const btn = $('btn-acme-go'), out = $('acme-out');
   btn.disabled = true; btn.textContent = 'Issuing SSL...';
   out.style.display = 'block'; out.textContent = 'Contacting Let\'s Encrypt for ' + domain + ' (port 80 standalone)...';
+  const stopProg = startSSLProgress('acme-prog', 'acme-prog-pct', 'acme-prog-lbl', 'acme-prog-bar', [
+    [12, 'Checking domain & port 80 availability...'],
+    [34, 'Preparing Let\'s Encrypt ACME client...'],
+    [62, 'Verifying HTTP-01 challenge for ' + domain + '...'],
+    [86, 'Writing tls.crt & tls.key...']
+  ]);
   try {
     const r = await api('api/settings/tls/acme', 'POST', { domain, email });
     out.textContent = r.output || (r.ok ? r.message : r.error);
     if (r.ok) {
+      stopProg(100, 'SSL Certificate Issued! Restarting on HTTPS...');
       toast(r.message || 'SSL issued! Redirecting to HTTPS...');
       const url = 'https://' + r.domain + ':' + (r.port || location.port || '2053') + '/' + (r.web_path ? r.web_path + '/' : '');
       setTimeout(() => { location.href = url; }, 3200);
     } else {
+      stopProg(0, 'SSL issuance failed', true);
       toast(r.error || 'SSL issuance failed', true);
       btn.disabled = false; btn.textContent = 'Get Free SSL & Connect';
     }
   } catch (e) {
+    stopProg(0, 'Request error', true);
     toast('Request error', true);
     btn.disabled = false; btn.textContent = 'Get Free SSL & Connect';
   }
@@ -9317,8 +9460,16 @@ function renderSSHProfiles() {
   if (sel) {
     sel.innerHTML = SSH_PROFILES.length
       ? SSH_PROFILES.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.username)} :${p.port})</option>`).join('')
-      : '<option value="0">No saved profiles — add one in Settings</option>';
+      : '<option value="0">— No saved profiles yet —</option>';
   }
+  if ($('s-prof-empty-hint')) $('s-prof-empty-hint').style.display = SSH_PROFILES.length ? 'none' : 'block';
+  const tsel = $('term-prof-sel');
+  if (tsel) {
+    tsel.innerHTML = SSH_PROFILES.length
+      ? SSH_PROFILES.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.username)}:${p.port})</option>`).join('')
+      : '<option value="0">— No saved profiles yet —</option>';
+  }
+  if ($('term-prof-empty-hint')) $('term-prof-empty-hint').style.display = SSH_PROFILES.length ? 'none' : 'block';
 }
 
 function renderPortProfiles() {
@@ -9873,14 +10024,30 @@ if ($('su-domain')) {
 async function completeSetup() {
   const btn = $('btn-setup-go'); btn.disabled = true;
   const dom = $('su-domain') ? $('su-domain').value.trim() : '';
-  const wantSSL = !!($('su-ssl') && $('su-ssl').checked);
-  if (wantSSL) toast('Issuing Let\'s Encrypt SSL certificate... please wait 10-20s');
+  const sslMode = $('su-ssl-mode') ? $('su-ssl-mode').value : 'none';
+  const wantSSL = (sslMode === 'acme');
+  const customCert = (sslMode === 'upload' && $('su-cert-data')) ? $('su-cert-data').value.trim() : '';
+  const customKey = (sslMode === 'upload' && $('su-key-data')) ? $('su-key-data').value.trim() : '';
+  let stopProg = null;
+  if (wantSSL || sslMode === 'upload') {
+    stopProg = startSSLProgress('su-ssl-prog', 'su-ssl-prog-pct', 'su-ssl-prog-lbl', 'su-ssl-prog-bar',
+      sslMode === 'upload'
+        ? [[35, 'Validating uploaded certificate & private key...'], [78, 'Installing tls.crt & tls.key...']]
+        : [
+            [14, 'Checking domain DNS & port 80...'],
+            [38, 'Running Let\'s Encrypt ACME client...'],
+            [68, 'Verifying HTTP-01 domain challenge...'],
+            [88, 'Installing tls.crt & tls.key...']
+          ]
+    );
+  }
   const res = await api('api/setup/complete', 'POST', {
     username: $('su-user').value, password: $('su-pass').value, web_path: $('su-path').value,
     port: parseInt($('su-port').value || '0', 10), setup_token: $('su-token').value,
-    domain: dom, issue_ssl: wantSSL
+    domain: dom, issue_ssl: wantSSL, custom_cert: customCert, custom_key: customKey
   });
   if (res.ok) {
+    if (stopProg) stopProg(100, res.ssl_warning ? 'Completed with SSL warning' : 'SSL Configured! Launching HTTPS...');
     if (res.ssl_warning) toast(res.ssl_warning, true);
     const proto = res.ssl_issued ? 'https:' : location.protocol;
     const host = (res.domain && res.domain.length > 0) ? res.domain : location.hostname;
@@ -9888,7 +10055,11 @@ async function completeSetup() {
     const a = $('setup-new-url'); a.href = url; a.textContent = url;
     $('setup-result').style.display = 'block';
     setTimeout(() => { location.href = url; }, res.ssl_warning ? 6000 : 3500);
-  } else { toast(res.error || 'Setup failed', true); btn.disabled = false; }
+  } else {
+    if (stopProg) stopProg(0, res.error || 'Setup failed', true);
+    toast(res.error || 'Setup failed', true);
+    btn.disabled = false;
+  }
 }
 function randPath() {
   const a = new Uint8Array(5); crypto.getRandomValues(a);
@@ -10158,7 +10329,8 @@ function showTermAuthBox(show) {
     const profs = (typeof SSH_PROFILES !== 'undefined' && SSH_PROFILES) ? SSH_PROFILES : [];
     $('term-prof-sel').innerHTML = profs.length
       ? profs.map(p => `<option value="${p.id}">${esc(p.name)} (${esc(p.username)}:${p.port})</option>`).join('')
-      : '<option value="0">No saved SSH profiles (add in Settings)</option>';
+      : '<option value="0">— No saved profiles yet —</option>';
+    if ($('term-prof-empty-hint')) $('term-prof-empty-hint').style.display = profs.length ? 'none' : 'block';
   }
 }
 async function openWebTerm(id) {
@@ -10199,9 +10371,18 @@ async function saveTermAuthAndOpen() {
     };
     const r = await api('api/servers/' + termSrvId + '/term-auth', 'POST', payload);
     if (r.ok) {
+      const rawPass = payload.password;
       toast(r.message || 'Credentials saved!');
       $('term-pass').value = '';
-      showTermAuthBox(false);
+      if (payload.mode === 'custom' && rawPass && !_lastSavedSSHKey[payload.username + ':' + payload.port + ':' + rawPass]) {
+        const sObj = (SERVERS || []).find(x => +x.id === +termSrvId);
+        promptSaveSSHProfile('term', payload.username || 'root', rawPass, payload.port || 22, sObj ? sObj.name : '', () => {
+          showTermAuthBox(false);
+          switchTermView('shell');
+          populateVaultDropdown();
+        });
+      } else {
+        showTermAuthBox(false);
   switchTermView('shell');
   populateVaultDropdown();
       setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
@@ -11385,6 +11566,139 @@ window.loadBrandProfile = loadBrandProfile;
   }, true);
 })();
 
+/* ═══════════════ Quick SSH Profile Prompt, PEM Upload & SSL Progress ═══════════════ */
+let _pendingSSHProf = {};
+let _lastSavedSSHKey = {};
+
+function startQuickSSHProfile(ctx) {
+  if (ctx === 'server') {
+    pickCredMode('custom');
+    if ($('s-auth')) { $('s-auth').value = 'password'; $('s-auth').dispatchEvent(new Event('change')); }
+    setTimeout(() => $('s-pass') && $('s-pass').focus(), 40);
+    toast('Enter SSH user & password below — you will be asked to save it as a profile.');
+  } else {
+    pickTermAuthMode('custom');
+    setTimeout(() => $('term-pass') && $('term-pass').focus(), 40);
+    toast('Enter SSH user & password below — you will be asked to save it as a profile.');
+  }
+}
+
+function promptSaveSSHProfile(ctx, username, password, port, suggestedName, onDone) {
+  const askBox = $(ctx + '-save-prof-ask');
+  const s1 = $(ctx + '-save-prof-step1');
+  const s2 = $(ctx + '-save-prof-step2');
+  const nameInp = $(ctx + '-new-prof-name');
+  if (!askBox) { if (onDone) onDone(); return; }
+  _pendingSSHProf[ctx] = { username, password, port, onDone: onDone || null };
+  if (nameInp) nameInp.value = suggestedName ? (suggestedName + ' (' + username + ')') : (username + ' :' + port);
+  if (s1) s1.style.display = 'flex';
+  if (s2) s2.style.display = 'none';
+  askBox.classList.add('show');
+}
+
+function revealSSHProfileNameInput(ctx) {
+  const s1 = $(ctx + '-save-prof-step1');
+  const s2 = $(ctx + '-save-prof-step2');
+  const nameInp = $(ctx + '-new-prof-name');
+  if (s1) s1.style.display = 'none';
+  if (s2) s2.style.display = 'block';
+  if (nameInp) { nameInp.focus(); nameInp.select(); }
+}
+
+function dismissSSHProfileAsk(ctx) {
+  const askBox = $(ctx + '-save-prof-ask');
+  if (askBox) askBox.classList.remove('show');
+  const data = _pendingSSHProf[ctx];
+  delete _pendingSSHProf[ctx];
+  if (data && typeof data.onDone === 'function') data.onDone();
+}
+
+async function confirmSaveSSHProfile(ctx) {
+  const data = _pendingSSHProf[ctx];
+  if (!data) return;
+  const nameInp = $(ctx + '-new-prof-name');
+  const pName = (nameInp ? nameInp.value.trim() : '') || (data.username + ' :' + data.port);
+  const btn = $('btn-' + ctx + '-prof-save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    const r = await api('api/profiles/ssh', 'POST', {
+      name: pName,
+      username: data.username || 'root',
+      password: data.password,
+      port: data.port || 22
+    });
+    if (r && r.ok) {
+      _lastSavedSSHKey[data.username + ':' + data.port + ':' + data.password] = true;
+      toast('Saved SSH Profile: ' + pName);
+      if (typeof loadProfiles === 'function') await loadProfiles();
+      if (r.id) {
+        if ($('s-prof-sel')) $('s-prof-sel').value = String(r.id);
+        if ($('term-prof-sel')) $('term-prof-sel').value = String(r.id);
+      }
+      dismissSSHProfileAsk(ctx);
+    } else {
+      toast((r && r.error) || 'Failed to save SSH profile', true);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Profile'; }
+  }
+}
+
+function pickSetupSSLMode(m) {
+  if ($('su-ssl-mode')) $('su-ssl-mode').value = m;
+  document.querySelectorAll('#su-ssl-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.sussl === m));
+  if ($('su-ssl-acme-note')) $('su-ssl-acme-note').style.display = (m === 'acme') ? 'block' : 'none';
+  if ($('su-ssl-upload-wrap')) $('su-ssl-upload-wrap').style.display = (m === 'upload') ? 'block' : 'none';
+}
+
+function readPemFile(input, targetTextareaId, labelId) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  if (f.size > 64 * 1024) {
+    toast('Certificate/Key file is too large (max 64 KB)', true);
+    input.value = '';
+    return;
+  }
+  const rd = new FileReader();
+  rd.onload = () => {
+    const txt = String(rd.result || '').trim();
+    if ($(targetTextareaId)) $(targetTextareaId).value = txt;
+    if ($(labelId)) $(labelId).textContent = f.name;
+    toast('Loaded ' + f.name);
+  };
+  rd.readAsText(f);
+  input.value = '';
+}
+
+function startSSLProgress(boxId, pctId, lblId, barId, stages) {
+  const box = $(boxId), pctEl = $(pctId), lblEl = $(lblId), barEl = $(barId);
+  if (!box) return () => {};
+  box.classList.add('show');
+  let curPct = 5, stageIdx = 0;
+  const applyState = (p, txt, isErr) => {
+    curPct = p;
+    if (pctEl) { pctEl.textContent = p + '%'; pctEl.style.color = isErr ? 'var(--red)' : 'var(--accent)'; }
+    if (lblEl && txt) lblEl.textContent = txt;
+    if (barEl) {
+      barEl.style.width = p + '%';
+      barEl.style.background = isErr ? 'var(--red)' : 'linear-gradient(90deg, var(--accent), var(--accent2), var(--green))';
+    }
+  };
+  applyState(stages[0][0], stages[0][1], false);
+  const timer = setInterval(() => {
+    if (stageIdx + 1 < stages.length && curPct >= stages[stageIdx][0]) {
+      stageIdx++;
+      applyState(stages[stageIdx][0], stages[stageIdx][1], false);
+    } else if (curPct < 94) {
+      applyState(curPct + 2, null, false);
+    }
+  }, 1100);
+  return (finalPct, finalMsg, isErr) => {
+    clearInterval(timer);
+    applyState(finalPct, finalMsg, !!isErr);
+  };
+}
+
 boot();
 </script>
 
@@ -11434,8 +11748,14 @@ boot();
         <div class="role-opt" data-tm="saved" onclick="pickTermAuthMode('saved')">Saved SSH Profile</div>
       </div>
       <div id="term-auth-saved-wrap" class="field" style="display:none;">
-        <label>Select Saved SSH Profile</label>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
+          <label style="margin:0;">Select Saved SSH Profile</label>
+          <button type="button" class="btn btn-sky btn-sm" style="padding:3px 9px; font-size:.71rem;" onclick="startQuickSSHProfile('term')">+ Create Profile</button>
+        </div>
         <select id="term-prof-sel"></select>
+        <div id="term-prof-empty-hint" class="hint" style="display:none; margin-top:6px; color:var(--yellow);">
+          No saved SSH profiles yet. Click <b>+ Create Profile</b> above to enter user &amp; password and save it here.
+        </div>
       </div>
       <div id="term-auth-custom-wrap">
         <div class="row2">
@@ -11446,6 +11766,23 @@ boot();
       </div>
       <div class="flexw" style="justify-content:flex-end; gap:8px;">
         <button class="btn btn-sky btn-sm" id="btn-term-unlock" onclick="saveTermAuthAndOpen()">Save &amp; Open Terminal</button>
+      </div>
+      <div class="ssh-save-ask" id="term-save-prof-ask">
+        <div id="term-save-prof-step1" style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:.78rem; font-weight:700; color:var(--text);">💾 Save this username &amp; password to SSH Profiles?</span>
+          <div class="flexw" style="gap:6px;">
+            <button type="button" class="btn btn-sky btn-sm" onclick="revealSSHProfileNameInput('term')">Yes, Save</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="dismissSSHProfileAsk('term')">No</button>
+          </div>
+        </div>
+        <div id="term-save-prof-step2" style="display:none;">
+          <label style="display:block; font-size:.73rem; color:var(--muted); margin-bottom:5px;">Enter a name for this SSH Profile:</label>
+          <div class="flexw" style="gap:6px; flex-wrap:nowrap;">
+            <input id="term-new-prof-name" placeholder="e.g. Server Root" style="flex:1; padding:7px 10px; font-size:.8rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmSaveSSHProfile('term');}">
+            <button type="button" class="btn btn-sky btn-sm" id="btn-term-prof-save" onclick="confirmSaveSSHProfile('term')">Save Profile</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="dismissSSHProfileAsk('term')">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
 

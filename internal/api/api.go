@@ -582,6 +582,8 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 		SetupToken string `json:"setup_token"`
 		Domain     string `json:"domain"`
 		IssueSSL   bool   `json:"issue_ssl"`
+		CustomCert string `json:"custom_cert"`
+		CustomKey  string `json:"custom_key"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -621,7 +623,18 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "invalid domain or address")
 		return
 	}
-	if req.IssueSSL {
+	customCert := strings.TrimSpace(req.CustomCert)
+	customKey := strings.TrimSpace(req.CustomKey)
+	if customCert != "" || customKey != "" {
+		if customCert == "" || customKey == "" {
+			fail(w, http.StatusBadRequest, "both certificate (.crt/.pem) and private key (.key/.pem) files are required")
+			return
+		}
+		if _, err := tls.X509KeyPair([]byte(customCert), []byte(customKey)); err != nil {
+			fail(w, http.StatusBadRequest, "invalid SSL certificate/key pair: "+err.Error())
+			return
+		}
+	} else if req.IssueSSL {
 		if domain == "" || !validDomainRe.MatchString(domain) {
 			fail(w, http.StatusBadRequest, "a valid domain name (e.g. panel.example.com) is required to issue SSL")
 			return
@@ -639,7 +652,18 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 
 	sslIssued := false
 	sslWarning := ""
-	if req.IssueSSL && domain != "" {
+	if customCert != "" && customKey != "" {
+		dir := h.store.DataDir()
+		certPath := filepath.Join(dir, "tls.crt")
+		keyPath := filepath.Join(dir, "tls.key")
+		if err := os.WriteFile(certPath, []byte(customCert), 0600); err != nil {
+			sslWarning = "Failed to save uploaded tls.crt: " + err.Error()
+		} else if err := os.WriteFile(keyPath, []byte(customKey), 0600); err != nil {
+			sslWarning = "Failed to save uploaded tls.key: " + err.Error()
+		} else {
+			sslIssued = true
+		}
+	} else if req.IssueSSL && domain != "" {
 		dir := h.store.DataDir()
 		certPath := filepath.Join(dir, "tls.crt")
 		keyPath := filepath.Join(dir, "tls.key")
