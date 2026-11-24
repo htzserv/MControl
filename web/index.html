@@ -165,7 +165,7 @@ body[data-card="hud"]     .card { background: color-mix(in srgb, var(--surface) 
   background-image: linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent)), linear-gradient(var(--accent), var(--accent));
   background-size: 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px, 12px 2px, 2px 12px;
   background-position: left top, left top, right top, right top, left bottom, left bottom, right bottom, right bottom; background-repeat: no-repeat; }
-body[data-card="liquid"]  .card { background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.04)), color-mix(in srgb, var(--surface) 55%, transparent); border: 1px solid rgba(255,255,255,.30); box-shadow: inset 0 1px 0 rgba(255,255,255,.38), inset 0 -10px 24px -16px rgba(255,255,255,.18), 0 18px 40px -10px var(--shadow); backdrop-filter: blur(34px) saturate(190%); -webkit-backdrop-filter: blur(34px) saturate(190%); }
+body[data-card="liquid"]  .card { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 56%, color-mix(in srgb, var(--accent2) 6%, transparent)), color-mix(in srgb, var(--surface) var(--glass-opacity,74%), transparent); border: 1px solid rgba(255,255,255,.30); box-shadow: inset 0 1px 0 rgba(255,255,255,.38), inset 0 -10px 24px -16px rgba(255,255,255,.18), 0 18px 40px -10px var(--shadow); backdrop-filter: blur(34px) saturate(190%); -webkit-backdrop-filter: blur(34px) saturate(190%); }
 body[data-card="bevel"]   .card { background: var(--surface); border: none; border-radius: 0; box-shadow: inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf; backdrop-filter: none; }
 
 .stat-lbl { font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
@@ -888,7 +888,7 @@ body[data-navx="side"] .top-upd-btn, body[data-navx="rail"] .top-upd-btn { left:
 
 /* Theme family finishes */
 body[data-family="Neon"] { --accent-glow: color-mix(in srgb, var(--accent) 22%, transparent); }
-body[data-family="Neon"][data-bg="aurora"] { background-image: radial-gradient(ellipse at 12% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 48%), radial-gradient(ellipse at 92% 4%, color-mix(in srgb, var(--accent2) 8%, transparent), transparent 46%); }
+body[data-family="Neon"][data-bg="aurora"] { background-image: radial-gradient(ellipse at 12% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 52%), radial-gradient(ellipse at 92% 4%, color-mix(in srgb, var(--accent2) 12%, transparent), transparent 54%); }
 body[data-family="Material"][data-card="flat"] .card { background: color-mix(in srgb, var(--surface) 96%, var(--accent)); border-color: var(--border); }
 body[data-family="Material"] .nav-item.active { border-radius: 24px; border-color: transparent; }
 body:is([data-family="Material"], [data-family="Studio"]) { --accent-glow: transparent; }
@@ -2659,6 +2659,7 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 #studio-actions:not([hidden]) {display:flex;flex-wrap:wrap;gap:6px;}
 #theme-grid {margin-block-end:0;}
 #theme-grid .ttags {display:none;}
+.theme-inks {display:inline-flex;gap:3px;margin-inline-start:auto;} .theme-inks i {width:9px;height:9px;border-radius:50%;}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4868,18 +4869,18 @@ function T(id, n, g, s, d, l) {
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
-T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#0f1021 #181a30 #f1f3f9 #a3a9c2 #8b5cf6 #38bdf8 #2b2f52', '#f3f5fc #ffffff #14182b #64708a #6d28d9 #2563eb #e2e8f7');
+T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
 
-T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#0a1121 #142033 #ecedef #adb1b8 #65dcff #bda5ff #284f66', '#edf4fa #fbfdfe #0b111e #515661 #005a79 #644291 #b2ceda');
-T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#171222 #251d35 #eeedef #b3b0b8 #d9a0ff #ff99bf #523e68', '#f7f2fa #fdfcfe #16121f #5a5762 #663188 #95395b #d3c2de');
-T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#091915 #132a25 #eceeee #acb4b3 #5af4c3 #98cdfa #255c4c', '#edf7f3 #fbfdfc #0a1714 #505c59 #00634c #245980 #b2d2c9');
-T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#151520 #232432 #ededef #b2b2b7 #cbbcff #a8c8ff #4d4a65', '#f4f1fa #fdfcfe #14141d #595961 #5d4494 #385c88 #cec6e0');
-T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#111a1a #1e2a2b #edeeee #b0b4b5 #8cd8ce #b1cbd9 #3a5654', '#eef6f4 #fbfdfd #111818 #565c5c #21685e #425f70 #bbd2ce');
-T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#181310 #29211c #f2ece6 #b8ada4 #e8b882 #a3c9a8 #57463a', '#f8f3ee #fefcfa #1c1612 #635850 #874e1d #3e6b48 #dccbb9');
-T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#101621 #202935 #edeeef #b1b4b8 #a6c8ef #b7bdcd #425164', '#f0f3f7 #fcfcfd #10151e #555a61 #395775 #545e70 #c2ccd6');
-T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#101824 #1e2c40 #edeef0 #b0b5bc #9bcfff #c6bcf3 #3d5570', '#eef4fa #fbfdfe #101720 #555b64 #245c96 #644d8a #bccee1');
-T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#101716 #1d2927 #edeeee #b0b4b3 #93d7b5 #c0caba #3a544a', '#f1f5f3 #fcfdfc #101615 #555a5a #34634b #596450 #c2d0c9');
-T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#0d0e11 #181a1f #f0f2f5 #9fa6b2 #d1d9e6 #8ea4c8 #343942', '#f4f5f7 #ffffff #111318 #5c6370 #2c3e55 #4d627d #cfd5de');
+T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
+T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#24102c #391842 #fff2fc #deb9df #ef9dff #ffbd73 #77426e', '#fae7f7 #fff8fc #370e34 #754968 #93129d #a74312 #e7bfdb');
+T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#0b211b #15382a #f2ffdf #b8d9bd #99ed73 #ffce70 #41634d', '#eef4d9 #fcfff0 #1a3016 #506044 #356918 #93600a #ccd8ac');
+T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
+T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#082321 #103a36 #ecfff2 #b2d6c8 #60e8c2 #ffb18f #36635a', '#e0f2e5 #f7fff4 #153129 #426859 #006d59 #aa4428 #b9d8c7');
+T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#241911 #39281e #fff2d8 #dfc9ac #ffc278 #ec9e83 #65503a', '#f6e7cf #fff7e9 #352417 #705944 #924c18 #964438 #dac3a5');
+T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
+T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#231829 #392a40 #fff4ee #dac0cf #f4aec4 #a1d9f7 #66516d', '#fae8e6 #fffafa #35222d #745662 #a73463 #286998 #e6cbd0');
+T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#141e15 #202e20 #f1f6da #c1ceb1 #b9ec79 #f6ce7e #475b3d', '#f0efd9 #fbfbea #25301d #586344 #476724 #865b11 #d0d3b5');
+T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
 
 /* ═══════════════ icons ═══════════════ */
 const IC = {
@@ -5213,7 +5214,7 @@ function renderThemes() {
   const grid = $('theme-grid'); if (!grid) return;
   const profiles = TH.map(x => effective(x, x.id === themeId ? custom : readThemeSettings(x.id)));
   grid.innerHTML = profiles.map(x => `<button type="button" aria-pressed="${x.id === themeId}" class="card tcard${x.id === themeId ? ' sel' : ''}" data-theme-id="${esc(x.id)}">${pvHTML(x)}
-    <div class="tmeta"><strong>${esc(x.n)}</strong>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
+    <div class="tmeta"><strong>${esc(x.n)}</strong><span class="theme-inks" aria-hidden="true"><i style="background:${x.pal[4]}"></i><i style="background:${x.pal[5]}"></i></span>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
     <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
 }
 const monitorSample = {
