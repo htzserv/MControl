@@ -2660,6 +2660,51 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 #theme-grid {margin-block-end:0;}
 #theme-grid .ttags {display:none;}
 .theme-inks {display:inline-flex;gap:3px;margin-inline-start:auto;} .theme-inks i {width:9px;height:9px;border-radius:50%;}
+
+/* Accent color reaches the working surfaces in each preset. */
+body { --row:color-mix(in srgb,var(--accent2) 9%,transparent); }
+.master-head-card {background:linear-gradient(108deg,color-mix(in srgb,var(--accent) 15%,var(--surface)),var(--surface) 68%,color-mix(in srgb,var(--accent2) 14%,var(--surface)));}
+.mc-cpu {--metric-ink:var(--accent);} .mc-ram {--metric-ink:var(--accent2);}
+.mc-net {--metric-ink:var(--green);} .mc-toolbox {--metric-ink:var(--pink);}
+body .local-grid .metric-card {background-image:linear-gradient(145deg,color-mix(in srgb,var(--metric-ink) 14%,transparent),transparent 70%) !important;}
+body .nav-item.active {background:color-mix(in srgb,var(--accent) 16%,var(--surface));}
+body[data-navstyle="underline"] .nav-item {border-radius:0;border:0;border-bottom:3px solid transparent;}
+body[data-navstyle="underline"] .nav-item.active {border-color:var(--accent);background:transparent;}
+body[data-navstyle="islands"] .nav {gap:5px;}
+body[data-navstyle="islands"] .nav-item {border:1px solid var(--border);border-radius:12px;background:var(--surface);}
+body[data-navstyle="islands"] .nav-item.active {background:var(--accent);color:var(--on-accent);}
+body[data-navstyle="spine"] .nav-item {border:0;border-inline-start:3px solid var(--border);border-radius:0;}
+body[data-navstyle="spine"] .nav-item.active {border-inline-start-color:var(--accent);}
+[data-mini-nav="underline"] .pn {box-shadow:inset 0 -2px var(--accent);}
+[data-mini-nav="islands"] .pn b {height:6px!important;border-radius:3px;}
+[data-mini-nav="spine"] .pn {border-inline-end:3px solid var(--accent)!important;}
+body[data-chart="quadrant"] .local-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:2px;border:1px solid var(--border);background:var(--border);border-radius:var(--rc);overflow:hidden;}
+body[data-chart="quadrant"] .local-grid .metric-card {background-color:var(--surface);border-radius:0;box-shadow:none;}
+body[data-chart="bands"] .local-grid {grid-template-columns:1fr;gap:8px;}
+body[data-chart="bands"] .metric-card {min-height:0;display:grid;grid-template-columns:minmax(110px,1fr) minmax(150px,2fr) minmax(100px,1fr);align-items:center;gap:8px 18px;}
+body[data-chart="bands"] .metric-card .mc-foot {grid-column:-2 / -1;margin:0;}
+body[data-chart="bands"] .mc-toolbox {grid-template-columns:minmax(100px,1fr) minmax(180px,2fr) minmax(100px,1fr);}
+@media(min-width:1000px){
+ body[data-chart="bento"] .local-grid {grid-template-columns:repeat(3,minmax(0,1fr));}
+ body[data-chart="bento"] .mc-net {grid-column:3;grid-row:1 / span 2;justify-content:center;}
+ body[data-chart="bento"] .mc-toolbox {grid-column:1 / span 2;}
+}
+@media(max-width:999px){body[data-chart="bento"] .mc-net {grid-column:1 / -1;}}
+@media(max-width:600px){
+ body[data-chart="bands"] .metric-card {display:flex;flex-direction:column;align-items:stretch;}
+ body[data-chart="quadrant"] .local-grid {grid-template-columns:1fr;}
+}
+.chart-mini {width:80%;display:grid;grid-template-columns:1fr 1fr;gap:3px;}
+.chart-mini i {height:11px;background:var(--accent);border-radius:2px;} .chart-mini i:nth-child(even){background:var(--accent2);}
+.cm-bento {grid-template-columns:1fr 1fr 1.4fr;} .cm-bento i:nth-child(3){grid-row:1/span 2;grid-column:3;height:100%;}.cm-bento i:last-child{grid-column:span 2;}
+.cm-bands {grid-template-columns:1fr;} .cm-bands i {height:5px;}
+body[data-chk="jewel"] input[type=checkbox],.part-jewel {clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);border:0;border-radius:0;background:var(--border);}
+body[data-chk="jewel"] input[type=checkbox]:checked,.part-jewel {background:var(--accent);}
+body[data-chk="jewel"] input[type=checkbox]:focus-visible {background:var(--accent2);}
+body[data-chk="seal"] input[type=checkbox],.part-seal {border-radius:50%;border:3px double var(--accent);}
+body[data-chk="seal"] input[type=checkbox]:checked,.part-seal {box-shadow:inset 0 0 0 2px var(--surface);}
+body[data-chk="ticket"] input[type=checkbox],.part-ticket {width:25px;border-radius:4px;border-inline-end:5px double var(--accent);}
+body[data-chk="ticket"] input[type=checkbox]:checked,.part-ticket {border-inline-end-color:var(--on-accent);}
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4824,7 +4869,7 @@ const OPT = {
   corners: { inherit: ['Theme shape','فرم تم'], square: ['Square','چهارگوش'], soft: ['Rounded','گرد'], capsule: ['Extra rounded','بسیار گرد'], petal: ['Opposite corners','دو گوشهٔ مورب'], arch: ['Arched top','بالا قوسی'] },
   frame: { inherit: ['Theme frame','قاب تم'], outline: ['Hairline outline','دورخط ظریف'], double: ['Double outline','دوخط'], edge: ['Leading accent','نوار کناری'], ruled: ['Horizontal rules','خط بالا و پایین'] },
   beat: { diamond: ['Diamonds','لوزی'], hex: ['Honeycomb','لانه‌زنبوری'], chevron: ['Chevrons','پیکان'], slash: ['Slanted ticks','خطوط مورب'], loop: ['Hollow rings','حلقه‌های توخالی'], cross: ['Crosses','علامت مثبت'], ecg: ['ECG trace','ضربان قلب'], beacon: ['Live beacon','فانوس متحرک'], inherit: ['Monitor default','پیش‌فرض مانیتور'], line: ['Segmented line','خط بخش‌بندی‌شده'], dots: ['Signal dots','نقطه‌ای'], pill: ['Capsules','کپسولی'], block: ['Blocks','بلوک مربعی'] },
-  nav: { dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
+  nav: { underline: ['Underline tabs','تب خط‌دار'], islands: ['Island dock','داک جزیره‌ای'], spine: ['Side timeline','مسیر عمودی'], dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
   card: { glass: ['Glass', 'شیشه‌ای'], flat: ['Flat', 'تخت'], outline: ['Outline', 'خطی'], paper: ['Paper', 'کاغذی'], deck: ['Accent deck', 'نوار تأکید'], brutal: ['Brutalist', 'بروتالیست'], neu: ['Neumorphic', 'نئومورفیک'], hud: ['HUD', 'اچ‌یو‌دی'], liquid: ['Liquid glass', 'شیشه مایع'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], bevel: ['Retro bevel', 'برجسته رترو'] },
   btn: { pill: ['Pill', 'کپسولی'], round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], slant: ['Slanted', 'مایل'] },
   bg: { solid: ['Solid', 'ساده'], grid: ['Grid', 'شبکه'], dots: ['Dots', 'نقطه‌ای'], aurora: ['Aurora', 'شفق'], mesh: ['Mesh', 'مش گرادیان'], scan: ['Scanlines', 'خطوط اسکن'], noise: ['Grain', 'دانه‌دار'], diag: ['Diagonal', 'مورب'], stripes: ['Stripes', 'راه‌راه'], stars: ['Stars', 'ستاره‌ای'], horizon: ['Horizon', 'افق'] },
@@ -4832,9 +4877,9 @@ const OPT = {
   den: { compact: ['Compact', 'فشرده'], cozy: ['Cozy', 'متعادل'], roomy: ['Roomy', 'گشاد'] },
   srv: { grid: ['Cards', 'کارت‌ها'], list: ['List', 'لیست'], table: ['Table', 'جدول'] },
   stat: { tiles: ['Tiles', 'کاشی'], ribbon: ['Ribbon', 'نوار'] },
-  chart: { unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
+  chart: { bento: ['Network focus','شبکهٔ برجسته'], quadrant: ['Four quarters','چهارخانه'], bands: ['Metric bands','نوارهای افقی'], unified: ['Unified Card', 'کارت یکپارچه'], bubbles: ['Separate Bubbles', 'حباب‌های مجزا'] },
   gauge: { dial: ['Needle dial','عقربه‌ای'], drum: ['Segment dial','صفحهٔ مدرج'], tank: ['Liquid level','مخزن موج‌دار'], matrix: ['Dot matrix','ماتریس نقطه‌ای'], steps: ['Staircase','نمودار پله‌ای'], ribbon: ['Signal ribbon','روبان سیگنال'], pulse: ['Live pulse','پالس متحرک'], columns: ['Sample columns','ستون‌های زمانی'], heat: ['Heat strip','نوار حرارتی'], peak: ['Current and peak','فعلی و اوج'], wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
-  chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
+  chk: { jewel: ['Diamond','لوزی'], seal: ['Double ring','حلقهٔ دوتایی'], ticket: ['Ticket','بلیتی'], round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
   motion: { system: ['System preference', 'تنظیم سیستم'], reduced: ['Reduced', 'حداقل حرکت'] },
   uptime: {
     wall: ['Service wall','دیوار سرویس‌ها'], latency: ['Response time','زمان پاسخ'],
@@ -4869,18 +4914,18 @@ function T(id, n, g, s, d, l) {
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
-T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
+T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#321734 #462344 #fff1fa #d9bcd6 #ff9cdb #ffc179 #62446a', '#ffe3ee #fff5f6 #35152f #744f6c #9b206b #a54814 #e6c6dd');
 
-T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
-T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#24102c #391842 #fff2fc #deb9df #ef9dff #ffbd73 #77426e', '#fae7f7 #fff8fc #370e34 #754968 #93129d #a74312 #e7bfdb');
-T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#0b211b #15382a #f2ffdf #b8d9bd #99ed73 #ffce70 #41634d', '#eef4d9 #fcfff0 #1a3016 #506044 #356918 #93600a #ccd8ac');
-T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
-T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#082321 #103a36 #ecfff2 #b2d6c8 #60e8c2 #ffb18f #36635a', '#e0f2e5 #f7fff4 #153129 #426859 #006d59 #aa4428 #b9d8c7');
-T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#241911 #39281e #fff2d8 #dfc9ac #ffc278 #ec9e83 #65503a', '#f6e7cf #fff7e9 #352417 #705944 #924c18 #964438 #dac3a5');
-T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
-T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#231829 #392a40 #fff4ee #dac0cf #f4aec4 #a1d9f7 #66516d', '#fae8e6 #fffafa #35222d #745662 #a73463 #286998 #e6cbd0');
-T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#141e15 #202e20 #f1f6da #c1ceb1 #b9ec79 #f6ce7e #475b3d', '#f0efd9 #fbfbea #25301d #586344 #476724 #865b11 #d0d3b5');
-T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
+T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#2b1622 #3f2030 #fff5f7 #cab9d3 #ff9b70 #ffc855 #594463', '#ffe6cf #fff5e8 #2c1b30 #705564 #b33a16 #8e4d00 #e5c7bd');
+T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#321139 #481846 #fff2fc #deb9df #ff86df #ffb855 #77426e', '#ffe0f1 #fff2f8 #370e34 #754968 #a41680 #a24410 #e7bfdb');
+T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#202411 #333b19 #f2ffdf #b8d9bd #d9f669 #ffae51 #41634d', '#f6edc8 #fff9df #1a3016 #506044 #596207 #a3450b #ccd8ac');
+T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#35151e #49202b #fff3e7 #e4c3b9 #ff8d87 #ffc35a #764b4e', '#ffdfd3 #fff4e8 #381d24 #79534c #b42f4a #934c00 #e7c4b6');
+T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#122a22 #203e30 #ecfff2 #b2d6c8 #85ecc0 #ffa16b #36635a', '#f2edce #fff9e6 #153129 #426859 #116c4e #ac401e #b9d8c7');
+T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#2f1a12 #48281b #fff2d8 #dfc9ac #ffb65f #ff9a84 #65503a', '#f9dfbd #fff2dc #352417 #705944 #a04b0b #a33636 #dac3a5');
+T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#292022 #392b2c #f5f2e7 #c2c8c9 #ffb576 #bccfee #485965', '#f7e4d4 #fff7eb #202b30 #506166 #9a4b1b #425e89 #cccfc6');
+T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#32192b #472337 #fff4ee #dac0cf #ffa3c0 #ffd299 #66516d', '#ffdfdf #fff4ed #35222d #745662 #ac345d #875019 #e6cbd0');
+T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#25210f #363119 #f1f6da #c1ceb1 #f9d874 #b8e889 #475b3d', '#f7ebbe #fdf7da #25301d #586344 #7d5910 #416328 #d0d3b5');
+T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#231a1c #342629 #f8f1e7 #c9beb8 #fbc393 #e9a6bc #53484b', '#f3dfd4 #fff6ef #2d2626 #655a57 #8c4e2f #93425e #d8cabe');
 
 /* ═══════════════ icons ═══════════════ */
 const IC = {
@@ -5072,7 +5117,8 @@ function effective(th = curTheme(), settings = custom) {
   });
   return e;
 }
-function navxFor(e) { return window.innerWidth <= 860 ? 'bottom' : e.nav; }
+const navBases = {underline:'top',islands:'dock',spine:'side'};
+function navxFor(e) { return window.innerWidth <= 860 ? 'bottom' : (navBases[e.nav] || e.nav); }
 function applyTheme() {
   const e = effective(), b = document.body, m = effMode(), dark = m === 'dark';
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
@@ -5090,7 +5136,7 @@ function applyTheme() {
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
   b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
-  b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
+  b.dataset.navstyle = e.nav; b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   renderMetricDetails();
   refreshMonitorVisuals();
   $('atelier-current').textContent = curTheme().n;
@@ -5191,7 +5237,7 @@ function pvHTML(th) {
   const ins = { t: 7, l: 7, r: 7, b: 7 };
   let nav = '';
   const bars = (vert) => [0, 1, 2].map(i => `<b style="display:${vert ? 'block' : 'inline-block'};width:${vert ? '60%' : '9px'};height:3px;margin:${vert ? '7px 5px 0' : '3px 2px'};background:${i === 0 ? ac : tx + '66'};border-radius:2px"></b>`).join('');
-  switch (th.nav) {
+  switch (navBases[th.nav] || th.nav) {
     case 'dock': nav = `<div class="pn" style="--pc:${sf};top:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.t = 24; break;
     case 'float-b': nav = `<div class="pn" style="--pc:${sf};bottom:5px;left:50%;transform:translateX(-50%);width:56%;height:10px;border-radius:${rad};text-align:center;line-height:6px">${bars(false)}</div>`; ins.b = 24; break;
     case 'top': nav = `<div class="pn" style="--pc:${sf};top:0;left:0;right:0;height:12px;border-width:0 0 1px 0">${bars(false)}</div>`; ins.t = 19; break;
@@ -5208,7 +5254,7 @@ function pvHTML(th) {
 
   const tile = (height, ink) => `<div style="flex:1;${pvCard(th, p)}border-radius:${cr};${previewFrame};overflow:hidden"><i style="display:block;height:3px;width:42%;margin:6px 6px 3px;background:${ac};border-radius:2px"></i><i style="display:block;height:3px;width:26%;margin:0 6px;background:${ac2};border-radius:2px"></i><svg aria-hidden="true" viewBox="0 0 100 26" preserveAspectRatio="none" style="display:block;width:100%;height:${height}%;margin-top:3px;color:${ink}"><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3 V26 H0Z" fill="currentColor" opacity=".16"/><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>`;
   const area = `left:${ins.l}px;right:${ins.r}px;top:${ins.t}px;bottom:${ins.b}px;display:flex;gap:5px;flex-direction:${list ? 'column' : 'row'};`;
-  return `<div class="pv" style="background-color:${bg};${pvBg(th, p)}">${nav}<div style="${area}">${tile(45, ac)}${tile(32, ac2)}</div><span class="pt" style="right:9px;bottom:${ins.b + 5}px;color:${ac};font-family:${FF[th.font]};z-index:3;text-shadow:0 1px 2px ${bg}">Aa</span></div>`;
+  return `<div class="pv" data-mini-nav="${th.nav}" style="background-color:${bg};${pvBg(th, p)}">${nav}<div style="${area}">${tile(45, ac)}${tile(32, ac2)}</div><span class="pt" style="right:9px;bottom:${ins.b + 5}px;color:${ac};font-family:${FF[th.font]};z-index:3;text-shadow:0 1px 2px ${bg}">Aa</span></div>`;
 }
 function renderThemes() {
   const grid = $('theme-grid'); if (!grid) return;
@@ -5276,8 +5322,8 @@ function uptimeRing(value) {
   return `<div class="uptime-ring" style="--uptime-fill:${percent}%"><span><strong>${valid ? n.toLocaleString(lang, {maximumFractionDigits: 2}) + '%' : '—'}</strong><small>${lang === 'fa' ? '۲۴ ساعت' : '24 hours'}</small></span></div>`;
 }
 const studioLabels = Object.fromEntries(DIMS.map(k=>[k,'studio_'+k]));
-const studioPicks = { quick:'gauge', advanced:'nav' };
-const quickAxes = ['gauge','beat','uptime','card','corners','frame'];
+const studioPicks = { quick:'nav', advanced:'bg' };
+const quickAxes = ['nav','chart','chk','gauge','beat','uptime','card','corners','frame'];
 const studioText = (en,fa) => lang === 'fa' ? fa : en;
 function optionArt(key,v,e) {
   const candidate = {...e,[key]:v};
@@ -5285,6 +5331,7 @@ function optionArt(key,v,e) {
   const rows = n => Array.from({length:n},(_,i)=>bar(82-i*10)).join('');
   const sample = [14,20,18,16,25,38,40,30,48,56,42,50,68,60,70,55,47,58,42,40,51,46,54,48,35,38,41,42];
   if (['nav','frame','corners','card','bg'].includes(key)) return pvHTML(candidate);
+  if(key==='chart' && ['bento','quadrant','bands'].includes(v)) return `<span class="chart-mini cm-${v}">${'<i></i>'.repeat(4)}</span>`;
   if (key==='font') return `<b style="font:700 22px ${FF[v]}">${studioText('Aa 24','آب ۲۴')}</b>`;
   if (key==='motion') return `<span class="motion-track ${v}"><i></i></span>`;
   if (key==='btn'||key==='chk') return `<span class="part-${key} part-${v}">${key==='chk'?'✓':studioText('Apply','اعمال')}</span>`;
@@ -5329,7 +5376,7 @@ function renderStudio() {
     const options=keys.map(key=>`<option value="${key}" ${key===k?'selected':''}>${esc(label(key))}</option>`).join('');
     return `<details name="studio-main" class="atelier-group" data-section="${id}" ${open.has(id)?'open':''}><summary><strong>${title}</strong></summary><div class="atelier-content"><select aria-label="${title}" data-pick="${id}">${options}</select><div class="${k==='palette'||k==='sizes'?'atelier-tiles':''}">${content}</div></div></details>`;
   };
-  box.innerHTML=panel('quick',studioText('Cards and charts','کارت‌ها و نمودارها'),quickAxes)+panel('advanced',studioText('More settings','تنظیمات بیشتر'),[...DIMS.filter(k=>!quickAxes.includes(k)),'palette','sizes','tools']);
+  box.innerHTML=panel('quick',studioText('Main settings','تنظیمات اصلی'),quickAxes)+panel('advanced',studioText('More settings','تنظیمات بیشتر'),[...DIMS.filter(k=>!quickAxes.includes(k)),'palette','sizes','tools']);
   const slot=$('studio-tools-slot');
   if(slot){slot.append(actions); actions.hidden=false;}
 
