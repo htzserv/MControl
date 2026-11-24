@@ -1620,7 +1620,7 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, 12)
 	_, _ = rand.Read(b)
 	peerCode := "MC-" + strings.ToUpper(hex.EncodeToString(b))
-	// Multi-port fallback list: primary configured port (or 2054), then 2055 & 2056
+	// Multi-port fallback list: keep previous/default port (srv.AgentPort / 2054), then 2 random high ports (20000-59999)
 	candPorts := []int{}
 	addPort := func(pt int) {
 		if pt <= 0 || pt > 65535 {
@@ -1635,8 +1635,12 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	}
 	addPort(srv.AgentPort)
 	addPort(2054)
-	addPort(2055)
-	addPort(2056)
+	randFallbackTarget := len(candPorts) + 2
+	for tries := 0; len(candPorts) < randFallbackTarget && tries < 20; tries++ {
+		if n, err := rand.Int(rand.Reader, big.NewInt(40000)); err == nil {
+			addPort(20000 + int(n.Int64()))
+		}
+	}
 
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
