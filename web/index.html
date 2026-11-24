@@ -2439,6 +2439,47 @@ body[data-motion="reduced"], body[data-motion="reduced"] *,
 body[data-motion="reduced"] *::before, body[data-motion="reduced"] *::after {
   animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
 }
+
+/* Independent monitor layouts and heartbeat geometry */
+.uptime-ring { display: none; }
+body[data-uptime="orbit"] .mon-card {
+  display: grid; grid-template-columns: 78px minmax(0,1fr); align-items: center; gap: 6px 16px;
+}
+body[data-uptime="orbit"] .mon-card > * { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
+body[data-uptime="orbit"] .mon-card > .uptime-ring {
+  display: grid; grid-column: 1; grid-row: 1 / span 4; width: 78px; aspect-ratio: 1;
+  place-items: center; border-radius: 50%;
+  background: conic-gradient(var(--ring-ink,var(--accent)) var(--uptime-fill), var(--row) 0);
+}
+.mon-card.is-up { --ring-ink: var(--green); }
+.mon-card.is-down { --ring-ink: var(--red); }
+.mon-card.is-pending { --ring-ink: var(--yellow); }
+.uptime-ring span { width: 84%; height: 84%; border-radius: inherit; display: grid; align-content: center; text-align: center; background: var(--surface); font-variant-numeric: tabular-nums; }
+.uptime-ring strong { direction: ltr; font-size: .86rem; }
+.uptime-ring small { font-size: .65rem; color: var(--muted); }
+body[data-uptime="ledger"] .mon-grid { gap: 0; }
+body[data-uptime="ledger"] .mon-card { border: 0; border-block-end: 1px solid var(--border); padding: 12px 14px; border-radius: 0; box-shadow: none; background: var(--surface); }
+body[data-uptime="ledger"] .mon-hb-bars { height: 8px; gap: 2px; }
+.detail-demo { width: 100%; max-width: 640px; justify-self: start; }
+body[data-beat]:not([data-beat="inherit"]) .mon-hb-bars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); gap: clamp(1px,.25vw,4px); align-items:center; }
+body[data-beat]:not([data-beat="inherit"]) .mon-hb { width: 100%; min-width: 0; }
+body[data-beat="dots"] .mon-hb, body[data-beat="block"] .mon-hb { height: auto; aspect-ratio: 1; max-width: 12px; justify-self: center; border-radius: 50%; }
+body[data-beat="block"] .mon-hb { border-radius: 1px; }
+body[data-beat="pill"] .mon-hb { height: 100%; border-radius: 999px; }
+body[data-beat="line"] .mon-hb { height: 5px; border-radius: 1px; }
+@media (max-width: 520px) {
+  body[data-uptime="orbit"] .mon-card { grid-template-columns: 60px minmax(0,1fr); gap: 5px 10px; }
+  body[data-uptime="orbit"] .mon-card > .uptime-ring { width: 60px; }
+}
+body[data-corners="square"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border-radius: 0 !important; }
+body[data-corners="soft"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border-radius: var(--rc) !important; }
+body[data-corners="capsule"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border-radius: calc(24px + var(--rc)) !important; }
+body[data-corners="petal"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border-radius: var(--rc) 3px !important; }
+body[data-corners="arch"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border-radius: calc(12px + var(--rc)) calc(12px + var(--rc)) 4px 4px !important; }
+body[data-frame="outline"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: max(1px,var(--bw)) solid var(--border); }
+body[data-frame="double"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: max(3px,calc(2px + var(--bw))) double var(--accent); }
+body[data-frame="ruled"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: 0; border-block: max(1px,var(--bw)) solid var(--border); }
+body[data-frame="edge"] :is(.card:not(.modal-box), .srv-row-wrap, .stat-mini, .mon-card) { border: var(--bw) solid var(--border); border-inline-start: max(4px,var(--bw)) solid var(--ring-ink,var(--accent)); }
 /* Theme workspace */
 #sub-themes > .toolbar { padding-block: var(--gap); border-bottom: 1px solid var(--border); }
 #sub-themes h3 { font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.2; }
@@ -4551,7 +4592,7 @@ en: {
   run_cmd: 'Run a command', exec_warn: "Runs with the SSH user's privileges on the selected server. Every command is written to the panel log.",
   ph_cmd: 'e.g. df -h', btn_run: 'Run', output: 'Output', btn_clear: 'Clear', cmd_empty: 'Type a command first', select_srv_first: 'Add / select a server first',
   confirm_service: 'Really {a} the core service on this server?', exit_code: 'exit status',
-  style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
+  studio_corners: 'Card corners', studio_frame: 'Card frame', studio_beat: 'Heartbeat shape', style_export: 'Export theme', style_import: 'Import theme', style_invalid: 'Choose a valid MControl theme file.', theme_title: 'Theme studio', theme_note: 'A theme changes the whole interface: navigation, surfaces, shapes, typography, backgrounds and layout, not only colors. Settings are saved in this browser.',
   mode_dark: 'Dark', mode_light: 'Light', mode_auto: 'Auto', btn_random: 'Random theme', cust_title: 'Studio: mix your own',
   btn_random_mix: 'Random mix', btn_reset: 'Reset overrides', theme_search: 'Search themes...', themes_n: 'themes', theme_active: 'ACTIVE', theme_default: '(theme default)',
   studio_nav: 'Navigation', studio_card: 'Surface style', studio_btn: 'Control shape', studio_bg: 'Background', studio_font: 'Typography',
@@ -4605,7 +4646,7 @@ fa: {
   run_cmd: 'اجرای دستور', exec_warn: 'دستور با دسترسی کاربر SSH روی سرور انتخابی اجرا می‌شود و هر دستور در لاگ پنل ثبت می‌شود.',
   ph_cmd: 'مثلاً df -h', btn_run: 'اجرا', output: 'خروجی', btn_clear: 'پاک کردن', cmd_empty: 'ابتدا یک دستور بنویسید', select_srv_first: 'ابتدا یک سرور اضافه یا انتخاب کنید',
   confirm_service: 'واقعاً می‌خواهید سرویس هسته را روی این سرور «{a}» کنید؟', exit_code: 'کد خروج',
-  studio_motion: 'حرکت', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
+  studio_motion: 'حرکت', studio_corners: 'فرم گوشه‌های کارت', studio_frame: 'قاب و خط دور کارت', studio_beat: 'شکل تاریخچهٔ آپتایم', style_export: 'خروجی تم', style_import: 'ورود تم', style_invalid: 'یک فایل تم معتبر MControl انتخاب کنید.', theme_title: 'استودیوی تم', theme_note: 'تم کل رابط را تغییر می‌دهد: ناوبری، سطوح، شکل‌ها، تایپوگرافی، پس‌زمینه و چیدمان؛ نه فقط رنگ‌ها. تنظیمات در همین مرورگر ذخیره می‌شود.',
   mode_dark: 'تیره', mode_light: 'روشن', mode_auto: 'خودکار', btn_random: 'تم تصادفی', cust_title: 'استودیو: ترکیب دلخواه',
   btn_random_mix: 'ترکیب تصادفی', btn_reset: 'بازنشانی تغییرات', theme_search: 'جستجوی تم...', themes_n: 'تم', theme_active: 'فعال', theme_default: '(پیش‌فرض تم)',
   studio_nav: 'ناوبری', studio_card: 'سبک سطوح', studio_btn: 'شکل کنترل‌ها', studio_bg: 'پس‌زمینه', studio_font: 'تایپوگرافی',
@@ -4644,6 +4685,9 @@ fa: {
 }
 };
 const OPT = {
+  corners: { inherit: ['Theme shape','فرم تم'], square: ['Square','چهارگوش'], soft: ['Rounded','گرد'], capsule: ['Extra rounded','بسیار گرد'], petal: ['Opposite corners','دو گوشهٔ مورب'], arch: ['Arched top','بالا قوسی'] },
+  frame: { inherit: ['Theme frame','قاب تم'], outline: ['Hairline outline','دورخط ظریف'], double: ['Double outline','دوخط'], edge: ['Leading accent','نوار کناری'], ruled: ['Horizontal rules','خط بالا و پایین'] },
+  beat: { inherit: ['Monitor default','پیش‌فرض مانیتور'], line: ['Segmented line','خط بخش‌بندی‌شده'], dots: ['Signal dots','نقطه‌ای'], pill: ['Capsules','کپسولی'], block: ['Blocks','بلوک مربعی'] },
   nav: { dock: ['Floating top', 'شناور بالا'], 'float-b': ['Floating bottom', 'شناور پایین'], top: ['Top bar', 'نوار بالا'], side: ['Sidebar', 'سایدبار'], 'side-float': ['Floating Sidebar', 'سایدبار حبابی'], 'side-r': ['Sidebar (opposite)', 'سایدبار مقابل'], rail: ['Icon rail', 'ریل آیکون'], bottom: ['Bottom tabs', 'تب پایین'] },
   card: { glass: ['Glass', 'شیشه‌ای'], flat: ['Flat', 'تخت'], outline: ['Outline', 'خطی'], paper: ['Paper', 'کاغذی'], deck: ['Accent deck', 'نوار تأکید'], brutal: ['Brutalist', 'بروتالیست'], neu: ['Neumorphic', 'نئومورفیک'], hud: ['HUD', 'اچ‌یو‌دی'], liquid: ['Liquid glass', 'شیشه مایع'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], bevel: ['Retro bevel', 'برجسته رترو'] },
   btn: { pill: ['Pill', 'کپسولی'], round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], slant: ['Slanted', 'مایل'] },
@@ -4656,7 +4700,7 @@ const OPT = {
   gauge: { wave: ['Wave Sparkline', 'نمودار موجی'], ring: ['Circular Ring', 'حلقه دایره‌ای'], line: ['Classic Line', 'خطی کلاسیک'] },
   chk: { round: ['Rounded', 'گرد'], square: ['Square', 'مربعی'], circle: ['Circle', 'دایره‌ای'], neon: ['Neon Glow', 'نئونی'], material: ['Material', 'متریال'], switch: ['Mini Switch', 'سوئیچ'] },
   motion: { system: ['System preference', 'تنظیم سیستم'], reduced: ['Reduced', 'حداقل حرکت'] },
-  uptime: { kuma: ['Kuma Classic', 'کوما کلاسیک'], neon: ['Neon Cyber', 'نئون سایبری'], dots: ['LED Dots', 'نقطه‌ای LED'], grid: ['2-Col Grid', 'کارت ۲ستونه'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], noc: ['NOC Matrix', 'رادار NOC'] }
+  uptime: { orbit: ['24-hour ring','حلقهٔ ۲۴ ساعته'], ledger: ['Compact ledger','ردیف خطی فشرده'], kuma: ['Kuma Classic', 'کوما کلاسیک'], neon: ['Neon Cyber', 'نئون سایبری'], dots: ['LED Dots', 'نقطه‌ای LED'], grid: ['2-Col Grid', 'کارت ۲ستونه'], prism: ['Prism Bubbles', 'حبابی رنگارنگ'], noc: ['NOC Matrix', 'رادار NOC'] }
 };
 let lang = ls.get('mc_lang', '') || ((navigator.language || '').toLowerCase().startsWith('fa') ? 'fa' : 'en');
 function t(key, p) {
@@ -4670,12 +4714,18 @@ const optLabel = (dim, val) => { const o = OPT[dim] && OPT[dim][val]; return o ?
    T(id, name, group, 'nav card btn bg font density srv stat radius borderWidth', darkPalette, lightPalette)
    palette = bg surface text muted accent accent2 border                                          */
 const TH = [];
+const presetDetails = {
+  'prism-ring': { corners: 'capsule', uptime: 'orbit', beat: 'dots' },
+  ion: { frame: 'edge', uptime: 'ledger', beat: 'line' },
+  espresso: { corners: 'petal', beat: 'pill' },
+  terminal: { corners: 'square', frame: 'ruled', uptime: 'noc', beat: 'block' }
+};
 function T(id, n, g, s, d, l) {
   const a = s.split(' ');
   const chartMode = a[10] || (a[1] === 'prism' ? 'bubbles' : 'unified');
   const gaugeMode = a[11] || (a[1] === 'prism' ? 'wave' : 'line');
   const chkMode = a[12] || (g === 'Neon' ? 'neon' : (g === 'Material' ? 'material' : (a[2] === 'square' ? 'square' : (a[1] === 'prism' ? 'circle' : 'round'))));
-  TH.push({ id, n, g, nav: a[0], card: a[1], btn: a[2], bg: a[3], font: a[4], den: a[5], srv: a[6], stat: a[7], chart: chartMode, gauge: gaugeMode, chk: chkMode, r: +a[8], bw: +a[9], d: d.split(' '), l: l.split(' ') });
+  TH.push({ ...presetDetails[id], id, n, g, nav: a[0], card: a[1], btn: a[2], bg: a[3], font: a[4], den: a[5], srv: a[6], stat: a[7], chart: chartMode, gauge: gaugeMode, chk: chkMode, r: +a[8], bw: +a[9], d: d.split(' '), l: l.split(' ') });
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
@@ -4838,7 +4888,7 @@ function flagSVG(cc) {
 }
 
 /* ═══════════════ theme engine ═══════════════ */
-const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk', 'uptime', 'motion'];
+const DIMS = ['nav', 'card', 'btn', 'bg', 'font', 'den', 'srv', 'stat', 'chart', 'gauge', 'chk', 'uptime', 'motion', 'corners', 'frame', 'beat'];
 function lum(hex) {
   let h = String(hex || '').replace('#', '');
   if (h.length === 3) h = h.split('').map(c => c + c).join('');
@@ -4864,7 +4914,7 @@ const sizeRoles = [
   ['shadow', 'Shadow strength', 'شدت سایه', 0, 65, '%']
 ];
 function effective(th = curTheme(), settings = custom) {
-  const e = { blur: 18, scale: 100, opacity: 74, shadow: 30, motion: 'system', uptime: 'kuma', ...th };
+  const e = { blur: 18, scale: 100, opacity: 74, shadow: 30, motion: 'system', corners: 'inherit', frame: 'inherit', beat: 'inherit', uptime: 'kuma', ...th };
   for (const key of DIMS) {
     if (Object.hasOwn(OPT[key], settings[key])) e[key] = settings[key];
   }
@@ -4892,6 +4942,9 @@ function applyTheme() {
   set('--glass-opacity', e.opacity + '%');
   set('--shadow', 'rgb(0 0 0 / ' + e.shadow + '%)');
   b.dataset.motion = e.motion;
+  b.dataset.corners = e.corners;
+  b.dataset.frame = e.frame;
+  b.dataset.beat = e.beat;
   document.documentElement.style.fontSize = e.scale + '%';
   document.querySelector('meta[name="theme-color"]').content = p[0];
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
@@ -5002,8 +5055,11 @@ function pvHTML(th) {
     default: nav = `<div class="pn" style="--pc:${sf};bottom:0;left:0;right:0;height:12px;border-width:1px 0 0 0">${bars(false)}</div>`; ins.b = 19;
   }
   const list = th.srv !== 'grid';
-  const cr = Math.min(th.r, 9) + 'px';
-  const tile = (height, ink) => `<div style="flex:1;border-radius:${cr};${pvCard(th, p)}overflow:hidden"><i style="display:block;height:3px;width:42%;margin:6px 6px 3px;background:${ac};border-radius:2px"></i><i style="display:block;height:3px;width:26%;margin:0 6px;background:${ac2};border-radius:2px"></i><svg aria-hidden="true" viewBox="0 0 100 26" preserveAspectRatio="none" style="display:block;width:100%;height:${height}%;margin-top:3px;color:${ink}"><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3 V26 H0Z" fill="currentColor" opacity=".16"/><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>`;
+  const smallRadius = Math.min(th.r, 9) + 'px';
+  const cr = ({ square: '0', capsule: '14px', petal: smallRadius + ' 1px', arch: '12px 12px 2px 2px' })[th.corners] || smallRadius;
+  const previewFrame = ({ outline: 'border:1px solid '+bd, double: 'border:3px double '+ac, edge: 'border-inline-start:3px solid '+ac, ruled: 'border:0;border-block:1px solid '+bd })[th.frame] || '';
+
+  const tile = (height, ink) => `<div style="flex:1;${pvCard(th, p)}border-radius:${cr};${previewFrame};overflow:hidden"><i style="display:block;height:3px;width:42%;margin:6px 6px 3px;background:${ac};border-radius:2px"></i><i style="display:block;height:3px;width:26%;margin:0 6px;background:${ac2};border-radius:2px"></i><svg aria-hidden="true" viewBox="0 0 100 26" preserveAspectRatio="none" style="display:block;width:100%;height:${height}%;margin-top:3px;color:${ink}"><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3 V26 H0Z" fill="currentColor" opacity=".16"/><path d="M0 22 L13 18 23 21 37 11 52 14 61 8 70 13 81 7 91 9 100 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></div>`;
   const area = `left:${ins.l}px;right:${ins.r}px;top:${ins.t}px;bottom:${ins.b}px;display:flex;gap:5px;flex-direction:${list ? 'column' : 'row'};`;
   return `<div class="pv" style="background-color:${bg};${pvBg(th, p)}">${nav}<div style="${area}">${tile(45, ac)}${tile(32, ac2)}</div><span class="pt" style="right:9px;bottom:${ins.b + 5}px;color:${ac};font-family:${FF[th.font]};z-index:3;text-shadow:0 1px 2px ${bg}">Aa</span></div>`;
 }
@@ -5019,18 +5075,29 @@ function renderThemes() {
     <div class="tmeta"><strong>${esc(x.n)}</strong>${x.id === themeId ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</div>
     <div class="ttags"><span class="tag">${esc(t('g_' + x.g))}</span><span class="tag">${esc(optLabel('srv', x.srv))}</span></div></button>`).join('');
 }
+function uptimeRing(value) {
+  const n = Number(value);
+  const valid = value != null && value !== '' && Number.isFinite(n) && n >= 0 && n <= 100;
+  const percent = valid ? n : 0;
+  return `<div class="uptime-ring" style="--uptime-fill:${percent}%"><span><strong>${valid ? n.toLocaleString(lang, {maximumFractionDigits: 2}) + '%' : '—'}</strong><small>${lang === 'fa' ? '۲۴ ساعت' : '24 hours'}</small></span></div>`;
+}
 function renderStudio() {
   const box = $('studio'); if (!box) return;
   const e = effective();
-  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk', uptime: 'studio_uptime', motion: 'studio_motion' };
+  const labels = { nav: 'studio_nav', card: 'studio_card', btn: 'studio_btn', bg: 'studio_bg', font: 'studio_font', den: 'studio_den', srv: 'studio_srv', stat: 'studio_stat', chart: 'studio_chart', gauge: 'studio_gauge', chk: 'studio_chk', uptime: 'studio_uptime', motion: 'studio_motion', corners: 'studio_corners', frame: 'studio_frame', beat: 'studio_beat' };
   const label = (en, fa) => lang === 'fa' ? fa : en;
-  const fields = DIMS.map(k => `<label class="field"><span>${t(labels[k])}</span><select data-dim="${k}"><option value="">${esc(t('theme_default'))} · ${esc(optLabel(k, curTheme()[k] || (k === 'motion' ? 'system' : 'kuma')))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></label>`).join('');
+  const base = effective(curTheme(), {});
+  const fields = keys => keys.map(k => `<label class="field"><span>${t(labels[k])}</span><select data-dim="${k}"><option value="">${esc(t('theme_default'))} · ${esc(optLabel(k, base[k]))}</option>${Object.keys(OPT[k]).map(v => `<option value="${v}"${custom[k] === v ? ' selected' : ''}>${esc(optLabel(k, v))}</option>`).join('')}</select></label>`).join('');
   const colors = colorRoles.map(([key, en, fa], i) => `<label class="studio-color"><input type="color" data-dim="${effMode()}_${key}" value="${e.pal[i]}"><span>${label(en, fa)}</span></label>`).join('');
   const sizes = sizeRoles.map(([key, en, fa, min, max, unit]) => `<label class="field"><span>${label(en, fa)} <output id="value-${key}">${e[key]}</output>${unit}</span><input type="range" data-dim="${key}" min="${min}" max="${max}" value="${e[key]}"></label>`).join('');
   const section = (title, content) => `<fieldset><legend>${title}</legend><div class="studio-fields">${content}</div></fieldset>`;
-  box.innerHTML = section(label('Palette', 'پالت رنگ') + ' · ' + t('mode_' + effMode()), colors)
+  const detailKeys = ['corners','frame','uptime','beat'];
+  const demoHistory = ['up','up','up','warn','down','up','up','up','up','up','up','up'];
+  const demo = `<div class="mon-card is-up detail-demo"><div class="mon-head"><strong>${label('Monitor preview','پیش‌نمایش مانیتور')}</strong></div>${uptimeRing(98.7)}<div class="mon-hb-bars">${demoHistory.map(state => `<i class="mon-hb ${state}"></i>`).join('')}</div><div class="mon-foot">${label('Sample history','تاریخچهٔ نمونه')} · 24h · 98.7%</div></div>`;
+  box.innerHTML = section(label('Cards and uptime', 'کارت‌ها و آپتایم'), fields(detailKeys)) + demo
+    + section(label('Palette', 'پالت رنگ') + ' · ' + t('mode_' + effMode()), colors)
     + section(label('Shape and scale', 'اندازه و فرم'), sizes)
-    + section(label('Components and layout', 'اجزا و چیدمان'), fields);
+    + section(label('Components and layout', 'اجزا و چیدمان'), fields(DIMS.filter(k => !detailKeys.includes(k))));
 }
 function onStudio(el) {
   const k = el.dataset.dim;
@@ -8920,6 +8987,7 @@ async function loadMonitorsTab() {
           </div>
         </div>
         <div class="mono" style="font-size:.73rem; color:var(--muted);">${esc(m.target)}${m.last_error ? ` · <span style="color:var(--red);">${esc(m.last_error)}</span>` : ''}</div>
+        ${uptimeRing(m.uptime_24h)}
         <div class="mon-hb-bars">${bars}</div>
         <div class="mon-foot">
           <span>24h: <b style="color:var(--green);">${m.uptime_24h}%</b> · 7d: <b>${m.uptime_7d}%</b> · 30d: <b>${m.uptime_30d}%</b></span>
