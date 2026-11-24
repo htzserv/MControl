@@ -2649,7 +2649,7 @@ body[data-family="Studio"]:is([data-card="flat"],[data-card="paper"],[data-card=
 .family-swatches i {width:8px;height:8px;border:1px solid var(--surface);border-radius:50%;margin-inline-start:-2px;}
 .atelier-tile[aria-pressed=true]::after,.appearance-modes [aria-pressed=true]::after {background-color:#a7f3d0;}
 .ml-grid b {background:var(--row);} .ml-wall b {align-items:end;height:19px;} .ml-wall b i {height:6px;}
-#sub-themes {max-width:780px;margin-inline:auto;}
+#sub-themes {max-width:960px;margin-inline:auto;}
 #sub-themes .atelier-head {margin-block:12px;}
 #sub-themes .appearance-modes {gap:4px;margin-block:10px 20px;}
 #sub-themes .appearance-modes .mode-sample {display:none;}
@@ -2741,7 +2741,9 @@ body {--accent-blend:color-mix(in srgb,var(--accent) 55%,var(--accent2));}
 .metric-card .mc-ico-pill {box-shadow:0 3px 12px -6px var(--accent-blend);}
 body[data-family="Android"] .nav-item.active {background:var(--accent-soft);border-radius:18px;}
 body[data-family="Android"][data-card="flat"] .card {background:color-mix(in srgb,var(--surface) 96%,var(--accent));box-shadow:0 1px 3px var(--shadow);}
-#theme-grid {align-items:start;}
+#theme-grid {align-items:start;grid-template-columns:repeat(auto-fit,minmax(min(100%,255px),1fr));}
+#family-tabs,#theme-grid .tmeta,#theme-grid .family-colors,#sub-themes>.appearance-modes {justify-content:center;}
+#theme-grid .color-collection {text-align:center;}
 #theme-grid details summary {padding:7px 0;cursor:pointer;color:var(--muted);font-size:.78rem;}
 #theme-grid .color-collection {margin-block:6px 12px;}
 #theme-grid .color-collection strong {font-size:.74rem;color:var(--muted);}
@@ -4997,16 +4999,16 @@ const themeColors = [
   ['ocean','Ocean','اقیانوسی','#101e30 #192e45 #eff7ff #b6cade #7bbfff #8de6dc #355878','#e7f2ff #f7fbff #152d49 #4c627c #155b9f #076b69 #bed3ea'],
   ['jade','Jade','یشمی','#10251e #19392d #edfff3 #b6d7c5 #70e3ae #ebd882 #365d4b','#e6f5e9 #f7fff7 #183421 #46634f #116c4e #786013 #bfdbc9'],
   ['amber','Amber','کهربایی','#291e12 #3b2b19 #fff5dc #d8c4a5 #ffbf67 #ff9e89 #634b31','#fff0d6 #fffaee #382915 #6b5638 #8f510e #9a402a #e5cfaa'],
-  ['royal-lapis','Persian Royal Lapis','لاجورد شاهی','#101a35 #1c2b4b #f4f4ff #becbea #91b7ff #f4cd75 #384b70','#eaf0ff #fafaff #172445 #516080 #284da0 #865c12 #c3cfe8'],
-  ['royal-turquoise','Persian Nishapur Turquoise','فیروزهٔ نیشابور','#092523 #103c37 #edfff9 #b5d8cf #57e4ce #f1bd77 #306359','#e0f6f1 #f6fffb #10362f #44675e #006e62 #875322 #b5ddd2'],
-  ['royal-carmine','Persian Carmine','قرمز لاکی','#2b111c #451d2a #fff0ee #e0bcc3 #ff93a5 #eac688 #703746','#fae7e5 #fff8f3 #3c1824 #77515b #a12543 #7b591e #e6c4c5'],
-  ['royal-saffron','Persian Khorasan Saffron','زعفران خراسان','#281c0d #402c16 #fff5de #dcc7a8 #ffbd47 #f59890 #665032','#fff0d1 #fffaf0 #382819 #725a41 #8d5008 #a03c42 #e4cfaa'],
-  ['royal-aubergine','Persian Court Aubergine','بادمجانی درباری','#23132a #39203e #fff1fd #d9bedb #dfa4ea #ebc07c #634069','#f5e9f5 #fff9ff #331d37 #6e5072 #793487 #83591c #dec9df'],
-  ['royal-cypress','Persian Shiraz Cypress','سرو شیراز','#11251c #1d3929 #f1faec #bfd4bc #8cd6a6 #dfb87c #3d5c41','#e8f1e1 #f9fcf3 #213320 #50634a #346942 #835920 #c6d7b9'],
-  ['royal-green','Persian Deep Green','سبز پرشینِ سیر','#061e19 #11372b #eefff3 #accdbd #47d693 #dfbb76 #305c49','#dfefe5 #f6fcf7 #132e20 #486653 #005331 #895b1e #b8d4c2'],
-  ['royal-blue','Persian Blue','آبی پرشین','#101637 #202953 #f2f2ff #c1c7e6 #929fff #eab86a #414a76','#e9ecff #fafaff #202541 #525c80 #253ea8 #895b12 #c2c9e9'],
-  ['royal-rose','Persian Rose','گل‌سرخی پرشین','#291425 #42213a #fff1fb #dcbcd3 #fa9bd2 #a9d8bb #683958','#f9e7f1 #fff8fc #361a2e #78546a #9a286a #326348 #e4c5d9'],
-  ['burgundy','Apple Burgundy','شرابی اپل','#22141b #39232e #fff3f6 #d9bdc9 #d998ad #d8b392 #593748','#f2e6ea #fff9fa #341d28 #715460 #722f49 #795632 #dcc5cf']
+  ['royal-lapis','Lapis','لاجورد','#101a35 #1c2b4b #f4f4ff #becbea #91b7ff #f4cd75 #384b70','#eaf0ff #fafaff #172445 #516080 #284da0 #865c12 #c3cfe8'],
+  ['royal-turquoise','Turquoise','فیروزه','#092523 #103c37 #edfff9 #b5d8cf #57e4ce #f1bd77 #306359','#e0f6f1 #f6fffb #10362f #44675e #006e62 #875322 #b5ddd2'],
+  ['royal-carmine','Carmine','لاکی','#2b111c #451d2a #fff0ee #e0bcc3 #ff93a5 #eac688 #703746','#fae7e5 #fff8f3 #3c1824 #77515b #a12543 #7b591e #e6c4c5'],
+  ['royal-saffron','Saffron','زعفرانی','#281c0d #402c16 #fff5de #dcc7a8 #ffbd47 #f59890 #665032','#fff0d1 #fffaf0 #382819 #725a41 #8d5008 #a03c42 #e4cfaa'],
+  ['royal-aubergine','Plum','بادمجانی','#23132a #39203e #fff1fd #d9bedb #dfa4ea #ebc07c #634069','#f5e9f5 #fff9ff #331d37 #6e5072 #793487 #83591c #dec9df'],
+  ['royal-cypress','Cypress','سرو','#11251c #1d3929 #f1faec #bfd4bc #8cd6a6 #dfb87c #3d5c41','#e8f1e1 #f9fcf3 #213320 #50634a #346942 #835920 #c6d7b9'],
+  ['royal-green','Deep Green','سبز سیر','#061e19 #11372b #eefff3 #accdbd #47d693 #dfbb76 #305c49','#dfefe5 #f6fcf7 #132e20 #486653 #005331 #895b1e #b8d4c2'],
+  ['royal-blue','Blue','آبی','#101637 #202953 #f2f2ff #c1c7e6 #929fff #eab86a #414a76','#e9ecff #fafaff #202541 #525c80 #253ea8 #895b12 #c2c9e9'],
+  ['royal-rose','Rose','گل\u200cسرخی','#291425 #42213a #fff1fb #dcbcd3 #fa9bd2 #a9d8bb #683958','#f9e7f1 #fff8fc #361a2e #78546a #9a286a #326348 #e4c5d9'],
+  ['burgundy','Burgundy','شرابی','#22141b #39232e #fff3f6 #d9bdc9 #d998ad #d8b392 #593748','#f2e6ea #fff9fa #341d28 #715460 #722f49 #795632 #dcc5cf']
 ];
 const baseThemes = TH.slice();
 function familyOf(th) {
@@ -5416,7 +5418,7 @@ function renderThemes() {
     const royal=variants.filter(x=>x.paletteKey.startsWith('royal-'));
     return `<div class="card tcard ${selected?'sel':''}"><button type="button" class="family-cover" data-theme-id="${th.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><strong>${esc(base.n)}</strong>${selected?`<span class="badge b-ok">${t('theme_active')}</span>`:''}</span></button>
       <div data-colors-for="${base.id}">
-      ${colors(studioText('Classic','کلاسیک'),classic)}${colors(studioText('Persian Royal','شاهانهٔ ایرانی'),royal)}</div></div>`;
+      ${colors(studioText('Classic','کلاسیک'),classic)}${colors(studioText('Royal','شاهانه'),royal)}</div></div>`;
   }).join('');
 
 }
