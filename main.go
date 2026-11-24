@@ -138,6 +138,11 @@ func main() {
 		log.Printf("MControl v%s (First-Time Setup) listening on %s://0.0.0.0%s/", version.Current, scheme, addr)
 	}
 
+	// Confirm healthy startup after 5s and clear pending auto-rollback marker
+	time.AfterFunc(5*time.Second, func() {
+		_ = os.Remove(filepath.Join(*dataDir, ".update_pending"))
+	})
+
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           securityHeaders(finalHandler),

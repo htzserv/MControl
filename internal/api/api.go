@@ -477,6 +477,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/fleet/exec", h.auth(h.handleFleetExec))
 	mux.HandleFunc("GET /api/servers/{id}/ports", h.auth(h.handleServerPorts))
 	mux.HandleFunc("POST /api/servers/{id}/firewall", h.auth(h.handleServerFirewall))
+	mux.HandleFunc("POST /api/servers/{id}/firewall/confirm", h.auth(h.handleServerFirewallConfirm))
 	mux.HandleFunc("GET /api/servers/{id}/services", h.auth(h.handleServerServices))
 	mux.HandleFunc("POST /api/servers/{id}/services", h.auth(h.handleServerServices))
 	mux.HandleFunc("GET /api/scheduler", h.auth(h.handleScheduler))

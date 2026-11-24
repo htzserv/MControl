@@ -37,7 +37,7 @@ MIRROR_STABLE_BASE="${MIRROR_BASE}"
 MIRROR_BETA_BASE="${MIRROR_BASE}/beta-latest"
 MIRROR_BUNDLE_BASE="${MIRROR_BASE}"
 
-PORT="2053"
+PORT=""
 DO_WIPE=0
 SOURCE=""        # mirror | direct
 CHANNEL=""       # stable | beta
@@ -58,6 +58,10 @@ for arg in "$@"; do
         [0-9]*)                  PORT="$arg" ;;
     esac
 done
+
+if [[ -z "$PORT" ]]; then
+    PORT=$((20000 + RANDOM % 35000))
+fi
 
 case "$(uname -m)" in
     aarch64|arm64) ARCH="arm64" ;;
@@ -327,6 +331,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=${INSTALL_DIR}/mcontrol -port ${PORT} -data ${DATA_DIR}
+ExecStopPost=/bin/bash -c 'if [ "$SERVICE_RESULT" != "success" ] && [ -f ${DATA_DIR}/.update_pending ] && [ -f ${INSTALL_DIR}/mcontrol.old ]; then mv -f ${INSTALL_DIR}/mcontrol.old ${INSTALL_DIR}/mcontrol && chmod 0755 ${INSTALL_DIR}/mcontrol && rm -f ${DATA_DIR}/.update_pending; fi'
 Restart=always
 RestartSec=2
 LimitNOFILE=65535

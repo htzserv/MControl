@@ -364,15 +364,18 @@ if command -v ufw >/dev/null 2>&1; then ufw status numbered 2>/dev/null | head -
 	writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "output": res.Output})
 }
 
+var safeFwTokRe = regexp.MustCompile(`^[a-zA-Z0-9_-]{4,40}$`)
+
 func (h *Handler) handleServerFirewall(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
 		return
 	}
 	var req struct {
-		Port   int    `json:"port"`
-		Proto  string `json:"proto"`
-		Action string `json:"action"`
+		Port            int    `json:"port"`
+		Proto           string `json:"proto"`
+		Action          string `json:"action"`
+		CommitConfirmed bool   `json:"commit_confirmed"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -393,14 +396,61 @@ func (h *Handler) handleServerFirewall(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "server not found")
 		return
 	}
-	var cmd string
+	var applyCmd, revertCmd string
 	if req.Action == "allow" {
-		cmd = fmt.Sprintf(`if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then ufw allow %d/%s; else iptables -C INPUT -p %s --dport %d -j ACCEPT 2>/dev/null || iptables -I INPUT -p %s --dport %d -j ACCEPT; fi; echo "Port %d/%s allowed."`, req.Port, req.Proto, req.Proto, req.Port, req.Proto, req.Port, req.Port, req.Proto)
+		applyCmd = fmt.Sprintf(`if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then ufw allow %d/%s; else iptables -C INPUT -p %s --dport %d -j ACCEPT 2>/dev/null || iptables -I INPUT -p %s --dport %d -j ACCEPT; fi; echo "Port %d/%s allowed."`, req.Port, req.Proto, req.Proto, req.Port, req.Proto, req.Port, req.Port, req.Proto)
+		revertCmd = fmt.Sprintf(`if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then ufw delete allow %d/%s >/dev/null 2>&1 || true; else iptables -D INPUT -p %s --dport %d -j ACCEPT >/dev/null 2>&1 || true; fi`, req.Port, req.Proto, req.Proto, req.Port)
 	} else {
-		cmd = fmt.Sprintf(`if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then ufw deny %d/%s; else iptables -C INPUT -p %s --dport %d -j DROP 2>/dev/null || iptables -I INPUT -p %s --dport %d -j DROP; fi; echo "Port %d/%s blocked."`, req.Port, req.Proto, req.Proto, req.Port, req.Proto, req.Port, req.Port, req.Proto)
+		applyCmd = fmt.Sprintf(`if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then ufw deny %d/%s; else iptables -C INPUT -p %s --dport %d -j DROP 2>/dev/null || iptables -I INPUT -p %s --dport %d -j DROP; fi; echo "Port %d/%s blocked."`, req.Port, req.Proto, req.Proto, req.Port, req.Proto, req.Port, req.Port, req.Proto)
+		revertCmd = fmt.Sprintf(`if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then ufw delete deny %d/%s >/dev/null 2>&1 || true; else iptables -D INPUT -p %s --dport %d -j DROP >/dev/null 2>&1 || true; fi`, req.Port, req.Proto, req.Proto, req.Port)
 	}
-	res := h.runOnServer(srv, cmd, 20*time.Second)
-	writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "output": strings.TrimSpace(res.Output)})
+
+	confirmToken := ""
+	if req.CommitConfirmed {
+		confirmToken = fmt.Sprintf("fw_%d_%d", id, time.Now().UnixNano())
+		flagFile := "/tmp/mc_" + confirmToken + ".pending"
+		applyCmd = fmt.Sprintf(`touch %s && (%s) && nohup bash -c 'sleep 60; if [ -f %s ]; then %s; rm -f %s; fi' >/dev/null 2>&1 &`, flagFile, applyCmd, flagFile, revertCmd, flagFile)
+	}
+	res := h.runOnServer(srv, applyCmd, 20*time.Second)
+	h.logAudit(r.Header.Get("X-MC-User"), "POST", r.URL.Path, fmt.Sprintf("%s %d/%s (commit_confirmed=%v)", req.Action, req.Port, req.Proto, req.CommitConfirmed))
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":               res.Err == nil,
+		"output":           strings.TrimSpace(res.Output),
+		"confirm_token":    confirmToken,
+		"rollback_seconds": func() int { if req.CommitConfirmed { return 60 }; return 0 }(),
+	})
+}
+
+func (h *Handler) handleServerFirewallConfirm(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		Token string `json:"token"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	tok := strings.TrimSpace(req.Token)
+	if !safeFwTokRe.MatchString(tok) {
+		fail(w, http.StatusBadRequest, "invalid confirm token")
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	flagFile := "/tmp/mc_" + tok + ".pending"
+	cmd := fmt.Sprintf(`if [ -f %s ]; then rm -f %s && echo "CONFIRMED"; else echo "EXPIRED"; fi`, flagFile, flagFile)
+	res := h.runOnServer(srv, cmd, 12*time.Second)
+	out := strings.TrimSpace(res.Output)
+	if strings.Contains(out, "CONFIRMED") {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Firewall change confirmed & locked in!"})
+	} else {
+		fail(w, http.StatusGone, "60s window already expired — previous rule was auto-restored")
+	}
 }
 
 var safeUnitRe = regexp.MustCompile(`^[A-Za-z0-9@._-]{1,64}$`)

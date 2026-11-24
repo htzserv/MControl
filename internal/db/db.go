@@ -168,6 +168,14 @@ func Open(dataDir string) (*Store, error) {
 		return nil, err
 	}
 	sqlDB.SetMaxOpenConns(1)
+	for _, pragma := range []string{
+		"PRAGMA journal_mode=WAL;",
+		"PRAGMA synchronous=NORMAL;",
+		"PRAGMA busy_timeout=5000;",
+		"PRAGMA foreign_keys=ON;",
+	} {
+		_, _ = sqlDB.Exec(pragma)
+	}
 
 	s := &Store{db: sqlDB, encKey: hash[:], signKey: signKey, dbPath: dbPath, keyPath: keyPath}
 	if err := s.migrate(); err != nil {

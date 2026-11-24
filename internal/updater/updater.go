@@ -700,6 +700,7 @@ func replaceCurrentBinary(newBinPath string) error {
 		_ = os.Remove(tmpDst)
 		return err
 	}
+	_ = os.WriteFile("/var/lib/mcontrol/.update_pending", []byte(exePath+"\n"+oldPath), 0600)
 	return nil
 }
 

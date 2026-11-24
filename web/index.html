@@ -3311,15 +3311,14 @@ body[dir="rtl"] .mc-sel-opt.hi:not(:disabled) {
 .ver-bubble .ver-upd-drawer {
   transition: max-width .34s cubic-bezier(.22,1,.36,1), opacity .26s ease, transform .3s cubic-bezier(.22,1,.36,1);
 }
-.ver-bubble.ver-expanded {
-  padding: 0 18px 0 15px;
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  box-shadow: 0 10px 26px -8px var(--shadow), 0 0 16px -4px color-mix(in srgb, var(--accent) 32%, transparent);
+/* Mutually exclusive: when utility bar is expanded, keep version bubble compact even if update exists */
+#chrome:has(#util-bar:not(.collapsed)) .ver-bubble.has-upd .ver-upd-drawer {
+  max-width: 0 !important;
+  opacity: 0 !important;
+  transform: translateX(-6px) !important;
 }
-.ver-bubble.ver-expanded .ver-upd-drawer {
-  max-width: 150px;
-  opacity: 1;
-  transform: translateX(0);
+#chrome:has(#util-bar:not(.collapsed)) .ver-bubble.has-upd {
+  padding: 0 15px !important;
 }
 #btn-lang.mc-sel-open {
   border-color: var(--accent) !important;
@@ -9367,7 +9366,7 @@ function applyUtilCollapsed() {
   const bar = $('util-bar');
   if (bar) bar.classList.toggle('collapsed', isCol);
   const vb = $('nav-ver-bubble');
-  if (vb) vb.classList.toggle('ver-expanded', isCol);
+  if (vb) vb.classList.remove('ver-expanded');
 }
 function toggleUtilBar() {
   const next = ls.get('mc_util_collapsed', '0') === '1' ? '0' : '1';
@@ -10115,6 +10114,7 @@ if ($('l-2fa')) $('l-2fa').addEventListener('keydown', e => { if (e.key === 'Ent
 $('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') $('l-pass').focus(); });
 $('btn-setup-go').onclick = completeSetup;
 $('btn-rand-path').onclick = randPath;
+  if ($('su-path') && !$('su-path').value) randPath();
 $('btn-logout').onclick = logout;
 $('btn-mode').onchange = event => setMode(event.target.value);
 $('family-tabs').onclick = event => {
@@ -10380,12 +10380,14 @@ async function saveTermAuthAndOpen() {
           showTermAuthBox(false);
           switchTermView('shell');
           populateVaultDropdown();
+          setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
         });
       } else {
         showTermAuthBox(false);
-  switchTermView('shell');
-  populateVaultDropdown();
-      setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
+        switchTermView('shell');
+        populateVaultDropdown();
+        setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
+      }
     } else {
       toast(r.error || 'Failed to save credentials', true);
     }
@@ -10425,12 +10427,63 @@ async function refreshFwPorts() {
   const r = await api('api/servers/' + fwSrvId + '/ports');
   $('fw-out').textContent = r.output || r.error || 'No output.';
 }
+let _fwConfirmToken = '', _fwConfirmTimer = null, _fwConfirmLeft = 0;
+
+function stopFwConfirmCountdown() {
+  if (_fwConfirmTimer) { clearInterval(_fwConfirmTimer); _fwConfirmTimer = null; }
+  _fwConfirmToken = '';
+  if ($('fw-confirm-banner')) $('fw-confirm-banner').classList.remove('show');
+}
+
+function startFwConfirmCountdown(tok, secs) {
+  stopFwConfirmCountdown();
+  _fwConfirmToken = tok;
+  _fwConfirmLeft = secs || 60;
+  const ban = $('fw-confirm-banner'), lbl = $('fw-confirm-lbl');
+  if (!ban || !lbl) return;
+  ban.classList.add('show');
+  lbl.textContent = `⏳ Auto-rollback in ${_fwConfirmLeft}s — click Confirm to keep this rule!`;
+  _fwConfirmTimer = setInterval(() => {
+    _fwConfirmLeft--;
+    if (_fwConfirmLeft <= 0) {
+      stopFwConfirmCountdown();
+      toast('60s elapsed without confirmation — firewall rule auto-reverted!', true);
+      refreshFwPorts();
+    } else if ($('fw-confirm-lbl')) {
+      $('fw-confirm-lbl').textContent = `⏳ Auto-rollback in ${_fwConfirmLeft}s — click Confirm to keep this rule!`;
+    }
+  }, 1000);
+}
+
+async function confirmFwRule() {
+  if (!_fwConfirmToken) return;
+  const btn = $('btn-fw-confirm');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirming...'; }
+  try {
+    const r = await api('api/servers/' + fwSrvId + '/firewall/confirm', 'POST', { token: _fwConfirmToken });
+    if (r && r.ok) {
+      toast(r.message || 'Firewall rule confirmed!');
+      stopFwConfirmCountdown();
+    } else {
+      toast((r && r.error) || 'Confirmation window expired', true);
+      stopFwConfirmCountdown();
+      refreshFwPorts();
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✔ Confirm Rule (Keep)'; }
+  }
+}
+
 async function applyFwRule(action) {
   const port = parseInt($('fw-port').value || '0', 10);
   const proto = $('fw-proto').value || 'tcp';
+  const commit_confirmed = !!($('fw-commit-conf') && $('fw-commit-conf').checked);
   if (!port) { toast('Enter a port number', true); return; }
-  const r = await api('api/servers/' + fwSrvId + '/firewall', 'POST', { port, proto, action });
+  const r = await api('api/servers/' + fwSrvId + '/firewall', 'POST', { port, proto, action, commit_confirmed });
   toast(r.output || r.error || 'Done', !r.ok);
+  if (r && r.ok && r.confirm_token) {
+    startFwConfirmCountdown(r.confirm_token, r.rollback_seconds || 60);
+  }
   refreshFwPorts();
 }
 
@@ -11856,10 +11909,22 @@ boot();
       <div class="field" style="margin:0;"><label>Port (1-65535)</label><input id="fw-port" type="number" placeholder="443"></div>
       <div class="field" style="margin:0;"><label>Protocol</label><select id="fw-proto"><option value="tcp">TCP</option><option value="udp">UDP</option></select></div>
     </div>
-    <div class="flexw" style="gap:8px; margin-bottom:10px;">
-      <button class="btn btn-sky btn-sm" onclick="applyFwRule('allow')">✔ Allow Port</button>
-      <button class="btn btn-danger btn-sm" onclick="applyFwRule('deny')">✖ Block Port</button>
-      <button class="btn btn-ghost btn-sm" onclick="refreshFwPorts()">↻ Refresh</button>
+    <div class="flexw" style="justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <div class="flexw" style="gap:8px;">
+        <button class="btn btn-sky btn-sm" onclick="applyFwRule('allow')">✔ Allow Port</button>
+        <button class="btn btn-danger btn-sm" onclick="applyFwRule('deny')">✖ Block Port</button>
+        <button class="btn btn-ghost btn-sm" onclick="refreshFwPorts()">↻ Refresh</button>
+      </div>
+      <label class="check" style="margin:0; font-size:.75rem;" title="Automatically rolls back this firewall rule after 60 seconds unless you click Confirm">
+        <input type="checkbox" id="fw-commit-conf" checked>
+        <span>Commit-Confirmed (60s Auto-Rollback)</span>
+      </label>
+    </div>
+    <div class="ssh-save-ask" id="fw-confirm-banner" style="margin-bottom:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:.78rem; font-weight:700; color:var(--yellow);" id="fw-confirm-lbl">⏳ Auto-rollback in 60s if connection is lost...</span>
+        <button type="button" class="btn btn-sky btn-sm" id="btn-fw-confirm" onclick="confirmFwRule()">✔ Confirm Rule (Keep)</button>
+      </div>
     </div>
     <pre class="term" id="fw-out" style="height:240px;">Loading...</pre>
   </div>
