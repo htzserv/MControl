@@ -231,6 +231,8 @@ body[data-card="brutal"] .field input, body[data-card="brutal"] .field select, b
 .badge { padding: 3px 9px; border-radius: min(var(--rb), 8px); font-size: .66rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; letter-spacing: .3px; }
 .b-iran { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 35%, transparent); }
 .b-foreign { background: color-mix(in srgb, var(--purple) 15%, transparent); color: var(--purple); border: 1px solid color-mix(in srgb, var(--purple) 35%, transparent); }
+.b-cc { background: color-mix(in srgb, var(--cc) 18%, transparent); color: color-mix(in srgb, var(--cc) 62%, #fff); border: 1px solid color-mix(in srgb, var(--cc) 50%, transparent); }
+body.light-mode .b-cc { color: color-mix(in srgb, var(--cc) 78%, #000); }
 .b-ok { background: var(--accent-soft); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
 .b-miss { background: color-mix(in srgb, var(--yellow) 15%, transparent); color: var(--yellow); border: 1px solid color-mix(in srgb, var(--yellow) 35%, transparent); }
 .b-bad { background: color-mix(in srgb, var(--red) 15%, transparent); color: var(--red); border: 1px solid color-mix(in srgb, var(--red) 35%, transparent); }
@@ -3924,7 +3926,7 @@ body[data-navx="bottom"] #pwa-install-banner {
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.4.5</span>
+      <span class="mono" id="nav-ver-lbl">v1.4.6</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -6899,11 +6901,29 @@ function toggleServerRow(id, el) {
   }
 }
 
+/* One flat colour per country, taken from its flag (used for the country badge on server cards) */
+const CC_COLORS = {
+  IR:'#239f40', DE:'#ffce00', NL:'#2f5fc4', FR:'#3a5bd9', US:'#d63447', GB:'#d4213d', TR:'#e30a17',
+  FI:'#2b6cd4', SE:'#2a9fd6', AE:'#00a54a', RU:'#3b6fd8', AT:'#ed2939', CH:'#e0392b', PL:'#dc143c',
+  CA:'#ff3b3b', JP:'#e0194f', SG:'#ef3340', ES:'#f1bf00', IT:'#1fa65a', UA:'#2b7fe0', IN:'#ff9933',
+  CN:'#e53a26', KR:'#3a6fd0', BR:'#14a64a', AU:'#2a5bb8', HK:'#de2910', RO:'#f5c400', BG:'#1fa67a',
+  CZ:'#3a6fb8', HU:'#4a9a63', LU:'#2ab4e8', IE:'#1fae72', DK:'#d4213d', NO:'#d4213d', LT:'#e8b800',
+  LV:'#a4262c', EE:'#2a8fd8', KZ:'#00afca', AM:'#f28c00', GE:'#e03a3a', IL:'#2a7fe0', SA:'#1f9a52',
+  QA:'#9b2a52', IQ:'#d4213d', PT:'#1fa65a', BE:'#f5c400', GR:'#2a7fe0', MD:'#f5c400', RS:'#d4213d', ZA:'#1fa65a'
+};
+function countryColor(cc) {
+  const c = String(cc || '').toUpperCase();
+  return CC_COLORS[c] || '';
+}
+
 function renderServerCard(s) {
   const id = +s.id, on = s.status === 'online';
   const isOpen = openServerIds.has(id) ? 'open' : '';
   const countryLbl = (s.country && String(s.country).trim()) ? String(s.country).trim() : (s.role === 'iran' ? t('badge_iran') : t('badge_foreign'));
-  const role = s.role === 'iran' ? `<span class="badge b-iran">${esc(countryLbl)}</span>` : `<span class="badge b-foreign">${esc(countryLbl)}</span>`;
+  const ccCol = countryColor(s.country_code || (s.role === 'iran' ? 'IR' : ''));
+  const role = ccCol
+    ? `<span class="badge b-cc" style="--cc:${ccCol}">${esc(countryLbl)}</span>`
+    : (s.role === 'iran' ? `<span class="badge b-iran">${esc(countryLbl)}</span>` : `<span class="badge b-foreign">${esc(countryLbl)}</span>`);
   const core = s.core_installed ? `<span class="badge b-ok">${t('badge_core')}${s.core_version ? ' ' + esc(s.core_version) : ''}</span>` : `<span class="badge b-miss">${t('badge_notinst')}</span>`;
   const hk = String(s.last_error || '').indexOf('HOST KEY CHANGED') >= 0;
   const err = s.last_error ? `<div class="srv-err">${esc(s.last_error)}${hk ? ` <button class="btn btn-warn btn-sm" data-act="trust" data-id="${id}">${t('btn_trust_key')}</button>` : ''}</div>` : '';

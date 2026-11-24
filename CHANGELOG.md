@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.6
+- **Multi-panel Peer Agent (agent v3):** one server can now be paired with several MControl panels (even different versions) at the same time. The agent accepts the unit's `MC_PEER` plus every code in `/etc/mcontrol-agent/peers-<port>.txt`. Pairing from a second panel *adds* its code and keeps the first panel's code (read from the existing unit / legacy `mcontrol-agent.service`) instead of overwriting it.
+- **Key rotation only drops this panel's own old code** (`PeerAgentInstallScriptFull`), other panels keep working.
+- **Pair no longer aborts on the first blocked port:** if the agent is listening but unreachable (cloud firewall / route), the next candidate port (18443, 29443) is tried, extra services created for failed ports are removed, and the final error explains which ports to open.
+- **Iran mirror agent guard:** a mirror copy of `mcontrol-agent.py` is only used if it supports multi-peer (`PEERS_FILE`), so an old mirror file can't downgrade the agent.
+- **Country badge colour:** the badge next to each server name now uses one flat colour taken from that country's flag (`CC_COLORS` / `countryColor()` in `web/index.html`); unknown countries keep the old Iran/Foreign colours.
+
 ## 1.4.5
 - **Direct Beta & Release Updates from Iran Mirror (ParsPack):**
   - Added dedicated **`beta_mirror`** update channel in `internal/updater/updater.go`, `internal/api/api.go`, and the Panel Update Center (`#update-modal`) so both **Official Releases** and **Rolling Beta Action Builds** can be checked and installed directly from the Iran Mirror (`MIRROR_URL/beta-latest/`) without touching GitHub.

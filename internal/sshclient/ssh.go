@@ -545,6 +545,14 @@ func PeerAgentInstallScriptWithSource(peerCode string, agentPort int, mirrorURL 
 // When skipIfPortBusy is true, any port already actively listening (including another panel's agent)
 // is left untouched and exits 42 with PORT_BUSY:<process> so the caller tries the next port.
 func PeerAgentInstallScriptOpts(peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
+	return PeerAgentInstallScriptFull(peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy)
+}
+
+// PeerAgentInstallScriptFull is the multi-panel installer. The agent on a given port accepts
+// several peer codes (the unit's MC_PEER + /etc/mcontrol-agent/peers-<port>.txt), so a second
+// panel pairing with the same server ADDS its code and never locks the first panel out.
+// dropCode (optional) is this panel's previous code that must be removed (key rotation).
+func PeerAgentInstallScriptFull(peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
@@ -625,7 +633,7 @@ fi`
 	if isIran && mirrorClean != "" {
 		mirrorFetch = fmt.Sprintf(`
 if command -v curl >/dev/null 2>&1; then
-  if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "AGENT_VER" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
+  if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "AGENT_VER" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "PEERS_FILE" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
     mv -f /usr/local/bin/mcontrol-agent.py.dl /usr/local/bin/mcontrol-agent.py
     chmod 755 /usr/local/bin/mcontrol-agent.py
     echo "AGENT_SOURCE=iran_mirror"
@@ -635,7 +643,30 @@ if command -v curl >/dev/null 2>&1; then
   fi
 fi`, ShQuote(mirrorClean+"/beta-latest/mcontrol-agent.py"))
 	}
+	peersBlock := fmt.Sprintf(`
+NEW_CODE=%s
+DROP_CODE=%s
+PEERS_FILE="/etc/mcontrol-agent/peers-${AGENT_PORT}.txt"
+touch "$PEERS_FILE"; chmod 600 "$PEERS_FILE" 2>/dev/null || true
+UNITS="/etc/systemd/system/${SVC_NAME}"
+[ "$AGENT_PORT" = "2054" ] && UNITS="$UNITS /etc/systemd/system/mcontrol-agent.service"
+for U in $UNITS; do
+  [ -f "$U" ] || continue
+  OLD=$(grep -oE 'MC_PEER=[A-Za-z0-9_-]+' "$U" 2>/dev/null | head -1 | cut -d= -f2)
+  if [ -n "$OLD" ] && [ "$OLD" != "$DROP_CODE" ] && [ "$OLD" != "$NEW_CODE" ]; then
+    grep -qxF "$OLD" "$PEERS_FILE" 2>/dev/null || echo "$OLD" >> "$PEERS_FILE"
+  fi
+done
+if [ -n "$DROP_CODE" ]; then
+  grep -vxF "$DROP_CODE" "$PEERS_FILE" > "$PEERS_FILE.tmp" 2>/dev/null || true
+  mv -f "$PEERS_FILE.tmp" "$PEERS_FILE"
+fi
+grep -vxF "$NEW_CODE" "$PEERS_FILE" > "$PEERS_FILE.tmp" 2>/dev/null || true
+mv -f "$PEERS_FILE.tmp" "$PEERS_FILE"
+if [ "$AGENT_PORT" = "2054" ]; then systemctl disable mcontrol-agent.service >/dev/null 2>&1 || true; fi
+`, ShQuote(peerCode), ShQuote(dropCode))
 	return prepRendered + "\n" + fmt.Sprintf(`mkdir -p /etc/mcontrol-agent
+`+peersBlock+`
 if command -v openssl >/dev/null 2>&1; then
   if [ ! -f /etc/mcontrol-agent/agent.crt ] || [ ! -f /etc/mcontrol-agent/agent.key ]; then
     openssl req -x509 -newkey rsa:2048 -keyout /etc/mcontrol-agent/agent.key -out /etc/mcontrol-agent/agent.crt -days 3650 -nodes -subj "/CN=mcontrol-agent" 2>/dev/null || true
@@ -648,7 +679,19 @@ import http.server, json, os, ssl, subprocess, time
 
 PEER = os.environ.get("MC_PEER", "")
 PORT = int(os.environ.get("MC_PORT", "2054"))
-AGENT_VER = "v2"
+AGENT_VER = "v3"
+PEERS_FILE = "/etc/mcontrol-agent/peers-" + str(PORT) + ".txt"
+
+def peer_ok(code):
+    # v3: several panels can share one agent. The unit's MC_PEER plus every line of PEERS_FILE is accepted.
+    if not code: return False
+    if PEER and code == PEER: return True
+    try:
+        with open(PEERS_FILE) as f:
+            for ln in f:
+                if ln.strip() == code: return True
+    except Exception: pass
+    return False
 
 def read_net_totals():
     rx = tx = 0
@@ -745,12 +788,12 @@ class H(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
     def do_GET(self):
-        if self.headers.get("X-Peer-Code", "") != PEER:
+        if not peer_ok(self.headers.get("X-Peer-Code", "")):
             self.send_response(403); self.end_headers(); return
         data = run_speed() if self.path.startswith("/speedtest") else read_stats()
         self._send_json(200, data)
     def do_POST(self):
-        if self.headers.get("X-Peer-Code", "") != PEER:
+        if not peer_ok(self.headers.get("X-Peer-Code", "")):
             self.send_response(403); self.end_headers(); return
         if not self.path.startswith("/exec"):
             self.send_response(404); self.end_headers(); return

@@ -1695,13 +1695,19 @@ if ss -tln 2>/dev/null | grep -q ":${P} "; then LST="yes"; fi
 echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 			chkRes := sshclient.Run(target, chkCmd, 10*time.Second, 20*time.Second)
 			if strings.Contains(chkRes.Output, "LISTENING=yes") {
-				// Agent is installed & listening on tryPort, but Master cannot reach it directly
+				// Agent is installed & listening on tryPort, but Master cannot reach it directly.
+				// Do NOT abort: another candidate port may be open in the cloud firewall.
 				hintMsg := "blocked by firewall or route (try Via Master Outbound if Iran/Foreign)"
 				if socksPx != "" {
 					hintMsg = "reachable locally on server, but Master Outbound proxy could not connect"
 				}
-				fail(w, http.StatusBadGateway, fmt.Sprintf("agent active on :%d (%s)", tryPort, hintMsg))
-				return
+				portNotes = append(portNotes, fmt.Sprintf(":%d agent active (%s)", tryPort, hintMsg))
+				if skipBusy {
+					// we created this extra service ourselves: remove it so no stray agents are left behind
+					rmCmd := fmt.Sprintf(`S="mcontrol-agent-%d.service"; systemctl disable --now "$S" >/dev/null 2>&1 || true; rm -f "/etc/systemd/system/$S" "/etc/mcontrol-agent/peers-%d.txt"; systemctl daemon-reload >/dev/null 2>&1 || true`, tryPort, tryPort)
+					_ = sshclient.Run(target, rmCmd, 10*time.Second, 20*time.Second)
+				}
+				continue
 			}
 			p = probeWithRetry(tryPort)
 		}
@@ -1713,7 +1719,7 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 	}
 
 	if chosenPort == 0 || !p.Online {
-		fail(w, http.StatusBadGateway, fmt.Sprintf("peer agent failed on all ports (%s)", strings.Join(portNotes, " | ")))
+		fail(w, http.StatusBadGateway, fmt.Sprintf("peer agent failed on all ports (%s). If the agent is active, open TCP 2054 / 18443 / 29443 in the provider (cloud) firewall for the panel IP, or enable Via Master Outbound for this server", strings.Join(portNotes, " | ")))
 		return
 	}
 	if err := h.store.SetServerPeerMode(id, peerCode, chosenPort); err != nil {
@@ -2324,7 +2330,7 @@ func (h *Handler) handleRotatePeerKey(w http.ResponseWriter, r *http.Request) {
 	}
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	script := sshclient.PeerAgentInstallScriptWithSource(newCode, agentPort, stCfg.PanelMirrorURL, isIran)
+	script := sshclient.PeerAgentInstallScriptFull(newCode, srv.PeerCode, agentPort, stCfg.PanelMirrorURL, isIran, false)
 	bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-rot.log 2>&1 & echo 'ROTATE_STARTED'", sshclient.ShQuote("sleep 1\n"+script))
 	res := sshclient.PeerExec(srv.Host, agentPort, srv.PeerCode, bgCmd, 15*time.Second)
 	if res.Err != nil {
