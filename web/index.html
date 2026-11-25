@@ -4565,6 +4565,47 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
   </div>
 </div>
 <div id="fm-ctx-menu" role="menu"></div>
+<!-- Smart Guard Firewall Modal (nftables + Iran GeoIP + 90s Safe Mode) -->
+<div class="modal-bg" id="guard-modal" style="z-index:1195;">
+  <div class="card modal-box" style="max-width:660px; width:96%;">
+    <div class="toolbar" style="margin-bottom:8px;">
+      <div>
+        <h3 style="margin:0; color:var(--accent);" id="guard-title">🛡️ Guard Firewall</h3>
+        <div class="hint" style="margin:2px 0 0;" id="guard-sub">Atomic nftables firewall — auto-protects SSH, Panel &amp; Peer IPs with per-port All / Iran-Only / Closed rules.</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-close="guard-modal">✕</button>
+    </div>
+    <div id="guard-safe-banner" style="display:none; padding:10px 12px; margin-bottom:10px; border-radius:12px; background:rgba(245,158,11,.14); border:1px solid rgba(245,158,11,.45); align-items:center; justify-content:space-between; gap:10px;">
+      <span style="font-size:.8rem; color:var(--yellow);" id="guard-safe-msg">⏳ Safe Mode active — auto-rollback in 90s unless confirmed!</span>
+      <button type="button" class="btn btn-sky btn-sm" onclick="confirmGuardSafe()">✓ Keep &amp; Lock Rules</button>
+    </div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="field" style="margin-bottom:0;">
+        <label>ICMP Ping Policy</label>
+        <select id="guard-ping-pol">
+          <option value="all">Open to All</option>
+          <option value="iran">Iran IPs Only (geoip:ir)</option>
+          <option value="closed">Closed (Drop Ping)</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Extra Always-Allowed IPs / CIDRs</label>
+        <input id="guard-allow-ips" class="mono" placeholder="e.g. 1.2.3.4, 5.6.7.0/24">
+      </div>
+    </div>
+    <div id="guard-ports-list" style="display:flex; flex-direction:column; gap:7px; max-height:42vh; overflow-y:auto; margin-bottom:12px;"></div>
+    <div class="toolbar" style="margin:0; gap:8px;">
+      <label style="display:inline-flex; align-items:center; gap:7px; font-size:.78rem; color:var(--text); cursor:pointer;">
+        <input type="checkbox" id="guard-safe-chk" checked style="width:auto;">
+        <span>🛡️ Safe Mode (90s Auto-Rollback if disconnected)</span>
+      </label>
+      <div class="flexw" style="gap:6px;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="disableGuardFirewall()">Disable Guard</button>
+        <button type="button" class="btn btn-sky btn-sm" id="btn-guard-apply" onclick="applyGuardFirewall()">Apply Firewall</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <!-- ═════════ FIRST-TIME SETUP ═════════ -->
@@ -4750,7 +4791,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.5.3</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.0</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -6501,7 +6542,9 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
           <button type="button" class="eng-pill" data-eng="rathole" onclick="pickTunnelEngine('rathole')">Rathole</button>
           <button type="button" class="eng-pill" data-eng="paqet" onclick="pickTunnelEngine('paqet')">Paqet</button>
           <button type="button" class="eng-pill" data-eng="gre" onclick="pickTunnelEngine('gre')">GRE</button>
+          <button type="button" class="eng-pill" data-eng="ipip" onclick="pickTunnelEngine('ipip')">IPIP</button>
           <button type="button" class="eng-pill" data-eng="vxlan" onclick="pickTunnelEngine('vxlan')">VXLAN</button>
+          <button type="button" class="eng-pill" data-eng="wireguard" onclick="pickTunnelEngine('wireguard')">WireGuard</button>
         </div>
 
         <div class="tun-sec" style="margin-bottom:0;">
@@ -6557,7 +6600,10 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
                 <option value="v6">IPv6</option>
               </select>
             </div>
-            <div class="field" style="margin-bottom:0;"><label>Tunnel Control Port</label><input id="t-port" type="number" value="3080" oninput="updateTunFloatDock()"></div>
+            <div class="field" style="margin-bottom:0;">
+              <div style="display:flex; justify-content:space-between; align-items:center;"><label style="margin:0;">Tunnel Control Port</label><button type="button" class="btn btn-ghost btn-sm" style="padding:1px 7px; font-size:.66rem;" onclick="findFreeTunnelPort()">⚡ Free Port</button></div>
+              <input id="t-port" type="number" value="3080" oninput="updateTunFloatDock()">
+            </div>
           </div>
 
           <!-- Backhaul v0.9.3 Preset & Transport-Specific Anti-DPI Options -->
@@ -6642,6 +6688,41 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
                 <input type="checkbox" id="t-bh-knofec" style="width:auto;">
                 <span>Disable KCP FEC (Lower bandwidth overhead on clean UDP links)</span>
               </label>
+            </div>
+          </div>
+
+          <!-- Phase 2 Kernel Tunnel Options (FOU / IPsec / Transparent / MTU / Smart Queue) -->
+          <div id="t-kern-p2-wrap" style="display:none; margin-top:10px; padding:10px 12px; border-radius:12px; background:var(--row); border:1px solid var(--border);">
+            <div class="row2" style="margin-bottom:6px;">
+              <div class="field" style="margin-bottom:0;">
+                <label>Encapsulation</label>
+                <select id="t-k-encap">
+                  <option value="">Raw Kernel Protocol (Default)</option>
+                  <option value="fou">FOU — Over UDP Port (Bypass Raw Filter)</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label>Kernel IPsec Encryption</label>
+                <select id="t-k-ipsec">
+                  <option value="">None (Max Speed)</option>
+                  <option value="aes-gcm-128">AES-GCM-128 (Fast Hardware AES)</option>
+                  <option value="aes-gcm-256">AES-GCM-256</option>
+                  <option value="chacha20">ChaCha20-Poly1305</option>
+                </select>
+              </div>
+            </div>
+            <div class="row2">
+              <div class="field" style="margin-bottom:0;">
+                <label>Forwarding Mode</label>
+                <select id="t-k-fwd">
+                  <option value="nat">NAT / Masquerade (Standard)</option>
+                  <option value="transparent">Transparent (Preserve Real Client IP)</option>
+                </select>
+              </div>
+              <div class="row2" style="gap:6px; margin-bottom:0;">
+                <div class="field" style="margin-bottom:0;"><label>MTU (0=Auto)</label><input id="t-k-mtu" type="number" value="0" min="0" max="1500"></div>
+                <div class="field" style="margin-bottom:0;"><label>Cap Mbps (CAKE)</label><input id="t-k-rate" type="number" value="0" min="0" max="10000" title="0 = Unlimited; >0 enables kernel CAKE / fq_codel smart queue"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -8929,7 +9010,8 @@ async function loadTunnels() {
           <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'${ok ? 'stop' : 'start'}')">${ok ? 'Stop' : 'Start'}</button>
           <button class="btn btn-ghost btn-sm" onclick="openEditTunnelModal(${tu.id})">Edit</button>
           <button class="btn btn-ghost btn-sm" onclick="checkTunnelMetrics(${tu.id},'${esc(tu.name)}')">Metrics</button>
-          ${(tu.engine === 'gre' || tu.engine === 'ip6gre') ? `<button class="btn btn-ghost btn-sm" onclick="openMikrotikModal(${tu.id},'${esc(tu.name)}')">MikroTik</button>` : ''}
+          <button class="btn btn-ghost btn-sm" onclick="runTunnelPMTU(${tu.id},'${esc(tu.name)}')" title="Measure Path MTU & apply optimal MTU">PMTU</button>
+          ${['gre','ip6gre','ipip','vxlan','wireguard'].includes(tu.engine) ? `<button class="btn btn-ghost btn-sm" onclick="openMikrotikModal(${tu.id},'${esc(tu.name)}')">MikroTik</button>` : ''}
           <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'logs')">Logs</button>
           <button class="btn btn-danger btn-sm" onclick="deleteTunnel(${tu.id})">Delete</button>
         </div>
@@ -9011,12 +9093,13 @@ function onBackhaulTransportChange() {
 }
 function onTunnelEngineChange() {
   const eng = $('t-engine').value;
-  const isKernel = (eng === 'gre' || eng === 'ip6gre' || eng === 'vxlan');
+  const isKernel = (eng === 'gre' || eng === 'ip6gre' || eng === 'ipip' || eng === 'vxlan' || eng === 'wireguard');
   $('t-trans-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
   if ($('t-bh-v9-wrap')) $('t-bh-v9-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
   if (typeof onBackhaulTransportChange === 'function') onBackhaulTransportChange();
   const vw = $('t-vip-wrap'); if (vw) vw.style.display = isKernel ? 'block' : 'none';
   const ipw = $('t-ipmode-wrap'); if (ipw) ipw.style.display = isKernel ? 'block' : 'none';
+  const kp2 = $('t-kern-p2-wrap'); if (kp2) kp2.style.display = isKernel ? 'block' : 'none';
   const ulw = $('t-underlay-wrap'); if (ulw) ulw.style.display = isKernel ? 'none' : 'block';
   if (isKernel) pickTunnelUnderlay('ip');
   const irIp = $('t-iran-ipver'), frIp = $('t-for-ipver');
@@ -9515,7 +9598,12 @@ async function deployTunnel() {
       fallback_addr: $('t-bh-fb') ? $('t-bh-fb').value.trim() : '',
       kcp_mode: $('t-bh-kmode') ? $('t-bh-kmode').value : 'fast2',
       kcp_crypt: $('t-bh-kcrypt') ? $('t-bh-kcrypt').value : 'aes',
-      kcp_nofec: $('t-bh-knofec') ? !!$('t-bh-knofec').checked : false
+      kcp_nofec: $('t-bh-knofec') ? !!$('t-bh-knofec').checked : false,
+      kernel_encap: $('t-k-encap') ? $('t-k-encap').value : '',
+      kernel_ipsec: $('t-k-ipsec') ? $('t-k-ipsec').value : '',
+      forward_mode: $('t-k-fwd') ? $('t-k-fwd').value : 'nat',
+      mtu: $('t-k-mtu') ? (parseInt($('t-k-mtu').value || '0', 10) || 0) : 0,
+      rate_limit_mbps: $('t-k-rate') ? (parseInt($('t-k-rate').value || '0', 10) || 0) : 0
     };
     const r = await api('api/tunnels', 'POST', payload);
     $('tun-term-card').style.display = 'block';
@@ -11175,6 +11263,7 @@ function openSrvDropdown(ev, id, group, btn) {
   } else if (group === 'mgr') {
     items = [
       { lbl: fa ? '📋 کپی IPv4 سرور' : '📋 Copy Server IPv4', fn: () => copyText(s.ipv4 || s.host, 'IPv4') },
+      { lbl: fa ? '🛡️ فایروال هوشمند Guard (فقط ایران / Safe Mode)' : '🛡️ Guard Firewall (Iran-Only / Safe Mode)', fn: () => openGuardModal(id) },
       { lbl: fa ? '🔄 جایگزینی سرور (Replace)' : '🔄 Replace Server', fn: () => openReplaceSrvModal(id) },
       { lbl: '✏️ ' + t('btn_edit'), fn: () => openSrvModal(id) },
       { sep: true },
@@ -13076,6 +13165,126 @@ function resetTabPrefs() {
   toast((typeof lang !== 'undefined' && lang === 'fa') ? 'تنظیمات همه تب‌ها به حالت پیش‌فرض برگشت' : 'All tab settings reset to default');
 }
 applyTabPrefs();
+
+
+/* ═══════════════ Phase 2: Free Port Finder, Auto-PMTU & Smart Guard Firewall ═══════════════ */
+async function findFreeTunnelPort() {
+  const ir = ($('t-iran') && $('t-iran').value) || '0';
+  const fr = ($('t-foreign') && $('t-foreign').value) || '0';
+  const pref = ($('t-port') && $('t-port').value) || '3080';
+  if (!+ir || !+fr) { toast('Select Iran & Foreign servers first', true); return; }
+  toast('Checking port availability on both servers...');
+  const r = await api(`api/tunnels/free-port?iran_id=${ir}&foreign_id=${fr}&preferred=${pref}`);
+  if (!r || !r.ok) { toast((r && r.error) || 'Port check failed', true); return; }
+  if ($('t-port') && r.port) $('t-port').value = r.port;
+  if (typeof updateTunFloatDock === 'function') updateTunFloatDock();
+  toast(r.message || ('Free port: ' + r.port), false);
+}
+
+async function runTunnelPMTU(id, name) {
+  toast('Measuring true Path MTU for ' + name + '...');
+  const r = await api('api/tunnels/' + id + '/pmtu', 'POST');
+  if (!r || !r.ok) { toast((r && r.error) || 'PMTU probe failed', true); return; }
+  toast(r.message || ('Optimal MTU: ' + r.optimal_mtu));
+  if ($('tun-term-card')) {
+    $('tun-term-card').style.display = 'block';
+    $('tun-term-title').textContent = 'Path MTU Discovery — ' + name;
+    $('tun-term').textContent = r.message + (r.applied ? '\nApplied live to both tunnel interfaces.' : '');
+  }
+}
+
+let _guardSrvId = 0, _guardPorts = [], _guardSafeTimer = null;
+async function openGuardModal(srvId) {
+  _guardSrvId = srvId;
+  const s = (SERVERS || []).find(x => +x.id === +srvId);
+  if ($('guard-title')) $('guard-title').textContent = '🛡️ Guard Firewall — ' + (s ? s.name : ('Server #' + srvId));
+  if ($('guard-safe-banner')) $('guard-safe-banner').style.display = 'none';
+  if (_guardSafeTimer) { clearInterval(_guardSafeTimer); _guardSafeTimer = null; }
+  if ($('guard-ports-list')) $('guard-ports-list').innerHTML = '<div class="hint">Scanning listening ports via ss &amp; nftables...</div>';
+  if ($('guard-modal')) $('guard-modal').classList.add('active');
+  const r = await api('api/servers/' + srvId + '/guard/scan', 'POST');
+  if (!r || !r.ok) {
+    if ($('guard-ports-list')) $('guard-ports-list').innerHTML = `<div class="hint" style="color:var(--red);">${esc((r && r.error) || 'Scan failed')}</div>`;
+    return;
+  }
+  _guardPorts = r.ports || [];
+  renderGuardPorts(r.active, r.has_nftables);
+}
+
+function renderGuardPorts(isActive, hasNft) {
+  const box = $('guard-ports-list');
+  if (!box) return;
+  const hdr = `<div class="hint" style="margin-bottom:4px;">Status: <b style="color:${isActive ? 'var(--green)' : 'var(--muted)'};">${isActive ? 'ACTIVE (mcontrol_guard)' : 'INACTIVE'}</b> • nftables: <b>${hasNft ? 'Installed' : 'Will Auto-Install'}</b></div>`;
+  if (!_guardPorts.length) {
+    box.innerHTML = hdr + '<div class="hint">No listening ports detected.</div>';
+    return;
+  }
+  box.innerHTML = hdr + _guardPorts.map((p, idx) => `
+    <div class="tab-cfg-row">
+      <div>
+        <strong class="mono">${esc(p.proto.toUpperCase())} :${p.port} <span style="color:var(--muted); font-weight:500;">(${esc(p.process || 'service')})</span></strong>
+        <span>${p.protected ? ('🔒 Auto-Protected (' + esc(p.reason || 'System') + ')') : 'Control who can reach this port'}</span>
+      </div>
+      ${p.protected
+        ? '<span class="badge b-ok mono" style="font-size:.66rem;">ALWAYS OPEN</span>'
+        : `<select class="tab-cfg-sel" onchange="_guardPorts[${idx}].scope = this.value">
+            <option value="all" ${p.scope === 'all' ? 'selected' : ''}>🌐 Open (All)</option>
+            <option value="iran" ${p.scope === 'iran' ? 'selected' : ''}>🇮🇷 Iran Only (geoip:ir)</option>
+            <option value="closed" ${p.scope === 'closed' ? 'selected' : ''}>⛔ Closed</option>
+          </select>`
+      }
+    </div>`).join('');
+}
+
+async function applyGuardFirewall() {
+  if (!_guardSrvId) return;
+  const btn = $('btn-guard-apply');
+  if (btn) { btn.disabled = true; btn.textContent = 'Applying...'; }
+  try {
+    const safeMode = $('guard-safe-chk') ? !!$('guard-safe-chk').checked : true;
+    const r = await api('api/servers/' + _guardSrvId + '/guard/apply', 'POST', {
+      ports: _guardPorts,
+      ping_policy: $('guard-ping-pol') ? $('guard-ping-pol').value : 'all',
+      allow_ips: $('guard-allow-ips') ? $('guard-allow-ips').value.trim() : '',
+      safe_mode: safeMode
+    });
+    if (!r || !r.ok) { toast((r && r.error) || 'Guard apply failed', true); return; }
+    toast(r.message || 'Guard Firewall applied!');
+    if (safeMode && $('guard-safe-banner')) {
+      $('guard-safe-banner').style.display = 'flex';
+      let sec = 90;
+      if (_guardSafeTimer) clearInterval(_guardSafeTimer);
+      _guardSafeTimer = setInterval(() => {
+        sec--;
+        if ($('guard-safe-msg')) $('guard-safe-msg').textContent = `⏳ Safe Mode active — auto-rollback in ${sec}s unless confirmed!`;
+        if (sec <= 0) {
+          clearInterval(_guardSafeTimer); _guardSafeTimer = null;
+          if ($('guard-safe-banner')) $('guard-safe-banner').style.display = 'none';
+          toast('Safe Mode window expired — Guard rules auto-rolled back', true);
+        }
+      }, 1000);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Apply Firewall'; }
+  }
+}
+
+async function confirmGuardSafe() {
+  if (!_guardSrvId) return;
+  const r = await api('api/servers/' + _guardSrvId + '/guard/confirm', 'POST');
+  if (_guardSafeTimer) { clearInterval(_guardSafeTimer); _guardSafeTimer = null; }
+  if ($('guard-safe-banner')) $('guard-safe-banner').style.display = 'none';
+  toast((r && r.message) || 'Guard Firewall locked in!', !(r && r.ok));
+}
+
+async function disableGuardFirewall() {
+  if (!_guardSrvId || !confirm('Disable Guard Firewall on this server?')) return;
+  const r = await api('api/servers/' + _guardSrvId + '/guard/disable', 'POST');
+  if (_guardSafeTimer) { clearInterval(_guardSafeTimer); _guardSafeTimer = null; }
+  if ($('guard-safe-banner')) $('guard-safe-banner').style.display = 'none';
+  toast((r && r.message) || 'Guard Firewall disabled', !(r && r.ok));
+  if (r && r.ok) openGuardModal(_guardSrvId);
+}
 
 async function boot() {
   applyLang();

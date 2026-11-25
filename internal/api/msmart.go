@@ -92,8 +92,11 @@ func (h *Handler) handleBenchmarkStart(w http.ResponseWriter, r *http.Request) {
 		req.Candidates = []BenchCandidate{
 			{Engine: "backhaul", Transport: "tcp", IPMode: "v4", Underlay: "ip", Label: "Backhaul TCP"},
 			{Engine: "backhaul", Transport: "tcpmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul TCPMUX"},
-			{Engine: "backhaul", Transport: "ws", IPMode: "v4", Underlay: "ip", Label: "Backhaul WS"},
-			{Engine: "backhaul", Transport: "kcp", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCP"},
+			{Engine: "backhaul", Transport: "tls", IPMode: "v4", Underlay: "ip", Label: "Backhaul TLS (uTLS)"},
+			{Engine: "backhaul", Transport: "tlsmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul TLSMUX"},
+			{Engine: "backhaul", Transport: "xhttps", IPMode: "v4", Underlay: "ip", Label: "Backhaul XHTTPS (H2)"},
+			{Engine: "backhaul", Transport: "kcp", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCP (FEC)"},
+			{Engine: "backhaul", Transport: "kcpmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCPMUX"},
 			{Engine: "rathole", Transport: "tcp", IPMode: "v4", Underlay: "ip", Label: "Rathole TCP"},
 			{Engine: "gre", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "GRE 4-to-4"},
 			{Engine: "vxlan", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "VXLAN IPv4"},
@@ -367,21 +370,25 @@ if rtts:
   print(f'JITTER_MS={jit:.1f}')
 total = [0]
 buf = b'x'*65536
+t_start = time.time()
+t_warm = t_start + 1.5
+t_end = t_start + 5.0
 def worker():
   try:
     s=socket.create_connection((host,port),3)
-    end=time.time()+3.5
     sent=0
-    while time.time()<end:
-      sent += s.send(buf)
+    while True:
+      now=time.time()
+      if now>=t_end: break
+      n=s.send(buf)
+      if now>=t_warm: sent += n
     s.close()
     total[0] += sent
   except: pass
-t0=time.time()
 ts=[threading.Thread(target=worker) for _ in range(4)]
 for t in ts: t.start()
 for t in ts: t.join()
-dt=max(0.1, time.time()-t0)
+dt=max(0.5, min(time.time(), t_end)-t_warm)
 mbps=(total[0]*8)/(dt*1e6)
 print(f'{mbps:.1f} Mbits/sec receiver')
 " 2>&1`, targetHost, dataPort)

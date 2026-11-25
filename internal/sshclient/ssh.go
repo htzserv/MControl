@@ -505,7 +505,12 @@ func getAgentCertPin(host string, port int) string {
 	return pinnedAgentCert[pinKey(host, port)]
 }
 
-func peerClient(timeout time.Duration, socksProxy, expectedFP string) *http.Client {
+var (
+	veilCapMu   sync.RWMutex
+	veilNoHosts = map[string]time.Time{}
+)
+
+func peerClient(timeout time.Duration, socksProxy, expectedFP, veilPeerCode string) *http.Client {
 	tlsCfg := &tls.Config{InsecureSkipVerify: true}
 	if expectedFP != "" {
 		tlsCfg.VerifyPeerCertificate = func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
@@ -520,11 +525,34 @@ func peerClient(timeout time.Duration, socksProxy, expectedFP string) *http.Clie
 			return nil
 		}
 	}
-	tr := &http.Transport{TLSClientConfig: tlsCfg}
-	if socksProxy != "" {
-		tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+	tr := &http.Transport{TLSClientConfig: tlsCfg, DisableKeepAlives: veilPeerCode != ""}
+	baseDial := func(ctx context.Context, network, addr string) (net.Conn, error) {
+		if socksProxy != "" {
 			return dialViaSOCKS5(socksProxy, addr, timeout)
 		}
+		d := &net.Dialer{Timeout: timeout}
+		return d.DialContext(ctx, network, addr)
+	}
+	if veilPeerCode != "" {
+		tr.DialTLSContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			raw, err := baseDial(ctx, network, addr)
+			if err != nil {
+				return nil, err
+			}
+			vc, err := WrapClientVeil(raw, veilPeerCode)
+			if err != nil {
+				raw.Close()
+				return nil, err
+			}
+			tc := tls.Client(vc, tlsCfg)
+			if err := tc.HandshakeContext(ctx); err != nil {
+				vc.Close()
+				return nil, err
+			}
+			return tc, nil
+		}
+	} else if socksProxy != "" {
+		tr.DialContext = baseDial
 	}
 	return &http.Client{Timeout: timeout, Transport: tr}
 }
@@ -537,10 +565,10 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 	if len(socksProxy) > 0 {
 		px = socksProxy[0]
 	}
-	client := peerClient(timeout, px, getAgentCertPin(host, agentPort))
 	hostPort := net.JoinHostPort(host, strconv.Itoa(agentPort))
-	var lastErr error
-	for _, scheme := range []string{"https", "http"} {
+	pin := getAgentCertPin(host, agentPort)
+
+	doReq := func(cl *http.Client, scheme string) (*http.Response, error) {
 		u := fmt.Sprintf("%s://%s%s", scheme, hostPort, path)
 		var rdr io.Reader
 		if body != nil {
@@ -554,7 +582,26 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 		if body != nil {
 			req.Header.Set("Content-Type", "application/json")
 		}
-		resp, err := client.Do(req)
+		return cl.Do(req)
+	}
+
+	veilCapMu.RLock()
+	skipVeil := time.Since(veilNoHosts[hostPort]) < 5*time.Minute
+	veilCapMu.RUnlock()
+	if peerCode != "" && !skipVeil {
+		resp, err := doReq(peerClient(timeout, px, pin, peerCode), "https")
+		if err == nil {
+			return resp, nil
+		}
+		veilCapMu.Lock()
+		veilNoHosts[hostPort] = time.Now()
+		veilCapMu.Unlock()
+	}
+
+	client := peerClient(timeout, px, pin, "")
+	var lastErr error
+	for _, scheme := range []string{"https", "http"} {
+		resp, err := doReq(client, scheme)
 		if err == nil {
 			return resp, nil
 		}

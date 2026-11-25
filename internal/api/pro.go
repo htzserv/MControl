@@ -1212,16 +1212,37 @@ func (h *Handler) handleTunnelMikrotik(w http.ResponseWriter, r *http.Request) {
 	}
 	ifName := "mcontrol-" + tun.Name
 	var script string
-	if tun.Engine == "ip6gre" {
+	switch tun.Engine {
+	case "ip6gre":
 		script = fmt.Sprintf(`# MikroTik RouterOS v7 — IPv6 GRE Tunnel (%s)
 /interface gre6 add name=%s local-address=%s remote-address=%s mtu=1420 clamp-tcp-mss=yes disabled=no
 /ip address add address=%s.1/30 interface=%s
 /ip firewall mangle add chain=forward out-interface=%s protocol=tcp tcp-flags=syn action=change-mss new-mss=clamp-to-pmtu
 /ip firewall mangle add chain=forward in-interface=%s protocol=tcp tcp-flags=syn action=change-mss new-mss=clamp-to-pmtu
 # Test peer: /ping %s.2`, tun.Name, ifName, localIP, remoteIP, sub, ifName, ifName, ifName, sub)
-	} else {
+	case "ipip":
+		script = fmt.Sprintf(`# MikroTik RouterOS v7 — IPIP Tunnel (%s)
+/interface ipip add name=%s local-address=%s remote-address=%s mtu=1420 clamp-tcp-mss=yes disabled=no
+/ip address add address=%s.1/30 interface=%s
+/ip firewall mangle add chain=forward out-interface=%s protocol=tcp tcp-flags=syn action=change-mss new-mss=clamp-to-pmtu
+# Test peer: /ping %s.2`, tun.Name, ifName, localIP, remoteIP, sub, ifName, ifName, sub)
+	case "vxlan":
+		vni := 100 + tun.ID
+		script = fmt.Sprintf(`# MikroTik RouterOS v7 — VXLAN Tunnel (%s)
+/interface vxlan add name=%s vni=%d port=%d local-address=%s mtu=1420
+/interface vxlan vteps add interface=%s remote-ip=%s
+/ip address add address=%s.1/30 interface=%s
+# Test peer: /ping %s.2`, tun.Name, ifName, vni, tun.TunnelPort, localIP, ifName, remoteIP, sub, ifName, sub)
+	case "wireguard":
+		script = fmt.Sprintf(`# MikroTik RouterOS v7 — WireGuard Tunnel (%s)
+/interface wireguard add name=%s listen-port=%d mtu=1380
+/ip address add address=%s.1/30 interface=%s
+# Replace FOREIGN_WG_PUBKEY with output of: wg show mctun%d public-key (on Foreign server)
+/interface wireguard peers add interface=%s public-key="FOREIGN_WG_PUBKEY" endpoint-address=%s endpoint-port=%d allowed-address=0.0.0.0/0 persistent-keepalive=20s
+# Test peer: /ping %s.2`, tun.Name, ifName, tun.TunnelPort, sub, ifName, tun.ID, ifName, remoteIP, tun.TunnelPort, sub)
+	default:
 		script = fmt.Sprintf(`# MikroTik RouterOS v7 — GRE Tunnel (%s)
-/interface gre add name=%s local-address=%s remote-address=%s mtu=1440 clamp-tcp-mss=yes keepalive=10s,5 disabled=no
+/interface gre add name=%s local-address=%s remote-address=%s mtu=1420 clamp-tcp-mss=yes keepalive=10s,5 disabled=no
 /ip address add address=%s.1/30 interface=%s
 /ip firewall mangle add chain=forward out-interface=%s protocol=tcp tcp-flags=syn action=change-mss new-mss=clamp-to-pmtu
 /ip firewall mangle add chain=forward in-interface=%s protocol=tcp tcp-flags=syn action=change-mss new-mss=clamp-to-pmtu

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.6.0
+- **Phase 2 — Anti-DPI Agent Veil, Advanced Kernel Engines, Smart Guard Firewall & MSmart v2:**
+  - **Peer Agent v4.1 Veil Layer (`internal/sshclient/veil.go` & `cmd/mcontrol-agent`):** wraps Master ↔ Peer TLS control traffic in an AES-256-CTR directional keystream with random nonce & padding (`nonce[0] != 0x16`), hiding bare-IP ClientHello packets from DPI while keeping 100% backward compatibility with legacy plain-TLS peers.
+  - **Advanced Kernel Engines & Networking (`internal/api/tunnels.go` & `pro.go`):**
+    - Added **IPIP** and **WireGuard** engines alongside GRE/IP6GRE/VXLAN.
+    - Added **FOU (GRE/IPIP over UDP)** encapsulation to bypass raw protocol 47/4 filtering.
+    - Added deterministic **Kernel IPsec (`ip xfrm`)** encryption (`AES-GCM-128`, `AES-GCM-256`, `ChaCha20-Poly1305`) with zero external daemon overhead.
+    - Added **Transparent Forwarding (`fwmark` + policy routing)** to preserve real client IPs without altering destination services.
+    - Added **Auto Path-MTU Discovery (`POST /api/tunnels/{id}/pmtu`)**, **Kernel Smart Queue Shaping (`tc` CAKE / TBF + `fq_codel`)**, and expanded **MikroTik RouterOS v7** export for GRE, IP6GRE, IPIP, VXLAN, and WireGuard.
+  - **Smart Guard Firewall (`internal/api/guard.go`):** atomic `nftables` firewall per server with automatic listening-port scanner, per-port **Open / Iran-Only (`geoip:ir`) / Closed** policy, automatic SSH/Panel/Peer protection, and **90-second Safe Mode auto-rollback**.
+  - **MSmart v2 & 2-Node Free Port Finder (`internal/api/msmart.go` & `/api/tunnels/free-port`):** added Backhaul v0.9.3 transports (`TLS`, `TLSMUX`, `XHTTPS`, `KCPMUX`) to default benchmarks, excluded the initial 1.5s TCP slow-start warm-up window from throughput results, and added 1-click free-port discovery in the Tunnel Wizard.
+
+
 ## 1.5.3
 - **Phase 1 — Backhaul v0.9.3 Sync, Security Hardening & Reliability:**
   - **Custom Backhaul v0.9.3 Fork Integration:** updated `.github/workflows/bundle.yml` to bundle `bh-linux-amd64` from `htzserv/Backhaul` (with upstream fallback), added all **15 Backhaul v0.9.3 transports** (`tcp`, `tcpmux`, `tls`, `tlsmux`, `ws`, `wss`, `wsmux`, `wssmux`, `udp`, `kcp`, `kcpmux`, `xhttp`, `xhttps`, `xhttpmux`, `xhttpsmux`) to the Tunnel Wizard, and added **5 performance presets** (`Balanced`, `Many Users`, `Gaming`, `Streaming`, `Max Capacity`) plus Anti-DPI options (`SNI`, `uTLS Fingerprint`, `Edge IP`, `TLS Record Fragmentation`, `XHTTP Path/Host/Mode/Fallback`, `KCP Mode/Crypt/NoFEC`).

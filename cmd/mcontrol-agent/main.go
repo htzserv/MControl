@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
+	"net"
+	"crypto/cipher"
+	"crypto/aes"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
@@ -26,7 +29,7 @@ import (
 	"time"
 )
 
-const agentVersion = "v4-go"
+const agentVersion = "v4.1-veil"
 
 type statsPayload struct {
 	Online        bool   `json:"online"`
@@ -376,6 +379,154 @@ printf '%s|%s|%s' "$ping_ms" "$dl_mbps" "$ul_mbps"
 	return map[string]any{"error": "failed"}
 }
 
+
+// ── Dual-Mode Anti-DPI Veil Listener (Veil-wrapped TLS + Legacy Plain TLS) ──
+
+type peekBufConn struct {
+	net.Conn
+	pre []byte
+}
+
+func (p *peekBufConn) Read(b []byte) (int, error) {
+	if len(p.pre) > 0 {
+		n := copy(b, p.pre)
+		p.pre = p.pre[n:]
+		return n, nil
+	}
+	return p.Conn.Read(b)
+}
+
+type agentVeilConn struct {
+	net.Conn
+	rmu sync.Mutex
+	wmu sync.Mutex
+	rs  cipher.Stream
+	ws  cipher.Stream
+}
+
+func (v *agentVeilConn) Read(p []byte) (int, error) {
+	v.rmu.Lock()
+	defer v.rmu.Unlock()
+	n, err := v.Conn.Read(p)
+	if n > 0 {
+		v.rs.XORKeyStream(p[:n], p[:n])
+	}
+	return n, err
+}
+
+func (v *agentVeilConn) Write(p []byte) (int, error) {
+	v.wmu.Lock()
+	defer v.wmu.Unlock()
+	buf := make([]byte, len(p))
+	v.ws.XORKeyStream(buf, p)
+	return v.Conn.Write(buf)
+}
+
+func deriveAgentVeilStreams(peerCode string, nonce []byte) (c2s, s2c cipher.Stream) {
+	mk := func(dir string) cipher.Stream {
+		h := sha256.New()
+		h.Write([]byte("mc-veil-" + dir + ":"))
+		h.Write([]byte(peerCode))
+		h.Write(nonce)
+		key := h.Sum(nil)
+		ivh := sha256.New()
+		ivh.Write([]byte("mc-veil-iv-" + dir + ":"))
+		ivh.Write(nonce)
+		ivh.Write([]byte(peerCode))
+		iv := ivh.Sum(nil)[:aes.BlockSize]
+		blk, _ := aes.NewCipher(key)
+		return cipher.NewCTR(blk, iv)
+	}
+	return mk("c2s"), mk("s2c")
+}
+
+func unwrapAgentVeil(raw net.Conn) (net.Conn, error) {
+	_ = raw.SetReadDeadline(time.Now().Add(8 * time.Second))
+	var first [1]byte
+	if _, err := io.ReadFull(raw, first[:]); err != nil {
+		return nil, err
+	}
+	if first[0] == 0x16 {
+		_ = raw.SetReadDeadline(time.Time{})
+		return &peekBufConn{Conn: raw, pre: first[:]}, nil
+	}
+	nonce := make([]byte, 32)
+	nonce[0] = first[0]
+	if _, err := io.ReadFull(raw, nonce[1:]); err != nil {
+		return nil, err
+	}
+	var hdr5 [5]byte
+	if _, err := io.ReadFull(raw, hdr5[:]); err != nil {
+		return nil, err
+	}
+	for _, code := range loadPeerCodes() {
+		c2s, s2c := deriveAgentVeilStreams(code, nonce)
+		var dec [5]byte
+		c2s.XORKeyStream(dec[:], hdr5[:])
+		if string(dec[:4]) == "MCV1" {
+			padLen := int(dec[4])
+			if padLen > 0 {
+				pad := make([]byte, padLen)
+				if _, err := io.ReadFull(raw, pad); err != nil {
+					return nil, err
+				}
+				c2s.XORKeyStream(pad, pad)
+			}
+			_ = raw.SetReadDeadline(time.Time{})
+			return &agentVeilConn{Conn: raw, rs: c2s, ws: s2c}, nil
+		}
+	}
+	return nil, fmt.Errorf("veil authentication failed")
+}
+
+type veilTLSListener struct {
+	net.Listener
+	tlsCfg *tls.Config
+	connCh chan net.Conn
+	errCh  chan error
+}
+
+func newVeilTLSListener(ln net.Listener, tlsCfg *tls.Config) net.Listener {
+	vl := &veilTLSListener{
+		Listener: ln,
+		tlsCfg:   tlsCfg,
+		connCh:   make(chan net.Conn, 64),
+		errCh:    make(chan error, 1),
+	}
+	go func() {
+		for {
+			raw, err := ln.Accept()
+			if err != nil {
+				vl.errCh <- err
+				return
+			}
+			go func(c net.Conn) {
+				unwrapped, uerr := unwrapAgentVeil(c)
+				if uerr != nil {
+					c.Close()
+					return
+				}
+				tc := tls.Server(unwrapped, tlsCfg)
+				select {
+				case vl.connCh <- tc:
+				default:
+					tc.Close()
+				}
+			}(raw)
+		}
+	}()
+	return vl
+}
+
+func (vl *veilTLSListener) Accept() (net.Conn, error) {
+	select {
+	case c := <-vl.connCh:
+		return c, nil
+	case err := <-vl.errCh:
+		return nil, err
+	}
+}
+
 func main() {
 	primaryPeer = strings.TrimSpace(os.Getenv("MC_PEER"))
 	masterURL = strings.TrimSpace(os.Getenv("MC_MASTER_URL"))
@@ -458,10 +609,18 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	if err := ensureTLSCert(crtPath, keyPath); err == nil {
-		if err := srv.ListenAndServeTLS(crtPath, keyPath); err != nil {
-			os.Exit(1)
+		cert, cerr := tls.LoadX509KeyPair(crtPath, keyPath)
+		if cerr == nil {
+			rawLn, lerr := net.Listen("tcp", addr)
+			if lerr != nil {
+				os.Exit(1)
+			}
+			vLn := newVeilTLSListener(rawLn, &tls.Config{Certificates: []tls.Certificate{cert}, MinVersion: tls.VersionTLS12})
+			if err := srv.Serve(vLn); err != nil {
+				os.Exit(1)
+			}
+			return
 		}
-		return
 	}
 	if err := srv.ListenAndServe(); err != nil {
 		os.Exit(1)

@@ -2,6 +2,8 @@ package api
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -65,6 +67,11 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		KCPMode         string `json:"kcp_mode"`
 		KCPCrypt        string `json:"kcp_crypt"`
 		KCPNoFEC        bool   `json:"kcp_nofec"`
+		KernelEncap   string `json:"kernel_encap"`    // "" | "fou"
+		KernelIPsec   string `json:"kernel_ipsec"`    // "" | "aes-gcm-128" | "aes-gcm-256" | "chacha20"
+		ForwardMode   string `json:"forward_mode"`    // "nat" | "transparent"
+		MTU           int    `json:"mtu"`             // 0 = auto (1420), or explicit 1280..1500
+		RateLimitMbps int    `json:"rate_limit_mbps"` // 0 = unlimited, >0 = tc CAKE/TBF cap
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -85,9 +92,9 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch req.Engine {
-	case "backhaul", "rathole", "paqet", "gre", "ip6gre", "vxlan":
+	case "backhaul", "rathole", "paqet", "gre", "ip6gre", "ipip", "vxlan", "wireguard":
 	default:
-		fail(w, http.StatusBadRequest, "unsupported engine (backhaul, rathole, paqet, gre, ip6gre, vxlan)")
+		fail(w, http.StatusBadRequest, "unsupported engine (backhaul, rathole, paqet, gre, ip6gre, ipip, vxlan, wireguard)")
 		return
 	}
 	if req.TunnelPort <= 0 || req.TunnelPort > 65535 {
@@ -119,7 +126,7 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusBadRequest, "at least one valid forward port (1-65535) is required")
 		return
 	}
-	if req.Engine == "gre" || req.Engine == "ip6gre" || req.Engine == "vxlan" {
+	if req.Engine == "gre" || req.Engine == "ip6gre" || req.Engine == "ipip" || req.Engine == "vxlan" || req.Engine == "wireguard" {
 		if req.Forwarder != "realm" {
 			req.Forwarder = "iptables"
 		}
@@ -231,6 +238,11 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		KCPMode:         strings.TrimSpace(req.KCPMode),
 		KCPCrypt:        strings.TrimSpace(req.KCPCrypt),
 		KCPNoFEC:        req.KCPNoFEC,
+		KernelEncap:     strings.TrimSpace(req.KernelEncap),
+		KernelIPsec:     strings.TrimSpace(req.KernelIPsec),
+		ForwardMode:     strings.TrimSpace(req.ForwardMode),
+		MTU:             req.MTU,
+		RateLimitMbps:   req.RateLimitMbps,
 	}
 	extraBytes, _ := json.Marshal(extraObj)
 
@@ -699,23 +711,133 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 		return iranCmd, forCmd
 
 	default:
+		var ex backhaulExtraOpts
+		if strings.TrimSpace(t.ExtraJSON) != "" {
+			_ = json.Unmarshal([]byte(t.ExtraJSON), &ex)
+		}
 		ifName := fmt.Sprintf("mctun%d", t.ID)
 		iranLocal := t.Subnet + ".1/30"
 		forLocal := t.Subnet + ".2/30"
 		forPeerIP := t.Subnet + ".2"
 		tag := fmt.Sprintf("mc_tun_%d", t.ID)
+		mtuVal := ex.MTU
+		if mtuVal < 1200 || mtuVal > 1500 {
+			mtuVal = 1420
+			if ex.KernelIPsec != "" || t.Engine == "wireguard" {
+				mtuVal = 1380
+			}
+		}
+		useFOU := ex.KernelEncap == "fou" && (t.Engine == "gre" || t.Engine == "ipip") && !strings.Contains(iranAddr, ":")
+		fouPort := t.TunnelPort
+		if fouPort <= 0 {
+			fouPort = 5500 + int(t.ID%500)
+		}
 
-		var iranLink, forLink string
-		if t.Engine == "vxlan" {
+		var iranLink, forLink, iranPre, forPre, iranPost, forPost string
+		switch t.Engine {
+		case "vxlan":
 			vni := 100 + t.ID
 			iranLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, forAddr, iranAddr, t.TunnelPort)
 			forLink = fmt.Sprintf("ip link add %s type vxlan id %d remote %s local %s dstport %d", ifName, vni, iranAddr, forAddr, t.TunnelPort)
-		} else if t.Engine == "ip6gre" || ipMode == "6to4" || ipMode == "6to6" {
-			iranLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s key %d ttl 255", ifName, forAddr, iranAddr, t.ID)
-			forLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s key %d ttl 255", ifName, iranAddr, forAddr, t.ID)
-		} else {
-			iranLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s key %d ttl 255", ifName, foreign.Host, iran.Host, t.ID)
-			forLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s key %d ttl 255", ifName, iran.Host, foreign.Host, t.ID)
+		case "wireguard":
+			k1 := sha256.Sum256([]byte("mc-wg-ir:" + t.Token))
+			k1[0] &= 248
+			k1[31] &= 127
+			k1[31] |= 64
+			k2 := sha256.Sum256([]byte("mc-wg-fr:" + t.Token))
+			k2[0] &= 248
+			k2[31] &= 127
+			k2[31] |= 64
+			irPrivB64 := base64.StdEncoding.EncodeToString(k1[:])
+			frPrivB64 := base64.StdEncoding.EncodeToString(k2[:])
+			iranLink = fmt.Sprintf(`command -v wg >/dev/null 2>&1 || (apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq wireguard-tools) >/dev/null 2>&1 || dnf install -y -q wireguard-tools >/dev/null 2>&1 || true
+ip link add %s type wireguard
+printf '%%s\n' %s > /etc/mcontrol/tunnels/%s.key && chmod 600 /etc/mcontrol/tunnels/%s.key
+FR_PUB=$(printf '%%s\n' %s | wg pubkey)
+wg set %s private-key /etc/mcontrol/tunnels/%s.key listen-port %d peer "$FR_PUB" endpoint %s allowed-ips 0.0.0.0/0,::/0 persistent-keepalive 20`,
+				ifName, sshclient.ShQuote(irPrivB64), unit, unit, sshclient.ShQuote(frPrivB64), ifName, unit, t.TunnelPort, formatHostPort(forAddr, t.TunnelPort))
+			forLink = fmt.Sprintf(`command -v wg >/dev/null 2>&1 || (apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq wireguard-tools) >/dev/null 2>&1 || dnf install -y -q wireguard-tools >/dev/null 2>&1 || true
+ip link add %s type wireguard
+printf '%%s\n' %s > /etc/mcontrol/tunnels/%s.key && chmod 600 /etc/mcontrol/tunnels/%s.key
+IR_PUB=$(printf '%%s\n' %s | wg pubkey)
+wg set %s private-key /etc/mcontrol/tunnels/%s.key listen-port %d peer "$IR_PUB" endpoint %s allowed-ips 0.0.0.0/0,::/0 persistent-keepalive 20`,
+				ifName, sshclient.ShQuote(frPrivB64), unit, unit, sshclient.ShQuote(irPrivB64), ifName, unit, t.TunnelPort, formatHostPort(iranAddr, t.TunnelPort))
+		case "ipip":
+			if useFOU {
+				iranPre = fmt.Sprintf("modprobe fou 2>/dev/null || true\nip fou add port %d ipproto 4 2>/dev/null || true\n", fouPort)
+				forPre = iranPre
+				iranLink = fmt.Sprintf("ip link add %s type ipip remote %s local %s ttl 255 encap fou encap-sport auto encap-dport %d", ifName, foreign.Host, iran.Host, fouPort)
+				forLink = fmt.Sprintf("ip link add %s type ipip remote %s local %s ttl 255 encap fou encap-sport auto encap-dport %d", ifName, iran.Host, foreign.Host, fouPort)
+			} else {
+				iranLink = fmt.Sprintf("ip tunnel add %s mode ipip remote %s local %s ttl 255", ifName, foreign.Host, iran.Host)
+				forLink = fmt.Sprintf("ip tunnel add %s mode ipip remote %s local %s ttl 255", ifName, iran.Host, foreign.Host)
+			}
+		default:
+			if t.Engine == "ip6gre" || ipMode == "6to4" || ipMode == "6to6" {
+				iranLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s key %d ttl 255", ifName, forAddr, iranAddr, t.ID)
+				forLink = fmt.Sprintf("ip -6 tunnel add %s mode ip6gre remote %s local %s key %d ttl 255", ifName, iranAddr, forAddr, t.ID)
+			} else if useFOU {
+				iranPre = fmt.Sprintf("modprobe fou 2>/dev/null || true\nip fou add port %d ipproto 47 2>/dev/null || true\n", fouPort)
+				forPre = iranPre
+				iranLink = fmt.Sprintf("ip link add %s type gre remote %s local %s key %d ttl 255 encap fou encap-sport auto encap-dport %d", ifName, foreign.Host, iran.Host, t.ID, fouPort)
+				forLink = fmt.Sprintf("ip link add %s type gre remote %s local %s key %d ttl 255 encap fou encap-sport auto encap-dport %d", ifName, iran.Host, foreign.Host, t.ID, fouPort)
+			} else {
+				iranLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s key %d ttl 255", ifName, foreign.Host, iran.Host, t.ID)
+				forLink = fmt.Sprintf("ip tunnel add %s mode gre remote %s local %s key %d ttl 255", ifName, iran.Host, foreign.Host, t.ID)
+			}
+		}
+
+		if ex.KernelIPsec != "" && t.Engine != "wireguard" {
+			ipsecSetup := func(localIP, remoteIP string, spiOut, spiIn uint32) string {
+				kOut := sha256.Sum256([]byte(fmt.Sprintf("mc-xfrm:%s:%d", t.Token, spiOut)))
+				kIn := sha256.Sum256([]byte(fmt.Sprintf("mc-xfrm:%s:%d", t.Token, spiIn)))
+				aeadOut, aeadIn := "", ""
+				switch ex.KernelIPsec {
+				case "aes-gcm-256":
+					aeadOut = fmt.Sprintf("aead 'rfc4106(gcm(aes))' 0x%x%08x 128", kOut[:], spiOut)
+					aeadIn = fmt.Sprintf("aead 'rfc4106(gcm(aes))' 0x%x%08x 128", kIn[:], spiIn)
+				case "chacha20":
+					aeadOut = fmt.Sprintf("aead 'rfc7539esp(chacha20,poly1305)' 0x%x%08x 128", kOut[:], spiOut)
+					aeadIn = fmt.Sprintf("aead 'rfc7539esp(chacha20,poly1305)' 0x%x%08x 128", kIn[:], spiIn)
+				default:
+					aeadOut = fmt.Sprintf("aead 'rfc4106(gcm(aes))' 0x%x%08x 128", kOut[:16], spiOut)
+					aeadIn = fmt.Sprintf("aead 'rfc4106(gcm(aes))' 0x%x%08x 128", kIn[:16], spiIn)
+				}
+				xproto := "gre"
+				if t.Engine == "ipip" {
+					xproto = "ipencap"
+				} else if t.Engine == "vxlan" || useFOU {
+					xproto = "udp"
+				}
+				return fmt.Sprintf(`modprobe esp4 esp6 xfrm_user 2>/dev/null || true
+ip xfrm state delete src %s dst %s proto esp spi 0x%x 2>/dev/null || true
+ip xfrm state delete src %s dst %s proto esp spi 0x%x 2>/dev/null || true
+ip xfrm policy delete src %s dst %s proto %s dir out 2>/dev/null || true
+ip xfrm policy delete src %s dst %s proto %s dir in 2>/dev/null || true
+ip xfrm state add src %s dst %s proto esp spi 0x%x reqid %d mode transport %s
+ip xfrm state add src %s dst %s proto esp spi 0x%x reqid %d mode transport %s
+ip xfrm policy add src %s dst %s proto %s dir out tmpl src %s dst %s proto esp reqid %d mode transport
+ip xfrm policy add src %s dst %s proto %s dir in tmpl src %s dst %s proto esp reqid %d mode transport
+`, localIP, remoteIP, spiOut, remoteIP, localIP, spiIn,
+					localIP, remoteIP, xproto, remoteIP, localIP, xproto,
+					localIP, remoteIP, spiOut, t.ID, aeadOut,
+					remoteIP, localIP, spiIn, t.ID, aeadIn,
+					localIP, remoteIP, xproto, localIP, remoteIP, t.ID,
+					remoteIP, localIP, xproto, remoteIP, localIP, t.ID)
+			}
+			spiA := uint32(0x10000 + t.ID*2)
+			spiB := uint32(0x10000 + t.ID*2 + 1)
+			iranPre += ipsecSetup(iranAddr, forAddr, spiA, spiB)
+			forPre += ipsecSetup(forAddr, iranAddr, spiB, spiA)
+		}
+
+		if ex.RateLimitMbps > 0 {
+			shapeCmd := fmt.Sprintf(`tc qdisc del dev %s root 2>/dev/null || true
+tc qdisc replace dev %s root cake bandwidth %dmbit besteffort nat 2>/dev/null \
+  || (tc qdisc replace dev %s root handle 1: tbf rate %dmbit burst 64kbit latency 40ms && tc qdisc replace dev %s parent 1:1 fq_codel) 2>/dev/null || true
+`, ifName, ifName, ex.RateLimitMbps, ifName, ex.RateLimitMbps, ifName)
+			iranPost += shapeCmd
+			forPost += shapeCmd
 		}
 
 		// Build target VIP list for single-peer or multi-VIP load balancing
@@ -758,7 +880,18 @@ systemctl daemon-reload && systemctl enable %s.service && systemctl restart %s.s
 				}
 			}
 		}
-		iptRules.WriteString(fmt.Sprintf("iptables -t nat -A POSTROUTING -o %s -m comment --comment %s -j MASQUERADE\n", ifName, tag))
+		if ex.ForwardMode != "transparent" {
+			iptRules.WriteString(fmt.Sprintf("iptables -t nat -A POSTROUTING -o %s -m comment --comment %s -j MASQUERADE\n", ifName, tag))
+		} else {
+			markID := int(100 + (t.ID % 200))
+			forPost += fmt.Sprintf(`iptables -t mangle -A PREROUTING -i %s -m conntrack --ctstate NEW -m comment --comment %s -j CONNMARK --set-mark %d
+iptables -t mangle -A OUTPUT -m connmark --mark %d -m comment --comment %s -j CONNMARK --restore-mark
+iptables -t mangle -A PREROUTING -m connmark --mark %d -m comment --comment %s -j CONNMARK --restore-mark
+ip rule del fwmark %d table %d 2>/dev/null || true
+ip rule add fwmark %d table %d priority %d
+ip route replace default via %s dev %s table %d
+`, ifName, tag, markID, markID, tag, markID, tag, markID, markID, markID, markID, 7700+markID, t.Subnet+".1", ifName, markID)
+		}
 		iptRules.WriteString(fmt.Sprintf("iptables -C FORWARD -i %s -m comment --comment %s -j ACCEPT 2>/dev/null || iptables -A FORWARD -i %s -m comment --comment %s -j ACCEPT\n", ifName, tag, ifName, tag))
 		iptRules.WriteString(fmt.Sprintf("iptables -C FORWARD -o %s -m comment --comment %s -j ACCEPT 2>/dev/null || iptables -A FORWARD -o %s -m comment --comment %s -j ACCEPT\n", ifName, tag, ifName, tag))
 		iptRules.WriteString(fmt.Sprintf("iptables -t mangle -C FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -m comment --comment %s -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || iptables -t mangle -A FORWARD -o %s -p tcp --tcp-flags SYN,RST SYN -m comment --comment %s -j TCPMSS --clamp-mss-to-pmtu\n", ifName, tag, ifName, tag))
@@ -794,7 +927,7 @@ done
 			iptRules.WriteString(iptRulesStr)
 		}
 
-		makeKernel := func(linkCmd, cidr, extraRules string) string {
+		makeKernel := func(preCmd, linkCmd, cidr, extraRules, postCmd string) string {
 			return fmt.Sprintf(`set -e
 mkdir -p %s
 cat <<'EOF' > %s/%s.sh
@@ -806,15 +939,17 @@ sysctl -w net.ipv4.conf.all.rp_filter=0 >/dev/null 2>&1 || true
 sysctl -w net.ipv4.conf.default.rp_filter=0 >/dev/null 2>&1 || true
 modprobe ip_gre 2>/dev/null || true
 modprobe ip6_gre 2>/dev/null || true
+modprobe ipip 2>/dev/null || true
 modprobe vxlan 2>/dev/null || true
+modprobe wireguard 2>/dev/null || true
 ip link del %s 2>/dev/null || true
 ip tunnel del %s 2>/dev/null || true
-%s
+%s%s
 ip addr add %s dev %s
-ip link set %s mtu 1420 up
+ip link set %s mtu %d up
 sysctl -w net.ipv4.conf.%s.rp_filter=0 >/dev/null 2>&1 || true
 for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "%s" | iptables-restore -T "$tbl" 2>/dev/null || true; done
-%s
+%s%s
 EOF
 chmod 755 %s/%s.sh
 cat <<EOF > /etc/systemd/system/%s.service
@@ -835,9 +970,9 @@ systemctl daemon-reload
 systemctl enable %s.service
 if ! systemctl restart %s.service 2>/dev/null; then journalctl -u %s.service -n 8 --no-pager -o cat >&2; exit 1; fi
 ip -br addr show %s
-`, cfgDir, cfgDir, unit, ifName, ifName, linkCmd, cidr, ifName, ifName, ifName, tag, extraRules, cfgDir, unit, unit, t.ID, t.Name, cfgDir, unit, ifName, unit, unit, unit, ifName)
+`, cfgDir, cfgDir, unit, ifName, ifName, preCmd, linkCmd, cidr, ifName, ifName, mtuVal, ifName, tag, extraRules, postCmd, cfgDir, unit, unit, t.ID, t.Name, cfgDir, unit, ifName, unit, unit, unit, ifName)
 		}
-		return makeKernel(iranLink, iranLocal, iptRules.String()), makeKernel(forLink, forLocal, "")
+		return makeKernel(iranPre, iranLink, iranLocal, iptRules.String(), iranPost), makeKernel(forPre, forLink, forLocal, "", forPost)
 	}
 }
 
@@ -912,12 +1047,12 @@ func (h *Handler) handleDeleteTunnel(w http.ResponseWriter, r *http.Request) {
 	ifName := fmt.Sprintf("mctun%d", id)
 	tag := fmt.Sprintf("mc_tun_%d", id)
 	cleanCmd := fmt.Sprintf(`systemctl disable --now %s.service 2>/dev/null || true
-rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh /etc/mcontrol/tunnels/%s.yaml
+rm -f /etc/systemd/system/%s.service /etc/mcontrol/tunnels/%s.toml /etc/mcontrol/tunnels/%s.sh /etc/mcontrol/tunnels/%s.yaml /etc/mcontrol/tunnels/%s.key
 ip link del %s 2>/dev/null || true
 ip tunnel del %s 2>/dev/null || true
 for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "%s" | iptables-restore -T "$tbl" 2>/dev/null || true; done
 systemctl daemon-reload
-echo "Cleaned."`, unit, unit, unit, unit, unit, ifName, ifName, tag)
+echo "Cleaned."`, unit, unit, unit, unit, unit, unit, ifName, ifName, tag)
 
 	var wg sync.WaitGroup
 	if iranSrv != nil {
@@ -1179,6 +1314,11 @@ type backhaulExtraOpts struct {
 	KCPMode         string `json:"kcp_mode,omitempty"`
 	KCPCrypt        string `json:"kcp_crypt,omitempty"`
 	KCPNoFEC        bool   `json:"kcp_nofec,omitempty"`
+	KernelEncap     string `json:"kernel_encap,omitempty"`
+	KernelIPsec     string `json:"kernel_ipsec,omitempty"`
+	ForwardMode     string `json:"forward_mode,omitempty"`
+	MTU             int    `json:"mtu,omitempty"`
+	RateLimitMbps   int    `json:"rate_limit_mbps,omitempty"`
 }
 
 func (h *Handler) StartTunnelWatchdog() {
@@ -1239,4 +1379,142 @@ fi`, unit, unit, ifName, unit)
 			wg.Wait()
 		}
 	}()
+}
+
+
+// handleTunnelPMTU measures true Path MTU between Iran and Foreign nodes via DF-bit binary search
+// and applies optimal tunnel MTU live on both sides.
+func (h *Handler) handleTunnelPMTU(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	tun, err := h.store.GetTunnel(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "tunnel not found")
+		return
+	}
+	iranSrv, err := h.store.GetServerWithSecret(tun.IranServerID)
+	if err != nil {
+		fail(w, http.StatusNotFound, "Iran server not found")
+		return
+	}
+	forSrv, err := h.store.GetServerWithSecret(tun.ForeignServerID)
+	if err != nil {
+		fail(w, http.StatusNotFound, "Foreign server not found")
+		return
+	}
+	target := forSrv.Host
+	probeCmd := fmt.Sprintf(`lo=1200; hi=1472; best=1280
+while [ $lo -le $hi ]; do
+  mid=$(( (lo + hi) / 2 ))
+  if ping -c 1 -W 1 -M do -s "$mid" %s >/dev/null 2>&1; then
+    best=$((mid + 28))
+    lo=$((mid + 1))
+  else
+    hi=$((mid - 1))
+  fi
+done
+echo "PMTU=$best"`, sshclient.ShQuote(target))
+	res := h.runOnServer(iranSrv, probeCmd, 25*time.Second)
+	pathMTU := 1500
+	for _, ln := range strings.Split(res.Output, "\n") {
+		if strings.HasPrefix(ln, "PMTU=") {
+			if v, e := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(ln, "PMTU="))); e == nil && v >= 1280 && v <= 1500 {
+				pathMTU = v
+			}
+		}
+	}
+	overhead := 48
+	switch tun.Engine {
+	case "ip6gre", "vxlan":
+		overhead = 64
+	case "wireguard":
+		overhead = 80
+	case "gre", "ipip":
+		overhead = 36
+	}
+	var ex backhaulExtraOpts
+	if strings.TrimSpace(tun.ExtraJSON) != "" {
+		_ = json.Unmarshal([]byte(tun.ExtraJSON), &ex)
+	}
+	if ex.KernelIPsec != "" {
+		overhead += 56
+	}
+	if ex.KernelEncap == "fou" {
+		overhead += 8
+	}
+	optMTU := pathMTU - overhead
+	if optMTU < 1240 {
+		optMTU = 1240
+	}
+	applied := false
+	if tun.Engine == "gre" || tun.Engine == "ip6gre" || tun.Engine == "ipip" || tun.Engine == "vxlan" || tun.Engine == "wireguard" {
+		ifName := fmt.Sprintf("mctun%d", tun.ID)
+		setCmd := fmt.Sprintf("ip link set %s mtu %d 2>/dev/null || true", ifName, optMTU)
+		var wg sync.WaitGroup
+		wg.Add(2)
+		go func() { defer wg.Done(); _ = h.runOnServer(iranSrv, setCmd, 10*time.Second) }()
+		go func() { defer wg.Done(); _ = h.runOnServer(forSrv, setCmd, 10*time.Second) }()
+		wg.Wait()
+		applied = true
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":          true,
+		"path_mtu":    pathMTU,
+		"optimal_mtu": optMTU,
+		"overhead":    overhead,
+		"applied":     applied,
+		"message":     fmt.Sprintf("Measured Path MTU = %d bytes -> Optimal Tunnel MTU = %d (overhead %dB)", pathMTU, optMTU, overhead),
+	})
+}
+
+// handleFindFreePort checks whether a port is free on both Iran & Foreign nodes and suggests a free port.
+func (h *Handler) handleFindFreePort(w http.ResponseWriter, r *http.Request) {
+	irID, _ := strconv.ParseInt(r.URL.Query().Get("iran_id"), 10, 64)
+	frID, _ := strconv.ParseInt(r.URL.Query().Get("foreign_id"), 10, 64)
+	pref, _ := strconv.Atoi(r.URL.Query().Get("preferred"))
+	if pref < 1024 || pref > 65000 {
+		pref = 3080
+	}
+	iranSrv, err1 := h.store.GetServerWithSecret(irID)
+	forSrv, err2 := h.store.GetServerWithSecret(frID)
+	if err1 != nil || err2 != nil {
+		fail(w, http.StatusBadRequest, "select both Iran and Foreign servers first")
+		return
+	}
+	listCmd := `ss -H -tuln 2>/dev/null | awk '{n=split($5,a,":"); p=a[n]; if(p~/^[0-9]+$/) print p}' | sort -nu`
+	var wg sync.WaitGroup
+	var r1, r2 sshclient.Result
+	wg.Add(2)
+	go func() { defer wg.Done(); r1 = h.runOnServer(iranSrv, listCmd, 10*time.Second) }()
+	go func() { defer wg.Done(); r2 = h.runOnServer(forSrv, listCmd, 10*time.Second) }()
+	wg.Wait()
+
+	busy := map[int]bool{}
+	for _, out := range []string{r1.Output, r2.Output} {
+		for _, ln := range strings.Split(out, "\n") {
+			if p, e := strconv.Atoi(strings.TrimSpace(ln)); e == nil {
+				busy[p] = true
+			}
+		}
+	}
+	if !busy[pref] {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "free": true, "port": pref, "message": fmt.Sprintf("Port %d is free on both servers", pref)})
+		return
+	}
+	suggested := pref
+	for p := pref + 1; p < 60000; p++ {
+		if !busy[p] {
+			suggested = p
+			break
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":        true,
+		"free":      false,
+		"busy_port": pref,
+		"port":      suggested,
+		"message":   fmt.Sprintf("Port %d is BUSY — switched to free port %d", pref, suggested),
+	})
 }

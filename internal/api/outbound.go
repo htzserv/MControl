@@ -404,7 +404,7 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 	var bodyStr, subUserInfo string
 	client := &http.Client{Timeout: 14 * time.Second}
 	httpReq, _ := http.NewRequest("GET", req.URL, nil)
-	httpReq.Header.Set("User-Agent", "MControl/1.5.3 v2rayN/6.0")
+	httpReq.Header.Set("User-Agent", "MControl/1.6.0 v2rayN/6.0")
 	resp, err := client.Do(httpReq)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		subUserInfo = resp.Header.Get("Subscription-Userinfo")
@@ -423,7 +423,7 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 				_ = hdrFile.Close()
 				defer os.Remove(hdrPath)
 			}
-			args := []string{"-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.5.3 v2rayN/6.0"}
+			args := []string{"-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.6.0 v2rayN/6.0"}
 			if hdrPath != "" {
 				args = append(args, "-D", hdrPath)
 			}
