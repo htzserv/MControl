@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.2
+- **Official Stable Release `v1.5.2`:**
+  - **Local Master & Remote Full File Manager + Right-Click Context Menu:** added binary-safe file download, multi-file upload (up to 20MB), new file/folder creation, rename, copy/duplicate, recursive delete with system-path protection, and a full right-click context menu for both Web Terminal and File Manager across Master and remote servers.
+  - **Advanced DB-Synced Per-Tab Control Center (`GET/POST /api/ui/tab-prefs`):** configure all 11 tabs (active or hidden) from a unified modal — including auto-ping/telemetry intervals, server sort/filter, compact rows, vertical card alignment (Top/Center/Bottom), and toolbar gear visibility.
+  - **Paqet Auto-Bundled & Fixed Verification:** auto-downloads `paqet` in `bundle.yml` (YAML indentation fixed) and supports `paqet version` verification in `setup.go`.
+  - **ParsPack Mirror AMD64 Optimization & Live Auto-Sync:** pruned legacy `arm64` artifacts from ParsPack S3 mirror for faster sync, upgraded server live auto-sync (quiet 4s poll + 8s probe), and replaced password eye emojis with minimal SVG icons.
+  - **Updated Documentation:** refreshed both `README.md` (English) and `README.fa.md` (Persian) for `v1.5.2`.
+
+
 ## 1.5.1
 - **Stable Release `v1.5.1`:**
   - **Reliable GitHub Releases (`gh` CLI):** replaced `softprops/action-gh-release@v2` (which failed with parallel asset delete/upload errors under Node 24) with sequential `gh release upload --clobber` + 3x retry, added `mcontrol-agent-linux-amd64/arm64` (+ `.sha256`) to GitHub Releases, and hardened ParsPack S3 sync (`max_concurrent_requests 1` + per-file fallback).

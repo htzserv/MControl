@@ -1,17 +1,18 @@
-# MControl — Central Server, Tunnel & DNS Management Panel (MDesign)
+# MControl v1.5.2 — Central Server, Tunnel, Cloud & DNS Management Panel (MDesign)
 
 [![Release](https://img.shields.io/github/v/release/htzserv/MControl?style=flat-square&color=6366f1)](https://github.com/htzserv/MControl/releases)
 [![Architecture](https://img.shields.io/badge/architecture-Go%20Single%20Binary-22d3ee?style=flat-square)](#)
+[![Agent](https://img.shields.io/badge/Peer%20Agent-v4%20Go%20Static%20%2B%20TLS%20Pinning-10b981?style=flat-square)](#)
 
 [🇮🇷 نسخه فارسی (Persian README)](README.fa.md)
 
-**MControl** is a standalone, single-binary Go management panel for multi-node infrastructure (Iran & Foreign servers). Engineered with the modular **MDesign** theme engine, it unifies **2-Sided Tunnel Orchestration**, **MTunnel Pro Migration**, **Cloudflare & ArvanCloud DNS Management**, **Master Outbound (Xray Core)**, **Peer Agent v2 (TLS)**, and a **Native Telegram Bot & Auto-Backuper** into a single lightweight binary with an embedded UI and SQLite database.
+**MControl** is a standalone, single-binary Go management panel for multi-node infrastructure (Iran & Foreign servers). Built on the **MDesign** theme engine with an embedded Web UI, PWA support, and AES-256 encrypted SQLite database, it unifies **Peer Agent v4**, **2-Sided Tunnel Orchestration**, **Datacenter Cloud Hub**, **Master Outbound (Xray Core)**, **Cloudflare & ArvanCloud DNS**, **Uptime Monitoring**, **Local & Remote Web Terminal + File Manager**, and a **Native Telegram Bot & Auto-Backuper**.
 
 ---
 
 ## Quick Install
 
-### Stable Release
+### Stable Release (`v1.5.2`)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash
 ```
@@ -28,47 +29,45 @@ curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | 
 
 ---
 
-## Core Features
+## Key Features
 
-### 1. Unified 2-Sided Tunnel Orchestrator & Auto-Watchdog
-- **Supported Engines:** `Backhaul`, `Rathole`, `Paqet` (native YAML + automatic `raw NOTRACK` / `mangle RST DROP` iptables rules), `GRE` (`4-to-4`, `6-to-4`, `6-to-6`), and `VXLAN`.
-- **Stability First:** NAT-friendly keepalives & heartbeats, `StartLimitIntervalSec=0` systemd units, `rp_filter=0` + bidirectional `TCPMSS` clamping, and a built-in **45-second Tunnel Watchdog** that auto-heals dropped services on both nodes.
-- **Kernel VIP Load Balancing:** `Round-Robin`, `Random`, `Lowest Ping`, `Lightest Load`, and `Least Traffic`.
-- **MSmart Benchmark & 8-Ping Tester:** Compare all protocols between any two nodes in one click, run in-tunnel Speedtests, and review saved benchmark history.
+### 1. Peer Agent v4 Ultimate & Multi-Source Ping
+* **Zero-Dependency Go Agent (`cmd/mcontrol-agent`):** Static Go binary with automatic Python v4 fallback, TLS certificate pinning, Master-IP key sync, 5 fixed ports (`84`, `847`, `7483`, `24819`, `2054`), auto-discovery, and reverse heartbeat push (`/_mc_agent/heartbeat`).
+* **3-Way Live Ping Monitoring:** Real-time **Direct Iran Ping (`🇮🇷`)**, **Outbound Ping (`🚀`)**, and **Reverse Ping (`↩️` Server → Master)** with dynamic latency-colored pills, one-click `📡 Ping` / `↻ Ping All`, and automatic background live sync.
+* **Multi-Iran Reachability & Filtering Check:** Test direct ICMP & TCP connectivity to any foreign node simultaneously from all Iran servers registered in your panel.
+* **Streamlined Add-Server Wizard:** Automatic IPv6 detection drawer in Step 1 (`GET /api/servers/resolve-ipv6`) and clean 3-row SSH credentials in Step 2 with auto-populating Saved SSH Profiles dropdown and minimal SVG password visibility toggle.
 
-### 2. MTunnel → MControl Pro Migrator
-- **Zero-Data-Loss Pipeline:** Automatically detects legacy MTunnel installations when adding a server, saves an AES-GCM encrypted verbatim snapshot (`.json`), installs & verifies MControl engines, and pairs both sides automatically or manually.
-- **Live Kernel Tunnel Control:** Preserves existing MTunnel `GRE` / `VXLAN` tunnels (`mgre.service` / `mxlan.service`) without downtime and provides live **`Status / Restart / Stop / Logs`** controls directly in the **Tunnels** tab.
+### 2. Datacenter Cloud Hub (`Datacenter` Tab)
+* **5 Integrated Cloud Providers:** Encrypted API management for **Hetzner Cloud**, **DigitalOcean**, **Linode (Akamai)**, **OVHcloud**, and **YottaSrc**.
+* **Full VM Lifecycle:** Create servers, Rebuild OS, Reboot/Power controls, 1-click Peer v4 Cloud Firewall, Auto-Import, and background **Auto-Pair with Peer Agent v4**.
 
-### 3. Dual-Provider Cloud DNS Manager (Cloudflare & ArvanCloud)
-- Manage **Cloudflare** and **ArvanCloud** zones side-by-side with independent auto-sync schedules.
-- **Auto Server IP Matching:** Automatically links `A`/`AAAA` records to your managed servers.
-- **Instant Parallel Bulk Actions:** Select multiple records with checkboxes for parallel bulk **Proxy ON/OFF** and **Bulk Delete**.
+### 3. Unified Tunnel Orchestration & MSmart
+* **Supported Engines:** `Backhaul`, `Rathole`, `Paqet` (auto-bundled on Iran Mirror), `Realm`, `GRE`, `IP6GRE`, and `VXLAN` with automated 2-sided deployment, health watchdog, and `MSmart` auto-failover.
+* **Static Zero-APT Bundle:** One-click installation of tunnel engines and network tools (`iperf3`, `speedtest`, `jq`, `socat`) from GitHub, ParsPack Iran Mirror, or Master Cache.
 
-### 4. Master Outbound (Xray Core)
-- Runs an isolated local SOCKS5 proxy (`127.0.0.1:10808`) strictly for the Master Panel (GitHub updates, Telegram bot, Cloud DNS, and Foreign node SSH/probing).
-- Supports Subscription sync, Xray Observatory Load-Balancing, Auto-Failover, and Real Delay testing.
+### 4. Unified Master Outbound (Xray Core)
+* **Isolated Local SOCKS5 (`127.0.0.1:10808`):** Routes Master Panel traffic (GitHub, Telegram Bot, Foreign Nodes) without touching user tunnels.
+* **Single Config, Subscriptions & Load Balance:** Clean single-URI bar (`vless://`, `vmess://`, `trojan://`, `ss://`, `socks5://`), collapsible **Subscriptions** with `Subscription-Userinfo` traffic/expiry meter & per-sub real delay ping, and optional **Load Balance & Auto-Failover** toggle cards.
 
-### 5. Native Telegram Bot & Auto-Backuper
-- Full inline-keyboard tunnel creation & control, scheduled Auto-Backuper (6/12/24/48h), Pre-Update backups, Send-to-Restore `.zip` backups, actionable outage alerts (with Restart/Logs buttons), and Daily Digest.
+### 5. Local & Remote Web Terminal + Full File Manager
+* **Master & Remote Nodes:** Built-in Bash terminal with 1-click quick snippets (`System`, `Ports`, `MControl`, `Services`, `IPs`) and Script Vault.
+* **Full Web File Manager:** Browse, edit, binary-safe **Download** & multi-file **Upload** (up to 20MB), create files/folders, rename, copy/duplicate, recursive delete (with system-path protection), and a full **Right-Click Context Menu** on both Master and remote servers.
 
-### 6. Native Uptime Monitor (Kuma-Style), Dedicated Alert Bot & Public `/status` Page
-- **Multi-Point Probes:** Monitor `HTTP/HTTPS` (+ SSL expiry), `TCP`, `Ping (v4/v6)`, and `DNS` directly from **Master**, **Master Outbound**, or any managed **Iran/Foreign server** with 30-tick heartbeat bars, Auto-Heal tunnel restarts, a **Dedicated Telegram Notification Bot** (with Forum Topic ID support), and a login-free **Public Status Page (`/status`)**.
+### 6. MDesign Theme Engine & Per-Tab Control Center
+* **Decoupled Design & Color Engine:** 30+ structural designs across 6 families (`Prism`, `Neon`, `Material`, `Studio`, `iOS`, `Android`) with independent Classic & Royal color palettes and live Accent pickers.
+* **Inline Floating Bar Editor:** Right-click or hold (`0.5s`) on the top navigation bar to drag-reorder, remove (`−`), or add (`+`) tabs directly — synced to the panel SQLite database across devices.
+* **Advanced Per-Tab Settings (`⚙`):** Configure refresh intervals, default server sorting/filtering, compact mode, vertical card alignment, and visibility for all 11 tabs (active or hidden), synced to the database.
 
-### 7. Fleet Pro Operations & Disaster Recovery
-- **1-Click Replace Server:** Migrate all linked tunnels and matching Cloudflare/ArvanCloud DNS records to a replacement server.
-- **Live Topology Map & v4/v6 Reachability Matrix:** Visual tunnel map and cross-node IPv4/IPv6 reachability matrix.
-- **Web Terminal + File Manager + Script Vault + Firewall/Services + Scheduler + 3x-ui/Marzban Port Sync + Auto SSL Sync + MikroTik GRE/IP6GRE Generator + 24h/7d Metrics History + Viewer RBAC + PWA + `Ctrl+K` Command Palette.**
-
-### 8. Modular MDesign Theme Engine
-- **11 Independent Customization Axes** in Theme Studio: Navigation (`Dock`, `Floating Sidebar`, `Sidebar`, `Icon Rail`, `Bottom`), Card Surface (`Glass`, `Prism Bubbles`, `Liquid Glass`, `Neumorphic`, `Brutalist`, etc.), Master Cards (`Unified` vs `Separate Bubbles`), Metric Graphs (`Wave Sparkline`, `Circular Ring`, `Classic Line`), Checkboxes (`Rounded`, `Square`, `Circle`, `Neon Glow`, `Material`, `Mini Switch`), Fonts, Density, and Background effects.
-- **Master Toolbox & Symmetric Top Bar:** Floating **Version/Update** bubble (with Rolling Beta toggle & Offline ZIP installer), floating **Backup/Restore** bubble, and an Overview **Toolbox** card (`Speedtest`, `Tweak`, `Clean RAM`, `MSmart`, `Restart Panel`).
+### 7. Domains (DNS), Uptime Monitor & Telegram Bot
+* **Cloudflare & ArvanCloud DNS:** Multi-provider zone management, automatic server IP matching, and DNS auto-failover.
+* **Uptime Monitor & Public `/status`:** Multi-point HTTP/SSL, TCP, Ping & DNS monitors with heartbeat bars and dedicated notifications.
+* **Telegram Bot & Auto-Backuper:** Inline keyboard management, encrypted database backups, and actionable alerts.
 
 ---
 
-## CLI Manager
-Run `mcontrol` on the Master server for service control, port/web-path updates, emergency 2FA/HTTPS reset, and live logs.
+## CLI Management
 
-## Automatic Releases (GitHub Actions)
-- **Official Release:** Bump `VERSION` (e.g., `1.2.3`) and push to `main` — GitHub Actions compiles static `amd64`/`arm64` binaries + `.sha256` checksums and publishes an official Release.
-- **Rolling Beta:** Push to `main` without changing `VERSION` to automatically refresh the `beta-latest` pre-release.
+After installation, manage MControl anytime via:
+```bash
+mcontrol
+```
