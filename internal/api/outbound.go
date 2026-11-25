@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -26,12 +27,12 @@ const (
 )
 
 type outboundNode struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	URI     string `json:"uri"`
-	Proto   string `json:"proto"`
-	Address string `json:"address"`
-	Source  string `json:"source"` // "manual" or subscription ID
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	URI         string `json:"uri"`
+	Proto       string `json:"proto"`
+	Address     string `json:"address"`
+	Source      string `json:"source"` // "manual" or subscription ID
 	Enabled     bool   `json:"enabled"`
 	LastDelayMs int    `json:"last_delay_ms"` // 0=untested, -1=timeout/error, >0=ms
 }
@@ -46,6 +47,8 @@ type outboundSub struct {
 
 type outboundConfig struct {
 	Enabled       bool           `json:"enabled"`
+	Mode          string         `json:"mode"`           // "single" (default) | "loadbalance"
+	ActiveNodeID  string         `json:"active_node_id"` // selected node ID when Mode == "single"
 	Link          string         `json:"link"`           // legacy single-link field
 	LBStrategy    string         `json:"lb_strategy"`    // leastPing | leastLoad | roundRobin | random
 	ProbeURL      string         `json:"probe_url"`      // default https://www.gstatic.com/generate_204
@@ -63,11 +66,26 @@ func shortRandID() string {
 	return hex.EncodeToString(b)
 }
 
+func mapStr(m map[string]any, key string) string {
+	v, ok := m[key]
+	if !ok || v == nil {
+		return ""
+	}
+	s := strings.TrimSpace(fmt.Sprint(v))
+	if s == "<nil>" {
+		return ""
+	}
+	return s
+}
+
 func (h *Handler) loadOutboundCfg() outboundConfig {
 	raw := h.store.GetSetting("master_outbound_json")
 	var cfg outboundConfig
 	if raw != "" {
 		_ = json.Unmarshal([]byte(raw), &cfg)
+	}
+	if cfg.Mode != "single" && cfg.Mode != "loadbalance" {
+		cfg.Mode = "single"
 	}
 	if cfg.LBStrategy == "" {
 		cfg.LBStrategy = "leastPing"
@@ -84,10 +102,33 @@ func (h *Handler) loadOutboundCfg() outboundConfig {
 	if cfg.Nodes == nil {
 		cfg.Nodes = []outboundNode{}
 	}
-	// Auto-migrate legacy single Link into Nodes list
 	if len(cfg.Nodes) == 0 && strings.TrimSpace(cfg.Link) != "" {
 		if n, ok := parseNodeSummary(cfg.Link, "manual"); ok {
 			cfg.Nodes = append(cfg.Nodes, n)
+			if cfg.ActiveNodeID == "" {
+				cfg.ActiveNodeID = n.ID
+			}
+		}
+	}
+	if len(cfg.Nodes) > 0 {
+		found := false
+		for _, n := range cfg.Nodes {
+			if n.ID == cfg.ActiveNodeID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			for _, n := range cfg.Nodes {
+				if n.Enabled {
+					cfg.ActiveNodeID = n.ID
+					found = true
+					break
+				}
+			}
+			if !found {
+				cfg.ActiveNodeID = cfg.Nodes[0].ID
+			}
 		}
 	}
 	return cfg
@@ -98,7 +139,6 @@ func (h *Handler) saveOutboundCfg(cfg outboundConfig) {
 		_ = h.store.SetSetting("master_outbound_json", string(b))
 	}
 }
-
 
 func (h *Handler) telegramSocksProxy() string {
 	cfg := h.loadOutboundCfg()
@@ -118,7 +158,15 @@ func (h *Handler) githubSocksProxy() string {
 
 func isOutboundActive() bool {
 	out, err := exec.Command("systemctl", "is-active", outboundUnit).Output()
-	return err == nil && strings.TrimSpace(string(out)) == "active"
+	if err != nil || strings.TrimSpace(string(out)) != "active" {
+		return false
+	}
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), 400*time.Millisecond)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
 }
 
 func xrayBinPath() string {
@@ -178,10 +226,12 @@ func parseNodeSummary(uri, source string) (outboundNode, bool) {
 		if raw, err := decodeFlexibleBase64(b64); err == nil {
 			var vm map[string]any
 			if json.Unmarshal(raw, &vm) == nil {
-				addr = fmt.Sprintf("%v:%v", vm["add"], vm["port"])
-				if ps, ok := vm["ps"].(string); ok {
-					name = ps
+				add := mapStr(vm, "add")
+				port := mapStr(vm, "port")
+				if add != "" {
+					addr = add + ":" + port
 				}
+				name = mapStr(vm, "ps")
 			}
 		}
 	case strings.HasPrefix(low, "ss://"):
@@ -278,6 +328,15 @@ func (h *Handler) handleOutboundStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) handleOutboundLogs(w http.ResponseWriter, r *http.Request) {
+	out, _ := exec.Command("journalctl", "-u", outboundUnit, "-n", "40", "--no-pager").CombinedOutput()
+	txt := strings.TrimSpace(string(out))
+	if txt == "" {
+		txt = "No logs recorded yet for " + outboundUnit
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "logs": txt})
+}
+
 func (h *Handler) handleOutboundInstallCore(w http.ResponseWriter, r *http.Request) {
 	bin, err := installOrUpdateXray()
 	if err != nil {
@@ -316,11 +375,10 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	// Fetch subscription (direct first; fallback via curl --socks5-hostname if outbound is active)
 	var bodyStr string
-	client := &http.Client{Timeout: 12 * time.Second}
+	client := &http.Client{Timeout: 14 * time.Second}
 	httpReq, _ := http.NewRequest("GET", req.URL, nil)
-	httpReq.Header.Set("User-Agent", "MControl/1.2.0 v2rayN/6.0")
+	httpReq.Header.Set("User-Agent", "MControl/1.4.6 v2rayN/6.0")
 	resp, err := client.Do(httpReq)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
@@ -331,7 +389,7 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 			resp.Body.Close()
 		}
 		if isOutboundActive() {
-			out, cerr := exec.Command("curl", "-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.2.0", req.URL).Output()
+			out, cerr := exec.Command("curl", "-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.4.6 v2rayN/6.0", req.URL).Output()
 			if cerr == nil {
 				bodyStr = string(out)
 			}
@@ -354,7 +412,6 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Update or add sub entry
 	foundSub := false
 	for i := range cfg.Subs {
 		if cfg.Subs[i].ID == subID {
@@ -376,7 +433,6 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 		})
 	}
 
-	// Replace old nodes from this sub and append fresh ones
 	kept := make([]outboundNode, 0, len(cfg.Nodes)+len(parsed))
 	for _, n := range cfg.Nodes {
 		if n.Source != subID {
@@ -385,6 +441,9 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 	}
 	kept = append(kept, parsed...)
 	cfg.Nodes = kept
+	if cfg.ActiveNodeID == "" && len(cfg.Nodes) > 0 {
+		cfg.ActiveNodeID = cfg.Nodes[0].ID
+	}
 	h.saveOutboundCfg(cfg)
 
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -393,6 +452,110 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 		"config":  cfg,
 		"message": fmt.Sprintf("Synced %d nodes from %s", len(parsed), req.Name),
 	})
+}
+
+func buildStreamSettings(netType, sec, sni, fp, alpn, pbk, sid, spx, host, path, serviceName, headerType string, allowInsecure bool) map[string]any {
+	if netType == "" || netType == "raw" {
+		netType = "tcp"
+	}
+	if sec == "" {
+		sec = "none"
+	}
+	stream := map[string]any{"network": netType, "security": sec}
+
+	if sec == "tls" {
+		tlsSet := map[string]any{"allowInsecure": allowInsecure}
+		if sni != "" {
+			tlsSet["serverName"] = sni
+		}
+		if fp != "" {
+			tlsSet["fingerprint"] = fp
+		}
+		if alpn != "" {
+			var list []string
+			for _, a := range strings.Split(alpn, ",") {
+				if t := strings.TrimSpace(a); t != "" {
+					list = append(list, t)
+				}
+			}
+			if len(list) > 0 {
+				tlsSet["alpn"] = list
+			}
+		}
+		stream["tlsSettings"] = tlsSet
+	} else if sec == "reality" {
+		if fp == "" {
+			fp = "chrome"
+		}
+		if spx == "" {
+			spx = "/"
+		}
+		stream["realitySettings"] = map[string]any{
+			"serverName":  sni,
+			"fingerprint": fp,
+			"publicKey":   pbk,
+			"shortId":     sid,
+			"spiderX":     spx,
+		}
+	}
+
+	switch netType {
+	case "ws":
+		ws := map[string]any{"path": "/"}
+		if path != "" {
+			ws["path"] = path
+		}
+		if host != "" {
+			ws["headers"] = map[string]any{"Host": host}
+		}
+		stream["wsSettings"] = ws
+	case "grpc":
+		gs := map[string]any{"serviceName": serviceName}
+		if serviceName == "" && path != "" {
+			gs["serviceName"] = strings.TrimPrefix(path, "/")
+		}
+		stream["grpcSettings"] = gs
+	case "xhttp", "splithttp":
+		stream["network"] = "xhttp"
+		xh := map[string]any{"path": "/"}
+		if path != "" {
+			xh["path"] = path
+		}
+		if host != "" {
+			xh["host"] = host
+		}
+		stream["xhttpSettings"] = xh
+	case "httpupgrade":
+		hu := map[string]any{"path": "/"}
+		if path != "" {
+			hu["path"] = path
+		}
+		if host != "" {
+			hu["host"] = host
+		}
+		stream["httpupgradeSettings"] = hu
+	case "tcp":
+		if strings.EqualFold(headerType, "http") {
+			reqHdr := map[string]any{}
+			if host != "" {
+				reqHdr["Host"] = strings.Split(host, ",")
+			}
+			reqPath := []string{"/"}
+			if path != "" {
+				reqPath = strings.Split(path, ",")
+			}
+			stream["tcpSettings"] = map[string]any{
+				"header": map[string]any{
+					"type": "http",
+					"request": map[string]any{
+						"path":    reqPath,
+						"headers": reqHdr,
+					},
+				},
+			}
+		}
+	}
+	return stream
 }
 
 func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
@@ -408,6 +571,9 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid vless URI: %w", err)
 		}
+		if u.Hostname() == "" || u.User == nil || u.User.Username() == "" {
+			return nil, fmt.Errorf("incomplete vless URI (missing host or UUID)")
+		}
 		port, _ := strconv.Atoi(u.Port())
 		if port == 0 {
 			port = 443
@@ -421,41 +587,25 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 		if netType == "" {
 			netType = "tcp"
 		}
-		stream := map[string]any{"network": netType, "security": sec}
-		if sec == "tls" {
-			tlsSet := map[string]any{"allowInsecure": q.Get("allowInsecure") == "1"}
-			if sni := q.Get("sni"); sni != "" {
-				tlsSet["serverName"] = sni
-			}
-			if fp := q.Get("fp"); fp != "" {
-				tlsSet["fingerprint"] = fp
-			}
-			stream["tlsSettings"] = tlsSet
-		} else if sec == "reality" {
-			stream["realitySettings"] = map[string]any{
-				"serverName":  q.Get("sni"),
-				"fingerprint": q.Get("fp"),
-				"publicKey":   q.Get("pbk"),
-				"shortId":     q.Get("sid"),
-				"spiderX":     q.Get("spx"),
+		sni := q.Get("sni")
+		if sni == "" && sec == "tls" {
+			sni = q.Get("host")
+			if sni == "" {
+				sni = u.Hostname()
 			}
 		}
-		if netType == "ws" {
-			ws := map[string]any{"path": q.Get("path")}
-			if host := q.Get("host"); host != "" {
-				ws["headers"] = map[string]any{"Host": host}
-			}
-			stream["wsSettings"] = ws
-		} else if netType == "grpc" {
-			stream["grpcSettings"] = map[string]any{"serviceName": q.Get("serviceName")}
-		} else if netType == "xhttp" || netType == "splithttp" {
-			xh := map[string]any{"path": q.Get("path")}
-			if host := q.Get("host"); host != "" {
-				xh["host"] = host
-			}
-			stream["xhttpSettings"] = xh
+		allowIns := q.Get("allowInsecure") == "1" || q.Get("insecure") == "1" || strings.EqualFold(q.Get("allowInsecure"), "true")
+		stream := buildStreamSettings(
+			netType, sec, sni, q.Get("fp"), q.Get("alpn"),
+			q.Get("pbk"), q.Get("sid"), q.Get("spx"),
+			q.Get("host"), q.Get("path"), q.Get("serviceName"), q.Get("headerType"),
+			allowIns,
+		)
+		enc := q.Get("encryption")
+		if enc == "" {
+			enc = "none"
 		}
-		user := map[string]any{"id": u.User.Username(), "encryption": "none"}
+		user := map[string]any{"id": u.User.Username(), "encryption": enc}
 		if fl := q.Get("flow"); fl != "" {
 			user["flow"] = fl
 		}
@@ -477,12 +627,22 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid trojan URI: %w", err)
 		}
+		if u.Hostname() == "" || u.User == nil || u.User.Username() == "" {
+			return nil, fmt.Errorf("incomplete trojan URI (missing host or password)")
+		}
 		port, _ := strconv.Atoi(u.Port())
 		if port == 0 {
 			port = 443
 		}
 		q := u.Query()
+		sec := q.Get("security")
+		if sec == "" {
+			sec = "tls"
+		}
 		sni := q.Get("sni")
+		if sni == "" {
+			sni = q.Get("peer")
+		}
 		if sni == "" {
 			sni = u.Hostname()
 		}
@@ -490,22 +650,16 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 		if netType == "" {
 			netType = "tcp"
 		}
-		stream := map[string]any{
-			"network":  netType,
-			"security": "tls",
-			"tlsSettings": map[string]any{
-				"serverName":    sni,
-				"allowInsecure": q.Get("allowInsecure") == "1",
-			},
-		}
-		if netType == "ws" {
-			ws := map[string]any{"path": q.Get("path")}
-			if host := q.Get("host"); host != "" {
-				ws["headers"] = map[string]any{"Host": host}
-			}
-			stream["wsSettings"] = ws
-		} else if netType == "grpc" {
-			stream["grpcSettings"] = map[string]any{"serviceName": q.Get("serviceName")}
+		allowIns := q.Get("allowInsecure") == "1" || q.Get("insecure") == "1" || strings.EqualFold(q.Get("allowInsecure"), "true")
+		stream := buildStreamSettings(
+			netType, sec, sni, q.Get("fp"), q.Get("alpn"),
+			q.Get("pbk"), q.Get("sid"), q.Get("spx"),
+			q.Get("host"), q.Get("path"), q.Get("serviceName"), q.Get("headerType"),
+			allowIns,
+		)
+		pass := u.User.Username()
+		if dec, err := url.QueryUnescape(pass); err == nil && dec != "" {
+			pass = dec
 		}
 		return map[string]any{
 			"tag":      tag,
@@ -514,7 +668,7 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 				"servers": []any{map[string]any{
 					"address":  u.Hostname(),
 					"port":     port,
-					"password": u.User.Username(),
+					"password": pass,
 				}},
 			},
 			"streamSettings": stream,
@@ -530,34 +684,41 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 		if err := json.Unmarshal(raw, &vm); err != nil {
 			return nil, fmt.Errorf("invalid vmess JSON")
 		}
-		addr := fmt.Sprint(vm["add"])
-		port, _ := strconv.Atoi(fmt.Sprint(vm["port"]))
+		addr := mapStr(vm, "add")
+		uid := mapStr(vm, "id")
+		if addr == "" || uid == "" {
+			return nil, fmt.Errorf("incomplete vmess JSON (missing add or id)")
+		}
+		port, _ := strconv.Atoi(mapStr(vm, "port"))
 		if port == 0 {
 			port = 443
 		}
-		uid := fmt.Sprint(vm["id"])
-		netType := fmt.Sprint(vm["net"])
-		if netType == "" || netType == "<nil>" {
+		netType := mapStr(vm, "net")
+		if netType == "" {
 			netType = "tcp"
 		}
 		sec := "none"
-		if fmt.Sprint(vm["tls"]) == "tls" {
+		if strings.EqualFold(mapStr(vm, "tls"), "tls") {
 			sec = "tls"
 		}
-		stream := map[string]any{"network": netType, "security": sec}
-		if sec == "tls" {
-			sni := fmt.Sprint(vm["sni"])
-			if sni == "" || sni == "<nil>" {
-				sni = fmt.Sprint(vm["host"])
-			}
-			stream["tlsSettings"] = map[string]any{"serverName": sni, "allowInsecure": true}
-		}
-		if netType == "ws" {
-			stream["wsSettings"] = map[string]any{
-				"path":    fmt.Sprint(vm["path"]),
-				"headers": map[string]any{"Host": fmt.Sprint(vm["host"])},
+		sni := mapStr(vm, "sni")
+		host := mapStr(vm, "host")
+		if sni == "" {
+			if host != "" {
+				sni = host
+			} else {
+				sni = addr
 			}
 		}
+		scy := mapStr(vm, "scy")
+		if scy == "" {
+			scy = "auto"
+		}
+		stream := buildStreamSettings(
+			netType, sec, sni, mapStr(vm, "fp"), mapStr(vm, "alpn"),
+			"", "", "", host, mapStr(vm, "path"), mapStr(vm, "path"), mapStr(vm, "type"),
+			true,
+		)
 		return map[string]any{
 			"tag":      tag,
 			"protocol": "vmess",
@@ -565,7 +726,7 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 				"vnext": []any{map[string]any{
 					"address": addr,
 					"port":    port,
-					"users":   []any{map[string]any{"id": uid, "security": "auto"}},
+					"users":   []any{map[string]any{"id": uid, "security": scy}},
 				}},
 			},
 			"streamSettings": stream,
@@ -591,7 +752,6 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 				}
 			}
 		} else {
-			// Legacy full base64 ss://base64(method:pass@host:port)
 			rawPart := strings.SplitN(link[5:], "#", 2)[0]
 			if dec, err := decodeFlexibleBase64(rawPart); err == nil {
 				if u2, err := url.Parse("ss://" + string(dec)); err == nil && u2.User != nil {
@@ -623,12 +783,15 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid socks URI: %w", err)
 		}
+		if u.Hostname() == "" {
+			return nil, fmt.Errorf("incomplete socks5 URI")
+		}
 		port, _ := strconv.Atoi(u.Port())
 		if port == 0 {
 			port = 1080
 		}
 		srv := map[string]any{"address": u.Hostname(), "port": port}
-		if u.User != nil {
+		if u.User != nil && u.User.Username() != "" {
 			p, _ := u.User.Password()
 			srv["users"] = []any{map[string]any{"user": u.User.Username(), "pass": p}}
 		}
@@ -655,8 +818,12 @@ ARCH=$(uname -m)
 ASSET="Xray-linux-64.zip"
 if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then ASSET="Xray-linux-arm64-v8a.zip"; fi
 URL="https://github.com/XTLS/Xray-core/releases/latest/download/${ASSET}"
-curl -fsSL %s "$URL" -o "$TMPD/xray.zip" || curl -fsSL "$URL" -o "$TMPD/xray.zip"
-python3 -c "import zipfile; zipfile.ZipFile('$TMPD/xray.zip').extract('xray', '$TMPD')"
+curl -fsSL --connect-timeout 10 --max-time 60 %s "$URL" -o "$TMPD/xray.zip" || curl -fsSL --connect-timeout 10 --max-time 60 "$URL" -o "$TMPD/xray.zip"
+if command -v unzip >/dev/null 2>&1; then
+  unzip -qo "$TMPD/xray.zip" xray -d "$TMPD"
+else
+  python3 -c "import zipfile; zipfile.ZipFile('$TMPD/xray.zip').extract('xray', '$TMPD')"
+fi
 install -m 755 "$TMPD/xray" /usr/local/bin/xray`, proxyFlag)
 	cmd := exec.Command("bash", "-c", script)
 	out, err := cmd.CombinedOutput()
@@ -678,6 +845,9 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 	if !readJSON(w, r, &req) {
 		return
 	}
+	if req.Mode != "single" && req.Mode != "loadbalance" {
+		req.Mode = "single"
+	}
 	if req.LBStrategy == "" {
 		req.LBStrategy = "leastPing"
 	}
@@ -693,11 +863,11 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 	if req.Nodes == nil {
 		req.Nodes = []outboundNode{}
 	}
-	// Legacy single link fallback
 	req.Link = strings.TrimSpace(req.Link)
 	if len(req.Nodes) == 0 && req.Link != "" {
 		if n, ok := parseNodeSummary(req.Link, "manual"); ok {
 			req.Nodes = append(req.Nodes, n)
+			req.ActiveNodeID = n.ID
 		}
 	}
 	h.saveOutboundCfg(req)
@@ -708,30 +878,62 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build Xray outbounds array from all enabled nodes
 	var outbounds []any
+	var activeSingleName string
 	var firstErr error
-	for _, n := range req.Nodes {
-		if !n.Enabled || strings.TrimSpace(n.URI) == "" {
-			continue
-		}
-		tag := fmt.Sprintf("proxy-%d", len(outbounds))
-		obj, err := parseLinkToXrayOutbound(n.URI, tag)
-		if err != nil {
-			if firstErr == nil {
-				firstErr = err
+
+	if req.Mode == "single" {
+		var chosen *outboundNode
+		for i := range req.Nodes {
+			if req.Nodes[i].ID == req.ActiveNodeID && strings.TrimSpace(req.Nodes[i].URI) != "" {
+				chosen = &req.Nodes[i]
+				break
 			}
-			continue
+		}
+		if chosen == nil {
+			for i := range req.Nodes {
+				if req.Nodes[i].Enabled && strings.TrimSpace(req.Nodes[i].URI) != "" {
+					chosen = &req.Nodes[i]
+					req.ActiveNodeID = chosen.ID
+					h.saveOutboundCfg(req)
+					break
+				}
+			}
+		}
+		if chosen == nil {
+			fail(w, http.StatusBadRequest, "select or add an active single config first")
+			return
+		}
+		obj, err := parseLinkToXrayOutbound(chosen.URI, "proxy-0")
+		if err != nil {
+			fail(w, http.StatusBadRequest, "invalid active config: "+err.Error())
+			return
 		}
 		outbounds = append(outbounds, obj)
-	}
-	if len(outbounds) == 0 {
-		msg := "no enabled valid outbound nodes found"
-		if firstErr != nil {
-			msg = firstErr.Error()
+		activeSingleName = chosen.Name
+	} else {
+		for _, n := range req.Nodes {
+			if !n.Enabled || strings.TrimSpace(n.URI) == "" {
+				continue
+			}
+			tag := fmt.Sprintf("proxy-%d", len(outbounds))
+			obj, err := parseLinkToXrayOutbound(n.URI, tag)
+			if err != nil {
+				if firstErr == nil {
+					firstErr = err
+				}
+				continue
+			}
+			outbounds = append(outbounds, obj)
 		}
-		fail(w, http.StatusBadRequest, msg)
-		return
+		if len(outbounds) == 0 {
+			msg := "no enabled valid outbound nodes found"
+			if firstErr != nil {
+				msg = firstErr.Error()
+			}
+			fail(w, http.StatusBadRequest, msg)
+			return
+		}
 	}
 
 	bin, err := ensureXrayInstalled()
@@ -754,8 +956,7 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 		"outbounds": outbounds,
 	}
 
-	// Enable Xray Observatory + Load Balancer + Auto-Failover whenever 2+ nodes are active
-	if len(outbounds) > 1 {
+	if req.Mode == "loadbalance" && len(outbounds) > 1 {
 		strat := req.LBStrategy
 		switch strat {
 		case "leastPing", "leastLoad", "roundRobin", "random":
@@ -766,10 +967,10 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 			fullCfg["burstObservatory"] = map[string]any{
 				"subjectSelector": []string{"proxy-"},
 				"pingConfig": map[string]any{
-					"destination":  req.ProbeURL,
-					"interval":     req.ProbeInterval,
-					"sampling":     3,
-					"timeout":      "5s",
+					"destination": req.ProbeURL,
+					"interval":    req.ProbeInterval,
+					"sampling":    3,
+					"timeout":     "5s",
 				},
 			}
 		} else {
@@ -797,6 +998,16 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 				},
 			},
 		}
+	} else {
+		fullCfg["routing"] = map[string]any{
+			"rules": []any{
+				map[string]any{
+					"type":        "field",
+					"inboundTag":  []string{"mc-local-socks"},
+					"outboundTag": "proxy-0",
+				},
+			},
+		}
 	}
 
 	_ = os.MkdirAll("/etc/mcontrol", 0750)
@@ -806,9 +1017,16 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if testOut, testErr := exec.Command(bin, "run", "-test", "-c", outboundCfgPath).CombinedOutput(); testErr != nil {
+		fail(w, http.StatusBadRequest, "Xray config validation failed: "+strings.TrimSpace(string(testOut)))
+		return
+	}
+
 	unitTxt := fmt.Sprintf(`[Unit]
 Description=MControl Master Isolated Outbound (Xray SOCKS5 127.0.0.1:%d)
 After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -830,15 +1048,31 @@ WantedBy=multi-user.target
 		fail(w, http.StatusInternalServerError, "start outbound failed: "+strings.TrimSpace(string(out)))
 		return
 	}
-	time.Sleep(850 * time.Millisecond)
-	active := isOutboundActive()
-	modeDesc := "Single Node"
-	if len(outbounds) > 1 {
-		modeDesc = fmt.Sprintf("%d Nodes (%s + Auto-Failover)", len(outbounds), req.LBStrategy)
+
+	active := false
+	for i := 0; i < 5; i++ {
+		time.Sleep(500 * time.Millisecond)
+		if isOutboundActive() {
+			active = true
+			break
+		}
+	}
+	if !active {
+		jlog, _ := exec.Command("journalctl", "-u", outboundUnit, "-n", "12", "--no-pager").CombinedOutput()
+		fail(w, http.StatusInternalServerError, "Xray started but SOCKS5 127.0.0.1:10808 did not come up:\n"+strings.TrimSpace(string(jlog)))
+		return
+	}
+
+	modeDesc := "Single Config"
+	if activeSingleName != "" {
+		modeDesc = "Single Config (" + activeSingleName + ")"
+	}
+	if req.Mode == "loadbalance" && len(outbounds) > 1 {
+		modeDesc = fmt.Sprintf("Load Balance • %d Nodes (%s)", len(outbounds), req.LBStrategy)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":           true,
-		"running":      active,
+		"running":      true,
 		"xray_version": xrayVersionString(),
 		"active_nodes": len(outbounds),
 		"socks_addr":   fmt.Sprintf("127.0.0.1:%d", outboundSocksPort),
@@ -856,15 +1090,17 @@ func (h *Handler) handleOutboundStop(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleOutboundTest(w http.ResponseWriter, r *http.Request) {
 	if !isOutboundActive() {
-		fail(w, http.StatusBadRequest, "Master Outbound service is not running. Save & Start it first.")
+		fail(w, http.StatusBadRequest, "Master Outbound service is not running on 127.0.0.1:10808. Save & Start it first.")
 		return
 	}
 	cmd := exec.Command("bash", "-c", fmt.Sprintf(`
+t_ip=$(curl -sS --max-time 8 --socks5-hostname 127.0.0.1:%d https://api.ipify.org 2>&1 || echo "FAILED")
 t_gh=$(curl -sS --max-time 8 --socks5-hostname 127.0.0.1:%d -o /dev/null -w "HTTP %%{http_code} | %%{time_total}s" https://api.github.com/zen 2>&1 || echo "FAILED")
 t_tg=$(curl -sS --max-time 8 --socks5-hostname 127.0.0.1:%d -o /dev/null -w "HTTP %%{http_code} | %%{time_total}s" https://api.telegram.org 2>&1 || echo "FAILED")
+echo "Exit IP     : $t_ip"
 echo "GitHub API  : $t_gh"
 echo "Telegram API: $t_tg"
-`, outboundSocksPort, outboundSocksPort))
+`, outboundSocksPort, outboundSocksPort, outboundSocksPort))
 	out, _ := cmd.CombinedOutput()
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "output": strings.TrimSpace(string(out))})
 }
@@ -950,7 +1186,7 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 	}
 
 	tmpCfg := map[string]any{
-		"log":       map[string]any{"loglevel": "none"},
+		"log":       map[string]any{"loglevel": "error"},
 		"inbounds":  inbounds,
 		"outbounds": outbounds,
 		"routing":   map[string]any{"rules": rules},
@@ -966,7 +1202,9 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 	_ = tmpFile.Close()
 	defer os.Remove(tmpPath)
 
+	var stderrBuf bytes.Buffer
 	cmd := exec.Command(bin, "run", "-c", tmpPath)
+	cmd.Stderr = &stderrBuf
 	if err := cmd.Start(); err != nil {
 		fail(w, http.StatusInternalServerError, "failed to start xray tester: "+err.Error())
 		return
@@ -978,7 +1216,23 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 		_ = cmd.Wait()
 	}()
 
-	time.Sleep(700 * time.Millisecond)
+	ready := false
+	for i := 0; i < 8; i++ {
+		time.Sleep(250 * time.Millisecond)
+		if c, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", items[0].port), 200*time.Millisecond); err == nil {
+			_ = c.Close()
+			ready = true
+			break
+		}
+	}
+	if !ready {
+		msg := strings.TrimSpace(stderrBuf.String())
+		if msg == "" {
+			msg = "Xray tester exited before opening SOCKS ports (check node URI parameters)"
+		}
+		fail(w, http.StatusBadRequest, "Xray delay tester failed: "+msg)
+		return
+	}
 
 	probeURL := cfg.ProbeURL
 	if probeURL == "" {

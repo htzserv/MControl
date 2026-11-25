@@ -4951,9 +4951,36 @@ body[data-navx="bottom"] #pwa-install-banner {
           <button class="btn btn-sky btn-sm" id="btn-ob-install" onclick="installXrayCore()">Install Xray Core</button>
         </div>
 
-        <div class="row2">
+        <!-- Operation Mode Picker: Single Active Config vs Load Balancing -->
+        <div class="field" style="margin-bottom:12px;">
+          <label>Outbound Operation Mode</label>
+          <input type="hidden" id="ob-mode" value="single">
+          <div class="role-picker" id="ob-mode-picker">
+            <div class="role-opt active" data-obm="single" onclick="pickOutboundMode('single')">🎯 Single Active Config</div>
+            <div class="role-opt" data-obm="loadbalance" onclick="pickOutboundMode('loadbalance')">⚖️ Load Balance &amp; Failover</div>
+          </div>
+        </div>
+
+        <!-- Dedicated Single Active Config Box -->
+        <div id="ob-single-box" style="margin-bottom:12px; padding:12px 14px; border-radius:min(var(--rc,14px),16px); background:color-mix(in srgb, var(--accent) 8%, var(--row)); border:1.5px solid color-mix(in srgb, var(--accent) 36%, var(--border));">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <strong style="font-size:.82rem; color:var(--accent);">🎯 Active Single Config</strong>
+            <span class="badge b-ok mono" id="ob-single-active-badge">None Selected</span>
+          </div>
+          <div class="field" style="margin-bottom:8px;">
+            <label>Select Active Node from Pool</label>
+            <select id="ob-active-node" onchange="selectActiveOutboundNode(this.value)"></select>
+          </div>
+          <div class="flexw" style="gap:8px;">
+            <input id="ob-quick-single-uri" class="mono" style="flex:1; min-width:200px;" placeholder="Or paste a single URI here (vless://, vmess://, trojan://, ss://, socks5://)">
+            <button type="button" class="btn btn-sky btn-sm" onclick="applyQuickSingleOutbound()">⚡ Set &amp; Start</button>
+          </div>
+        </div>
+
+        <!-- Load Balancing Options (only visible in loadbalance mode) -->
+        <div class="row2" id="ob-lb-opts" style="display:none;">
           <div class="field" style="margin-bottom:10px;">
-            <label>Load Balancing &amp; Auto-Failover Mode</label>
+            <label>Load Balancing &amp; Auto-Failover Strategy</label>
             <select id="ob-lb">
               <option value="leastPing">Least Ping + Auto-Failover (Recommended)</option>
               <option value="leastLoad">Least Load + Auto-Failover (Balanced)</option>
@@ -4981,9 +5008,10 @@ body[data-navx="bottom"] #pwa-install-banner {
         <div class="flexw" style="gap:8px;">
           <button class="btn btn-sky" id="btn-ob-save" onclick="saveMasterOutbound()">Save &amp; Start</button>
           <button class="btn btn-warn" id="btn-ob-test" onclick="testMasterOutbound()">Test Outbound</button>
+          <button class="btn btn-ghost" onclick="viewMasterOutboundLogs()">View Xray Logs</button>
           <button class="btn btn-danger" onclick="stopMasterOutbound()">Stop</button>
         </div>
-        <pre class="term" id="ob-out" style="height:90px; margin-top:12px; display:none;"></pre>
+        <pre class="term" id="ob-out" style="height:120px; margin-top:12px; display:none;"></pre>
       </div>
 
       <!-- 2. Subscriptions -->
@@ -8484,6 +8512,18 @@ function renderOutboundLists() {
   const nodes = OB_CFG.nodes || [];
   const enabledCount = nodes.filter(n => n.enabled).length;
   if ($('ob-nodes-cnt')) $('ob-nodes-cnt').textContent = enabledCount + ' / ' + nodes.length + ' active';
+  const actSel = $('ob-active-node'), actBadge = $('ob-single-active-badge');
+  if (actSel) {
+    actSel.innerHTML = nodes.length
+      ? nodes.map(n => `<option value="${esc(n.id)}" ${n.id === OB_CFG.active_node_id ? 'selected' : ''}>[${esc(n.proto)}] ${esc(n.name)} (${esc(n.address || '—')})${n.last_delay_ms > 0 ? ' • ' + n.last_delay_ms + 'ms' : ''}</option>`).join('')
+      : '<option value="">— No nodes yet (paste a config below or import a sub) —</option>';
+    const curNode = nodes.find(n => n.id === OB_CFG.active_node_id) || nodes[0];
+    if (curNode && !OB_CFG.active_node_id) OB_CFG.active_node_id = curNode.id;
+    if (actBadge) {
+      actBadge.textContent = curNode ? (curNode.proto + ' • ' + curNode.name) : 'None Selected';
+      actBadge.className = 'badge mono ' + (curNode ? 'b-iran' : 'b-miss');
+    }
+  }
   if (nodesBox) {
     const subMap = {};
     (OB_CFG.subs || []).forEach(s => { subMap[s.id] = s.name; });
@@ -8508,6 +8548,7 @@ function renderOutboundLists() {
         <div class="flexw" style="gap:6px; flex-shrink:0;">
           ${dBadge}
           <button class="btn btn-ghost btn-sm" title="Test Real Delay" onclick="testOutboundRealDelay('${esc(n.id)}')">⚡</button>
+          <button class="btn ${n.id === OB_CFG.active_node_id ? 'btn-sky' : 'btn-ghost'} btn-sm" style="padding:4px 9px; font-size:.7rem;" onclick="activateSingleOutboundNode('${esc(n.id)}')">${n.id === OB_CFG.active_node_id ? '✔ Active' : 'Use'}</button>
           <button class="btn btn-danger btn-sm" title="Remove" onclick="deleteOutboundNode(${idx})">✕</button>
         </div>
       </div>`;
@@ -8528,6 +8569,7 @@ async function loadMasterOutbound() {
   if ($('ob-fr')) $('ob-fr').checked = !!OB_CFG.use_foreign;
   if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
   if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
+  pickOutboundMode(OB_CFG.mode === 'loadbalance' ? 'loadbalance' : 'single');
 
   const b = $('ob-badge');
   if (b) {
@@ -8675,18 +8717,89 @@ function clearOutboundNodes() {
   renderOutboundLists();
 }
 
+function pickOutboundMode(m) {
+  const mode = (m === 'loadbalance') ? 'loadbalance' : 'single';
+  OB_CFG.mode = mode;
+  if ($('ob-mode')) $('ob-mode').value = mode;
+  document.querySelectorAll('#ob-mode-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.obm === mode));
+  if ($('ob-single-box')) $('ob-single-box').style.display = (mode === 'single') ? 'block' : 'none';
+  if ($('ob-lb-opts')) $('ob-lb-opts').style.display = (mode === 'loadbalance') ? 'grid' : 'none';
+}
+
+function selectActiveOutboundNode(id) {
+  OB_CFG.active_node_id = id;
+  renderOutboundLists();
+}
+
+async function activateSingleOutboundNode(id) {
+  OB_CFG.mode = 'single';
+  OB_CFG.active_node_id = id;
+  OB_CFG.enabled = true;
+  if ($('ob-en')) $('ob-en').checked = true;
+  pickOutboundMode('single');
+  renderOutboundLists();
+  await saveMasterOutbound();
+}
+
+async function applyQuickSingleOutbound() {
+  const inp = $('ob-quick-single-uri');
+  const uri = (inp && inp.value || '').trim();
+  if (!uri || !uri.includes('://')) {
+    toast('Paste a valid vless://, vmess://, trojan://, ss://, or socks5:// URI', true);
+    return;
+  }
+  const proto = uri.split('://')[0].toUpperCase();
+  let name = proto + ' Single', addr = '';
+  try {
+    if (proto !== 'VMESS') {
+      const u = new URL(uri);
+      addr = u.host || '';
+      if (u.hash && u.hash.length > 1) name = decodeURIComponent(u.hash.slice(1));
+      else if (addr) name = proto + ' • ' + addr;
+    }
+  } catch (e) {}
+  const newId = 's-' + Date.now();
+  OB_CFG.nodes.unshift({ id: newId, name, uri, proto, address: addr, source: 'manual', enabled: true });
+  OB_CFG.mode = 'single';
+  OB_CFG.active_node_id = newId;
+  OB_CFG.enabled = true;
+  if ($('ob-en')) $('ob-en').checked = true;
+  inp.value = '';
+  pickOutboundMode('single');
+  renderOutboundLists();
+  await saveMasterOutbound();
+}
+
+async function viewMasterOutboundLogs() {
+  const out = $('ob-out');
+  if (!out) return;
+  out.style.display = 'block';
+  out.textContent = 'Loading Xray systemd logs...';
+  const r = await api('api/outbound/logs');
+  out.textContent = r.ok ? (r.logs || 'No logs.') : (r.error || 'Failed to read logs');
+}
+
 async function saveMasterOutbound() {
   const btn = $('btn-ob-save'); btn.disabled = true; btn.textContent = 'Applying...';
+  const out = $('ob-out');
   try {
     OB_CFG.enabled = $('ob-en').checked;
+    OB_CFG.mode = ($('ob-mode') && $('ob-mode').value) || 'single';
+    if ($('ob-active-node') && $('ob-active-node').value) OB_CFG.active_node_id = $('ob-active-node').value;
     OB_CFG.use_github = $('ob-gh').checked;
     OB_CFG.use_telegram = $('ob-tg').checked;
     OB_CFG.use_foreign = $('ob-fr').checked;
     OB_CFG.lb_strategy = $('ob-lb').value;
     OB_CFG.probe_interval = $('ob-int').value;
     const r = await api('api/outbound/save', 'POST', OB_CFG);
-    if (r.ok) { toast(r.message || 'Master Outbound saved'); loadMasterOutbound(); }
-    else toast(r.error || 'Failed to save outbound', true);
+    if (r.ok) {
+      toast(r.message || 'Master Outbound saved');
+      if (out) { out.style.display = 'block'; out.textContent = r.message || 'Running'; }
+      loadMasterOutbound();
+    } else {
+      toast(r.error || 'Failed to save outbound', true);
+      if (out) { out.style.display = 'block'; out.textContent = r.error || 'Failed to start Xray'; }
+    }
   } finally { btn.disabled = false; btn.textContent = 'Save & Start'; }
 }
 

@@ -534,6 +534,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/outbound/save", h.auth(h.handleOutboundSave))
 	mux.HandleFunc("POST /api/outbound/stop", h.auth(h.handleOutboundStop))
 	mux.HandleFunc("POST /api/outbound/test", h.auth(h.handleOutboundTest))
+	mux.HandleFunc("GET /api/outbound/logs", h.auth(h.handleOutboundLogs))
 	mux.HandleFunc("POST /api/outbound/install", h.auth(h.handleOutboundInstallCore))
 	mux.HandleFunc("POST /api/outbound/sub/fetch", h.auth(h.handleOutboundFetchSub))
 	mux.HandleFunc("POST /api/outbound/realdelay", h.auth(h.handleOutboundRealDelay))
