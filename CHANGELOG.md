@@ -1,6 +1,14 @@
 # Changelog
 
 ## 1.4.6
+- **Peer Agent v4 Ultimate (6 Upgrades + 5 Fixed Ports):**
+  - Fixed 5-port order (preserving saved port & auto-discovered running agent first): `84` (2-digit) → `847` (3-digit) → `7483` (4-digit) → `24819` (5-digit) → `2054` (always last).
+  - Auto-Discovery of existing `mcontrol-agent-*.service` ports before creating new ones.
+  - Standalone zero-dependency Go static agent (`cmd/mcontrol-agent`) with instant Python v4 fallback.
+  - Non-blocking background 2s stats cache (sub-ms `/stats`).
+  - TLS Certificate Pinning (SHA-256 fingerprint verified on every request).
+  - Auto-Route Detection (automatically switches to Master Outbound Xray if direct path is blocked) + Reverse Heartbeat Push (`/_mc_agent/heartbeat`).
+- **Random Peer Ports (No 2054):** pairing preserves any existing `AgentPort`, then generates 3 crypto-random ports in `20000–32000` (outside Linux's ephemeral range `32768–60999`) so common port `2054` collisions are eliminated.
 - **Peer Agent v3 (Master-IP Key Sync):** each paired panel registers `master_ip|peer_code` in `/etc/mcontrol-agent/peers-<port>.txt`. Multiple Master servers share one agent simultaneously, and if a Master is wiped and reinstalled on the same IP, pairing automatically syncs and reuses its previous key (`SYNCED_KEY`).
 - **ParsPack S3 Mirror Sync Fix:** restored clean S3 sync with 3x retry in `.github/workflows/release.yml` (removed `aws configure set` / `continue-on-error` masking issues).
 - **Multi-panel Peer Agent (agent v3):** one server can now be paired with several MControl panels (even different versions) at the same time. The agent accepts the unit's `MC_PEER` plus every code in `/etc/mcontrol-agent/peers-<port>.txt`. Pairing from a second panel *adds* its code and keeps the first panel's code (read from the existing unit / legacy `mcontrol-agent.service`) instead of overwriting it.

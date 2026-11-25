@@ -93,6 +93,7 @@ func New(store *db.Store, currentPort string) *Handler {
 		h.setupToken = hex.EncodeToString(b)
 		log.Printf("FIRST-TIME SETUP TOKEN: %s", h.setupToken)
 	}
+	h.loadAgentCertPins()
 	return h
 }
 
@@ -1611,6 +1612,107 @@ func (h *Handler) handleServerSpeedtest(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "speed": sr})
 }
 
+func (h *Handler) loadAgentCertPins() {
+	if h.store == nil {
+		return
+	}
+	raw := h.store.GetSetting("agent_cert_pins_json")
+	if raw == "" {
+		return
+	}
+	m := map[string]string{}
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		return
+	}
+	for k, fp := range m {
+		parts := strings.Split(k, ":")
+		if len(parts) >= 2 {
+			pt, _ := strconv.Atoi(parts[len(parts)-1])
+			host := strings.Join(parts[:len(parts)-1], ":")
+			if host != "" && pt > 0 && fp != "" {
+				sshclient.SetAgentCertPin(host, pt, fp)
+			}
+		}
+	}
+}
+
+func (h *Handler) saveAgentCertPin(host string, port int, fp string) {
+	if h.store == nil || host == "" || port <= 0 || fp == "" {
+		return
+	}
+	sshclient.SetAgentCertPin(host, port, fp)
+	m := map[string]string{}
+	if raw := h.store.GetSetting("agent_cert_pins_json"); raw != "" {
+		_ = json.Unmarshal([]byte(raw), &m)
+	}
+	m[strings.ToLower(strings.TrimSpace(host))+":"+strconv.Itoa(port)] = strings.ToLower(strings.TrimSpace(fp))
+	if b, err := json.Marshal(m); err == nil {
+		_ = h.store.SetSetting("agent_cert_pins_json", string(b))
+	}
+}
+
+func (h *Handler) masterBaseURL() string {
+	dir := h.store.DataDir()
+	scheme := "http"
+	if _, e1 := os.Stat(filepath.Join(dir, "tls.crt")); e1 == nil {
+		if _, e2 := os.Stat(filepath.Join(dir, "tls.key")); e2 == nil {
+			scheme = "https"
+		}
+	}
+	host := h.masterPublicIP()
+	if host == "" {
+		return ""
+	}
+	port := h.store.GetSettings().PanelPort
+	if port == "" {
+		port = h.currentPort
+	}
+	if port == "" {
+		port = "2053"
+	}
+	return fmt.Sprintf("%s://%s:%s", scheme, host, port)
+}
+
+// ServeAgentHeartbeat accepts reverse-push telemetry from Peer Agents v4 behind strict firewalls.
+func (h *Handler) ServeAgentHeartbeat(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	code := strings.TrimSpace(r.Header.Get("X-Peer-Code"))
+	if code == "" {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	list, err := h.store.ListServers()
+	if err != nil {
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
+	var matched *db.Server
+	for _, item := range list {
+		if item.AuthMode != "peer" {
+			continue
+		}
+		if full, e := h.store.GetServerWithSecret(item.ID); e == nil && full.PeerCode == code {
+			matched = full
+			break
+		}
+	}
+	if matched == nil {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	var pr sshclient.ProbeResult
+	if err := json.NewDecoder(io.LimitReader(r.Body, 16384)).Decode(&pr); err != nil {
+		http.Error(w, "bad json", http.StatusBadRequest)
+		return
+	}
+	pr.Online = true
+	h.applyProbe(matched, pr)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (h *Handler) masterPublicIP() string {
 	stats := sysinfo.Collect()
 	if ip := strings.TrimSpace(stats.IPv4); ip != "" && ip != "N/A" {
@@ -1639,7 +1741,16 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, 12)
 	_, _ = rand.Read(b)
 	peerCode := "MC-" + strings.ToUpper(hex.EncodeToString(b))
-	// Multi-port fallback list: keep previous port if set, then 3 fixed unrelated ports
+	stCfg := h.store.GetSettings()
+	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
+	target := h.targetOfSrv(srv)
+	socksPx := h.serverSocksProxy(srv)
+	autoSwitchedOutbound := false
+
+	// Multi-port list:
+	// 1) Existing saved srv.AgentPort (if any)
+	// 2) Auto-discovered running mcontrol-agent-<port>.service on server (for multi-panel & IP-sync!)
+	// 3) 5 fixed ports: 84 (2-digit), 847 (3-digit), 7483 (4-digit), 24819 (5-digit), and 2054 (always last)
 	candPorts := []int{}
 	addPort := func(pt int) {
 		if pt <= 0 || pt > 65535 {
@@ -1653,14 +1764,16 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		candPorts = append(candPorts, pt)
 	}
 	addPort(srv.AgentPort)
-	addPort(2054)
-	addPort(18443)
-	addPort(29443)
-
-	stCfg := h.store.GetSettings()
-	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	target := h.targetOfSrv(srv)
-	socksPx := h.serverSocksProxy(srv)
+	// Auto-discover any already-running MControl Peer Agent port(s) on this server
+	discRes := sshclient.Run(target, `systemctl list-units --type=service --state=running --no-legend 'mcontrol-agent*.service' 2>/dev/null | grep -oE 'mcontrol-agent-[0-9]+' | cut -d- -f3`, 8*time.Second, 10*time.Second)
+	for _, ln := range strings.Split(discRes.Output, "\n") {
+		if pt, err := strconv.Atoi(strings.TrimSpace(ln)); err == nil && pt > 0 && pt <= 65535 {
+			addPort(pt)
+		}
+	}
+	for _, fixedPt := range []int{84, 847, 7483, 24819, 2054} {
+		addPort(fixedPt)
+	}
 
 	probeWithRetry := func(port int, code string) sshclient.ProbeResult {
 		var pr sshclient.ProbeResult
@@ -1673,10 +1786,20 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 				return pr
 			}
 		}
+		// Auto-Route Detection: if direct probe failed and Master Outbound (Xray) is active, try via Outbound!
+		if socksPx == "" && isOutboundActive() {
+			obPx := fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+			if pr2 := sshclient.ProbePeer(srv.Host, port, code, obPx); pr2.Online {
+				socksPx = obPx
+				autoSwitchedOutbound = true
+				return pr2
+			}
+		}
 		return pr
 	}
 
 	masterIP := h.masterPublicIP()
+	masterURL := h.masterBaseURL()
 	chosenPort := 0
 	keySynced := false
 	var p sshclient.ProbeResult
@@ -1686,7 +1809,9 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		// Preserve any port already occupied by another panel's agent unless it is this server's own saved port
 		skipBusy := (srv.AgentPort <= 0 || tryPort != srv.AgentPort)
 		tryCode := peerCode
-		res := sshclient.InstallPeerAgentV3(target, masterIP, tryCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
+		// Temporarily clear pin for fresh pairing on tryPort
+		sshclient.SetAgentCertPin(srv.Host, tryPort, "")
+		res := sshclient.InstallPeerAgentV4(target, masterIP, masterURL, tryCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
 		joined := false
 		syncedHere := false
 		if idx := strings.Index(res.Output, "SYNCED_KEY:"); idx >= 0 {
@@ -1758,12 +1883,22 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 	}
 
 	if chosenPort == 0 || !p.Online {
-		fail(w, http.StatusBadGateway, fmt.Sprintf("peer agent failed on all ports (%s). If the agent is active, open TCP 2054 / 18443 / 29443 in the provider (cloud) firewall for the panel IP, or enable Via Master Outbound for this server", strings.Join(portNotes, " | ")))
+		portStrs := make([]string, 0, len(candPorts))
+		for _, pt := range candPorts {
+			portStrs = append(portStrs, strconv.Itoa(pt))
+		}
+		fail(w, http.StatusBadGateway, fmt.Sprintf("peer agent failed on all ports (%s). If the agent is active, open TCP %s in the provider (cloud) firewall for the panel IP, or enable Via Master Outbound for this server", strings.Join(portNotes, " | "), strings.Join(portStrs, " / ")))
 		return
 	}
 	if err := h.store.SetServerPeerMode(id, peerCode, chosenPort); err != nil {
 		fail(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if autoSwitchedOutbound {
+		_ = h.store.SetServerUseOutbound(id, true)
+	}
+	if p.AgentCertFP != "" {
+		h.saveAgentCertPin(srv.Host, chosenPort, p.AgentCertFP)
 	}
 	h.applyProbe(srv, p)
 	srcUsed := "direct"
@@ -1774,9 +1909,12 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 	if keySynced {
 		syncNote = " (Synced previous Master-IP key)"
 	}
-	msg := fmt.Sprintf("Paired via Peer v3 on port :%d%s! SSH password wiped from database.", chosenPort, syncNote)
+	if autoSwitchedOutbound {
+		syncNote += " • Auto-Outbound"
+	}
+	msg := fmt.Sprintf("Paired via Peer v4 on port :%d%s! SSH password wiped from database.", chosenPort, syncNote)
 	if isIran {
-		msg = fmt.Sprintf("Paired via Peer v3 (Iran Mirror · :%d)%s! SSH password wiped from database.", chosenPort, syncNote)
+		msg = fmt.Sprintf("Paired via Peer v4 (Iran Mirror · :%d)%s! SSH password wiped from database.", chosenPort, syncNote)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":           true,

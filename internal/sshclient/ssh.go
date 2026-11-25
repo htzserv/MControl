@@ -3,8 +3,11 @@ package sshclient
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"errors"
@@ -47,6 +50,7 @@ type ProbeResult struct {
 	CoreInstalled  bool   `json:"core_installed"`
 	CoreVersion    string `json:"core_version"`
 	HostKey        string `json:"host_key"`
+	AgentCertFP    string `json:"agent_cert_fp,omitempty"`
 	HostKeyChanged bool   `json:"host_key_changed"`
 	Error          string `json:"error,omitempty"`
 }
@@ -422,10 +426,48 @@ func RunSpeedtest(t Target) SpeedResult {
 	return ParseSpeedOutput(res.Output)
 }
 
-func peerClient(timeout time.Duration, socksProxy string) *http.Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+var (
+	pinnedCertMu    sync.RWMutex
+	pinnedAgentCert = map[string]string{}
+)
+
+func pinKey(host string, port int) string {
+	return strings.ToLower(strings.TrimSpace(host)) + ":" + strconv.Itoa(port)
+}
+
+func SetAgentCertPin(host string, port int, fp string) {
+	fp = strings.ToLower(strings.TrimSpace(fp))
+	pinnedCertMu.Lock()
+	defer pinnedCertMu.Unlock()
+	if fp == "" {
+		delete(pinnedAgentCert, pinKey(host, port))
+	} else {
+		pinnedAgentCert[pinKey(host, port)] = fp
 	}
+}
+
+func getAgentCertPin(host string, port int) string {
+	pinnedCertMu.RLock()
+	defer pinnedCertMu.RUnlock()
+	return pinnedAgentCert[pinKey(host, port)]
+}
+
+func peerClient(timeout time.Duration, socksProxy, expectedFP string) *http.Client {
+	tlsCfg := &tls.Config{InsecureSkipVerify: true}
+	if expectedFP != "" {
+		tlsCfg.VerifyPeerCertificate = func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+			if len(rawCerts) == 0 {
+				return errors.New("agent presented no TLS certificate")
+			}
+			sum := sha256.Sum256(rawCerts[0])
+			got := hex.EncodeToString(sum[:])
+			if !strings.EqualFold(got, expectedFP) {
+				return errors.New("agent TLS certificate pin mismatch")
+			}
+			return nil
+		}
+	}
+	tr := &http.Transport{TLSClientConfig: tlsCfg}
 	if socksProxy != "" {
 		tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return dialViaSOCKS5(socksProxy, addr, timeout)
@@ -442,7 +484,7 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 	if len(socksProxy) > 0 {
 		px = socksProxy[0]
 	}
-	client := peerClient(timeout, px)
+	client := peerClient(timeout, px, getAgentCertPin(host, agentPort))
 	hostPort := net.JoinHostPort(host, strconv.Itoa(agentPort))
 	var lastErr error
 	for _, scheme := range []string{"https", "http"} {
@@ -487,6 +529,10 @@ func ProbePeer(host string, agentPort int, peerCode string, socksProxy ...string
 	var pr ProbeResult
 	if err := json.NewDecoder(resp.Body).Decode(&pr); err != nil {
 		return ProbeResult{Online: false, CPU: "---", RAM: "---", Uptime: "---", Error: "invalid agent JSON"}
+	}
+	if resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+		sum := sha256.Sum256(resp.TLS.PeerCertificates[0].Raw)
+		pr.AgentCertFP = hex.EncodeToString(sum[:])
 	}
 	pr.Online = true
 	return pr
@@ -555,12 +601,20 @@ func PeerAgentInstallScriptFull(peerCode, dropCode string, agentPort int, mirror
 //   finds the existing `master_ip|peer_code` entry and returns `SYNCED_KEY:<existing_code>` so
 //   the new Master adopts and syncs the exact previous key seamlessly!
 func PeerAgentInstallScriptV3(masterIP, peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
+	return PeerAgentInstallScriptV4(masterIP, "", peerCode, dropCode, agentPort, mirrorURL, isIran, skipIfPortBusy)
+}
+
+func PeerAgentInstallScriptV4(masterIP, masterURL, peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
 	masterIP = strings.TrimSpace(masterIP)
 	svcName := fmt.Sprintf("mcontrol-agent-%d.service", agentPort)
 	mirrorClean := strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
+	agentBinBase := "https://github.com/htzserv/MControl/releases/download/beta-latest"
+	if isIran && mirrorClean != "" {
+		agentBinBase = mirrorClean + "/beta-latest"
+	}
 	skipFlag := "0"
 	if skipIfPortBusy {
 		skipFlag = "1"
@@ -607,7 +661,7 @@ if [ -n "$BUSY_PIDS" ]; then
       [ -d "/proc/$pid" ] || continue
       comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
       cmdline=$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
-      if echo "$cmdline" | grep -q 'mcontrol-agent' && grep -q 'MASTER_IP_SYNC' /usr/local/bin/mcontrol-agent.py 2>/dev/null; then
+      if echo "$cmdline" | grep -q 'mcontrol-agent' && ( [ -x /usr/local/bin/mcontrol-agent ] || grep -q 'MASTER_IP_SYNC' /usr/local/bin/mcontrol-agent.py 2>/dev/null ); then
         mkdir -p /etc/mcontrol-agent
         PF="/etc/mcontrol-agent/peers-${AGENT_PORT}.txt"
         touch "$PF"; chmod 600 "$PF" 2>/dev/null || true
@@ -717,12 +771,13 @@ if command -v openssl >/dev/null 2>&1; then
 fi
 cat <<'PYEOF' > /usr/local/bin/mcontrol-agent.py
 #!/usr/bin/env python3
-import http.server, json, os, ssl, subprocess, time
+import http.server, json, os, ssl, subprocess, threading, time, urllib.request
 
 PEER = os.environ.get("MC_PEER", "")
 MASTER_IP = os.environ.get("MC_MASTER_IP", "")
+MASTER_URL = os.environ.get("MC_MASTER_URL", "").rstrip("/")
 PORT = int(os.environ.get("MC_PORT", "2054"))
-AGENT_VER = "v3"
+AGENT_VER = "v4-py"
 MASTER_IP_SYNC = True
 PEERS_FILE = "/etc/mcontrol-agent/peers-" + str(PORT) + ".txt"
 
@@ -850,7 +905,7 @@ class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if not peer_ok(self.headers.get("X-Peer-Code", "")):
             self.send_response(403); self.end_headers(); return
-        data = run_speed() if self.path.startswith("/speedtest") else read_stats()
+        data = run_speed() if self.path.startswith("/speedtest") else get_cached_stats()
         self._send_json(200, data)
     def do_POST(self):
         if not peer_ok(self.headers.get("X-Peer-Code", "")):
@@ -875,6 +930,45 @@ class H(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(200, {"output": "", "exit": 1, "error": str(e)})
 
+_CACHED_STATS = None
+_STATS_LOCK = threading.Lock()
+
+def get_cached_stats():
+    with _STATS_LOCK:
+        if _CACHED_STATS is not None:
+            return _CACHED_STATS
+    st = read_stats()
+    with _STATS_LOCK:
+        globals()["_CACHED_STATS"] = st
+    return st
+
+def _bg_stats_loop():
+    while True:
+        try:
+            st = read_stats()
+            with _STATS_LOCK:
+                globals()["_CACHED_STATS"] = st
+        except Exception:
+            pass
+        time.sleep(2.0)
+
+def _bg_heartbeat_loop():
+    if not MASTER_URL or not PEER:
+        return
+    ctx_hb = ssl._create_unverified_context()
+    url = MASTER_URL + "/_mc_agent/heartbeat"
+    while True:
+        time.sleep(10.0)
+        try:
+            data = json.dumps(get_cached_stats()).encode()
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json", "X-Peer-Code": PEER}, method="POST")
+            urllib.request.urlopen(req, timeout=6, context=ctx_hb).read()
+        except Exception:
+            pass
+
+threading.Thread(target=_bg_stats_loop, daemon=True).start()
+threading.Thread(target=_bg_heartbeat_loop, daemon=True).start()
+
 class ReusableThreadingHTTPServer(http.server.ThreadingHTTPServer):
     allow_reuse_address = True
 srv = ReusableThreadingHTTPServer(("0.0.0.0", PORT), H)
@@ -897,18 +991,31 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 Environment="MC_MASTER_IP=%s"
+Environment="MC_MASTER_URL=%s"
 Environment="MC_PEER=${EFFECTIVE_CODE}"
 Environment="MC_PORT=%d"
 ExecStartPre=-/bin/bash -c 'P=${MC_PORT:-2054}; if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then ufw allow ${P}/tcp >/dev/null 2>&1 || true; elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then firewall-cmd --add-port=${P}/tcp >/dev/null 2>&1 || true; elif command -v iptables >/dev/null 2>&1; then iptables -C INPUT -p tcp --dport ${P} -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport ${P} -j ACCEPT 2>/dev/null || true; fi'
-ExecStart=__PYBIN__ /usr/local/bin/mcontrol-agent.py
+ExecStart=__AGENT_EXEC__
 Restart=always
 RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
-PYBIN=$(command -v python3 || echo /usr/bin/python3)
-sed -i "s|__PYBIN__|${PYBIN}|g" "/etc/systemd/system/%s"
+ARCH=$(uname -m 2>/dev/null || echo x86_64)
+case "$ARCH" in aarch64|arm64) ARCH="arm64" ;; *) ARCH="amd64" ;; esac
+AGENT_EXEC="$(command -v python3 || echo /usr/bin/python3) /usr/local/bin/mcontrol-agent.py"
+if [ -x /usr/local/bin/mcontrol-agent ]; then
+  AGENT_EXEC="/usr/local/bin/mcontrol-agent"
+elif command -v curl >/dev/null 2>&1 && [ -n "%s" ]; then
+  if curl -fsSL --connect-timeout 5 --max-time 20 "%s/mcontrol-agent-linux-${ARCH}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then
+    chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent
+    AGENT_EXEC="/usr/local/bin/mcontrol-agent"
+  else
+    rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true
+  fi
+fi
+sed -i "s|__AGENT_EXEC__|${AGENT_EXEC}|g" "/etc/systemd/system/%s"
 systemctl daemon-reload
 systemctl enable "%s"
 systemctl restart "%s"
@@ -919,7 +1026,7 @@ for _i in 1 2 3 4 5 6; do
   sleep 0.5
 done
 systemctl is-active "%s"
-`, mirrorFetch, svcName, agentPort, masterIP, agentPort, svcName, svcName, svcName, svcName, svcName)
+`, mirrorFetch, svcName, agentPort, masterIP, strings.TrimRight(strings.TrimSpace(masterURL), "/"), agentPort, agentBinBase, agentBinBase, svcName, svcName, svcName, svcName, svcName)
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
@@ -935,5 +1042,9 @@ func InstallPeerAgentPreserveBusy(t Target, peerCode string, agentPort int, mirr
 }
 
 func InstallPeerAgentV3(t Target, masterIP, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
-	return Run(t, PeerAgentInstallScriptV3(masterIP, peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 45*time.Second)
+	return Run(t, PeerAgentInstallScriptV4(masterIP, "", peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 50*time.Second)
+}
+
+func InstallPeerAgentV4(t Target, masterIP, masterURL, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
+	return Run(t, PeerAgentInstallScriptV4(masterIP, masterURL, peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 50*time.Second)
 }

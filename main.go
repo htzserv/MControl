@@ -130,6 +130,10 @@ func main() {
 			saasMgr.ServeDist(w, r)
 			return
 		}
+		if r.URL.Path == "/_mc_agent/heartbeat" {
+			apiHandler.ServeAgentHeartbeat(w, r)
+			return
+		}
 		if r.URL.Path == "/status" || strings.HasPrefix(r.URL.Path, "/status/") || r.URL.Path == "/api/public/status" || strings.HasPrefix(r.URL.Path, "/api/public/status/") {
 			saasMgr.ServePublicStatus(w, r)
 			return

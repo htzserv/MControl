@@ -814,6 +814,15 @@ func (s *Store) SetServerPeerMode(id int64, peerCode string, agentPort int) erro
 	return err
 }
 
+func (s *Store) SetServerUseOutbound(id int64, use bool) error {
+	v := 0
+	if use {
+		v = 1
+	}
+	_, err := s.db.Exec("UPDATE servers SET use_outbound=? WHERE id=?", v, id)
+	return err
+}
+
 func (s *Store) SaveDefaults(user string, port int, pass string, clearPass bool, savedPorts string) error {
 	user = strings.TrimSpace(user)
 	if user == "" {
