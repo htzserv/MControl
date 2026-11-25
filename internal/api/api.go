@@ -453,6 +453,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/probe", h.auth(h.handleProbeServer))
 	mux.HandleFunc("POST /api/servers/{id}/ping", h.auth(h.handlePingServer))
 	mux.HandleFunc("POST /api/servers/probe-all", h.auth(h.handleProbeAll))
+	mux.HandleFunc("POST /api/servers/ping-all", h.auth(h.handlePingAllServers))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/unpair", h.auth(h.handleUnpairPeer))
@@ -1181,6 +1182,38 @@ func (h *Handler) handlePingServer(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = h.store.UpdateServerPings(id, pingMs, obPingMs)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ping_ms": pingMs, "outbound_ping_ms": obPingMs})
+}
+
+func (h *Handler) handlePingAllServers(w http.ResponseWriter, r *http.Request) {
+	list, err := h.store.ListServers()
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	sem := make(chan struct{}, 8)
+	var wg sync.WaitGroup
+	for _, item := range list {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(id int64) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			srv, e := h.store.GetServerWithSecret(id)
+			if e != nil {
+				return
+			}
+			socksPx := h.serverSocksProxy(srv)
+			pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
+			obPingMs := ""
+			if socksPx != "" {
+				obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
+			}
+			_ = h.store.UpdateServerPings(id, pingMs, obPingMs)
+		}(item.ID)
+	}
+	wg.Wait()
+	updated, _ := h.store.ListServers()
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "servers": updated})
 }
 
 func (h *Handler) handleProbeAll(w http.ResponseWriter, r *http.Request) {

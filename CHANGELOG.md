@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.2
+- **Stable Release `v1.0.2`:**
+  - **Dynamic Peer Version Badge (`PEER V4`):** replaced the hardcoded `PEER V2` badge with dynamic version detection (`PEER V4` / `PEER V3` / `PEER V2` from `core_version` with agent tooltip).
+  - **Quick Terminal Bubble Button (`🖥️ Term`) in Server Header:** added a one-click pill bubble button right next to `PEER V4` / `OUTBOUND` so you can launch Terminal without expanding the server card.
+  - **Ping All (`↻ Ping All`):** added `POST /api/servers/ping-all` and a toolbar button to refresh direct Iran + Outbound pings across all servers in parallel.
+  - **Single-Line Header Ping Layout:** prevented the manual ping `↻` button from wrapping onto a second line below the server IP.
+
+
 ## 1.0.1
 - **Official Public Release (`v1.0.1`):** consolidated Peer Agent v4 (Go static binary + Python fallback, Master-IP key sync, 5 fixed ports, TLS cert pinning, reverse heartbeat), Master Outbound Xray Core (Single Active Config + Load Balance + Iran Mirror bundle), Datacenter Cloud Hub (Hetzner, DigitalOcean, Linode, OVHcloud, YottaSrc + OS Rebuild & Peer FW), MDesign PWA, and Advanced 4-mode Server Delete.
 - **Dual Ping (Direct Iran `🇮🇷` + Outbound `🚀`):** displays direct ICMP/TCP latency from Master alongside true end-to-end RTT via Master Outbound (Xray SOCKS5) with dynamic latency colors and 1-click manual Ping (`↻`).

@@ -3827,6 +3827,22 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
 .srv-dd-item.is-danger:hover { background: color-mix(in srgb, var(--red) 15%, transparent); color: var(--red); }
 .srv-dd-sep { height: 1px; background: var(--border); margin: 3px 6px; opacity: .75; }
 
+
+/* ── Quick Action Bubble Button next to Peer Badge in Header Row ── */
+.hdr-bubble-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 999px; font-size: .68rem; font-weight: 800;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent); cursor: pointer; line-height: 1.35; white-space: nowrap;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.hdr-bubble-btn:hover {
+  background: var(--accent); color: var(--on-accent, #fff);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4219,7 +4235,7 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.0.1</span>
+      <span class="mono" id="nav-ver-lbl">v1.0.2</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -4432,6 +4448,7 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
         <div class="flexw">
           <button class="btn btn-sky" id="btn-live-ov" onclick="toggleLiveServers()">LIVE: ON</button>
           <button class="btn btn-ghost" onclick="openSSLSyncModal()">🔒 SSL Sync</button>
+          <button class="btn btn-ghost" id="btn-ping-all" onclick="pingAllServers()">↻ Ping All</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
         </div>
@@ -7138,6 +7155,7 @@ function applyLang() {
   if ($('login-lang')) $('login-lang').textContent = lang === 'fa' ? 'EN' : 'FA';
   $('srv-modal-title').textContent = editId ? t('modal_edit') : t('modal_add');
   if (typeof syncPwaLabels === 'function') syncPwaLabels();
+  if ($('btn-ping-all')) $('btn-ping-all').textContent = (lang === 'fa') ? '↻ پینگ همه' : '↻ Ping All';
   renderNav(); renderThemes(); renderStudio(); renderPresets(); renderServers(); applyTheme();
 }
 function setLang(l) { lang = (l === 'fa') ? 'fa' : 'en'; ls.set('mc_lang', lang); applyLang(); }
@@ -7268,6 +7286,18 @@ function countryColor(cc) {
   return CC_COLORS[c] || '';
 }
 
+function peerModeBadge(s) {
+  if (s.auth_mode !== 'peer') return '<span class="badge b-miss">SSH</span>';
+  const cv = String(s.core_version || '').toLowerCase();
+  let lbl = 'PEER V4';
+  if (cv.includes('v4-go')) lbl = 'PEER V4';
+  else if (cv.includes('v4')) lbl = 'PEER V4';
+  else if (cv.includes('v3')) lbl = 'PEER V3';
+  else if (cv.includes('v2')) lbl = 'PEER V2';
+  const tip = cv ? ('Agent: ' + s.core_version) : 'MControl Peer Agent v4';
+  return `<span class="badge b-iran mono" title="${esc(tip)}">${lbl}</span>`;
+}
+
 function pingBadgeClass(val) {
   const s = String(val || '').trim();
   const m = s.match(/([0-9]+(?:\.[0-9]+)?)/);
@@ -7310,9 +7340,9 @@ function renderServerCard(s) {
           <span>CPU <b style="color:var(--accent);">${esc(s.cpu || '0%')}</b> • RAM <b style="color:var(--pink);">${esc(s.ram || '0%')}</b></span>
         </div>
       </div>
-      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}<button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" onclick="event.stopPropagation(); manualPingServer(${id})">↻</button></div>
+      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}<button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" onclick="event.stopPropagation(); manualPingServer(${id})">↻</button></div>
       <div class="srv-col-hide mono" style="font-size:.78rem; color:var(--muted);">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
-      <div class="srv-col-hide" style="display:flex; gap:5px; flex-wrap:wrap;">${s.auth_mode === 'peer' ? '<span class="badge b-iran">PEER V2</span>' : '<span class="badge b-miss">SSH</span>'}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}</div>
+      <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" title="${lang === 'fa' ? 'باز کردن سریع ترمینال' : 'Quick Terminal'}" onclick="event.stopPropagation(); openWebTerm(${id})">🖥️ ${lang === 'fa' ? 'ترمینال' : 'Term'}</button></div>
       <div style="display:flex; align-items:center; gap:6px;"><span class="chev">▾</span></div>
     </div>
 
@@ -9930,6 +9960,25 @@ function openSrvDropdown(ev, id, group, btn) {
   m.style.left = left + 'px';
 }
 
+async function pingAllServers() {
+  const btn = $('btn-ping-all');
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if (btn) { btn.disabled = true; btn.textContent = fa ? '↻ در حال پینگ...' : '↻ Pinging...'; }
+  document.querySelectorAll('[data-srv-ping-btn]').forEach(b => b.classList.add('spinning'));
+  try {
+    const r = await api('api/servers/ping-all', 'POST');
+    if (r.ok && r.servers) {
+      SERVERS = r.servers;
+      renderServers();
+      toast(fa ? '✔ پینگ تمام سرورها بروزرسانی شد!' : '✔ All servers pinged!');
+    } else {
+      toast((r && r.error) || 'Ping All failed', true);
+    }
+  } finally {
+    document.querySelectorAll('[data-srv-ping-btn]').forEach(b => b.classList.remove('spinning'));
+    if (btn) { btn.disabled = false; btn.textContent = fa ? '↻ پینگ همه' : '↻ Ping All'; }
+  }
+}
 async function manualPingServer(id) {
   const btns = document.querySelectorAll(`[data-srv-ping-btn="${id}"]`);
   btns.forEach(b => b.classList.add('spinning'));
