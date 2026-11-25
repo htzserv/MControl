@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.1
+- **Stable Release `v1.5.1`:**
+  - **Reliable GitHub Releases (`gh` CLI):** replaced `softprops/action-gh-release@v2` (which failed with parallel asset delete/upload errors under Node 24) with sequential `gh release upload --clobber` + 3x retry, added `mcontrol-agent-linux-amd64/arm64` (+ `.sha256`) to GitHub Releases, and hardened ParsPack S3 sync (`max_concurrent_requests 1` + per-file fallback).
+  - **Fixed `openSrvModal` Crash:** removed unguarded `$('s-cred-mode-wrap')` DOM reference in Add/Edit Server modal and wired newly created SSH profiles to auto-fill Step 2 immediately.
+  - **Full Peer Agent v4 Rollout:** upgraded `Update Peer Agent`, `Rotate Key`, and `Canary Rollout` to deploy `PeerAgentInstallScriptV4` with `MC_MASTER_URL` reverse heartbeat.
+  - **Theme Engine, Floating Bar & Xray Hub Polish:** decoupled Design vs. Color selection (+ 12 structural theme designs), 0.5s long-press / right-click inline top-bar tab editor (DB-synced across devices), horizontally centered page toolbars, unified Xray Core UI with separate ON/OFF Subscriptions & Load Balance toggle cards, Reverse Ping (`↩️`), Multi-Iran Reachability Check, Datacenter Auto-Pair, and Master Local Terminal with quick snippets.
+
+
 ## 1.5.0
 - **Customizable Top Navigation Tabs + Settings All-Sections Hub + Local Master Terminal:** added an *Edit Top Navigation Tabs* studio inside Theme Studio (drag-and-drop or ▲/▼ reorder, toggle any section like Themes, Outbound, Telegram Bot, Profiles, Master Terminal, or Update Center on/off), added an *All Sections & Tabs* bubble hub inside Settings so every feature stays 1 click away even when hidden from the top bar, and added a Local Master Server Terminal button (`POST /api/local/exec`) inside the top-right collapsible utility bar.
 - **Responsive Server Rows, Reverse Ping (`↩️`) & Upgraded Add-Server Wizard:** fixed desktop/tablet server header overlap with a clean flex layout, added Reverse Ping (`Server → Iran Master`), added an automatic IPv6 slide-down drawer in Add Server Step 1 (`GET /api/servers/resolve-ipv6`), and streamlined Step 2 into 3 clean rows (Port + Auth, Username with automatic Saved Profiles dropdown, Password with Show/Hide eye toggle).

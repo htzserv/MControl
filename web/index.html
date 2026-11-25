@@ -4610,7 +4610,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.5.0</span>
+      <span class="mono" id="nav-ver-lbl">v1.5.1</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -8459,7 +8459,7 @@ function openSrvModal(id) {
   if ($('ed-tw-user')) $('ed-tw-user').value = (s && s.username) ? s.username : 'root';
   if ($('ed-tw-pass')) $('ed-tw-pass').value = '';
   if ($('ed-tw-res')) { $('ed-tw-res').style.display = 'none'; $('ed-tw-res').textContent = ''; }
-  $('s-cred-mode-wrap').style.display = 'block';
+  if ($('s-cred-mode-wrap')) $('s-cred-mode-wrap').style.display = 'block';
   pickCredMode('custom');
   renderSSHProfiles();
   toggleAuth();
@@ -8562,7 +8562,7 @@ async function saveServer() {
 }
 
 async function updatePeerAgent(id) {
-  toast('Upgrading Peer Agent to v2 (TLS + Exec)...');
+  toast('Upgrading Peer Agent to v4 (Go Static + TLS Pinning)...');
   const r = await api('api/servers/' + id + '/agent/update', 'POST');
   if (r.ok) { toast(r.message || 'Peer Agent updated!'); setTimeout(loadServers, 2000); }
   else toast(r.error || 'Agent update failed', true);
@@ -14429,6 +14429,7 @@ async function confirmSaveSSHProfile(ctx) {
       if (r.id) {
         if ($('s-prof-sel')) $('s-prof-sel').value = String(r.id);
         if ($('term-prof-sel')) $('term-prof-sel').value = String(r.id);
+        if (ctx === 'server' && typeof applySavedSSHProfile === 'function') applySavedSSHProfile(r.id);
       }
       dismissSSHProfileAsk(ctx);
     } else {

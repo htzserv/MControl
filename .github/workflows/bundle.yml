@@ -82,19 +82,25 @@ jobs:
           done)
           ls -lh dist/
 
-      - name: Publish Bundle & Xray Core to GitHub Release (bundle-latest)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: bundle-latest
-          name: MControl Static Bundle (Prereqs + Xray + Engines)
-          make_latest: false
-          files: |
-            dist/mcontrol-bundle-linux-amd64.tar.gz
-            dist/mcontrol-bundle-linux-amd64.tar.gz.sha256
-            dist/xray-linux-amd64
-            dist/xray-linux-amd64.sha256
-            dist/xray-linux-arm64
-            dist/xray-linux-arm64.sha256
+      - name: Publish Bundle & Xray Core to GitHub Release (bundle-latest via gh CLI)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TITLE="MControl Static Bundle (Prereqs + Xray + Engines)"
+          if gh release view "bundle-latest" >/dev/null 2>&1; then
+            gh release edit "bundle-latest" --title "$TITLE" --latest=false
+          else
+            gh release create "bundle-latest" --title "$TITLE" --notes "Static prereqs, Xray Core & tunnel engines." --latest=false
+          fi
+          for f in dist/mcontrol-bundle-linux-amd64.tar.gz dist/mcontrol-bundle-linux-amd64.tar.gz.sha256 dist/xray-linux-amd64 dist/xray-linux-amd64.sha256 dist/xray-linux-arm64 dist/xray-linux-arm64.sha256; do
+            ok=0
+            for attempt in 1 2 3; do
+              if gh release upload "bundle-latest" "$f" --clobber; then ok=1; break; fi
+              sleep $((attempt * 3))
+            done
+            [ "$ok" -eq 1 ] || exit 1
+          done
 
       - name: Upload Static Bundle & Xray Core to ParsPack S3 Mirror
         env:

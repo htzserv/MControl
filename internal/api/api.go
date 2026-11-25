@@ -2926,7 +2926,7 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 	}
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	script := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), srv.PeerCode, "", srv.AgentPort, stCfg.PanelMirrorURL, isIran, false)
+	script := sshclient.PeerAgentInstallScriptV4(h.masterPublicIP(), h.masterBaseURL(), srv.PeerCode, "", srv.AgentPort, stCfg.PanelMirrorURL, isIran, false)
 	var res sshclient.Result
 	if srv.AuthMode == "peer" {
 		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v2 upgrade triggered.'", sshclient.ShQuote(script))
@@ -2970,7 +2970,7 @@ func (h *Handler) handleRotatePeerKey(w http.ResponseWriter, r *http.Request) {
 	}
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	script := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), newCode, srv.PeerCode, agentPort, stCfg.PanelMirrorURL, isIran, false)
+	script := sshclient.PeerAgentInstallScriptV4(h.masterPublicIP(), h.masterBaseURL(), newCode, srv.PeerCode, agentPort, stCfg.PanelMirrorURL, isIran, false)
 	bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-rot.log 2>&1 & echo 'ROTATE_STARTED'", sshclient.ShQuote("sleep 1\n"+script))
 	res := sshclient.PeerExec(srv.Host, agentPort, srv.PeerCode, bgCmd, 15*time.Second)
 	if res.Err != nil {
@@ -3012,7 +3012,7 @@ func (h *Handler) handleCanaryAgentRollout(w http.ResponseWriter, r *http.Reques
 	stCfg := h.store.GetSettings()
 	canary := peers[0]
 	isIranC := canary.Role == "iran" || strings.EqualFold(canary.CountryCode, "IR")
-	cScript := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), canary.PeerCode, "", canary.AgentPort, stCfg.PanelMirrorURL, isIranC, false)
+	cScript := sshclient.PeerAgentInstallScriptV4(h.masterPublicIP(), h.masterBaseURL(), canary.PeerCode, "", canary.AgentPort, stCfg.PanelMirrorURL, isIranC, false)
 	cBg := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'CANARY_OK'", sshclient.ShQuote("sleep 1\n"+cScript))
 	if res := sshclient.PeerExec(canary.Host, canary.AgentPort, canary.PeerCode, cBg, 15*time.Second); res.Err != nil {
 		fail(w, http.StatusBadGateway, fmt.Sprintf("Canary node %s failed before rollout: %s", canary.Name, res.Err.Error()))
@@ -3026,7 +3026,7 @@ func (h *Handler) handleCanaryAgentRollout(w http.ResponseWriter, r *http.Reques
 	updated := 1
 	for _, s := range peers[1:] {
 		isIran := s.Role == "iran" || strings.EqualFold(s.CountryCode, "IR")
-		sc := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), s.PeerCode, "", s.AgentPort, stCfg.PanelMirrorURL, isIran, false)
+		sc := sshclient.PeerAgentInstallScriptV4(h.masterPublicIP(), h.masterBaseURL(), s.PeerCode, "", s.AgentPort, stCfg.PanelMirrorURL, isIran, false)
 		bg := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'OK'", sshclient.ShQuote("sleep 1\n"+sc))
 		if r2 := sshclient.PeerExec(s.Host, s.AgentPort, s.PeerCode, bg, 15*time.Second); r2.Err == nil {
 			updated++
