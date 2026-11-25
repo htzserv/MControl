@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.4.6
+- **Categorized Server Controls + Smart Outbound Ping & Manual Ping Button:** grouped server card actions into 4 clear categories (*Server*, *MControl & Peer*, *Network & Stats*, *Manage*), added a 1-click manual Ping button (`↻`) next to every Ping badge (`POST /api/servers/{id}/ping`), and upgraded auto-ping (`MeasurePingSmart`) to measure RTT over Master Outbound SOCKS5 / Peer TLS so Outbound nodes never show `N/A`.
 - **Datacenter Cloud Hub Tab (`دیتاسنتر` / `Datacenter`):** unified multi-cloud management for **Hetzner Cloud, DigitalOcean, Linode (Akamai), OVHcloud & YottaSrc** with encrypted API keys, **OS Rebuild**, Create/Delete/Reboot/Power controls, 1-click Cloud Firewall for Peer v4 ports, Master Outbound routing option, and 1-click Import to MControl Servers.
 - **Advanced Server Delete Menu:** clicking Delete now opens a 4-mode modal: *Unpair & Keep Tunnels* (removes master key & panel entry while tunnels stay running), *Unpair Only* (switches back to SSH mode), *Remove from Panel Only* (DB-only for offline nodes), and *Full Uninstall* (wipes Peer Agent, all `mcontrol-tun-*` tunnels, interfaces & iptables rules).
 - **Xray Core in Prereqs Bundle & Iran Mirror:** `bundle.yml` now packages `xray` inside `mcontrol-bundle-linux-amd64.tar.gz` and publishes standalone `xray-linux-amd64` / `xray-linux-arm64` (+ `.sha256`) to both GitHub `bundle-latest` and ParsPack S3 Mirror. Panel `Install Xray Core` installs offline from cache or directly from Iran Mirror first.

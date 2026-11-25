@@ -51,6 +51,7 @@ type ProbeResult struct {
 	CoreVersion    string `json:"core_version"`
 	HostKey        string `json:"host_key"`
 	AgentCertFP    string `json:"agent_cert_fp,omitempty"`
+	PingMs         string `json:"ping_ms,omitempty"`
 	HostKeyChanged bool   `json:"host_key_changed"`
 	Error          string `json:"error,omitempty"`
 }
@@ -390,6 +391,61 @@ printf '%s|%s|%s\n' "$ping_ms" "$dl_mbps" "$ul_mbps"
 
 // MeasurePingFromMaster measures latency from the Master server to a target host (ICMP with TCP RTT fallback).
 func MeasurePingFromMaster(host string, port int) string {
+	return MeasurePingSmart(host, port, 0, "")
+}
+
+// MeasurePingSmart measures RTT from Master to host:
+// 1) Direct ICMP ping (fast, accurate when direct route is open)
+// 2) Direct TCP dial (sshPort or agentPort)
+// 3) SOCKS5 Outbound dial (when server uses Via Master Outbound or direct ICMP/TCP is blocked)
+func MeasurePingSmart(host string, sshPort, agentPort int, socksProxy string) string {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return "N/A"
+	}
+	if sshPort <= 0 {
+		sshPort = 22
+	}
+	// Try direct ICMP first when not forced through outbound
+	if socksProxy == "" {
+		out, err := exec.Command("ping", "-c", "1", "-W", "2", host).CombinedOutput()
+		if err == nil {
+			s := string(out)
+			if idx := strings.Index(s, "time="); idx >= 0 {
+				rest := s[idx+5:]
+				if sp := strings.IndexAny(rest, " \n"); sp > 0 {
+					return strings.TrimSpace(rest[:sp]) + " ms"
+				}
+			}
+		}
+		for _, p := range []int{sshPort, agentPort} {
+			if p <= 0 {
+				continue
+			}
+			start := time.Now()
+			c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(p)), 2500*time.Millisecond)
+			if err == nil {
+				c.Close()
+				return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
+			}
+		}
+		return "N/A"
+	}
+	// Outbound mode: measure TCP connect RTT via SOCKS5 proxy (agentPort first, then sshPort)
+	ports := []int{}
+	if agentPort > 0 {
+		ports = append(ports, agentPort)
+	}
+	ports = append(ports, sshPort)
+	for _, p := range ports {
+		start := time.Now()
+		c, err := dialViaSOCKS5(socksProxy, net.JoinHostPort(host, strconv.Itoa(p)), 4*time.Second)
+		if err == nil {
+			c.Close()
+			return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
+		}
+	}
+	// Fallback to direct ICMP just in case ICMP is reachable directly
 	out, err := exec.Command("ping", "-c", "1", "-W", "2", host).CombinedOutput()
 	if err == nil {
 		s := string(out)
@@ -400,16 +456,7 @@ func MeasurePingFromMaster(host string, port int) string {
 			}
 		}
 	}
-	if port <= 0 {
-		port = 22
-	}
-	start := time.Now()
-	c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(port)), 3*time.Second)
-	if err != nil {
-		return "N/A"
-	}
-	c.Close()
-	return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
+	return "N/A"
 }
 
 func ParseSpeedOutput(out string) SpeedResult {
@@ -515,6 +562,7 @@ func peerRequest(method, host string, agentPort int, path, peerCode string, body
 }
 
 func ProbePeer(host string, agentPort int, peerCode string, socksProxy ...string) ProbeResult {
+	start := time.Now()
 	resp, err := peerRequest("GET", host, agentPort, "/stats", peerCode, nil, 5*time.Second, socksProxy...)
 	if err != nil {
 		reason := "peer agent unreachable"
@@ -538,6 +586,7 @@ func ProbePeer(host string, agentPort int, peerCode string, socksProxy ...string
 		sum := sha256.Sum256(resp.TLS.PeerCertificates[0].Raw)
 		pr.AgentCertFP = hex.EncodeToString(sum[:])
 	}
+	pr.PingMs = fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
 	pr.Online = true
 	return pr
 }

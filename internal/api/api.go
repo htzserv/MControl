@@ -351,7 +351,10 @@ func (h *Handler) applyProbe(srv *db.Server, p sshclient.ProbeResult) {
 	if p.Online {
 		status = "online"
 	}
-	pingMs := sshclient.MeasurePingFromMaster(srv.Host, srv.Port)
+	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, h.serverSocksProxy(srv))
+	if (pingMs == "" || pingMs == "N/A") && p.PingMs != "" {
+		pingMs = p.PingMs
+	}
 	_ = h.store.UpdateServerRuntime(srv.ID, status, p.CPU, p.RAM, p.Uptime, p.IPv4, p.IPv6, p.NetRx, p.NetTx, p.InstalledTools, pingMs, p.CoreInstalled, p.CoreVersion, p.Error)
 	if srv.HostKey == "" && p.HostKey != "" && p.Online {
 		_ = h.store.SetHostKey(srv.ID, p.HostKey)
@@ -439,6 +442,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/servers/{id}", h.auth(h.handleUpdateServer))
 	mux.HandleFunc("DELETE /api/servers/{id}", h.auth(h.handleDeleteServer))
 	mux.HandleFunc("POST /api/servers/{id}/probe", h.auth(h.handleProbeServer))
+	mux.HandleFunc("POST /api/servers/{id}/ping", h.auth(h.handlePingServer))
 	mux.HandleFunc("POST /api/servers/probe-all", h.auth(h.handleProbeAll))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
@@ -1148,6 +1152,27 @@ func (h *Handler) handleProbeServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "probe": p})
+}
+
+func (h *Handler) handlePingServer(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	socksPx := h.serverSocksProxy(srv)
+	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, socksPx)
+	if (pingMs == "" || pingMs == "N/A") && srv.AuthMode == "peer" && srv.PeerCode != "" {
+		if pr := sshclient.ProbePeer(srv.Host, srv.AgentPort, srv.PeerCode, socksPx); pr.Online && pr.PingMs != "" {
+			pingMs = pr.PingMs
+		}
+	}
+	_ = h.store.UpdateServerPing(id, pingMs)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ping_ms": pingMs})
 }
 
 func (h *Handler) handleProbeAll(w http.ResponseWriter, r *http.Request) {

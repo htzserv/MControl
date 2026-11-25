@@ -814,6 +814,11 @@ func (s *Store) SetServerPeerMode(id int64, peerCode string, agentPort int) erro
 	return err
 }
 
+func (s *Store) UpdateServerPing(id int64, pingMs string) error {
+	_, err := s.db.Exec("UPDATE servers SET ping_ms=? WHERE id=?", pingMs, id)
+	return err
+}
+
 func (s *Store) SetServerUseOutbound(id int64, use bool) error {
 	v := 0
 	if use {

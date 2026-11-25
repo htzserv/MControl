@@ -3739,6 +3739,19 @@ body[data-navx="bottom"] #pwa-install-banner {
 .dc-srv-meta div { background: var(--row); padding: 6px 9px; border-radius: 9px; border: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dc-srv-acts { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
 
+
+/* ── Manual Ping Trigger Button next to Ping Badge ── */
+.ping-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; padding: 0; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--accent); cursor: pointer; font-size: .74rem; line-height: 1;
+  transition: transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.ping-btn:hover { background: var(--accent-soft); border-color: var(--accent); transform: scale(1.08); }
+.ping-btn.spinning { animation: pwaSpin .65s linear infinite; pointer-events: none; opacity: .8; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -7213,7 +7226,7 @@ function renderServerCard(s) {
           <span>CPU <b style="color:var(--accent);">${esc(s.cpu || '0%')}</b> • RAM <b style="color:var(--pink);">${esc(s.ram || '0%')}</b></span>
         </div>
       </div>
-      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:8px;"><span>${esc(s.host)}</span><span class="badge b-iran" title="Ping from Master">${esc(s.ping_ms || "---")}</span></div>
+      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px;"><span>${esc(s.host)}</span><span class="badge b-iran" data-srv-ping="${id}" title="Ping from Master">${esc(s.ping_ms || "---")}</span><button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" onclick="event.stopPropagation(); manualPingServer(${id})">↻</button></div>
       <div class="srv-col-hide mono" style="font-size:.78rem; color:var(--muted);">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
       <div class="srv-col-hide" style="display:flex; gap:5px; flex-wrap:wrap;">${s.auth_mode === 'peer' ? '<span class="badge b-iran">PEER V2</span>' : '<span class="badge b-miss">SSH</span>'}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}</div>
       <div style="display:flex; align-items:center; gap:6px;"><span class="chev">▾</span></div>
@@ -7230,7 +7243,7 @@ function renderServerCard(s) {
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">Network Speed &amp; Uptime</div>
           <div class="srv-mini-val"><span style="color:var(--green);">↓ ${esc(s.net_rx || '0 B/s')}</span> <span style="color:var(--muted);">/</span> <span style="color:var(--yellow);">↑ ${esc(s.net_tx || '0 B/s')}</span></div>
-          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • Ping: <span class="mono" style="color:var(--green);">${esc(s.ping_ms || '---')}</span></div>
+          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • Ping: <span class="mono" data-srv-ping="${id}" style="color:var(--green);">${esc(s.ping_ms || '---')}</span> <button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" style="width:19px; height:19px; font-size:.66rem; vertical-align:middle;" onclick="manualPingServer(${id})">↻</button></div>
         </div>
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">${t('lbl_location')}</div>
@@ -7247,18 +7260,38 @@ function renderServerCard(s) {
       <div class="srv-tweak-bar" data-srv-tweak-bar="${id}">
         ${renderInlineTweakPills(id)}
       </div>
-      <div class="card-actions" style="margin-top:4px;">
-        <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
-        <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
-        <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
-        <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
-        <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
-        <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
-        <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota &amp; Expiry</button>
-        ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
-        <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
-        <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
-        <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
+      <div class="srv-act-groups">
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">${lang === 'fa' ? '🖥️ سرور' : '🖥️ Server'}</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-ghost btn-sm" onclick="openWebTerm(${id})">Terminal</button>
+            <button class="btn btn-ghost btn-sm" onclick="openFwModal(${id})">Ports / FW</button>
+            <button class="btn btn-ghost btn-sm" onclick="openSvcModal(${id})">Services</button>
+          </div>
+        </div>
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">${lang === 'fa' ? '⚡ MControl و Peer' : '⚡ MControl &amp; Peer'}</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-sky btn-sm" data-act="setup" data-id="${id}">Setup</button>
+            <button class="btn btn-ghost btn-sm" data-act="probe" data-id="${id}">${s.auth_mode === 'peer' ? 'Check Peer' : t('btn_check_ssh')}</button>
+            ${s.auth_mode === 'peer' ? `<button class="btn btn-ghost btn-sm" onclick="rotateServerPeerKey(${id})">🔑 Rotate Key</button>` : `<button class="btn btn-warn btn-sm" data-act="pair" data-id="${id}">Pair (Peer Code)</button>`}
+          </div>
+        </div>
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">${lang === 'fa' ? '🌐 شبکه و آمار' : '🌐 Network &amp; Stats'}</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-ghost btn-sm" data-act="speedtest" data-id="${id}">Speedtest</button>
+            <button class="btn btn-ghost btn-sm" onclick="openQuotaModal(${id})">📊 Quota &amp; Expiry</button>
+          </div>
+        </div>
+        <div class="srv-act-grp">
+          <span class="srv-act-grp-lbl">${lang === 'fa' ? '⚙️ مدیریت' : '⚙️ Manage'}</span>
+          <div class="srv-act-grp-btns">
+            <button class="btn btn-ghost btn-sm" onclick="openReplaceSrvModal(${id})">🔄 Replace</button>
+            <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${id}">${t('btn_edit')}</button>
+            <button class="btn btn-danger btn-sm" data-act="del" data-id="${id}">${t('btn_delete')}</button>
+          </div>
+        </div>
       </div>
       ${err}
     </div>
@@ -9737,6 +9770,24 @@ async function savePanelNameFromSettings() {
   } else toast(r.error || 'Failed', true);
 }
 
+async function manualPingServer(id) {
+  const btns = document.querySelectorAll(`[data-srv-ping-btn="${id}"]`);
+  btns.forEach(b => b.classList.add('spinning'));
+  try {
+    const r = await api('api/servers/' + id + '/ping', 'POST');
+    if (r.ok) {
+      const val = r.ping_ms || 'N/A';
+      document.querySelectorAll(`[data-srv-ping="${id}"]`).forEach(el => { el.textContent = val; });
+      const s = (SERVERS || []).find(x => +x.id === +id);
+      if (s) s.ping_ms = val;
+      toast(`Ping: ${val}`);
+    } else {
+      toast(r.error || 'Ping failed', true);
+    }
+  } finally {
+    btns.forEach(b => b.classList.remove('spinning'));
+  }
+}
 async function probeOne(id) { toast(t('toast_probing')); await api('api/servers/' + id + '/probe', 'POST'); loadServers(); }
 async function probeAll() { toast(t('toast_probing_all')); await api('api/servers/probe-all', 'POST'); loadServers(); }
 let _delSrvId = 0;
