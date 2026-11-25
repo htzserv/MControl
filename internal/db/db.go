@@ -103,6 +103,7 @@ type Tunnel struct {
 	Subnet          string `json:"subnet"`
 	VIPTargets      string `json:"vip_targets"`
 	LBMode          string `json:"lb_mode"`
+	ExtraJSON       string `json:"extra_json"`
 	Status          string `json:"status"`
 	LastError       string `json:"last_error"`
 	CreatedAt       int64  `json:"created_at"`
@@ -276,6 +277,7 @@ func (s *Store) migrate() error {
 		subnet TEXT NOT NULL DEFAULT '',
 		vip_targets TEXT NOT NULL DEFAULT '',
 		lb_mode TEXT NOT NULL DEFAULT 'none',
+		extra_json TEXT NOT NULL DEFAULT '',
 		status TEXT NOT NULL DEFAULT 'active',
 		last_error TEXT NOT NULL DEFAULT '',
 		created_at INTEGER NOT NULL
@@ -306,6 +308,7 @@ func (s *Store) migrate() error {
 		"ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1",
 		"ALTER TABLE tunnels ADD COLUMN vip_targets TEXT NOT NULL DEFAULT ''",
 		"ALTER TABLE tunnels ADD COLUMN lb_mode TEXT NOT NULL DEFAULT 'none'",
+		"ALTER TABLE tunnels ADD COLUMN extra_json TEXT NOT NULL DEFAULT ''",
 	} {
 		_, _ = s.db.Exec(stmt)
 	}
@@ -994,7 +997,7 @@ func (s *Store) ListTunnels() ([]Tunnel, error) {
 		SELECT t.id, t.name, t.engine, t.transport, t.iran_server_id, t.foreign_server_id,
 			COALESCE(si.name, 'Deleted'), COALESCE(si.host, ''),
 			COALESCE(sf.name, 'Deleted'), COALESCE(sf.host, ''),
-			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.vip_targets, t.lb_mode, t.status, t.last_error, t.created_at
+			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.vip_targets, t.lb_mode, COALESCE(t.extra_json,''), t.status, t.last_error, t.created_at
 		FROM tunnels t
 		LEFT JOIN servers si ON si.id = t.iran_server_id
 		LEFT JOIN servers sf ON sf.id = t.foreign_server_id
@@ -1008,7 +1011,7 @@ func (s *Store) ListTunnels() ([]Tunnel, error) {
 		var t Tunnel
 		if err := rows.Scan(&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
 			&t.IranName, &t.IranHost, &t.ForeignName, &t.ForeignHost,
-			&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.VIPTargets, &t.LBMode, &t.Status, &t.LastError, &t.CreatedAt); err != nil {
+			&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.VIPTargets, &t.LBMode, &t.ExtraJSON, &t.Status, &t.LastError, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, t)
@@ -1025,13 +1028,13 @@ func (s *Store) GetTunnel(id int64) (*Tunnel, error) {
 		SELECT t.id, t.name, t.engine, t.transport, t.iran_server_id, t.foreign_server_id,
 			COALESCE(si.name, 'Deleted'), COALESCE(si.host, ''),
 			COALESCE(sf.name, 'Deleted'), COALESCE(sf.host, ''),
-			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.vip_targets, t.lb_mode, t.status, t.last_error, t.created_at
+			t.tunnel_port, t.token, t.ports, t.forwarder, t.subnet, t.vip_targets, t.lb_mode, COALESCE(t.extra_json,''), t.status, t.last_error, t.created_at
 		FROM tunnels t
 		LEFT JOIN servers si ON si.id = t.iran_server_id
 		LEFT JOIN servers sf ON sf.id = t.foreign_server_id
 		WHERE t.id = ?`, id).Scan(&t.ID, &t.Name, &t.Engine, &t.Transport, &t.IranServerID, &t.ForeignServerID,
 		&t.IranName, &t.IranHost, &t.ForeignName, &t.ForeignHost,
-		&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.VIPTargets, &t.LBMode, &t.Status, &t.LastError, &t.CreatedAt)
+		&t.TunnelPort, &t.Token, &t.Ports, &t.Forwarder, &t.Subnet, &t.VIPTargets, &t.LBMode, &t.ExtraJSON, &t.Status, &t.LastError, &t.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -1040,9 +1043,9 @@ func (s *Store) GetTunnel(id int64) (*Tunnel, error) {
 
 func (s *Store) AddTunnel(t *Tunnel) (int64, error) {
 	res, err := s.db.Exec(`
-		INSERT INTO tunnels (name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, token, ports, forwarder, subnet, vip_targets, lb_mode, status, last_error, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.Name, t.Engine, t.Transport, t.IranServerID, t.ForeignServerID, t.TunnelPort, t.Token, t.Ports, t.Forwarder, t.Subnet, t.VIPTargets, t.LBMode, t.Status, t.LastError, time.Now().Unix())
+		INSERT INTO tunnels (name, engine, transport, iran_server_id, foreign_server_id, tunnel_port, token, ports, forwarder, subnet, vip_targets, lb_mode, extra_json, status, last_error, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.Name, t.Engine, t.Transport, t.IranServerID, t.ForeignServerID, t.TunnelPort, t.Token, t.Ports, t.Forwarder, t.Subnet, t.VIPTargets, t.LBMode, t.ExtraJSON, t.Status, t.LastError, time.Now().Unix())
 	if err != nil {
 		return 0, err
 	}

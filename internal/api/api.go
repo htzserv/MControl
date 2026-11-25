@@ -2159,6 +2159,66 @@ func (h *Handler) masterBaseURL() string {
 }
 
 // ServeAgentHeartbeat accepts reverse-push telemetry from Peer Agents v4 behind strict firewalls.
+var (
+	peerCodeCacheMu sync.RWMutex
+	peerCodeCache   = map[int64]string{}
+	peerCodeCacheAt time.Time
+)
+
+func (h *Handler) matchPeerByCode(code string) *db.Server {
+	codeBytes := []byte(code)
+	lookup := func(refresh bool) int64 {
+		peerCodeCacheMu.RLock()
+		fresh := !refresh && time.Since(peerCodeCacheAt) < 30*time.Second && len(peerCodeCache) > 0
+		if fresh {
+			for id, pc := range peerCodeCache {
+				if len(pc) == len(codeBytes) && subtle.ConstantTimeCompare([]byte(pc), codeBytes) == 1 {
+					peerCodeCacheMu.RUnlock()
+					return id
+				}
+			}
+			peerCodeCacheMu.RUnlock()
+			return 0
+		}
+		peerCodeCacheMu.RUnlock()
+
+		list, err := h.store.ListServers()
+		if err != nil {
+			return 0
+		}
+		next := make(map[int64]string, len(list))
+		var foundID int64
+		for _, item := range list {
+			if item.AuthMode != "peer" {
+				continue
+			}
+			if full, e := h.store.GetServerWithSecret(item.ID); e == nil && full.PeerCode != "" {
+				next[full.ID] = full.PeerCode
+				if foundID == 0 && len(full.PeerCode) == len(codeBytes) && subtle.ConstantTimeCompare([]byte(full.PeerCode), codeBytes) == 1 {
+					foundID = full.ID
+				}
+			}
+		}
+		peerCodeCacheMu.Lock()
+		peerCodeCache = next
+		peerCodeCacheAt = time.Now()
+		peerCodeCacheMu.Unlock()
+		return foundID
+	}
+	id := lookup(false)
+	if id == 0 {
+		id = lookup(true)
+	}
+	if id == 0 {
+		return nil
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil || subtle.ConstantTimeCompare([]byte(srv.PeerCode), codeBytes) != 1 {
+		return nil
+	}
+	return srv
+}
+
 func (h *Handler) ServeAgentHeartbeat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -2169,21 +2229,7 @@ func (h *Handler) ServeAgentHeartbeat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
-	list, err := h.store.ListServers()
-	if err != nil {
-		http.Error(w, "error", http.StatusInternalServerError)
-		return
-	}
-	var matched *db.Server
-	for _, item := range list {
-		if item.AuthMode != "peer" {
-			continue
-		}
-		if full, e := h.store.GetServerWithSecret(item.ID); e == nil && full.PeerCode == code {
-			matched = full
-			break
-		}
-	}
+	matched := h.matchPeerByCode(code)
 	if matched == nil {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return

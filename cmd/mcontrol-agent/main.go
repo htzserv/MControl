@@ -6,9 +6,11 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -41,7 +43,8 @@ type statsPayload struct {
 
 var (
 	primaryPeer string
-	masterURL   string
+	masterURL    string
+	masterCertFP string
 	listenPort  int
 	peersFile   string
 
@@ -259,10 +262,23 @@ func startHeartbeatLoop() {
 	if masterURL == "" || primaryPeer == "" {
 		return
 	}
+	tlsCfg := &tls.Config{InsecureSkipVerify: true}
+	if masterCertFP != "" {
+		tlsCfg.VerifyPeerCertificate = func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+			if len(rawCerts) == 0 {
+				return fmt.Errorf("missing master certificate")
+			}
+			sum := sha256.Sum256(rawCerts[0])
+			if hex.EncodeToString(sum[:]) != masterCertFP {
+				return fmt.Errorf("master TLS certificate pin mismatch")
+			}
+			return nil
+		}
+	}
 	client := &http.Client{
 		Timeout: 6 * time.Second,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: tlsCfg,
 		},
 	}
 	target := strings.TrimRight(masterURL, "/") + "/_mc_agent/heartbeat"
@@ -363,6 +379,7 @@ printf '%s|%s|%s' "$ping_ms" "$dl_mbps" "$ul_mbps"
 func main() {
 	primaryPeer = strings.TrimSpace(os.Getenv("MC_PEER"))
 	masterURL = strings.TrimSpace(os.Getenv("MC_MASTER_URL"))
+	masterCertFP = strings.ToLower(strings.TrimSpace(os.Getenv("MC_MASTER_CERT_FP")))
 	listenPort, _ = strconv.Atoi(os.Getenv("MC_PORT"))
 	if listenPort <= 0 {
 		listenPort = 2054

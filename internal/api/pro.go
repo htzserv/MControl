@@ -307,7 +307,8 @@ func (h *Handler) handleServerFiles(w http.ResponseWriter, r *http.Request) {
 		res := h.runOnServer(srv, cmd, 20*time.Second)
 		writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "message": strings.TrimSpace(res.Output)})
 	default: // list
-		cmd := fmt.Sprintf(`ls -la --group-directories-first %s 2>&1 | awk 'NR>1{t="file"; if(substr($1,1,1)=="d") t="dir"; name=$9; for(i=10;i<=NF;i++) name=name" "$i; if(name!="." && name!="..") print t"\t"$5"\t"name}' | head -n 120`, sshclient.ShQuote(p))
+		cmd := fmt.Sprintf(`if [ ! -d %s ]; then exit 1; fi
+find %s -mindepth 1 -maxdepth 1 -printf '%%y\t%%s\t%%f\n' 2>/dev/null | awk -F'\t' '{t=($1=="d"?"dir":"file"); print (t=="dir"?"0":"1")"\t"t"\t"$2"\t"$3}' | sort -t$'\t' -k1,1 -k4,4f | cut -f2-4 | head -n 200`, sshclient.ShQuote(p), sshclient.ShQuote(p))
 		res := h.runOnServer(srv, cmd, 15*time.Second)
 		type entry struct {
 			Type string `json:"type"`
@@ -421,12 +422,25 @@ func (h *Handler) handleServerFileUpload(w http.ResponseWriter, r *http.Request)
 			continue
 		}
 		dest := strings.TrimRight(dir, "/") + "/" + fname
-		b64 := base64.StdEncoding.EncodeToString(data)
-		cmd := fmt.Sprintf("mkdir -p %s && base64 -d << 'MC_UPLOAD_EOF' > %s\n%s\nMC_UPLOAD_EOF\necho OK", sshclient.ShQuote(dir), sshclient.ShQuote(dest), b64)
-		res := h.runOnServer(srv, cmd, 45*time.Second)
-		if res.Err != nil {
-			fail(w, http.StatusBadGateway, "upload failed for "+fname+": "+res.Err.Error())
+		// Chunked base64 upload (<= 48KB raw per chunk -> ~64KB base64) to avoid ARG_MAX & Agent 64KB exec body limit
+		const chunkRaw = 36 * 1024
+		initCmd := fmt.Sprintf("mkdir -p %s && : > %s", sshclient.ShQuote(dir), sshclient.ShQuote(dest))
+		if r0 := h.runOnServer(srv, initCmd, 15*time.Second); r0.Err != nil {
+			fail(w, http.StatusBadGateway, "upload init failed for "+fname+": "+r0.Err.Error())
 			return
+		}
+		for off := 0; off < len(data); off += chunkRaw {
+			end := off + chunkRaw
+			if end > len(data) {
+				end = len(data)
+			}
+			b64 := base64.StdEncoding.EncodeToString(data[off:end])
+			cmd := fmt.Sprintf("base64 -d << 'MC_UPLOAD_EOF' >> %s\n%s\nMC_UPLOAD_EOF", sshclient.ShQuote(dest), b64)
+			res := h.runOnServer(srv, cmd, 30*time.Second)
+			if res.Err != nil {
+				fail(w, http.StatusBadGateway, "upload failed for "+fname+": "+res.Err.Error())
+				return
+			}
 		}
 		uploaded = append(uploaded, fname)
 	}

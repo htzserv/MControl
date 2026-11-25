@@ -46,9 +46,14 @@ jobs:
           unzip -qo tmp_dl/xray-arm64.zip xray -d tmp_dl/xrayarm64
           install -m 755 tmp_dl/xrayarm64/xray dist/xray-linux-arm64
 
+          BH_REPO="${{ vars.BACKHAUL_REPO || 'htzserv/Backhaul' }}"
           if [ -f assets/engines/bh ]; then
             install -m 755 assets/engines/bh bundle/bin/bh
+          elif curl -fsSL "https://github.com/${BH_REPO}/releases/latest/download/bh-linux-amd64" -o tmp_dl/bh-custom && [ -s tmp_dl/bh-custom ]; then
+            echo "Bundled custom Backhaul from ${BH_REPO}"
+            install -m 755 tmp_dl/bh-custom bundle/bin/bh
           else
+            echo "Custom Backhaul release not found on ${BH_REPO}, falling back to upstream Musixal/Backhaul..."
             curl -fsSL "https://github.com/Musixal/Backhaul/releases/latest/download/backhaul_linux_amd64.tar.gz" -o tmp_dl/bh.tar.gz
             tar -xzf tmp_dl/bh.tar.gz -C tmp_dl
             BH_BIN=$(find tmp_dl -maxdepth 2 -type f -name 'backhaul' | head -n1)

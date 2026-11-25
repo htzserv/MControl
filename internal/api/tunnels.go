@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -51,6 +52,19 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		Subnet           string `json:"subnet"`
 		VIPTargets       string `json:"vip_targets"`
 		LBMode           string `json:"lb_mode"` // none | roundrobin | random
+		// Backhaul v0.9.3 advanced tuning & Anti-DPI options
+		Preset          string `json:"preset"`           // balanced | many_users | gaming | streaming | max_capacity
+		SNI             string `json:"sni"`
+		UTLSFingerprint string `json:"utls_fingerprint"`
+		EdgeIP          string `json:"edge_ip"`
+		TLSFragment     bool   `json:"tls_fragment"`
+		FallbackAddr    string `json:"fallback_addr"`
+		XHTTPPath       string `json:"xhttp_path"`
+		XHTTPHost       string `json:"xhttp_host"`
+		XHTTPMode       string `json:"xhttp_mode"`
+		KCPMode         string `json:"kcp_mode"`
+		KCPCrypt        string `json:"kcp_crypt"`
+		KCPNoFEC        bool   `json:"kcp_nofec"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -193,10 +207,38 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		req.Transport = baseT + "@" + req.Underlay
 	}
 
+	if req.Engine == "backhaul" {
+		baseT, suffix := splitTransportIPMode(req.Transport)
+		if baseT == "tcp+tls" {
+			baseT = "tls"
+			if suffix != "" {
+				req.Transport = baseT + "@" + suffix
+			} else {
+				req.Transport = baseT
+			}
+		}
+	}
+	extraObj := backhaulExtraOpts{
+		Preset:          strings.TrimSpace(req.Preset),
+		SNI:             strings.TrimSpace(req.SNI),
+		UTLSFingerprint: strings.TrimSpace(req.UTLSFingerprint),
+		EdgeIP:          strings.TrimSpace(req.EdgeIP),
+		TLSFragment:     req.TLSFragment,
+		FallbackAddr:    strings.TrimSpace(req.FallbackAddr),
+		XHTTPPath:       strings.TrimSpace(req.XHTTPPath),
+		XHTTPHost:       strings.TrimSpace(req.XHTTPHost),
+		XHTTPMode:       strings.TrimSpace(req.XHTTPMode),
+		KCPMode:         strings.TrimSpace(req.KCPMode),
+		KCPCrypt:        strings.TrimSpace(req.KCPCrypt),
+		KCPNoFEC:        req.KCPNoFEC,
+	}
+	extraBytes, _ := json.Marshal(extraObj)
+
 	tun := &db.Tunnel{
 		Name:            req.Name,
 		Engine:          req.Engine,
 		Transport:       req.Transport,
+		ExtraJSON:       string(extraBytes),
 		IranServerID:    req.IranServerID,
 		ForeignServerID: req.ForeignServerID,
 		TunnelPort:      req.TunnelPort,
@@ -304,39 +346,113 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 
 	switch t.Engine {
 	case "backhaul":
+		if baseTrans == "tcp+tls" {
+			baseTrans = "tls"
+		}
+		var ex backhaulExtraOpts
+		if strings.TrimSpace(t.ExtraJSON) != "" {
+			_ = json.Unmarshal([]byte(t.ExtraJSON), &ex)
+		}
+		// Apply hardware/traffic performance preset
+		connPool, muxCon, chSize, hbSec, kaSec, rcvBuf, strBuf := 8, 8, 2048, 10, 20, 4194304, 2097152
+		switch ex.Preset {
+		case "many_users":
+			connPool, muxCon, chSize, rcvBuf, strBuf = 12, 16, 4096, 8388608, 2097152
+		case "gaming":
+			connPool, muxCon, chSize, hbSec, kaSec, strBuf = 4, 4, 1024, 5, 10, 1048576
+		case "streaming":
+			connPool, muxCon, chSize, rcvBuf, strBuf = 10, 8, 4096, 8388608, 4194304
+		case "max_capacity":
+			connPool, muxCon, chSize, rcvBuf, strBuf = 16, 24, 8192, 16777216, 4194304
+		}
+
 		var portLines []string
 		for _, p := range ports {
 			portLines = append(portLines, fmt.Sprintf(`"%d=%d"`, p, p))
 		}
-		muxSrvExtra := ""
-		muxCliExtra := ""
+		var srvExtra, cliExtra strings.Builder
 		if strings.HasSuffix(baseTrans, "mux") {
-			muxSrvExtra = "mux_con = 8\nmux_version = 2\nmux_framesize = 32768\nmux_recievebuffer = 4194304\nmux_streambuffer = 2097152\n"
-			muxCliExtra = "mux_version = 2\nmux_framesize = 32768\nmux_recievebuffer = 4194304\nmux_streambuffer = 2097152\n"
+			fmt.Fprintf(&srvExtra, "mux_con = %d\nmux_version = 2\nmux_framesize = 32768\nmux_recievebuffer = %d\nmux_streambuffer = %d\n", muxCon, rcvBuf, strBuf)
+			fmt.Fprintf(&cliExtra, "mux_version = 2\nmux_framesize = 32768\nmux_recievebuffer = %d\nmux_streambuffer = %d\n", rcvBuf, strBuf)
 		}
+		isTLS := baseTrans == "tls" || baseTrans == "tlsmux" || baseTrans == "wss" || baseTrans == "wssmux" || baseTrans == "xhttps" || baseTrans == "xhttpsmux"
+		if isTLS {
+			sni := ex.SNI
+			if sni == "" {
+				sni = "www.cloudflare.com"
+			}
+			fp := ex.UTLSFingerprint
+			if fp == "" {
+				fp = "chrome"
+			}
+			fmt.Fprintf(&srvExtra, "sni = %q\n", sni)
+			fmt.Fprintf(&cliExtra, "sni = %q\nutls_fingerprint = %q\n", sni, fp)
+			if ex.TLSFragment {
+				cliExtra.WriteString("tls_fragment = true\n")
+			}
+		}
+		if ex.EdgeIP != "" {
+			fmt.Fprintf(&cliExtra, "edge_ip = %q\n", ex.EdgeIP)
+		}
+		if strings.HasPrefix(baseTrans, "xhttp") {
+			xp := ex.XHTTPPath
+			if xp == "" {
+				xp = "/api/v1/stream"
+			}
+			xm := ex.XHTTPMode
+			if xm == "" {
+				xm = "auto"
+			}
+			fmt.Fprintf(&srvExtra, "xhttp_path = %q\nxhttp_mode = %q\n", xp, xm)
+			fmt.Fprintf(&cliExtra, "xhttp_path = %q\nxhttp_mode = %q\n", xp, xm)
+			if ex.XHTTPHost != "" {
+				fmt.Fprintf(&srvExtra, "xhttp_host = %q\n", ex.XHTTPHost)
+				fmt.Fprintf(&cliExtra, "xhttp_host = %q\n", ex.XHTTPHost)
+			}
+			if ex.FallbackAddr != "" {
+				fmt.Fprintf(&srvExtra, "fallback_addr = %q\n", ex.FallbackAddr)
+			}
+		}
+		if baseTrans == "kcp" || baseTrans == "kcpmux" {
+			km := ex.KCPMode
+			if km == "" {
+				if ex.Preset == "gaming" {
+					km = "fast3"
+				} else {
+					km = "fast2"
+				}
+			}
+			kc := ex.KCPCrypt
+			if kc == "" {
+				kc = "aes"
+			}
+			fmt.Fprintf(&srvExtra, "kcp_mode = %q\nkcp_crypt = %q\nkcp_nofec = %v\n", km, kc, ex.KCPNoFEC)
+			fmt.Fprintf(&cliExtra, "kcp_mode = %q\nkcp_crypt = %q\nkcp_nofec = %v\n", km, kc, ex.KCPNoFEC)
+		}
+
 		iranToml := fmt.Sprintf(`[server]
 bind_addr = "%s:%d"
 transport = "%s"
 token = "%s"
 nodelay = true
-keepalive_period = 20
-heartbeat = 10
-channel_size = 2048
+keepalive_period = %d
+heartbeat = %d
+channel_size = %d
 sniffer = false
 %sports = [%s]
-`, bindWild, t.TunnelPort, baseTrans, t.Token, muxSrvExtra, strings.Join(portLines, ", "))
+`, bindWild, t.TunnelPort, baseTrans, t.Token, kaSec, hbSec, chSize, srvExtra.String(), strings.Join(portLines, ", "))
 
 		forToml := fmt.Sprintf(`[client]
 remote_addr = "%s"
 transport = "%s"
 token = "%s"
-connection_pool = 8
+connection_pool = %d
 aggressive_pool = true
 retry_interval = 1
 dial_timeout = 10
 nodelay = true
-keepalive_period = 20
-%s`, formatHostPort(iranAddr, t.TunnelPort), baseTrans, t.Token, muxCliExtra)
+keepalive_period = %d
+%s`, formatHostPort(iranAddr, t.TunnelPort), baseTrans, t.Token, connPool, kaSec, cliExtra.String())
 
 		makeBH := func(toml string) string {
 			return fmt.Sprintf(`set -e
@@ -1050,6 +1166,21 @@ func (h *Handler) handleTunnelPing8(w http.ResponseWriter, r *http.Request) {
 
 // StartTunnelWatchdog checks active MControl tunnels every 45 seconds and automatically
 // restarts any systemd tunnel unit that dropped or became inactive on either side.
+type backhaulExtraOpts struct {
+	Preset          string `json:"preset,omitempty"`
+	SNI             string `json:"sni,omitempty"`
+	UTLSFingerprint string `json:"utls_fingerprint,omitempty"`
+	EdgeIP          string `json:"edge_ip,omitempty"`
+	TLSFragment     bool   `json:"tls_fragment,omitempty"`
+	FallbackAddr    string `json:"fallback_addr,omitempty"`
+	XHTTPPath       string `json:"xhttp_path,omitempty"`
+	XHTTPHost       string `json:"xhttp_host,omitempty"`
+	XHTTPMode       string `json:"xhttp_mode,omitempty"`
+	KCPMode         string `json:"kcp_mode,omitempty"`
+	KCPCrypt        string `json:"kcp_crypt,omitempty"`
+	KCPNoFEC        bool   `json:"kcp_nofec,omitempty"`
+}
+
 func (h *Handler) StartTunnelWatchdog() {
 	go func() {
 		for {
@@ -1061,19 +1192,51 @@ func (h *Handler) StartTunnelWatchdog() {
 			if err != nil || len(list) == 0 {
 				continue
 			}
+			sem := make(chan struct{}, 6)
+			var wg sync.WaitGroup
 			for _, tun := range list {
 				if tun.Status != "active" {
 					continue
 				}
-				unit := fmt.Sprintf("mcontrol-tun-%d.service", tun.ID)
-				healCmd := fmt.Sprintf("if [ -f /etc/systemd/system/%s ]; then systemctl is-active --quiet %s || systemctl restart %s; fi", unit, unit, unit)
-				if iranSrv, err := h.store.GetServerWithSecret(tun.IranServerID); err == nil {
-					_ = h.runOnServer(iranSrv, healCmd, 15*time.Second)
-				}
-				if forSrv, err := h.store.GetServerWithSecret(tun.ForeignServerID); err == nil {
-					_ = h.runOnServer(forSrv, healCmd, 15*time.Second)
-				}
+				t := tun
+				wg.Add(1)
+				sem <- struct{}{}
+				go func() {
+					defer wg.Done()
+					defer func() { <-sem }()
+					unit := fmt.Sprintf("mcontrol-tun-%d.service", t.ID)
+					// Verify systemd unit is active AND listening control port (or kernel interface) is actually up
+					iranHeal := fmt.Sprintf(`if [ -f /etc/systemd/system/%s ]; then
+  if ! systemctl is-active --quiet %s; then systemctl restart %s; fi
+fi`, unit, unit, unit)
+					if t.Engine == "backhaul" || t.Engine == "rathole" {
+						iranHeal = fmt.Sprintf(`if [ -f /etc/systemd/system/%s ]; then
+  if ! systemctl is-active --quiet %s || ! ss -H -tuln "sport = :%d" 2>/dev/null | grep -q .; then
+    systemctl restart %s
+  fi
+fi`, unit, unit, t.TunnelPort, unit)
+					} else if t.Engine == "gre" || t.Engine == "ip6gre" || t.Engine == "vxlan" {
+						ifName := fmt.Sprintf("mctun%d", t.ID)
+						iranHeal = fmt.Sprintf(`if [ -f /etc/systemd/system/%s ]; then
+  if ! systemctl is-active --quiet %s || ! ip link show %s >/dev/null 2>&1; then
+    systemctl restart %s
+  fi
+fi`, unit, unit, ifName, unit)
+					}
+					forHeal := fmt.Sprintf(`if [ -f /etc/systemd/system/%s ]; then systemctl is-active --quiet %s || systemctl restart %s; fi`, unit, unit, unit)
+					var nwg sync.WaitGroup
+					if iranSrv, err := h.store.GetServerWithSecret(t.IranServerID); err == nil {
+						nwg.Add(1)
+						go func() { defer nwg.Done(); _ = h.runOnServer(iranSrv, iranHeal, 12*time.Second) }()
+					}
+					if forSrv, err := h.store.GetServerWithSecret(t.ForeignServerID); err == nil {
+						nwg.Add(1)
+						go func() { defer nwg.Done(); _ = h.runOnServer(forSrv, forHeal, 12*time.Second) }()
+					}
+					nwg.Wait()
+				}()
 			}
+			wg.Wait()
 		}
 	}()
 }

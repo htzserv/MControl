@@ -4750,7 +4750,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.5.2</span>
+      <span class="mono" id="nav-ver-lbl">v1.5.3</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -6520,15 +6520,33 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
           </div>
 
           <div class="row2">
-            <div class="field" id="t-trans-wrap" style="margin-bottom:0;"><label>Transport</label>
-              <select id="t-trans" onchange="updateTunFloatDock()">
-                <option value="tcp">TCP</option>
-                <option value="tcpmux">TCPMUX</option>
-                <option value="tcp+tls">TCP + TLS</option>
-                <option value="ws">WebSocket (WS)</option>
-                <option value="wss">WebSocket Secure (WSS)</option>
-                <option value="kcp">KCP (UDP)</option>
-                <option value="udp">UDP</option>
+            <div class="field" id="t-trans-wrap" style="margin-bottom:0;"><label>Transport (Backhaul v0.9.3)</label>
+              <select id="t-trans" onchange="onBackhaulTransportChange(); updateTunFloatDock()">
+                <optgroup label="Core &amp; Multiplex">
+                  <option value="tcp">TCP</option>
+                  <option value="tcpmux">TCPMUX</option>
+                  <option value="udp">UDP</option>
+                </optgroup>
+                <optgroup label="TLS / uTLS (Anti-DPI)">
+                  <option value="tls">TLS (Auto-TLS + uTLS)</option>
+                  <option value="tlsmux">TLSMUX (uTLS + smux)</option>
+                </optgroup>
+                <optgroup label="WebSocket / CDN">
+                  <option value="ws">WS</option>
+                  <option value="wss">WSS (uTLS)</option>
+                  <option value="wsmux">WSMUX (CDN-safe)</option>
+                  <option value="wssmux">WSSMUX (CDN + uTLS)</option>
+                </optgroup>
+                <optgroup label="XHTTP / HTTP2 (CDN &amp; Proxy)">
+                  <option value="xhttp">XHTTP</option>
+                  <option value="xhttps">XHTTPS (HTTP/2 + uTLS)</option>
+                  <option value="xhttpmux">XHTTPMUX</option>
+                  <option value="xhttpsmux">XHTTPSMUX (HTTP/2 + smux)</option>
+                </optgroup>
+                <optgroup label="KCP (High Packet-Loss)">
+                  <option value="kcp">KCP (UDP + FEC)</option>
+                  <option value="kcpmux">KCPMUX (UDP + FEC + smux)</option>
+                </optgroup>
               </select>
             </div>
             <div class="field" id="t-ipmode-wrap" style="margin-bottom:0;"><label>Kernel IP Mode</label>
@@ -6540,6 +6558,91 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
               </select>
             </div>
             <div class="field" style="margin-bottom:0;"><label>Tunnel Control Port</label><input id="t-port" type="number" value="3080" oninput="updateTunFloatDock()"></div>
+          </div>
+
+          <!-- Backhaul v0.9.3 Preset & Transport-Specific Anti-DPI Options -->
+          <div id="t-bh-v9-wrap" style="margin-top:10px; padding:10px 12px; border-radius:12px; background:var(--row); border:1px solid var(--border);">
+            <div class="row2" style="margin-bottom:6px;">
+              <div class="field" style="margin-bottom:0;">
+                <label>Performance Preset</label>
+                <select id="t-bh-preset">
+                  <option value="balanced">Balanced (Recommended)</option>
+                  <option value="many_users">Many Users (High Concurrency)</option>
+                  <option value="gaming">Gaming / Low Delay (Fast Heartbeat)</option>
+                  <option value="streaming">Streaming / Big Downloads</option>
+                  <option value="max_capacity">Max Capacity (Dedicated Server)</option>
+                </select>
+              </div>
+              <div class="field" style="margin-bottom:0;">
+                <label>CDN / Edge IP (Optional)</label>
+                <input id="t-bh-edge" class="mono" placeholder="e.g. 104.16.x.x (blank = direct)">
+              </div>
+            </div>
+            <div id="t-bh-tls-opts" style="display:none; margin-top:6px;">
+              <div class="row2" style="margin-bottom:6px;">
+                <div class="field" style="margin-bottom:0;"><label>TLS SNI</label><input id="t-bh-sni" class="mono" placeholder="www.cloudflare.com"></div>
+                <div class="field" style="margin-bottom:0;">
+                  <label>uTLS Fingerprint</label>
+                  <select id="t-bh-utls">
+                    <option value="chrome">Chrome (Auto)</option>
+                    <option value="firefox">Firefox</option>
+                    <option value="safari">Safari</option>
+                    <option value="ios">iOS</option>
+                    <option value="edge">Edge</option>
+                    <option value="random">Randomized ALPN</option>
+                    <option value="none">Standard Go TLS</option>
+                  </select>
+                </div>
+              </div>
+              <label style="display:inline-flex; align-items:center; gap:7px; font-size:.76rem; color:var(--text); cursor:pointer;">
+                <input type="checkbox" id="t-bh-frag" style="width:auto;">
+                <span>Enable TLS ClientHello Record Fragmentation (Anti-SNI DPI)</span>
+              </label>
+            </div>
+            <div id="t-bh-xhttp-opts" style="display:none; margin-top:6px;">
+              <div class="row2" style="margin-bottom:6px;">
+                <div class="field" style="margin-bottom:0;"><label>XHTTP Path</label><input id="t-bh-xpath" class="mono" value="/api/v1/stream"></div>
+                <div class="field" style="margin-bottom:0;">
+                  <label>XHTTP Upload Mode</label>
+                  <select id="t-bh-xmode">
+                    <option value="auto">Auto (Best for Path)</option>
+                    <option value="stream-up">stream-up (Lowest Latency)</option>
+                    <option value="packet-up">packet-up (CDN / Proxy Safe)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row2">
+                <div class="field" style="margin-bottom:0;"><label>XHTTP Host Header (Optional)</label><input id="t-bh-xhost" class="mono" placeholder="cdn.example.com"></div>
+                <div class="field" style="margin-bottom:0;"><label>Decoy Fallback URL (Optional)</label><input id="t-bh-fb" class="mono" placeholder="http://127.0.0.1:80"></div>
+              </div>
+            </div>
+            <div id="t-bh-kcp-opts" style="display:none; margin-top:6px;">
+              <div class="row2" style="margin-bottom:6px;">
+                <div class="field" style="margin-bottom:0;">
+                  <label>KCP Speed Mode</label>
+                  <select id="t-bh-kmode">
+                    <option value="fast2">fast2 (Balanced)</option>
+                    <option value="fast3">fast3 (Gaming / Ultra Low Delay)</option>
+                    <option value="fast">fast</option>
+                    <option value="normal">normal</option>
+                  </select>
+                </div>
+                <div class="field" style="margin-bottom:0;">
+                  <label>KCP Cipher</label>
+                  <select id="t-bh-kcrypt">
+                    <option value="aes">AES-256</option>
+                    <option value="aes-128">AES-128 (Faster)</option>
+                    <option value="salsa20">Salsa20</option>
+                    <option value="xor">Simple XOR</option>
+                    <option value="none">None (Plain)</option>
+                  </select>
+                </div>
+              </div>
+              <label style="display:inline-flex; align-items:center; gap:7px; font-size:.76rem; color:var(--text); cursor:pointer;">
+                <input type="checkbox" id="t-bh-knofec" style="width:auto;">
+                <span>Disable KCP FEC (Lower bandwidth overhead on clean UDP links)</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -8896,10 +8999,22 @@ function pickTunnelUnderlay(ul) {
     matching.map(t => `<option value="${t.id}">Use Existing: #${t.id} ${esc(t.name)} (${esc(t.subnet || '10.10.x')}.1/30)</option>`).join('');
 }
 
+
+function onBackhaulTransportChange() {
+  const tr = ($('t-trans') && $('t-trans').value) || 'tcp';
+  const isTLS = ['tls','tlsmux','wss','wssmux','xhttps','xhttpsmux'].includes(tr);
+  const isXHTTP = tr.startsWith('xhttp');
+  const isKCP = tr === 'kcp' || tr === 'kcpmux';
+  if ($('t-bh-tls-opts')) $('t-bh-tls-opts').style.display = isTLS ? 'block' : 'none';
+  if ($('t-bh-xhttp-opts')) $('t-bh-xhttp-opts').style.display = isXHTTP ? 'block' : 'none';
+  if ($('t-bh-kcp-opts')) $('t-bh-kcp-opts').style.display = isKCP ? 'block' : 'none';
+}
 function onTunnelEngineChange() {
   const eng = $('t-engine').value;
   const isKernel = (eng === 'gre' || eng === 'ip6gre' || eng === 'vxlan');
   $('t-trans-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
+  if ($('t-bh-v9-wrap')) $('t-bh-v9-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
+  if (typeof onBackhaulTransportChange === 'function') onBackhaulTransportChange();
   const vw = $('t-vip-wrap'); if (vw) vw.style.display = isKernel ? 'block' : 'none';
   const ipw = $('t-ipmode-wrap'); if (ipw) ipw.style.display = isKernel ? 'block' : 'none';
   const ulw = $('t-underlay-wrap'); if (ulw) ulw.style.display = isKernel ? 'none' : 'block';
@@ -9388,7 +9503,19 @@ async function deployTunnel() {
       underlay_tunnel_id: $('t-ul-tun') ? (parseInt($('t-ul-tun').value || '0', 10) || 0) : 0,
       subnet: $('t-subnet') ? $('t-subnet').value.trim() : '',
       vip_targets: $('t-viptargets') ? $('t-viptargets').value.trim() : '',
-      lb_mode: $('t-lbmode') ? $('t-lbmode').value : 'none'
+      lb_mode: $('t-lbmode') ? $('t-lbmode').value : 'none',
+      preset: $('t-bh-preset') ? $('t-bh-preset').value : 'balanced',
+      edge_ip: $('t-bh-edge') ? $('t-bh-edge').value.trim() : '',
+      sni: $('t-bh-sni') ? $('t-bh-sni').value.trim() : '',
+      utls_fingerprint: $('t-bh-utls') ? $('t-bh-utls').value : 'chrome',
+      tls_fragment: $('t-bh-frag') ? !!$('t-bh-frag').checked : false,
+      xhttp_path: $('t-bh-xpath') ? $('t-bh-xpath').value.trim() : '/api/v1/stream',
+      xhttp_mode: $('t-bh-xmode') ? $('t-bh-xmode').value : 'auto',
+      xhttp_host: $('t-bh-xhost') ? $('t-bh-xhost').value.trim() : '',
+      fallback_addr: $('t-bh-fb') ? $('t-bh-fb').value.trim() : '',
+      kcp_mode: $('t-bh-kmode') ? $('t-bh-kmode').value : 'fast2',
+      kcp_crypt: $('t-bh-kcrypt') ? $('t-bh-kcrypt').value : 'aes',
+      kcp_nofec: $('t-bh-knofec') ? !!$('t-bh-knofec').checked : false
     };
     const r = await api('api/tunnels', 'POST', payload);
     $('tun-term-card').style.display = 'block';

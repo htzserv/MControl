@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.3
+- **Phase 1 — Backhaul v0.9.3 Sync, Security Hardening & Reliability:**
+  - **Custom Backhaul v0.9.3 Fork Integration:** updated `.github/workflows/bundle.yml` to bundle `bh-linux-amd64` from `htzserv/Backhaul` (with upstream fallback), added all **15 Backhaul v0.9.3 transports** (`tcp`, `tcpmux`, `tls`, `tlsmux`, `ws`, `wss`, `wsmux`, `wssmux`, `udp`, `kcp`, `kcpmux`, `xhttp`, `xhttps`, `xhttpmux`, `xhttpsmux`) to the Tunnel Wizard, and added **5 performance presets** (`Balanced`, `Many Users`, `Gaming`, `Streaming`, `Max Capacity`) plus Anti-DPI options (`SNI`, `uTLS Fingerprint`, `Edge IP`, `TLS Record Fragmentation`, `XHTTP Path/Host/Mode/Fallback`, `KCP Mode/Crypt/NoFEC`).
+  - **Parallel & Real Health-Checked Tunnel Watchdog:** upgraded `StartTunnelWatchdog()` to check tunnels concurrently (up to 6 parallel workers) and verify actual control port listening (`ss`) or kernel interface existence (`ip link`), not just `systemctl is-active`.
+  - **Peer Agent v4 Security & Speed:** added `subtle.ConstantTimeCompare` + 30s in-memory peer-code cache to `ServeAgentHeartbeat` ($O(1)$ lookup) and optional Master TLS certificate fingerprint pinning (`MC_MASTER_CERT_FP`) in `cmd/mcontrol-agent`.
+  - **Bulletproof Remote File Manager:** replaced `ls | awk` parsing with `find -printf` (safe for spaces/symlinks) and upgraded remote file upload to 36KB chunked base64 writes (eliminating `ARG_MAX` & agent 64KB exec body limits on multi-MB uploads).
+
+
 ## 1.5.2
 - **Official Stable Release `v1.5.2`:**
   - **Local Master & Remote Full File Manager + Right-Click Context Menu:** added binary-safe file download, multi-file upload (up to 20MB), new file/folder creation, rename, copy/duplicate, recursive delete with system-path protection, and a full right-click context menu for both Web Terminal and File Manager across Master and remote servers.
