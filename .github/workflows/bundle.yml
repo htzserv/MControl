@@ -67,15 +67,7 @@ jobs:
           if [ -f assets/engines/paqet ]; then
             install -m 755 assets/engines/paqet bundle/bin/paqet
           else
-            PQ_URL=$(curl -fsSL "https://api.github.com/repos/hanselime/paqet/releases/latest" | python3 -c '
-import json, sys
-data = json.load(sys.stdin)
-for a in data.get("assets", []):
-    n = a.get("name", "").lower()
-    if "linux" in n and ("amd64" in n or "x86_64" in n) and not n.endswith(".sha256") and not n.endswith(".txt"):
-        print(a["browser_download_url"])
-        break
-' || true)
+            PQ_URL=$(curl -fsSL "https://api.github.com/repos/hanselime/paqet/releases/latest" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next((a["browser_download_url"] for a in d.get("assets",[]) if "linux" in a.get("name","").lower() and ("amd64" in a.get("name","").lower() or "x86_64" in a.get("name","").lower()) and not a.get("name","").lower().endswith((".sha256",".txt"))), ""))' || true)
             if [ -n "$PQ_URL" ]; then
               echo "Downloading Paqet from $PQ_URL ..."
               mkdir -p tmp_dl/pq
