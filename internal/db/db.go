@@ -1039,6 +1039,11 @@ func (s *Store) DeleteTunnel(id int64) error {
 	return err
 }
 
+func (s *Store) DeleteTunnelsByServer(serverID int64) error {
+	_, err := s.db.Exec("DELETE FROM tunnels WHERE iran_server_id=? OR foreign_server_id=?", serverID, serverID)
+	return err
+}
+
 func (s *Store) AddBenchmarkRun(r *BenchmarkRun) (int64, error) {
 	res, err := s.db.Exec(
 		"INSERT INTO benchmark_runs (iran_name, foreign_name, profile, results_json, logs_text, created_at) VALUES (?, ?, ?, ?, ?, ?)",

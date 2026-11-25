@@ -338,7 +338,7 @@ func (h *Handler) handleOutboundLogs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleOutboundInstallCore(w http.ResponseWriter, r *http.Request) {
-	bin, err := installOrUpdateXray()
+	bin, err := installOrUpdateXray(h.store.GetSettings().PanelMirrorURL)
 	if err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return
@@ -806,7 +806,11 @@ func parseLinkToXrayOutbound(link, tag string) (map[string]any, error) {
 	}
 }
 
-func installOrUpdateXray() (string, error) {
+func installOrUpdateXray(mirrorURL string) (string, error) {
+	mirrorBase := strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
+	if mirrorBase == "" {
+		mirrorBase = "https://c107328.parspack.net/c107328/MControl"
+	}
 	proxyFlag := ""
 	if isOutboundActive() {
 		proxyFlag = fmt.Sprintf("--socks5-hostname 127.0.0.1:%d", outboundSocksPort)
@@ -815,8 +819,46 @@ func installOrUpdateXray() (string, error) {
 TMPD=$(mktemp -d)
 trap 'rm -rf "$TMPD"' EXIT
 ARCH=$(uname -m)
+GOARCH="amd64"
 ASSET="Xray-linux-64.zip"
-if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then ASSET="Xray-linux-arm64-v8a.zip"; fi
+if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+  GOARCH="arm64"
+  ASSET="Xray-linux-arm64-v8a.zip"
+fi
+MIRROR="%s"
+BUNDLE_CACHE="/var/lib/mcontrol/cache/bundle/mcontrol-bundle-linux-amd64.tar.gz"
+
+# 1) Fast offline install from local cached bundle (amd64) if xray is inside it
+if [ "$GOARCH" = "amd64" ] && [ -f "$BUNDLE_CACHE" ]; then
+  if tar -xzf "$BUNDLE_CACHE" -C "$TMPD" bin/xray 2>/dev/null && [ -s "$TMPD/bin/xray" ]; then
+    chmod 755 "$TMPD/bin/xray"
+    if "$TMPD/bin/xray" version >/dev/null 2>&1; then
+      install -m 755 "$TMPD/bin/xray" /usr/local/bin/xray
+      exit 0
+    fi
+  fi
+fi
+
+# 2) Direct fast download from Iran Mirror (ParsPack)
+if curl -fsSL --connect-timeout 8 --max-time 60 "${MIRROR}/xray-linux-${GOARCH}" -o "$TMPD/xray" 2>/dev/null && [ -s "$TMPD/xray" ]; then
+  chmod 755 "$TMPD/xray"
+  if "$TMPD/xray" version >/dev/null 2>&1; then
+    install -m 755 "$TMPD/xray" /usr/local/bin/xray
+    exit 0
+  fi
+fi
+
+# 3) Fallback to GitHub MControl bundle-latest
+GH_BIN="https://github.com/htzserv/MControl/releases/download/bundle-latest/xray-linux-${GOARCH}"
+if curl -fsSL --connect-timeout 10 --max-time 60 %s "$GH_BIN" -o "$TMPD/xray" 2>/dev/null || curl -fsSL --connect-timeout 10 --max-time 60 "$GH_BIN" -o "$TMPD/xray" 2>/dev/null; then
+  chmod 755 "$TMPD/xray"
+  if "$TMPD/xray" version >/dev/null 2>&1; then
+    install -m 755 "$TMPD/xray" /usr/local/bin/xray
+    exit 0
+  fi
+fi
+
+# 4) Final fallback to official XTLS/Xray-core GitHub release zip
 URL="https://github.com/XTLS/Xray-core/releases/latest/download/${ASSET}"
 curl -fsSL --connect-timeout 10 --max-time 60 %s "$URL" -o "$TMPD/xray.zip" || curl -fsSL --connect-timeout 10 --max-time 60 "$URL" -o "$TMPD/xray.zip"
 if command -v unzip >/dev/null 2>&1; then
@@ -824,20 +866,20 @@ if command -v unzip >/dev/null 2>&1; then
 else
   python3 -c "import zipfile; zipfile.ZipFile('$TMPD/xray.zip').extract('xray', '$TMPD')"
 fi
-install -m 755 "$TMPD/xray" /usr/local/bin/xray`, proxyFlag)
+install -m 755 "$TMPD/xray" /usr/local/bin/xray`, mirrorBase, proxyFlag, proxyFlag)
 	cmd := exec.Command("bash", "-c", script)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to install xray: %s (%w)", strings.TrimSpace(string(out)), err)
+		return "", fmt.Errorf("failed to install xray (mirror & github): %s (%w)", strings.TrimSpace(string(out)), err)
 	}
 	return "/usr/local/bin/xray", nil
 }
 
-func ensureXrayInstalled() (string, error) {
+func ensureXrayInstalled(mirrorURL string) (string, error) {
 	if p := xrayBinPath(); p != "" {
 		return p, nil
 	}
-	return installOrUpdateXray()
+	return installOrUpdateXray(mirrorURL)
 }
 
 func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
@@ -936,7 +978,7 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	bin, err := ensureXrayInstalled()
+	bin, err := ensureXrayInstalled(h.store.GetSettings().PanelMirrorURL)
 	if err != nil {
 		fail(w, http.StatusBadGateway, err.Error())
 		return

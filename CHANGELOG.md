@@ -1,6 +1,9 @@
 # Changelog
 
 ## 1.4.6
+- **Datacenter Cloud Hub Tab (`دیتاسنتر` / `Datacenter`):** unified multi-cloud management for **Hetzner Cloud, DigitalOcean, Linode (Akamai), OVHcloud & YottaSrc** with encrypted API keys, **OS Rebuild**, Create/Delete/Reboot/Power controls, 1-click Cloud Firewall for Peer v4 ports, Master Outbound routing option, and 1-click Import to MControl Servers.
+- **Advanced Server Delete Menu:** clicking Delete now opens a 4-mode modal: *Unpair & Keep Tunnels* (removes master key & panel entry while tunnels stay running), *Unpair Only* (switches back to SSH mode), *Remove from Panel Only* (DB-only for offline nodes), and *Full Uninstall* (wipes Peer Agent, all `mcontrol-tun-*` tunnels, interfaces & iptables rules).
+- **Xray Core in Prereqs Bundle & Iran Mirror:** `bundle.yml` now packages `xray` inside `mcontrol-bundle-linux-amd64.tar.gz` and publishes standalone `xray-linux-amd64` / `xray-linux-arm64` (+ `.sha256`) to both GitHub `bundle-latest` and ParsPack S3 Mirror. Panel `Install Xray Core` installs offline from cache or directly from Iran Mirror first.
 - **Peer Agent v4 Ultimate (6 Upgrades + 5 Fixed Ports):**
   - Fixed 5-port order (preserving saved port & auto-discovered running agent first): `84` (2-digit) → `847` (3-digit) → `7483` (4-digit) → `24819` (5-digit) → `2054` (always last).
   - Auto-Discovery of existing `mcontrol-agent-*.service` ports before creating new ones.

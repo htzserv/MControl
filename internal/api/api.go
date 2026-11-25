@@ -564,6 +564,13 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/update/remote", h.auth(h.handleUpdateRemote))
 	mux.HandleFunc("POST /api/update/upload", h.auth(h.handleUpdateUpload))
 	mux.HandleFunc("GET /api/update/status", h.auth(h.handleUpdateStatus))
+	mux.HandleFunc("GET /api/datacenters/status", h.auth(h.handleDCStatus))
+	mux.HandleFunc("POST /api/datacenters/config", h.auth(h.handleDCSaveConfig))
+	mux.HandleFunc("GET /api/datacenters/servers", h.auth(h.handleDCListServers))
+	mux.HandleFunc("GET /api/datacenters/options", h.auth(h.handleDCOptions))
+	mux.HandleFunc("POST /api/datacenters/create", h.auth(h.handleDCCreateServer))
+	mux.HandleFunc("POST /api/datacenters/action", h.auth(h.handleDCAction))
+	mux.HandleFunc("POST /api/datacenters/import", h.auth(h.handleDCImportServer))
 }
 
 // ---------------------------------------------------------------------------
@@ -1004,11 +1011,130 @@ func (h *Handler) handleDeleteServer(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := h.store.DeleteServer(id); err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
+	mode := strings.TrimSpace(r.URL.Query().Get("mode"))
+	if mode == "" {
+		mode = "panel_only"
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+
+	agentPort := srv.AgentPort
+	if agentPort <= 0 {
+		agentPort = 2054
+	}
+	remoteNote := ""
+
+	// Build safe background remote cleanup command (sleep 1 so PeerExec returns HTTP 200 before stopping itself)
+	switch mode {
+	case "unpair_keep_tunnels", "unpair_only":
+		if srv.AuthMode == "peer" || srv.PeerCode != "" {
+			peerCode := srv.PeerCode
+			inner := fmt.Sprintf(`sleep 1
+PORT=%d
+CODE=%s
+PF="/etc/mcontrol-agent/peers-${PORT}.txt"
+if [ -f "$PF" ] && [ -n "$CODE" ]; then
+  awk -F'|' -v c="$CODE" '$0 != c && $2 != c {print}' "$PF" > "$PF.tmp" 2>/dev/null || true
+  mv -f "$PF.tmp" "$PF"
+fi
+REMAIN=0
+if [ -f "$PF" ]; then
+  REMAIN=$(grep -cve '^[[:space:]]*$' -e '^[[:space:]]*#' "$PF" 2>/dev/null || echo 0)
+fi
+if [ "$REMAIN" -eq 0 ]; then
+  SVC="mcontrol-agent-${PORT}.service"
+  systemctl disable --now "$SVC" >/dev/null 2>&1 || true
+  rm -f "/etc/systemd/system/$SVC" "$PF"
+  [ "$PORT" = "2054" ] && systemctl disable --now mcontrol-agent.service >/dev/null 2>&1 || true
+  [ "$PORT" = "2054" ] && rm -f /etc/systemd/system/mcontrol-agent.service
+  systemctl daemon-reload >/dev/null 2>&1 || true
+fi`, agentPort, sshclient.ShQuote(peerCode))
+			bg := fmt.Sprintf("nohup bash -c %s >/dev/null 2>&1 & echo 'UNPAIR_QUEUED'", sshclient.ShQuote(inner))
+			res := h.runOnServer(srv, bg, 12*time.Second)
+			if res.Err != nil {
+				remoteNote = " (server unreachable during remote unpair)"
+			}
+		}
+		sshclient.SetAgentCertPin(srv.Host, agentPort, "")
+		if mode == "unpair_only" {
+			if err := h.store.UnpairServer(id); err != nil {
+				fail(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			h.logAudit(r.Header.Get("X-MC-User"), "DELETE", r.URL.Path, "Unpaired server "+srv.Name+" (kept in panel + tunnels intact)")
+			writeJSON(w, http.StatusOK, map[string]any{
+				"ok":      true,
+				"mode":    mode,
+				"message": "Server unpaired & switched to SSH mode (tunnels untouched)" + remoteNote,
+			})
+			return
+		}
+		if err := h.store.DeleteServer(id); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		h.logAudit(r.Header.Get("X-MC-User"), "DELETE", r.URL.Path, "Unpaired & removed server "+srv.Name+" (tunnels kept on node)")
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"mode":    mode,
+			"message": "Server unpaired & removed from panel (active tunnels kept running)" + remoteNote,
+		})
+		return
+
+	case "uninstall_all":
+		inner := `sleep 1
+for svc in /etc/systemd/system/mcontrol-tun-*.service /etc/systemd/system/mcontrol-agent*.service; do
+  [ -e "$svc" ] || continue
+  name=$(basename "$svc")
+  systemctl disable --now "$name" >/dev/null 2>&1 || true
+  rm -f "$svc"
+done
+systemctl daemon-reload >/dev/null 2>&1 || true
+rm -rf /etc/mcontrol/tunnels /etc/mcontrol-agent
+rm -f /usr/local/bin/mcontrol-agent /usr/local/bin/mcontrol-agent.py
+for ifc in $(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | cut -d@ -f1 | grep -E '^mctun[0-9]+$'); do
+  ip link del "$ifc" >/dev/null 2>&1 || true
+  ip tunnel del "$ifc" >/dev/null 2>&1 || true
+done
+for tbl in nat raw mangle; do
+  iptables-save -t "$tbl" 2>/dev/null | grep -v "mc_tun_" | iptables-restore -T "$tbl" >/dev/null 2>&1 || true
+done`
+		bg := fmt.Sprintf("nohup bash -c %s >/dev/null 2>&1 & echo 'UNINSTALL_QUEUED'", sshclient.ShQuote(inner))
+		res := h.runOnServer(srv, bg, 15*time.Second)
+		if res.Err != nil {
+			remoteNote = " (server unreachable during remote uninstall)"
+		}
+		sshclient.SetAgentCertPin(srv.Host, agentPort, "")
+		_ = h.store.DeleteTunnelsByServer(id)
+		if err := h.store.DeleteServer(id); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		h.logAudit(r.Header.Get("X-MC-User"), "DELETE", r.URL.Path, "Full uninstall (agent + tunnels) & removed server "+srv.Name)
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"mode":    mode,
+			"message": "Peer Agent & all MControl tunnels uninstalled from server" + remoteNote,
+		})
+		return
+
+	default: // panel_only
+		sshclient.SetAgentCertPin(srv.Host, agentPort, "")
+		if err := h.store.DeleteServer(id); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		h.logAudit(r.Header.Get("X-MC-User"), "DELETE", r.URL.Path, "Removed server "+srv.Name+" from panel only")
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"mode":    "panel_only",
+			"message": "Server removed from panel database only.",
+		})
+		return
+	}
 }
 
 func (h *Handler) handleProbeServer(w http.ResponseWriter, r *http.Request) {

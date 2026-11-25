@@ -21,10 +21,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare static tools & tunnel engines (amd64)
+      - name: Prepare static tools, Xray Core & tunnel engines
         run: |
           set -euo pipefail
-          mkdir -p bundle/bin tmp_dl
+          mkdir -p bundle/bin tmp_dl dist
 
           curl -fsSL "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64" -o bundle/bin/jq
           chmod 755 bundle/bin/jq
@@ -35,6 +35,16 @@ jobs:
 
           curl -fsSL "https://github.com/andrew-d/static-binaries/raw/master/binaries/linux/x86_64/socat" -o bundle/bin/socat || true
           [ -s bundle/bin/socat ] && chmod 755 bundle/bin/socat || rm -f bundle/bin/socat
+
+          # Xray Core (amd64 bundled + standalone amd64 & arm64 for Iran Mirror)
+          curl -fsSL "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip" -o tmp_dl/xray-amd64.zip
+          unzip -qo tmp_dl/xray-amd64.zip xray -d tmp_dl/xray64
+          install -m 755 tmp_dl/xray64/xray bundle/bin/xray
+          install -m 755 tmp_dl/xray64/xray dist/xray-linux-amd64
+
+          curl -fsSL "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-arm64-v8a.zip" -o tmp_dl/xray-arm64.zip
+          unzip -qo tmp_dl/xray-arm64.zip xray -d tmp_dl/xrayarm64
+          install -m 755 tmp_dl/xrayarm64/xray dist/xray-linux-arm64
 
           if [ -f assets/engines/bh ]; then
             install -m 755 assets/engines/bh bundle/bin/bh
@@ -66,22 +76,27 @@ jobs:
             install -m 755 tmp_dl/realm bundle/bin/realm
           fi
 
-          mkdir -p dist
           tar -czf dist/mcontrol-bundle-linux-amd64.tar.gz -C bundle bin
-          (cd dist && sha256sum mcontrol-bundle-linux-amd64.tar.gz > mcontrol-bundle-linux-amd64.tar.gz.sha256)
+          (cd dist && for f in mcontrol-bundle-linux-amd64.tar.gz xray-linux-amd64 xray-linux-arm64; do
+            sha256sum "$f" > "${f}.sha256"
+          done)
           ls -lh dist/
 
-      - name: Publish Bundle to GitHub Release (bundle-latest)
+      - name: Publish Bundle & Xray Core to GitHub Release (bundle-latest)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: bundle-latest
-          name: MControl Static Bundle (Prereqs + Engines)
+          name: MControl Static Bundle (Prereqs + Xray + Engines)
           make_latest: false
           files: |
             dist/mcontrol-bundle-linux-amd64.tar.gz
             dist/mcontrol-bundle-linux-amd64.tar.gz.sha256
+            dist/xray-linux-amd64
+            dist/xray-linux-amd64.sha256
+            dist/xray-linux-arm64
+            dist/xray-linux-arm64.sha256
 
-      - name: Upload Static Bundle to ParsPack S3 Mirror
+      - name: Upload Static Bundle & Xray Core to ParsPack S3 Mirror
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PP_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PP_SECRET_KEY }}
@@ -96,7 +111,16 @@ jobs:
             exit 0
           fi
           EP="${PP_ENDPOINT%/}"
-          echo "Uploading static bundle to ${EP}/${PP_BUCKET}/MControl/ ..."
-          aws --endpoint-url "$EP" s3 cp dist/mcontrol-bundle-linux-amd64.tar.gz "s3://${PP_BUCKET}/MControl/mcontrol-bundle-linux-amd64.tar.gz" --acl public-read
-          aws --endpoint-url "$EP" s3 cp dist/mcontrol-bundle-linux-amd64.tar.gz.sha256 "s3://${PP_BUCKET}/MControl/mcontrol-bundle-linux-amd64.tar.gz.sha256" --acl public-read
-          echo "ParsPack S3 Bundle upload complete!"
+          cp_retry() {
+            for i in 1 2 3; do
+              if aws --endpoint-url "$EP" s3 cp "$1" "$2" --acl public-read; then return 0; fi
+              echo "Upload attempt $i failed for $1, retrying..."
+              sleep $((i * 4))
+            done
+            return 1
+          }
+          echo "Uploading static bundle & Xray Core to ${EP}/${PP_BUCKET}/MControl/ ..."
+          for f in mcontrol-bundle-linux-amd64.tar.gz mcontrol-bundle-linux-amd64.tar.gz.sha256 xray-linux-amd64 xray-linux-amd64.sha256 xray-linux-arm64 xray-linux-arm64.sha256; do
+            cp_retry "dist/${f}" "s3://${PP_BUCKET}/MControl/${f}"
+          done
+          echo "ParsPack S3 Bundle & Xray upload complete!"

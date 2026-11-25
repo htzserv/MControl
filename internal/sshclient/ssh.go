@@ -120,6 +120,10 @@ func authMethods(t Target) ([]ssh.AuthMethod, error) {
 
 // dial connects with a hard deadline covering TCP connect + SSH handshake and enforces host-key pinning.
 
+func DialViaSOCKS5(proxyAddr, targetAddr string, timeout time.Duration) (net.Conn, error) {
+	return dialViaSOCKS5(proxyAddr, targetAddr, timeout)
+}
+
 func dialViaSOCKS5(proxyAddr, targetAddr string, timeout time.Duration) (net.Conn, error) {
 	host, portStr, err := net.SplitHostPort(targetAddr)
 	if err != nil {

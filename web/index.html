@@ -3685,6 +3685,60 @@ body[data-navx="bottom"] #pwa-install-banner {
 #btn-pwa-install { display: none; }
 #btn-pwa-install.avail { display: inline-flex; }
 
+
+/* ── Advanced Server Delete Modal Cards ── */
+.del-opt-list { display: flex; flex-direction: column; gap: 9px; margin: 12px 0 16px; }
+.del-opt {
+  display: flex; align-items: flex-start; gap: 12px; text-align: start;
+  padding: 12px 14px; border-radius: min(var(--rc, 16px), 16px);
+  background: var(--row); border: 1.5px solid var(--border);
+  cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .16s ease, box-shadow .18s ease;
+}
+.del-opt:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); transform: translateY(-1px); }
+.del-opt.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 11%, var(--row));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.del-opt.is-danger.active {
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, var(--row));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent);
+}
+.del-opt-ico {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem;
+  background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid var(--border);
+}
+.del-opt-body { flex: 1; min-width: 0; }
+.del-opt-body strong { display: block; font-size: .86rem; color: var(--text); margin-bottom: 2px; }
+.del-opt-body span { display: block; font-size: .74rem; line-height: 1.45; color: var(--muted); }
+.del-opt.is-danger .del-opt-body strong { color: var(--red); }
+
+
+/* ── Datacenter Cloud Providers Hub ── */
+.dc-prov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.dc-prov-card {
+  padding: 13px 14px; border-radius: min(var(--rc, 18px), 18px);
+  background: var(--surface); border: 1.5px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px; cursor: pointer;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.dc-prov-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.dc-prov-card.is-on { border-color: color-mix(in srgb, var(--green) 52%, var(--border)); box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--green) 35%, transparent); }
+.dc-prov-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.dc-prov-name { font-weight: 800; font-size: .88rem; display: flex; align-items: center; gap: 7px; }
+.dc-srv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+.dc-srv-card {
+  padding: 14px 16px; border-radius: min(var(--rc, 18px), 18px);
+  background: var(--surface); border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.dc-srv-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dc-srv-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: .75rem; color: var(--muted); }
+.dc-srv-meta div { background: var(--row); padding: 6px 9px; border-radius: 9px; border: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dc-srv-acts { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -3739,6 +3793,156 @@ body[data-navx="bottom"] #pwa-install-banner {
     <div class="pwa-ios-step"><span class="pwa-ios-num">2</span><span id="pwa-ios-s2">Scroll down and tap <b>Add to Home Screen</b> (+).</span></div>
     <div class="pwa-ios-step" style="margin-bottom:14px;"><span class="pwa-ios-num">3</span><span id="pwa-ios-s3">Tap <b>Add</b> in the top-right corner to launch MControl as a native app.</span></div>
     <button type="button" class="btn btn-sky" style="width:100%; justify-content:center;" data-close="pwa-ios-modal" id="pwa-ios-ok">Got it</button>
+  </div>
+</div>
+<!-- Advanced Server Delete / Unpair / Uninstall Modal -->
+<div class="modal-bg" id="srv-del-modal" style="z-index:1185;">
+  <div class="card modal-box" style="max-width:490px;">
+    <div class="toolbar" style="margin-bottom:8px;">
+      <h3 style="margin:0; color:var(--red);" id="del-m-title">Remove / Unpair Server</h3>
+      <button class="btn btn-ghost btn-sm" data-close="srv-del-modal">✕</button>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; border-radius:12px; background:var(--row); border:1px solid var(--border); margin-bottom:6px;">
+      <div>
+        <strong id="del-m-name" style="font-size:.92rem;">Server</strong>
+        <div class="mono" id="del-m-host" style="font-size:.74rem; color:var(--muted);"></div>
+      </div>
+      <span class="badge b-ok mono" id="del-m-mode-badge">PEER</span>
+    </div>
+
+    <div class="del-opt-list" id="del-opt-list">
+      <div class="del-opt active" data-delm="unpair_keep_tunnels" onclick="pickDeleteMode('unpair_keep_tunnels')">
+        <span class="del-opt-ico">🔗</span>
+        <div class="del-opt-body">
+          <strong id="del-o1-t">Unpair &amp; Keep Tunnels (Recommended)</strong>
+          <span id="del-o1-d">Removes this panel's Peer key from the server and deletes it from this panel, while keeping all active tunnels running uninterrupted.</span>
+        </div>
+      </div>
+      <div class="del-opt" data-delm="unpair_only" onclick="pickDeleteMode('unpair_only')">
+        <span class="del-opt-ico">🔓</span>
+        <div class="del-opt-body">
+          <strong id="del-o2-t">Unpair Only (Keep Server in Panel)</strong>
+          <span id="del-o2-d">Disconnects Peer Agent and switches the server back to SSH mode in this panel. Tunnels stay untouched.</span>
+        </div>
+      </div>
+      <div class="del-opt" data-delm="panel_only" onclick="pickDeleteMode('panel_only')">
+        <span class="del-opt-ico">🗂️</span>
+        <div class="del-opt-body">
+          <strong id="del-o3-t">Remove from Panel Only</strong>
+          <span id="del-o3-d">Deletes the record from this panel's database without connecting to the server (best for offline/dead nodes).</span>
+        </div>
+      </div>
+      <div class="del-opt is-danger" data-delm="uninstall_all" onclick="pickDeleteMode('uninstall_all')">
+        <span class="del-opt-ico">🧨</span>
+        <div class="del-opt-body">
+          <strong id="del-o4-t">Full Uninstall (Agent + All Tunnels)</strong>
+          <span id="del-o4-d">Permanently stops and removes MControl Peer Agent, all mcontrol-tun-* tunnels &amp; iptables rules on the server, and deletes it from the panel.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flexw" style="justify-content:flex-end; gap:8px;">
+      <button type="button" class="btn btn-ghost" data-close="srv-del-modal" id="del-m-cancel">Cancel</button>
+      <button type="button" class="btn btn-warn" id="btn-del-exec" onclick="execAdvancedDelete()">Unpair &amp; Remove</button>
+    </div>
+  </div>
+</div>
+<!-- Datacenter API Credentials Modal -->
+<div class="modal-bg" id="dc-cfg-modal" style="z-index:1186;">
+  <div class="card modal-box" style="max-width:580px; max-height:88vh; overflow-y:auto;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="margin:0; color:var(--accent);">Datacenter API Credentials</h3>
+      <button class="btn btn-ghost btn-sm" data-close="dc-cfg-modal">✕</button>
+    </div>
+    <label class="check" style="margin-bottom:14px;"><input type="checkbox" id="dc-use-ob"><span>Route Datacenter API calls via Master Outbound (Xray SOCKS5)</span></label>
+
+    <div class="kv" style="flex-direction:column; align-items:stretch; gap:8px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;"><strong>🔴 Hetzner Cloud</strong><label class="check" style="margin:0;"><input type="checkbox" id="dc-hz-en"><span>Enable</span></label></div>
+      <input id="dc-hz-tok" class="mono" type="password" placeholder="Hetzner Cloud API Token (Bearer)">
+    </div>
+
+    <div class="kv" style="flex-direction:column; align-items:stretch; gap:8px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;"><strong>🔵 DigitalOcean</strong><label class="check" style="margin:0;"><input type="checkbox" id="dc-do-en"><span>Enable</span></label></div>
+      <input id="dc-do-tok" class="mono" type="password" placeholder="DigitalOcean Personal Access Token">
+    </div>
+
+    <div class="kv" style="flex-direction:column; align-items:stretch; gap:8px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;"><strong>🟢 Linode (Akamai)</strong><label class="check" style="margin:0;"><input type="checkbox" id="dc-ln-en"><span>Enable</span></label></div>
+      <input id="dc-ln-tok" class="mono" type="password" placeholder="Linode Personal Access Token">
+    </div>
+
+    <div class="kv" style="flex-direction:column; align-items:stretch; gap:8px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;"><strong>🔷 OVHcloud (VPS)</strong><label class="check" style="margin:0;"><input type="checkbox" id="dc-ovh-en"><span>Enable</span></label></div>
+      <div class="row2">
+        <select id="dc-ovh-ep"><option value="ovh-eu">OVH Europe (ovh-eu)</option><option value="ovh-ca">OVH Canada (ovh-ca)</option><option value="ovh-us">OVH US (ovh-us)</option></select>
+        <input id="dc-ovh-ak" class="mono" placeholder="Application Key">
+      </div>
+      <div class="row2">
+        <input id="dc-ovh-as" class="mono" type="password" placeholder="Application Secret">
+        <input id="dc-ovh-ck" class="mono" type="password" placeholder="Consumer Key">
+      </div>
+    </div>
+
+    <div class="kv" style="flex-direction:column; align-items:stretch; gap:8px; margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;"><strong>🟣 YottaSrc</strong><label class="check" style="margin:0;"><input type="checkbox" id="dc-yt-en"><span>Enable</span></label></div>
+      <input id="dc-yt-ep" class="mono" placeholder="API Base URL (e.g. https://api.yottasrc.com/v1)">
+      <div class="row2">
+        <input id="dc-yt-tok" class="mono" type="password" placeholder="API Key / Token">
+        <input id="dc-yt-hdr" class="mono" placeholder="Custom Auth Header (optional)">
+      </div>
+    </div>
+
+    <div class="flexw" style="justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" data-close="dc-cfg-modal">Cancel</button>
+      <button class="btn btn-sky" id="btn-dc-save-cfg" onclick="saveDCConfig()">Save Encrypted Keys</button>
+    </div>
+  </div>
+</div>
+
+<!-- Datacenter Create Server Modal -->
+<div class="modal-bg" id="dc-create-modal" style="z-index:1187;">
+  <div class="card modal-box" style="max-width:480px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="margin:0; color:var(--accent);">+ Create Cloud Server</h3>
+      <button class="btn btn-ghost btn-sm" data-close="dc-create-modal">✕</button>
+    </div>
+    <div class="field"><label>Provider</label>
+      <select id="dc-cr-prov" onchange="loadDCCreateOptions()">
+        <option value="hetzner">Hetzner Cloud</option>
+        <option value="digitalocean">DigitalOcean</option>
+        <option value="linode">Linode (Akamai)</option>
+        <option value="yottasrc">YottaSrc</option>
+      </select>
+    </div>
+    <div class="field"><label>Server Name</label><input id="dc-cr-name" placeholder="e.g. ger-edge-01"></div>
+    <div class="row2">
+      <div class="field"><label>Region / Location</label><select id="dc-cr-reg"></select></div>
+      <div class="field"><label>Plan / Size</label><select id="dc-cr-plan"></select></div>
+    </div>
+    <div class="field"><label>OS Image</label><select id="dc-cr-img"></select></div>
+    <div class="field"><label>Root Password (required for Linode / optional)</label><input id="dc-cr-pass" type="password" placeholder="Leave blank for auto-generated"></div>
+    <label class="check" style="margin-bottom:14px;"><input type="checkbox" id="dc-cr-imp" checked><span>Auto-import into MControl Servers after creation</span></label>
+    <div class="flexw" style="justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" data-close="dc-create-modal">Cancel</button>
+      <button class="btn btn-sky" id="btn-dc-cr-go" onclick="execDCCreate()">Create Server</button>
+    </div>
+  </div>
+</div>
+
+<!-- Datacenter OS Rebuild Modal -->
+<div class="modal-bg" id="dc-rebuild-modal" style="z-index:1188;">
+  <div class="card modal-box" style="max-width:460px;">
+    <div class="toolbar" style="margin-bottom:8px;">
+      <h3 style="margin:0; color:var(--yellow);">🔄 Rebuild Server OS</h3>
+      <button class="btn btn-ghost btn-sm" data-close="dc-rebuild-modal">✕</button>
+    </div>
+    <div class="hint" id="dc-rb-info" style="margin-bottom:12px;">All data on this server will be wiped and replaced with a fresh OS installation.</div>
+    <div class="field"><label>Select Fresh OS Image</label><select id="dc-rb-img"></select></div>
+    <div class="field" id="dc-rb-pass-wrap"><label>New Root Password (Linode / YottaSrc)</label><input id="dc-rb-pass" type="password" placeholder="Leave blank for auto-generated"></div>
+    <div class="flexw" style="justify-content:flex-end; gap:8px;">
+      <button class="btn btn-ghost" data-close="dc-rebuild-modal">Cancel</button>
+      <button class="btn btn-danger" id="btn-dc-rb-go" onclick="execDCRebuild()">🔄 Confirm Rebuild OS</button>
+    </div>
   </div>
 </div>
 <div id="toast"></div>
@@ -4576,6 +4780,38 @@ body[data-navx="bottom"] #pwa-install-banner {
     <!-- SETTINGS -->
     
     <!-- UPTIME MONITOR (KUMA-STYLE + DEDICATED TELEGRAM BOT + PUBLIC /status) -->
+    <!-- DATACENTER CLOUD PROVIDERS HUB -->
+    <section id="tab-datacenter" class="page">
+      <div class="toolbar" style="margin-bottom:12px;">
+        <div>
+          <h2 style="margin:0;" id="dc-title">Datacenter Cloud Hub</h2>
+          <div class="hint" style="margin:2px 0 0;" id="dc-sub">Connect Hetzner, DigitalOcean, Linode, OVHcloud &amp; YottaSrc — create, rebuild OS, open Peer firewall &amp; import servers.</div>
+        </div>
+        <div class="flexw" style="gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="openDCConfigModal()">⚙ API Keys</button>
+          <button class="btn btn-ghost btn-sm" id="btn-dc-refresh" onclick="loadDCServers()">↻ Sync Cloud</button>
+          <button class="btn btn-sky btn-sm" onclick="openDCCreateModal()">+ Create Server</button>
+        </div>
+      </div>
+
+      <div class="dc-prov-grid" id="dc-prov-cards"></div>
+
+      <div class="toolbar" style="margin-bottom:10px;">
+        <div class="flexw" style="gap:6px;" id="dc-filter-pills">
+          <button class="btn btn-sky btn-sm" data-dcf="all" onclick="setDCFilter('all')">All</button>
+          <button class="btn btn-ghost btn-sm" data-dcf="hetzner" onclick="setDCFilter('hetzner')">Hetzner</button>
+          <button class="btn btn-ghost btn-sm" data-dcf="digitalocean" onclick="setDCFilter('digitalocean')">DigitalOcean</button>
+          <button class="btn btn-ghost btn-sm" data-dcf="linode" onclick="setDCFilter('linode')">Linode</button>
+          <button class="btn btn-ghost btn-sm" data-dcf="ovh" onclick="setDCFilter('ovh')">OVHcloud</button>
+          <button class="btn btn-ghost btn-sm" data-dcf="yottasrc" onclick="setDCFilter('yottasrc')">YottaSrc</button>
+        </div>
+        <input id="dc-search" placeholder="Search cloud servers..." style="max-width:240px;" oninput="renderDCServers()">
+      </div>
+
+      <div id="dc-err-box" class="hint" style="display:none; color:var(--yellow); margin-bottom:10px;"></div>
+      <div class="dc-srv-grid" id="dc-srv-list"></div>
+    </section>
+
     <section id="tab-monitor" class="page">
       <div class="stats-strip">
         <div class="stat-mini"><span class="stat-lbl">Total Monitors</span><span class="stat-val" style="color:var(--accent);" id="mon-st-total">0</span></div>
@@ -6048,7 +6284,7 @@ en: {
   setup_done: 'Setup complete! Restarting panel...', setup_url: 'Your permanent MControl URL:', t_random: 'Random',
   login_sub: 'MDesign central control plane', http_warn: 'Plain HTTP: your password is sent unencrypted. Enable HTTPS (tls.crt / tls.key) or use a reverse proxy.',
   ph_user: 'Username', ph_pass: 'Password', btn_login: 'Sign in', theme_toggle: 'Dark / Light', t_mode: 'Dark / Light', t_lang: 'Language', logout: 'Log out',
-  nav_overview: 'Overview', nav_servers: 'Servers', nav_domains: 'Domains', nav_monitor: 'Uptime', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
+  nav_overview: 'Overview', nav_servers: 'Servers', nav_datacenter: 'Datacenter', nav_domains: 'Domains', nav_monitor: 'Uptime', nav_tunnels: 'Tunnels', nav_outbound: 'Outbound', nav_telegram: 'Telegram', nav_core: 'Core', nav_themes: 'Themes', nav_update: 'Update', nav_settings: 'Settings',
   btn_logs: 'Live logs', btn_update_center: 'Update center', loc_cpu: 'CPU', loc_ram: 'RAM', loc_disk: 'Disk', loc_net: 'Network',
   load_avg: 'Load avg', used_total: 'Used / total', upload: 'Upload', total_traffic: 'Total traffic', net_dl_ul: 'Download / Upload', btn_bak_short: 'Backup', btn_rst_short: 'Restore', toolbox_title: 'Toolbox', uptime_lbl: 'Uptime',
   st_tab_addr: 'Address & Port', st_tab_sec: 'Security & 2FA', st_tab_dl: 'Downloads & Engines', st_tab_def: 'Defaults & Ports', st_def_title: 'Server Defaults & Saved Ports', st_tab_bak: 'Backup & Restore', st_addr_title: 'Panel Address, Port & Web Path', st_sec_title: 'Admin Credentials & 2FA', st_dl_title: 'Tunnel Engines & Panel Sources', btn_save_addr: 'Save & Restart Panel', btn_save_sec: 'Save Security & 2FA', lbl_2fa: 'Two-Factor Authentication (2FA)', lbl_2fa_sub: 'Generate and store TOTP secret key', lbl_2fa_sec: '2FA Secret Key', st_total: 'Total servers', st_iran: 'Iran nodes', st_foreign: 'Foreign nodes', st_online: 'Online',
@@ -6102,7 +6338,7 @@ fa: {
   setup_done: 'راه‌اندازی کامل شد! در حال راه‌اندازی مجدد پنل...', setup_url: 'آدرس دائمی پنل شما:', t_random: 'تصادفی',
   login_sub: 'پنل مرکزی کنترل MDesign', http_warn: 'اتصال HTTP ساده است و رمز شما بدون رمزگذاری ارسال می‌شود. HTTPS (فایل‌های tls.crt و tls.key) یا ریورس‌پروکسی را فعال کنید.',
   ph_user: 'نام کاربری', ph_pass: 'رمز عبور', btn_login: 'ورود', theme_toggle: 'تیره / روشن', t_mode: 'تیره / روشن', t_lang: 'زبان', logout: 'خروج',
-  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_domains: 'دامنه‌ها', nav_monitor: 'آپتایم', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
+  nav_overview: 'داشبورد', nav_servers: 'سرورها', nav_datacenter: 'دیتاسنتر', nav_domains: 'دامنه‌ها', nav_monitor: 'آپتایم', nav_tunnels: 'تانل‌ها', nav_outbound: 'اوتباند', nav_telegram: 'تلگرام', nav_core: 'هسته', nav_themes: 'تم‌ها', nav_update: 'آپدیت', nav_settings: 'تنظیمات',
   btn_logs: 'لاگ زنده', btn_update_center: 'مرکز آپدیت', loc_cpu: 'پردازنده', loc_ram: 'حافظه RAM', loc_disk: 'دیسک', loc_net: 'شبکه',
   load_avg: 'میانگین بار', used_total: 'مصرف / کل', upload: 'آپلود', total_traffic: 'ترافیک کل', net_dl_ul: 'دانلود / آپلود', btn_bak_short: 'بکاپ', btn_rst_short: 'ریستور', toolbox_title: 'ابزارهای مستر', uptime_lbl: 'آپتایم',
   st_tab_addr: 'آدرس و پورت', st_tab_sec: 'امنیت و 2FA', st_tab_dl: 'دانلودها و موتورها', st_tab_def: 'پیش‌فرض‌ها و پورت‌ها', st_def_title: 'تنظیمات پیش‌فرض سرورها و پورت‌های ذخیره', st_tab_bak: 'بکاپ و ریستور', st_addr_title: 'آدرس، پورت و مسیر وب پنل', st_sec_title: 'اطلاعات ورود مدیر و 2FA', st_dl_title: 'منابع دانلود موتورها و پنل', btn_save_addr: 'ذخیره و ریستارت پنل', btn_save_sec: 'ذخیره تنظیمات امنیتی', lbl_2fa: 'احراز هویت دو مرحله‌ای (2FA)', lbl_2fa_sub: 'تولید و ذخیره کلید امنیتی TOTP', lbl_2fa_sec: 'کلید مخفی 2FA', st_total: 'کل سرورها', st_iran: 'نودهای ایران', st_foreign: 'نودهای خارج', st_online: 'آنلاین',
@@ -6252,6 +6488,7 @@ let galleryFamily = '';
 /* ═══════════════ icons ═══════════════ */
 const IC = {
   grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
   globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
   route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
@@ -6267,7 +6504,7 @@ const IC = {
   pulse: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['tunnels', 'nav_tunnels', 'term'], ['domains', 'nav_domains', 'globe'], ['monitor', 'nav_monitor', 'pulse'], ['settings', 'nav_settings', 'sliders']];
+const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['datacenter', 'nav_datacenter', 'cloud'], ['tunnels', 'nav_tunnels', 'term'], ['domains', 'nav_domains', 'globe'], ['monitor', 'nav_monitor', 'pulse'], ['settings', 'nav_settings', 'sliders']];
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -6832,6 +7069,7 @@ function switchTab(name) {
   if (name === 'tunnels') { loadTunnels(); loadLegacyTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'domains') { loadCloudflareStatus(); loadFailoverUI(); }
   if (name === 'monitor') { loadMonitorsTab(); }
+  if (name === 'datacenter') { loadDatacenterTab(); }
   if (name === 'outbound') { loadMasterOutbound(); }
   if (name === 'telegram') { loadTelegramStatus(); }
   if (name === 'settings') { initMobileSettingsCollapse(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
@@ -9501,9 +9739,82 @@ async function savePanelNameFromSettings() {
 
 async function probeOne(id) { toast(t('toast_probing')); await api('api/servers/' + id + '/probe', 'POST'); loadServers(); }
 async function probeAll() { toast(t('toast_probing_all')); await api('api/servers/probe-all', 'POST'); loadServers(); }
-async function delServer(id) {
-  if (!confirm(t('confirm_delete'))) return;
-  await api('api/servers/' + id, 'DELETE'); toast(t('toast_removed')); loadServers();
+let _delSrvId = 0;
+let _delMode = 'unpair_keep_tunnels';
+
+function delServer(id) {
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  if (!s) return;
+  _delSrvId = +id;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+
+  if ($('del-m-title')) $('del-m-title').textContent = fa ? 'حذف / آن‌پیر پیشرفته سرور' : 'Advanced Server Removal';
+  if ($('del-m-name')) $('del-m-name').textContent = s.name || ('Server #' + id);
+  if ($('del-m-host')) $('del-m-host').textContent = (s.host || '') + (s.agent_port && s.auth_mode === 'peer' ? (' · Peer :' + s.agent_port) : '');
+  if ($('del-m-mode-badge')) {
+    $('del-m-mode-badge').textContent = s.auth_mode === 'peer' ? 'PEER' : 'SSH';
+    $('del-m-mode-badge').className = 'badge mono ' + (s.auth_mode === 'peer' ? 'b-iran' : 'b-miss');
+  }
+  if ($('del-o1-t')) $('del-o1-t').textContent = fa ? 'آن‌پیر + حذف از پنل (باقی ماندن تانل‌ها)' : 'Unpair & Keep Tunnels (Recommended)';
+  if ($('del-o1-d')) $('del-o1-d').textContent = fa ? 'کلید Peer این مستر از سرور پاک و سرور از پنل حذف می‌شود، اما تمام تانل‌های فعال روی سرور بدون قطعی باقی می‌مانند.' : 'Removes this panel\'s Peer key from the server and deletes it from this panel, while keeping all active tunnels running uninterrupted.';
+  if ($('del-o2-t')) $('del-o2-t').textContent = fa ? 'فقط آن‌پیر (ماندن سرور در پنل)' : 'Unpair Only (Keep Server in Panel)';
+  if ($('del-o2-d')) $('del-o2-d').textContent = fa ? 'اتصال Peer قطع شده و سرور به حالت SSH برمی‌گردد بدون آنکه از پنل حذف شود. تانل‌ها دست‌نخورده می‌مانند.' : 'Disconnects Peer Agent and switches the server back to SSH mode in this panel. Tunnels stay untouched.';
+  if ($('del-o3-t')) $('del-o3-t').textContent = fa ? 'حذف فقط از پنل (بدون اتصال به سرور)' : 'Remove from Panel Only';
+  if ($('del-o3-d')) $('del-o3-d').textContent = fa ? 'فقط رکورد سرور از دیتابیس پنل حذف می‌شود و هیچ تغییری روی سرور مقصد انجام نمی‌شود (مناسب سرورهای خاموش).' : 'Deletes the record from this panel\'s database without connecting to the server (best for offline/dead nodes).';
+  if ($('del-o4-t')) $('del-o4-t').textContent = fa ? 'آن‌اینستال کامل (حذف ایجنت + تمام تانل‌ها)' : 'Full Uninstall (Agent + All Tunnels)';
+  if ($('del-o4-d')) $('del-o4-d').textContent = fa ? 'ایجنت Peer و تمام تانل‌های mcontrol-tun-* و قوانین شبکه به‌طور کامل از روی سرور پاک و سرور از پنل حذف می‌شود.' : 'Permanently stops and removes MControl Peer Agent, all mcontrol-tun-* tunnels & iptables rules on the server, and deletes it from the panel.';
+  if ($('del-m-cancel')) $('del-m-cancel').textContent = fa ? 'انصراف' : 'Cancel';
+
+  pickDeleteMode(s.auth_mode === 'peer' ? 'unpair_keep_tunnels' : 'panel_only');
+  if ($('srv-del-modal')) $('srv-del-modal').classList.add('active');
+}
+
+function pickDeleteMode(m) {
+  _delMode = m || 'unpair_keep_tunnels';
+  document.querySelectorAll('#del-opt-list .del-opt').forEach(el => {
+    el.classList.toggle('active', el.dataset.delm === _delMode);
+  });
+  const btn = $('btn-del-exec');
+  if (!btn) return;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if (_delMode === 'uninstall_all') {
+    btn.className = 'btn btn-danger';
+    btn.textContent = fa ? '🧨 آن‌اینستال کامل و حذف' : '🧨 Uninstall All & Delete';
+  } else if (_delMode === 'unpair_only') {
+    btn.className = 'btn btn-warn';
+    btn.textContent = fa ? '🔓 فقط آن‌پیر کن' : '🔓 Unpair Only';
+  } else if (_delMode === 'panel_only') {
+    btn.className = 'btn btn-danger';
+    btn.textContent = fa ? 'حذف از پنل' : 'Remove from Panel';
+  } else {
+    btn.className = 'btn btn-warn';
+    btn.textContent = fa ? '🔗 آن‌پیر (حفظ تانل‌ها)' : '🔗 Unpair & Keep Tunnels';
+  }
+}
+
+async function execAdvancedDelete() {
+  if (!_delSrvId) return;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if (_delMode === 'uninstall_all') {
+    const ok = confirm(fa ? 'آیا مطمئنید؟ تمام تانل‌ها و ایجنت MControl از روی این سرور برای همیشه پاک می‌شوند!' : 'Are you sure? All MControl tunnels and the Peer Agent will be permanently removed from this server!');
+    if (!ok) return;
+  }
+  const btn = $('btn-del-exec');
+  const prevTxt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = fa ? 'در حال اجرا...' : 'Processing...'; }
+  try {
+    const r = await api('api/servers/' + _delSrvId + '?mode=' + encodeURIComponent(_delMode), 'DELETE');
+    if (r.ok) {
+      closeModal('srv-del-modal');
+      toast(r.message || t('toast_removed'));
+      loadServers();
+      if (typeof loadTunnels === 'function' && _delMode === 'uninstall_all') loadTunnels();
+    } else {
+      toast(r.error || 'Failed', true);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = prevTxt; }
+  }
 }
 async function trustKey(id) {
   if (!confirm(t('confirm_trust'))) return;
@@ -10486,7 +10797,7 @@ function stopTimers() {
 /* ═══════════════ auth & boot ═══════════════ */
 function enterApp() {
   $('login-screen').style.display = 'none'; $('setup-screen').style.display = 'none'; $('app').style.display = 'block';
-  applyLang(); applyUtilCollapsed(); const _pwaTab = new URLSearchParams(location.search).get('tab'); switchTab(['overview','servers','tunnels','domains','monitor','settings'].includes(_pwaTab) ? _pwaTab : 'overview');
+  applyLang(); applyUtilCollapsed(); const _pwaTab = new URLSearchParams(location.search).get('tab'); switchTab(['overview','servers','datacenter','tunnels','domains','monitor','settings'].includes(_pwaTab) ? _pwaTab : 'overview');
   loadServers(); loadSettings(); loadProfiles(); startTimers();
   setTimeout(() => checkUpdates(false), 1200);
 }
@@ -10568,6 +10879,267 @@ function randPath() {
   const a = new Uint8Array(5); crypto.getRandomValues(a);
   $('su-path').value = 'mc_' + Array.from(a).map(b => b.toString(16).padStart(2, '0')).join('');
 }
+
+/* ═══════════════ Datacenter Cloud Providers Hub ═══════════════ */
+let DC_CFG = {}, DC_SERVERS = [], DC_FILTER = 'all';
+let _dcRbTarget = null;
+const DC_META = [
+  { id: 'hetzner',      name: 'Hetzner Cloud', ico: '🔴' },
+  { id: 'digitalocean', name: 'DigitalOcean',  ico: '🔵' },
+  { id: 'linode',       name: 'Linode',        ico: '🟢' },
+  { id: 'ovh',          name: 'OVHcloud',      ico: '🔷' },
+  { id: 'yottasrc',     name: 'YottaSrc',      ico: '🟣' }
+];
+
+async function loadDatacenterTab() {
+  const r = await api('api/datacenters/status');
+  if (r.ok && r.config) DC_CFG = r.config;
+  renderDCProviderCards();
+  await loadDCServers();
+}
+
+function renderDCProviderCards() {
+  const box = $('dc-prov-cards');
+  if (!box) return;
+  box.innerHTML = DC_META.map(p => {
+    const c = DC_CFG[p.id] || {};
+    const ready = !!(c.enabled && c.has_token);
+    const cnt = DC_SERVERS.filter(s => s.provider === p.id).length;
+    return `<div class="dc-prov-card ${ready ? 'is-on' : ''}" onclick="openDCConfigModal()">
+      <div class="dc-prov-top">
+        <span class="dc-prov-name">${p.ico} ${esc(p.name)}</span>
+        <span class="badge mono ${ready ? 'b-iran' : 'b-miss'}">${ready ? 'ACTIVE' : 'SETUP'}</span>
+      </div>
+      <div style="font-size:.74rem; color:var(--muted); display:flex; justify-content:space-between;">
+        <span>${ready ? (cnt + ' servers') : 'Click to add API key'}</span>
+        <span class="mono">${ready ? '✓' : '⚙'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDCConfigModal() {
+  if ($('dc-use-ob')) $('dc-use-ob').checked = !!DC_CFG.use_outbound;
+  if ($('dc-hz-en')) $('dc-hz-en').checked = !!(DC_CFG.hetzner && DC_CFG.hetzner.enabled);
+  if ($('dc-hz-tok')) $('dc-hz-tok').value = (DC_CFG.hetzner && DC_CFG.hetzner.token_masked) || '';
+  if ($('dc-do-en')) $('dc-do-en').checked = !!(DC_CFG.digitalocean && DC_CFG.digitalocean.enabled);
+  if ($('dc-do-tok')) $('dc-do-tok').value = (DC_CFG.digitalocean && DC_CFG.digitalocean.token_masked) || '';
+  if ($('dc-ln-en')) $('dc-ln-en').checked = !!(DC_CFG.linode && DC_CFG.linode.enabled);
+  if ($('dc-ln-tok')) $('dc-ln-tok').value = (DC_CFG.linode && DC_CFG.linode.token_masked) || '';
+  if ($('dc-ovh-en')) $('dc-ovh-en').checked = !!(DC_CFG.ovh && DC_CFG.ovh.enabled);
+  if ($('dc-ovh-ep')) $('dc-ovh-ep').value = (DC_CFG.ovh && DC_CFG.ovh.endpoint) || 'ovh-eu';
+  if ($('dc-ovh-ak')) $('dc-ovh-ak').value = (DC_CFG.ovh && DC_CFG.ovh.app_key) || '';
+  if ($('dc-ovh-as')) $('dc-ovh-as').value = (DC_CFG.ovh && DC_CFG.ovh.app_secret_masked) || '';
+  if ($('dc-ovh-ck')) $('dc-ovh-ck').value = (DC_CFG.ovh && DC_CFG.ovh.consumer_key_masked) || '';
+  if ($('dc-yt-en')) $('dc-yt-en').checked = !!(DC_CFG.yottasrc && DC_CFG.yottasrc.enabled);
+  if ($('dc-yt-ep')) $('dc-yt-ep').value = (DC_CFG.yottasrc && DC_CFG.yottasrc.endpoint) || '';
+  if ($('dc-yt-tok')) $('dc-yt-tok').value = (DC_CFG.yottasrc && DC_CFG.yottasrc.token_masked) || '';
+  if ($('dc-yt-hdr')) $('dc-yt-hdr').value = (DC_CFG.yottasrc && DC_CFG.yottasrc.extra_header) || '';
+  if ($('dc-cfg-modal')) $('dc-cfg-modal').classList.add('active');
+}
+
+async function saveDCConfig() {
+  const btn = $('btn-dc-save-cfg');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  try {
+    const payload = {
+      use_outbound: $('dc-use-ob').checked,
+      hetzner: { enabled: $('dc-hz-en').checked, token: $('dc-hz-tok').value.trim() },
+      digitalocean: { enabled: $('dc-do-en').checked, token: $('dc-do-tok').value.trim() },
+      linode: { enabled: $('dc-ln-en').checked, token: $('dc-ln-tok').value.trim() },
+      ovh: {
+        enabled: $('dc-ovh-en').checked, endpoint: $('dc-ovh-ep').value,
+        app_key: $('dc-ovh-ak').value.trim(), app_secret: $('dc-ovh-as').value.trim(), consumer_key: $('dc-ovh-ck').value.trim()
+      },
+      yottasrc: {
+        enabled: $('dc-yt-en').checked, endpoint: $('dc-yt-ep').value.trim(),
+        token: $('dc-yt-tok').value.trim(), extra_header: $('dc-yt-hdr').value.trim()
+      }
+    };
+    const r = await api('api/datacenters/config', 'POST', payload);
+    if (r.ok) {
+      closeModal('dc-cfg-modal');
+      toast(r.message || 'Saved!');
+      await loadDatacenterTab();
+    } else toast(r.error || 'Save failed', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save Encrypted Keys'; }
+  }
+}
+
+async function loadDCServers() {
+  const btn = $('btn-dc-refresh');
+  if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+  try {
+    const r = await api('api/datacenters/servers');
+    if (r.ok) {
+      DC_SERVERS = r.servers || [];
+      const errBox = $('dc-err-box');
+      const errKeys = Object.keys(r.errors || {});
+      if (errBox) {
+        if (errKeys.length) {
+          errBox.style.display = 'block';
+          errBox.textContent = 'Provider warnings: ' + errKeys.map(k => k + ': ' + r.errors[k]).join(' | ');
+        } else errBox.style.display = 'none';
+      }
+      renderDCProviderCards();
+      renderDCServers();
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Sync Cloud'; }
+  }
+}
+
+function setDCFilter(f) {
+  DC_FILTER = f;
+  document.querySelectorAll('#dc-filter-pills button').forEach(b => {
+    b.className = 'btn btn-sm ' + (b.dataset.dcf === f ? 'btn-sky' : 'btn-ghost');
+  });
+  renderDCServers();
+}
+
+function renderDCServers() {
+  const box = $('dc-srv-list');
+  if (!box) return;
+  const q = ($('dc-search') && $('dc-search').value || '').trim().toLowerCase();
+  const list = DC_SERVERS.filter(s => {
+    if (DC_FILTER !== 'all' && s.provider !== DC_FILTER) return false;
+    if (q && !(s.name + ' ' + s.ipv4 + ' ' + s.region + ' ' + s.provider).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  if (!list.length) {
+    box.innerHTML = '<div class="card sp" style="grid-column:1/-1; text-align:center; color:var(--muted);">No cloud servers found. Click <b>⚙ API Keys</b> to connect Hetzner, DigitalOcean, Linode, OVHcloud, or YottaSrc.</div>';
+    return;
+  }
+  box.innerHTML = list.map((s, idx) => {
+    const on = /run|active|on/i.test(s.status || '');
+    const pObj = DC_META.find(x => x.id === s.provider) || { ico: '☁️', name: s.provider };
+    return `<div class="dc-srv-card">
+      <div class="dc-srv-head">
+        <div>
+          <strong>${pObj.ico} ${esc(s.name)}</strong>
+          <div class="mono" style="font-size:.72rem; color:var(--muted);">${esc(pObj.name)} · #${esc(s.id)}</div>
+        </div>
+        <span class="badge mono ${on ? 'b-iran' : 'b-miss'}">${esc((s.status || 'unknown').toUpperCase())}</span>
+      </div>
+      <div class="dc-srv-meta mono">
+        <div title="IPv4">IPv4: ${esc(s.ipv4 || '—')}</div>
+        <div title="Region">Region: ${esc(s.region || '—')}</div>
+        <div title="Plan">Plan: ${esc(s.plan || '—')}</div>
+        <div title="OS Image">OS: ${esc(s.image || '—')}</div>
+      </div>
+      <div class="dc-srv-acts">
+        <button class="btn btn-sky btn-sm" onclick="importDCServer(${idx})">➕ Import</button>
+        ${s.can_rebuild ? `<button class="btn btn-warn btn-sm" onclick="openDCRebuildModal(${idx})">🔄 Rebuild OS</button>` : ''}
+        ${s.can_fw ? `<button class="btn btn-ghost btn-sm" onclick="dcQuickAction('${esc(s.provider)}','${esc(s.id)}','open_peer_fw')">🛡️ Peer FW</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="dcQuickAction('${esc(s.provider)}','${esc(s.id)}','reboot')">↻ Reboot</button>
+        <button class="btn btn-ghost btn-sm" onclick="dcQuickAction('${esc(s.provider)}','${esc(s.id)}','${on ? 'poweroff' : 'poweron'}')">${on ? '⏻ Off' : '▶ On'}</button>
+        ${s.can_delete ? `<button class="btn btn-danger btn-sm" onclick="dcQuickAction('${esc(s.provider)}','${esc(s.id)}','delete')">🗑️</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function dcQuickAction(provider, serverId, action) {
+  if (action === 'delete' && !confirm('Permanently DELETE this cloud server from ' + provider + '? This cannot be undone!')) return;
+  if (action === 'poweroff' && !confirm('Power off this server?')) return;
+  const r = await api('api/datacenters/action', 'POST', { provider, server_id: serverId, action });
+  if (r.ok) {
+    toast(r.message || 'Done!');
+    setTimeout(loadDCServers, 1200);
+  } else toast(r.error || 'Action failed', true);
+}
+
+async function openDCRebuildModal(idx) {
+  const s = DC_SERVERS[idx];
+  if (!s) return;
+  _dcRbTarget = s;
+  if ($('dc-rb-info')) $('dc-rb-info').textContent = `Rebuilding "${s.name}" (${s.ipv4 || s.id}) on ${s.provider.toUpperCase()} will wipe all disks and install a fresh OS.`;
+  if ($('dc-rb-img')) $('dc-rb-img').innerHTML = '<option>Loading OS images...</option>';
+  if ($('dc-rb-pass')) $('dc-rb-pass').value = '';
+  if ($('dc-rebuild-modal')) $('dc-rebuild-modal').classList.add('active');
+  const r = await api(`api/datacenters/options?provider=${encodeURIComponent(s.provider)}&server_id=${encodeURIComponent(s.id)}`);
+  if (r.ok && r.options && $('dc-rb-img')) {
+    $('dc-rb-img').innerHTML = (r.options.images || []).map(o => `<option value="${esc(o.id)}">${esc(o.label)}</option>`).join('');
+  }
+}
+
+async function execDCRebuild() {
+  if (!_dcRbTarget) return;
+  if (!confirm(`Confirm OS Rebuild for "${_dcRbTarget.name}"? All existing data will be erased!`)) return;
+  const btn = $('btn-dc-rb-go');
+  if (btn) { btn.disabled = true; btn.textContent = 'Rebuilding...'; }
+  try {
+    const r = await api('api/datacenters/action', 'POST', {
+      provider: _dcRbTarget.provider, server_id: _dcRbTarget.id, action: 'rebuild',
+      image: $('dc-rb-img').value, root_password: $('dc-rb-pass').value.trim()
+    });
+    if (r.ok) {
+      closeModal('dc-rebuild-modal');
+      toast(r.message + (r.root_password ? (' | New Root Pass: ' + r.root_password) : ''));
+      if (r.root_password) prompt('Save your new Root Password (copied/ready):', r.root_password);
+      setTimeout(loadDCServers, 1500);
+    } else toast(r.error || 'Rebuild failed', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Confirm Rebuild OS'; }
+  }
+}
+
+async function openDCCreateModal() {
+  if ($('dc-create-modal')) $('dc-create-modal').classList.add('active');
+  await loadDCCreateOptions();
+}
+
+async function loadDCCreateOptions() {
+  const prov = $('dc-cr-prov').value;
+  $('dc-cr-reg').innerHTML = '<option>Loading...</option>';
+  $('dc-cr-plan').innerHTML = '<option>Loading...</option>';
+  $('dc-cr-img').innerHTML = '<option>Loading...</option>';
+  const r = await api('api/datacenters/options?provider=' + encodeURIComponent(prov));
+  if (r.ok && r.options) {
+    $('dc-cr-reg').innerHTML = (r.options.regions || []).map(o => `<option value="${esc(o.id)}">${esc(o.label)}</option>`).join('') || '<option value="default">Default</option>';
+    $('dc-cr-plan').innerHTML = (r.options.plans || []).map(o => `<option value="${esc(o.id)}">${esc(o.label)}</option>`).join('') || '<option value="default">Default</option>';
+    $('dc-cr-img').innerHTML = (r.options.images || []).map(o => `<option value="${esc(o.id)}">${esc(o.label)}</option>`).join('');
+  } else toast(r.error || 'Could not load provider options', true);
+}
+
+async function execDCCreate() {
+  const btn = $('btn-dc-cr-go');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
+  try {
+    const r = await api('api/datacenters/create', 'POST', {
+      provider: $('dc-cr-prov').value,
+      name: $('dc-cr-name').value.trim(),
+      region: $('dc-cr-reg').value,
+      plan: $('dc-cr-plan').value,
+      image: $('dc-cr-img').value,
+      root_password: $('dc-cr-pass').value.trim(),
+      auto_import: $('dc-cr-imp').checked
+    });
+    if (r.ok) {
+      closeModal('dc-create-modal');
+      toast(r.message || 'Server created!');
+      if (r.root_password) prompt('Server Created! Save Root Password:', r.root_password);
+      loadDCServers();
+      if ($('dc-cr-imp').checked) loadServers();
+    } else toast(r.error || 'Create failed', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Create Server'; }
+  }
+}
+
+async function importDCServer(idx) {
+  const s = DC_SERVERS[idx];
+  if (!s || !s.ipv4) { toast('Server has no IPv4 yet', true); return; }
+  const pass = prompt(`Import "${s.name}" (${s.ipv4}) to MControl Servers.\nEnter SSH root password (optional, you can also set it later in Edit):`, '') || '';
+  const r = await api('api/datacenters/import', 'POST', {
+    name: s.name, host: s.ipv4, port: 22, username: 'root', password: pass,
+    provider: s.provider, region: s.region, role: 'foreign'
+  });
+  if (r.ok) { toast(r.message || 'Imported!'); loadServers(); }
+  else toast(r.error || 'Import failed', true);
+}
+
 async function boot() {
   applyLang();
   setLoginFX(ls.get('mc_login_fx', 'aurora'));
