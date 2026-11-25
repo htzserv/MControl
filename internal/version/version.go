@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-const Current = "1.4.6"
+const Current = "1.0.1"
 
 // Compare compares two 4-segment version strings (e.g. "1.4.0.0" vs "1.4.0.1").
 // Returns 1 if a > b, -1 if a < b, 0 if equal.

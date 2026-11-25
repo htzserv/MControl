@@ -351,11 +351,20 @@ func (h *Handler) applyProbe(srv *db.Server, p sshclient.ProbeResult) {
 	if p.Online {
 		status = "online"
 	}
-	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, h.serverSocksProxy(srv))
-	if (pingMs == "" || pingMs == "N/A") && p.PingMs != "" {
-		pingMs = p.PingMs
+	socksPx := h.serverSocksProxy(srv)
+	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
+	obPingMs := ""
+	if socksPx != "" {
+		if p.Online && p.PingMs != "" {
+			obPingMs = p.PingMs
+		} else if p.Online {
+			obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
+		} else {
+			obPingMs = "N/A"
+		}
 	}
 	_ = h.store.UpdateServerRuntime(srv.ID, status, p.CPU, p.RAM, p.Uptime, p.IPv4, p.IPv6, p.NetRx, p.NetTx, p.InstalledTools, pingMs, p.CoreInstalled, p.CoreVersion, p.Error)
+	_ = h.store.UpdateServerPings(srv.ID, pingMs, obPingMs)
 	if srv.HostKey == "" && p.HostKey != "" && p.Online {
 		_ = h.store.SetHostKey(srv.ID, p.HostKey)
 	}
@@ -1165,14 +1174,13 @@ func (h *Handler) handlePingServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	socksPx := h.serverSocksProxy(srv)
-	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, socksPx)
-	if (pingMs == "" || pingMs == "N/A") && srv.AuthMode == "peer" && srv.PeerCode != "" {
-		if pr := sshclient.ProbePeer(srv.Host, srv.AgentPort, srv.PeerCode, socksPx); pr.Online && pr.PingMs != "" {
-			pingMs = pr.PingMs
-		}
+	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
+	obPingMs := ""
+	if socksPx != "" {
+		obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
 	}
-	_ = h.store.UpdateServerPing(id, pingMs)
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ping_ms": pingMs})
+	_ = h.store.UpdateServerPings(id, pingMs, obPingMs)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ping_ms": pingMs, "outbound_ping_ms": obPingMs})
 }
 
 func (h *Handler) handleProbeAll(w http.ResponseWriter, r *http.Request) {

@@ -52,6 +52,7 @@ type Server struct {
 	PeerCode       string `json:"peer_code,omitempty"`
 	AgentPort      int    `json:"agent_port"`
 	PingMs         string `json:"ping_ms"`
+	OutboundPingMs string `json:"outbound_ping_ms"`
 	UseOutbound    bool   `json:"use_outbound"`
 	LastSpeed      string `json:"last_speed"`
 	CreatedAt      int64  `json:"created_at"`
@@ -297,6 +298,7 @@ func (s *Store) migrate() error {
 		"ALTER TABLE servers ADD COLUMN peer_code TEXT DEFAULT ''",
 		"ALTER TABLE servers ADD COLUMN agent_port INTEGER DEFAULT 2054",
 		"ALTER TABLE servers ADD COLUMN ping_ms TEXT DEFAULT '---'",
+		"ALTER TABLE servers ADD COLUMN outbound_ping_ms TEXT DEFAULT ''",
 		"ALTER TABLE servers ADD COLUMN last_speed TEXT DEFAULT ''",
 		"ALTER TABLE servers ADD COLUMN use_outbound INTEGER DEFAULT 0",
 		"ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1",
@@ -579,7 +581,7 @@ func (s *Store) ListServers() ([]Server, error) {
 		       country, country_code, datacenter,
 		       core_installed, core_version, status, cpu, ram, uptime,
 		       COALESCE(ipv4,''), COALESCE(ipv6,''), COALESCE(net_rx,'0 B/s'), COALESCE(net_tx,'0 B/s'), COALESCE(installed_tools,''),
-		       COALESCE(auth_mode,'ssh'), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(last_speed,''), COALESCE(use_outbound,0), created_at
+		       COALESCE(auth_mode,'ssh'), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(outbound_ping_ms,''), COALESCE(last_speed,''), COALESCE(use_outbound,0), created_at
 		FROM servers ORDER BY role ASC, id DESC`)
 	if err != nil {
 		return nil, err
@@ -596,7 +598,7 @@ func (s *Store) ListServers() ([]Server, error) {
 			&srv.Country, &srv.CountryCode, &srv.Datacenter,
 			&inst, &srv.CoreVersion, &srv.Status, &srv.CPU, &srv.RAM, &srv.Uptime,
 			&srv.IPv4, &srv.IPv6, &srv.NetRx, &srv.NetTx, &srv.InstalledTools,
-			&srv.AuthMode, &srv.AgentPort, &srv.PingMs, &srv.LastSpeed, &useOB, &srv.CreatedAt,
+			&srv.AuthMode, &srv.AgentPort, &srv.PingMs, &srv.OutboundPingMs, &srv.LastSpeed, &useOB, &srv.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -620,14 +622,14 @@ func (s *Store) GetServerWithSecret(id int64) (*Server, error) {
 		       country, country_code, datacenter,
 		       core_installed, core_version, status, cpu, ram, uptime,
 		       COALESCE(ipv4,''), COALESCE(ipv6,''), COALESCE(net_rx,'0 B/s'), COALESCE(net_tx,'0 B/s'), COALESCE(installed_tools,''),
-		       COALESCE(auth_mode,'ssh'), COALESCE(peer_code,''), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(last_speed,''), COALESCE(use_outbound,0), created_at
+		       COALESCE(auth_mode,'ssh'), COALESCE(peer_code,''), COALESCE(agent_port,2054), COALESCE(ping_ms,'---'), COALESCE(outbound_ping_ms,''), COALESCE(last_speed,''), COALESCE(use_outbound,0), created_at
 		FROM servers WHERE id = ?`, id).Scan(
 		&srv.ID, &srv.Name, &srv.Role, &srv.Host, &srv.Port, &srv.Username, &encPass,
 		&srv.AuthType, &srv.HostKey, &srv.LastError,
 		&srv.Country, &srv.CountryCode, &srv.Datacenter,
 		&inst, &srv.CoreVersion, &srv.Status, &srv.CPU, &srv.RAM, &srv.Uptime,
 		&srv.IPv4, &srv.IPv6, &srv.NetRx, &srv.NetTx, &srv.InstalledTools,
-		&srv.AuthMode, &srv.PeerCode, &srv.AgentPort, &srv.PingMs, &srv.LastSpeed, &useOB, &srv.CreatedAt,
+		&srv.AuthMode, &srv.PeerCode, &srv.AgentPort, &srv.PingMs, &srv.OutboundPingMs, &srv.LastSpeed, &useOB, &srv.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -816,6 +818,11 @@ func (s *Store) SetServerPeerMode(id int64, peerCode string, agentPort int) erro
 
 func (s *Store) UpdateServerPing(id int64, pingMs string) error {
 	_, err := s.db.Exec("UPDATE servers SET ping_ms=? WHERE id=?", pingMs, id)
+	return err
+}
+
+func (s *Store) UpdateServerPings(id int64, pingMs, outboundPingMs string) error {
+	_, err := s.db.Exec("UPDATE servers SET ping_ms=?, outbound_ping_ms=? WHERE id=?", pingMs, outboundPingMs, id)
 	return err
 }
 

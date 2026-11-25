@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+- **Official Public Release (`v1.0.1`):** consolidated Peer Agent v4 (Go static binary + Python fallback, Master-IP key sync, 5 fixed ports, TLS cert pinning, reverse heartbeat), Master Outbound Xray Core (Single Active Config + Load Balance + Iran Mirror bundle), Datacenter Cloud Hub (Hetzner, DigitalOcean, Linode, OVHcloud, YottaSrc + OS Rebuild & Peer FW), MDesign PWA, and Advanced 4-mode Server Delete.
+- **Dual Ping (Direct Iran `🇮🇷` + Outbound `🚀`):** displays direct ICMP/TCP latency from Master alongside true end-to-end RTT via Master Outbound (Xray SOCKS5) with dynamic latency colors and 1-click manual Ping (`↻`).
+- **Centered 5-Button Server Action Bar:** centered controls (`Terminal`, `System Controls`, `MControl & Peer`, `Network & Stats`, `Manage`), moved live `IPv6`, `BBR`, and `Firewall` status toggles into the `Network & Stats` dropdown, and enriched `MControl & Peer` (`Update Peer Agent`, `Unpair`) and `Manage` (`Copy IPv4`).
+
+
 ## 1.4.6
 - **5-Button Server Dropdown Bar + Dynamic Ping Colors + True Iran Direct Ping:** condensed server controls into 5 clean buttons (*Terminal* standalone + *System Controls*, *MControl & Peer*, *Network & Stats*, *Manage* floating dropdowns), added latency-based Ping bubble colors (green <100ms, amber 100–220ms, red >220ms), and fixed `MeasurePingSmart` to always measure true direct ICMP/TCP latency from Master instead of local Xray SOCKS5 loopback handshake (~0.5ms).
 - **Categorized Server Controls + Smart Outbound Ping & Manual Ping Button:** grouped server card actions into 4 clear categories (*Server*, *MControl & Peer*, *Network & Stats*, *Manage*), added a 1-click manual Ping button (`↻`) next to every Ping badge (`POST /api/servers/{id}/ping`), and upgraded auto-ping (`MeasurePingSmart`) to measure RTT over Master Outbound SOCKS5 / Peer TLS so Outbound nodes never show `N/A`.

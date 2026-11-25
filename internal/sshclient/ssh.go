@@ -428,8 +428,37 @@ func MeasurePingSmart(host string, sshPort, agentPort int, _ string) string {
 			return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
 		}
 	}
-	// Direct route unreachable: caller falls back to real end-to-end ProbePeer HTTP/TLS RTT
 	return "N/A"
+}
+
+// MeasureOutboundPing measures TRUE end-to-end RTT from Master through Xray SOCKS5 Outbound
+// to the target server (avoiding fake loopback CONNECT timing by waiting for remote TLS/HTTP
+// or SSH banner bytes).
+func MeasureOutboundPing(host string, sshPort, agentPort int, peerCode, socksProxy string) string {
+	host = strings.TrimSpace(host)
+	if host == "" || socksProxy == "" {
+		return ""
+	}
+	if peerCode != "" {
+		if pr := ProbePeer(host, agentPort, peerCode, socksProxy); pr.Online && pr.PingMs != "" {
+			return pr.PingMs
+		}
+	}
+	if sshPort <= 0 {
+		sshPort = 22
+	}
+	start := time.Now()
+	c, err := dialViaSOCKS5(socksProxy, net.JoinHostPort(host, strconv.Itoa(sshPort)), 4*time.Second)
+	if err != nil {
+		return "N/A"
+	}
+	defer c.Close()
+	_ = c.SetReadDeadline(time.Now().Add(4 * time.Second))
+	buf := make([]byte, 16)
+	if n, err := c.Read(buf); err != nil || n == 0 {
+		return "N/A"
+	}
+	return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
 }
 
 func ParseSpeedOutput(out string) SpeedResult {

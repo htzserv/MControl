@@ -3780,8 +3780,20 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
 
 /* ── Compact 5-Button Server Action Bar + Floating Dropdown Menu ── */
 .srv-act-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 10px; padding-top: 12px; border-top: 1px dashed color-mix(in srgb, var(--border) 85%, transparent);
 }
+.ping-pill-inline {
+  display: inline-flex; align-items: center; gap: 4px; vertical-align: middle;
+}
+.ping-pill-inline svg { width: 14px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.dd-st-pill {
+  margin-inline-start: auto; font-size: .64rem; font-weight: 800; padding: 1px 7px; border-radius: 999px;
+  font-family: var(--ff-m); letter-spacing: .04em;
+}
+.dd-st-pill.on  { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 45%, transparent); }
+.dd-st-pill.off { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); border: 1px solid color-mix(in srgb, var(--red) 42%, transparent); }
+.dd-st-pill.unk { background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted); border: 1px solid color-mix(in srgb, var(--muted) 32%, transparent); }
 .srv-dd-btn {
   display: inline-flex; align-items: center; gap: 6px;
 }
@@ -4207,7 +4219,7 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.4.6</span>
+      <span class="mono" id="nav-ver-lbl">v1.0.1</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -7298,7 +7310,7 @@ function renderServerCard(s) {
           <span>CPU <b style="color:var(--accent);">${esc(s.cpu || '0%')}</b> • RAM <b style="color:var(--pink);">${esc(s.ram || '0%')}</b></span>
         </div>
       </div>
-      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)}" data-srv-ping="${id}" title="Direct Ping from Master">${esc(s.ping_ms || "---")}</span><button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" onclick="event.stopPropagation(); manualPingServer(${id})">↻</button></div>
+      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px; flex-wrap:wrap;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}<button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" onclick="event.stopPropagation(); manualPingServer(${id})">↻</button></div>
       <div class="srv-col-hide mono" style="font-size:.78rem; color:var(--muted);">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
       <div class="srv-col-hide" style="display:flex; gap:5px; flex-wrap:wrap;">${s.auth_mode === 'peer' ? '<span class="badge b-iran">PEER V2</span>' : '<span class="badge b-miss">SSH</span>'}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}</div>
       <div style="display:flex; align-items:center; gap:6px;"><span class="chev">▾</span></div>
@@ -7315,7 +7327,7 @@ function renderServerCard(s) {
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">Network Speed &amp; Uptime</div>
           <div class="srv-mini-val"><span style="color:var(--green);">↓ ${esc(s.net_rx || '0 B/s')}</span> <span style="color:var(--muted);">/</span> <span style="color:var(--yellow);">↑ ${esc(s.net_tx || '0 B/s')}</span></div>
-          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • Ping: <span class="badge ${pingBadgeClass(s.ping_ms)} mono" data-srv-ping="${id}" style="padding:1px 7px; font-size:.7rem;">${esc(s.ping_ms || '---')}</span> <button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" style="width:19px; height:19px; font-size:.66rem; vertical-align:middle;" onclick="manualPingServer(${id})">↻</button></div>
+          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''} <button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" style="width:19px; height:19px; font-size:.66rem; vertical-align:middle;" onclick="manualPingServer(${id})">↻</button></div>
         </div>
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">${t('lbl_location')}</div>
@@ -7329,9 +7341,7 @@ function renderServerCard(s) {
           ${renderServerQuotaMini(id)}
         </div>
       </div>
-      <div class="srv-tweak-bar" data-srv-tweak-bar="${id}">
-        ${renderInlineTweakPills(id)}
-      </div>
+
       <div class="srv-act-bar">
         <button type="button" class="btn btn-sky btn-sm" onclick="openWebTerm(${id})">🖥️ ${lang === 'fa' ? 'ترمینال' : 'Terminal'}</button>
         <button type="button" class="btn btn-ghost btn-sm srv-dd-btn" onclick="openSrvDropdown(event, ${id}, 'sys', this)">🛠️ ${lang === 'fa' ? 'کنترل سیستم' : 'System Controls'} <span class="dd-caret">▾</span></button>
@@ -9856,19 +9866,31 @@ function openSrvDropdown(ev, id, group, btn) {
     items = [
       { lbl: fa ? '🚀 نصب و راه‌اندازی (Setup)' : '🚀 Setup', fn: () => openSetupModal(id) },
       { lbl: s.auth_mode === 'peer' ? (fa ? '📡 تست اتصال Peer' : '📡 Check Peer') : ('📡 ' + t('btn_check_ssh')), fn: () => probeOne(id) },
-      { sep: true },
-      s.auth_mode === 'peer'
-        ? { lbl: fa ? '🔑 تغییر کلید Peer (Rotate Key)' : '🔑 Rotate Key', fn: () => rotateServerPeerKey(id) }
-        : { lbl: fa ? '🔗 اتصال Peer (Pair Code)' : '🔗 Pair (Peer Code)', cls: 'is-warn', fn: () => pairServer(id) }
+      { sep: true }
     ];
+    if (s.auth_mode === 'peer') {
+      items.push({ lbl: fa ? '⬆️ آپدیت ایجنت Peer' : '⬆️ Update Peer Agent', fn: () => updatePeerAgent(id) });
+      items.push({ lbl: fa ? '🔑 تغییر کلید Peer (Rotate Key)' : '🔑 Rotate Key', fn: () => rotateServerPeerKey(id) });
+      items.push({ lbl: fa ? '🔓 آن‌پیر (تبدیل به SSH)' : '🔓 Unpair (to SSH)', cls: 'is-warn', fn: () => unpairServer(id) });
+    } else {
+      items.push({ lbl: fa ? '🔗 اتصال Peer (Pair Code)' : '🔗 Pair (Peer Code)', cls: 'is-warn', fn: () => pairServer(id) });
+    }
   } else if (group === 'net') {
+    const st = SRV_TWEAK_CACHE[id];
+    if (!st) loadInlineTweakStatus(id);
+    const pillOf = k => !st ? { txt: '...', cls: 'unk' } : (st[k] ? { txt: 'ON', cls: 'on' } : { txt: 'OFF', cls: 'off' });
     items = [
+      { lbl: '🌐 IPv6', pill: pillOf('ipv6'), fn: () => toggleInlineSrvTweak(id, 'ipv6', btn) },
+      { lbl: '⚡ BBR', pill: pillOf('bbr'), fn: () => toggleInlineSrvTweak(id, 'bbr', btn) },
+      { lbl: '🛡️ Firewall', pill: pillOf('fw'), fn: () => toggleInlineSrvTweak(id, 'fw', btn) },
+      { sep: true },
       { lbl: fa ? '🚀 تست سرعت (Speedtest)' : '🚀 Speedtest', fn: () => runServerSpeedtest(id) },
       { lbl: fa ? '📊 ترافیک و انقضا (Quota)' : '📊 Quota & Expiry', fn: () => openQuotaModal(id) },
-      { lbl: fa ? '↻ پینگ دستی همین الان' : '↻ Ping Now', fn: () => manualPingServer(id) }
+      { lbl: fa ? '↻ پینگ دستی (ایران + اوتباند)' : '↻ Ping Now (Direct + Outbound)', fn: () => manualPingServer(id) }
     ];
   } else if (group === 'mgr') {
     items = [
+      { lbl: fa ? '📋 کپی IPv4 سرور' : '📋 Copy Server IPv4', fn: () => copyText(s.ipv4 || s.host, 'IPv4') },
       { lbl: fa ? '🔄 جایگزینی سرور (Replace)' : '🔄 Replace Server', fn: () => openReplaceSrvModal(id) },
       { lbl: '✏️ ' + t('btn_edit'), fn: () => openSrvModal(id) },
       { sep: true },
@@ -9883,7 +9905,15 @@ function openSrvDropdown(ev, id, group, btn) {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'srv-dd-item ' + (it.cls || '');
-    b.textContent = it.lbl;
+    const sp = document.createElement('span');
+    sp.textContent = it.lbl;
+    b.appendChild(sp);
+    if (it.pill) {
+      const p = document.createElement('span');
+      p.className = 'dd-st-pill ' + it.pill.cls;
+      p.textContent = it.pill.txt;
+      b.appendChild(p);
+    }
     b.onclick = () => { closeSrvDropdown(); it.fn(); };
     m.appendChild(b);
   });
@@ -9907,15 +9937,24 @@ async function manualPingServer(id) {
     const r = await api('api/servers/' + id + '/ping', 'POST');
     if (r.ok) {
       const val = r.ping_ms || 'N/A';
+      const obVal = r.outbound_ping_ms || '';
       const pCls = pingBadgeClass(val);
-      document.querySelectorAll(`[data-srv-ping="${id}"]`).forEach(el => {
-        el.textContent = val;
+      document.querySelectorAll(`[data-srv-ping="${id}"]`).forEach(el => { el.textContent = val; });
+      document.querySelectorAll(`[data-srv-ping-wrap="${id}"]`).forEach(el => {
         el.classList.remove('ping-good', 'ping-mid', 'ping-bad', 'ping-na', 'b-iran');
         el.classList.add(pCls);
       });
+      if (obVal) {
+        const obCls = pingBadgeClass(obVal);
+        document.querySelectorAll(`[data-srv-ob-ping="${id}"]`).forEach(el => { el.textContent = obVal; });
+        document.querySelectorAll(`[data-srv-ob-ping-wrap="${id}"]`).forEach(el => {
+          el.classList.remove('ping-good', 'ping-mid', 'ping-bad', 'ping-na', 'b-iran');
+          el.classList.add(obCls);
+        });
+      }
       const s = (SERVERS || []).find(x => +x.id === +id);
-      if (s) s.ping_ms = val;
-      toast(`Ping: ${val}`);
+      if (s) { s.ping_ms = val; if (obVal) s.outbound_ping_ms = obVal; }
+      toast(obVal ? `🇮🇷 Direct: ${val} | 🚀 Outbound: ${obVal}` : `🇮🇷 Direct Ping: ${val}`);
     } else {
       toast(r.error || 'Ping failed', true);
     }

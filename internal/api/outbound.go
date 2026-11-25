@@ -378,7 +378,7 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 	var bodyStr string
 	client := &http.Client{Timeout: 14 * time.Second}
 	httpReq, _ := http.NewRequest("GET", req.URL, nil)
-	httpReq.Header.Set("User-Agent", "MControl/1.4.6 v2rayN/6.0")
+	httpReq.Header.Set("User-Agent", "MControl/1.0.1 v2rayN/6.0")
 	resp, err := client.Do(httpReq)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
@@ -389,7 +389,7 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 			resp.Body.Close()
 		}
 		if isOutboundActive() {
-			out, cerr := exec.Command("curl", "-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.4.6 v2rayN/6.0", req.URL).Output()
+			out, cerr := exec.Command("curl", "-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.0.1 v2rayN/6.0", req.URL).Output()
 			if cerr == nil {
 				bodyStr = string(out)
 			}
