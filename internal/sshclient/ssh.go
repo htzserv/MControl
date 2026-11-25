@@ -801,7 +801,7 @@ def load_peer_entries():
     return entries
 
 def peer_ok(code):
-    # v3 MASTER_IP_SYNC: multiple Master servers share one agent via `master_ip|peer_code` entries.
+    # v3 MASTER_IP_SYNC: multiple Master servers share one agent via master_ip|peer_code entries.
     if not code: return False
     for _, c in load_peer_entries():
         if c == code:
