@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.5.0
+- **Customizable Top Navigation Tabs + Settings All-Sections Hub + Local Master Terminal:** added an *Edit Top Navigation Tabs* studio inside Theme Studio (drag-and-drop or ▲/▼ reorder, toggle any section like Themes, Outbound, Telegram Bot, Profiles, Master Terminal, or Update Center on/off), added an *All Sections & Tabs* bubble hub inside Settings so every feature stays 1 click away even when hidden from the top bar, and added a Local Master Server Terminal button (`POST /api/local/exec`) inside the top-right collapsible utility bar.
+- **Responsive Server Rows, Reverse Ping (`↩️`) & Upgraded Add-Server Wizard:** fixed desktop/tablet server header overlap with a clean flex layout, added Reverse Ping (`Server → Iran Master`), added an automatic IPv6 slide-down drawer in Add Server Step 1 (`GET /api/servers/resolve-ipv6`), and streamlined Step 2 into 3 clean rows (Port + Auth, Username with automatic Saved Profiles dropdown, Password with Show/Hide eye toggle).
 - **Official Stable Release `v1.5.0`:**
   - **Peer Agent v4 Ultimate:** zero-dependency static Go binary (`cmd/mcontrol-agent`) with Python v4 fallback, Master-IP key sync (`MASTER_IP|PEER_CODE`), 5 fixed ports (`84`, `847`, `7483`, `24819`, `2054`), auto-discovery, TLS certificate pinning, auto-outbound route detection, and reverse heartbeat push (`/_mc_agent/heartbeat`).
   - **Datacenter Cloud Hub (`Datacenter` tab):** unified encrypted API integration for **Hetzner Cloud, DigitalOcean, Linode (Akamai), OVHcloud & YottaSrc** with OS Rebuild, Create/Delete/Reboot/Power controls, 1-click Peer v4 Cloud Firewall, and 1-click Import.

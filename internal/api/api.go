@@ -346,25 +346,122 @@ func targetOf(srv *db.Server) sshclient.Target {
 }
 
 // applyProbe stores the probe outcome and pins the host key on first successful contact.
+// measureReversePing measures RTT from the remote server BACK to the Master server IP.
+func (h *Handler) measureReversePing(srv *db.Server) string {
+	if srv == nil {
+		return ""
+	}
+	masterIP := strings.TrimSpace(h.masterPublicIP())
+	if masterIP == "" || masterIP == "N/A" || strings.EqualFold(masterIP, strings.TrimSpace(srv.Host)) {
+		return ""
+	}
+	panelPort := strings.TrimSpace(h.store.GetSettings().PanelPort)
+	if panelPort == "" {
+		panelPort = h.currentPort
+	}
+	if panelPort == "" {
+		panelPort = "2053"
+	}
+	cmd := fmt.Sprintf(`P=$(ping -c 1 -W 2 %s 2>/dev/null | sed -n 's/.*time=\([0-9.]*\).*/\1/p' | head -n1)
+if [ -n "$P" ]; then echo "${P} ms"; exit 0; fi
+if command -v python3 >/dev/null 2>&1; then
+  python3 -c 'import socket,time; t=time.monotonic(); s=socket.create_connection((%q,%s),2.5); s.close(); print(f"{(time.monotonic()-t)*1000:.1f} ms")' 2>/dev/null || echo "N/A"
+else
+  echo "N/A"
+fi`, sshclient.ShQuote(masterIP), masterIP, panelPort)
+	res := h.runOnServer(srv, cmd, 6*time.Second)
+	if res.Err != nil {
+		return "N/A"
+	}
+	lines := strings.Split(strings.TrimSpace(res.Output), "\n")
+	if len(lines) == 0 {
+		return "N/A"
+	}
+	last := strings.TrimSpace(lines[len(lines)-1])
+	if last == "" {
+		return "N/A"
+	}
+	return last
+}
+
+func (h *Handler) handleResolveIPv6(w http.ResponseWriter, r *http.Request) {
+	host := strings.TrimSpace(r.URL.Query().Get("host"))
+	if host == "" {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ipv6": ""})
+		return
+	}
+	// 1) If user typed an IPv6 literal directly
+	if ip := net.ParseIP(host); ip != nil && ip.To4() == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ipv6": ip.String()})
+		return
+	}
+	// 2) Check if we already have this host in our servers DB with a known IPv6
+	if list, err := h.store.ListServers(); err == nil {
+		for _, s := range list {
+			if (strings.EqualFold(s.Host, host) || strings.EqualFold(s.IPv4, host)) && s.IPv6 != "" && s.IPv6 != "N/A" {
+				writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ipv6": s.IPv6})
+				return
+			}
+		}
+	}
+	// 3) DNS lookup: if domain -> AAAA; if IPv4 -> reverse PTR -> AAAA
+	ctx, cancel := context.WithTimeout(r.Context(), 2500*time.Millisecond)
+	defer cancel()
+	found := ""
+	if net.ParseIP(host) == nil {
+		if ips, err := net.DefaultResolver.LookupIP(ctx, "ip6", host); err == nil && len(ips) > 0 {
+			found = ips[0].String()
+		}
+	} else {
+		if ptrs, err := net.DefaultResolver.LookupAddr(ctx, host); err == nil {
+			for _, ptr := range ptrs {
+				ptr = strings.TrimSuffix(ptr, ".")
+				if ips, e2 := net.DefaultResolver.LookupIP(ctx, "ip6", ptr); e2 == nil && len(ips) > 0 {
+					found = ips[0].String()
+					break
+				}
+			}
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ipv6": found})
+}
+
 func (h *Handler) applyProbe(srv *db.Server, p sshclient.ProbeResult) {
 	status := "offline"
 	if p.Online {
 		status = "online"
 	}
 	socksPx := h.serverSocksProxy(srv)
-	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
-	obPingMs := ""
+	var pingMs, obPingMs, revPingMs string
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		pingMs = sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
+	}()
 	if socksPx != "" {
 		if p.Online && p.PingMs != "" {
 			obPingMs = p.PingMs
 		} else if p.Online {
-			obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
+			}()
 		} else {
 			obPingMs = "N/A"
 		}
 	}
+	if p.Online {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			revPingMs = h.measureReversePing(srv)
+		}()
+	}
+	wg.Wait()
 	_ = h.store.UpdateServerRuntime(srv.ID, status, p.CPU, p.RAM, p.Uptime, p.IPv4, p.IPv6, p.NetRx, p.NetTx, p.InstalledTools, pingMs, p.CoreInstalled, p.CoreVersion, p.Error)
-	_ = h.store.UpdateServerPings(srv.ID, pingMs, obPingMs)
+	_ = h.store.UpdateServerPings(srv.ID, pingMs, obPingMs, revPingMs)
 	if srv.HostKey == "" && p.HostKey != "" && p.Online {
 		_ = h.store.SetHostKey(srv.ID, p.HostKey)
 	}
@@ -454,6 +551,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/ping", h.auth(h.handlePingServer))
 	mux.HandleFunc("POST /api/servers/probe-all", h.auth(h.handleProbeAll))
 	mux.HandleFunc("POST /api/servers/ping-all", h.auth(h.handlePingAllServers))
+	mux.HandleFunc("GET /api/servers/resolve-ipv6", h.auth(h.handleResolveIPv6))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/unpair", h.auth(h.handleUnpairPeer))
@@ -463,6 +561,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/speedtest", h.auth(h.handleServerSpeedtest))
 	mux.HandleFunc("POST /api/servers/{id}/service", h.auth(h.handleService))
 	mux.HandleFunc("POST /api/servers/{id}/exec", h.auth(h.handleExec))
+	mux.HandleFunc("POST /api/local/exec", h.auth(h.handleLocalExec))
 	mux.HandleFunc("POST /api/servers/{id}/hostkey/reset", h.auth(h.handleResetHostKey))
 	mux.HandleFunc("GET /api/settings", h.auth(h.handleGetSettings))
 	mux.HandleFunc("POST /api/settings", h.auth(h.handleSaveSettings))
@@ -824,6 +923,7 @@ type serverReq struct {
 	Secret       string `json:"secret"`
 	SSHProfileID int64  `json:"ssh_profile_id"`
 	UseOutbound  bool   `json:"use_outbound"`
+	IPv6         string `json:"ipv6"`
 }
 
 // normalize validates and cleans a server request, returning an error message ("" when fine).
@@ -943,7 +1043,7 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		RAM:            p.RAM,
 		Uptime:         p.Uptime,
 		IPv4:           p.IPv4,
-		IPv6:           p.IPv6,
+		IPv6:           func() string { if p.IPv6 != "" && p.IPv6 != "N/A" { return p.IPv6 }; return strings.TrimSpace(req.IPv6) }(),
 		NetRx:          p.NetRx,
 		NetTx:          p.NetTx,
 		InstalledTools: p.InstalledTools,
@@ -1164,6 +1264,30 @@ func (h *Handler) handleProbeServer(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "probe": p})
 }
 
+func (h *Handler) measureAllPingsForServer(srv *db.Server) (string, string, string) {
+	socksPx := h.serverSocksProxy(srv)
+	var pingMs, obPingMs, revPingMs string
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		pingMs = sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
+	}()
+	go func() {
+		defer wg.Done()
+		revPingMs = h.measureReversePing(srv)
+	}()
+	if socksPx != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
+		}()
+	}
+	wg.Wait()
+	return pingMs, obPingMs, revPingMs
+}
+
 func (h *Handler) handlePingServer(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -1174,14 +1298,9 @@ func (h *Handler) handlePingServer(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusNotFound, "server not found")
 		return
 	}
-	socksPx := h.serverSocksProxy(srv)
-	pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
-	obPingMs := ""
-	if socksPx != "" {
-		obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
-	}
-	_ = h.store.UpdateServerPings(id, pingMs, obPingMs)
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ping_ms": pingMs, "outbound_ping_ms": obPingMs})
+	pingMs, obPingMs, revPingMs := h.measureAllPingsForServer(srv)
+	_ = h.store.UpdateServerPings(id, pingMs, obPingMs, revPingMs)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ping_ms": pingMs, "outbound_ping_ms": obPingMs, "reverse_ping_ms": revPingMs})
 }
 
 func (h *Handler) handlePingAllServers(w http.ResponseWriter, r *http.Request) {
@@ -1202,13 +1321,8 @@ func (h *Handler) handlePingAllServers(w http.ResponseWriter, r *http.Request) {
 			if e != nil {
 				return
 			}
-			socksPx := h.serverSocksProxy(srv)
-			pingMs := sshclient.MeasurePingSmart(srv.Host, srv.Port, srv.AgentPort, "")
-			obPingMs := ""
-			if socksPx != "" {
-				obPingMs = sshclient.MeasureOutboundPing(srv.Host, srv.Port, srv.AgentPort, srv.PeerCode, socksPx)
-			}
-			_ = h.store.UpdateServerPings(id, pingMs, obPingMs)
+			pingMs, obPingMs, revPingMs := h.measureAllPingsForServer(srv)
+			_ = h.store.UpdateServerPings(id, pingMs, obPingMs, revPingMs)
 		}(item.ID)
 	}
 	wg.Wait()
@@ -1368,6 +1482,52 @@ func (h *Handler) handleExec(w http.ResponseWriter, r *http.Request) {
 // ---------------------------------------------------------------------------
 // Settings & password
 // ---------------------------------------------------------------------------
+
+
+func (h *Handler) handleLocalExec(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Command string `json:"command"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	cmdStr := strings.TrimSpace(req.Command)
+	if cmdStr == "" {
+		fail(w, http.StatusBadRequest, "command is empty")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "bash", "-c", cmdStr)
+	out, err := cmd.CombinedOutput()
+	if len(out) > 200000 {
+		out = out[:200000]
+	}
+	exitCode := 0
+	errMsg := ""
+	if ctx.Err() == context.DeadlineExceeded {
+		exitCode = 124
+		errMsg = "command timed out (30s)"
+	} else if err != nil {
+		exitCode = 1
+		if ee, ok := err.(*exec.ExitError); ok {
+			exitCode = ee.ExitCode()
+		} else {
+			errMsg = err.Error()
+		}
+	}
+	logCmd := cmdStr
+	if len(logCmd) > 80 {
+		logCmd = logCmd[:80] + "..."
+	}
+	h.logAudit(r.Header.Get("X-MC-User"), "POST", r.URL.Path, "Local Master Exec: "+logCmd)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"output": string(out),
+		"exit":   exitCode,
+		"error":  errMsg,
+	})
+}
 
 func (h *Handler) handleGetSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "settings": h.store.GetSettings()})

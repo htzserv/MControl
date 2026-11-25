@@ -494,9 +494,13 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
 .srv-row-wrap:hover { border-color: var(--accent); box-shadow: 0 12px 30px -6px var(--shadow), 0 0 16px var(--accent-soft); }
 
 .srv-row-head {
-  display: grid; grid-template-columns: minmax(185px, 1.45fr) minmax(150px, 1.15fr) minmax(140px, 1fr) minmax(110px, .9fr) auto;
-  align-items: center; gap: 16px; padding: 18px 22px; min-height: 68px; cursor: pointer; user-select: none;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 10px 14px; padding: 14px 20px; min-height: 66px; cursor: pointer; user-select: none;
 }
+.srv-head-name { flex: 1 1 180px; min-width: 0; }
+.srv-head-pings { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1.3 1 250px; min-width: 0; font-size: .8rem; }
+.srv-head-cpu { flex: 0 0 auto; white-space: nowrap; font-size: .77rem; color: var(--muted); }
+.srv-head-right { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; flex: 0 0 auto; margin-inline-start: auto; }
 .srv-row-head .chev { transition: transform .3s cubic-bezier(.4,0,.2,1); color: var(--muted); font-size: .95rem; }
 .srv-row-wrap.open .srv-row-head .chev { transform: rotate(180deg); color: var(--accent); }
 .srv-mob-meta { display: none; }
@@ -3856,6 +3860,204 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
   justify-content: center;
 }
 
+
+/* ── Add Server Step 1: Auto-IPv6 Slide-Down Drawer ── */
+.ipv6-drawer {
+  max-height: 0; opacity: 0; overflow: hidden; margin-bottom: 0;
+  transition: max-height .32s cubic-bezier(.16,1,.3,1), opacity .25s ease, margin-bottom .25s ease;
+}
+.ipv6-drawer.open {
+  max-height: 96px; opacity: 1; margin-bottom: 12px;
+}
+
+/* ── Add Server Step 2: Username Combo Dropdown + Password Eye Toggle ── */
+.user-combo-wrap { position: relative; }
+.user-combo-wrap input { padding-inline-end: 36px; }
+.user-combo-btn {
+  position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px; border: none; border-radius: 8px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; font-size: .8rem;
+}
+.user-combo-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.user-prof-dd {
+  position: absolute; inset-inline: 0; top: calc(100% + 5px); z-index: 40;
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 36%, var(--border));
+  border-radius: 13px; box-shadow: 0 16px 36px -8px rgba(0,0,0,.35);
+  padding: 5px; max-height: 210px; overflow-y: auto; display: none; flex-direction: column; gap: 3px;
+}
+.user-prof-dd.open { display: flex; }
+.user-prof-item {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px; border: none; border-radius: 9px; background: transparent;
+  color: var(--text); font-size: .8rem; text-align: start; cursor: pointer;
+  transition: background .14s ease;
+}
+.user-prof-item:hover { background: var(--accent-soft); color: var(--accent); }
+.user-prof-meta { font-size: .71rem; color: var(--muted); font-family: var(--ff-m); }
+.pass-eye-wrap { position: relative; }
+.pass-eye-wrap input { padding-inline-end: 40px; }
+.pass-eye-btn {
+  position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px; border: none; border-radius: 8px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; font-size: .95rem;
+}
+.pass-eye-btn:hover { background: var(--accent-soft); color: var(--accent); }
+
+
+/* ── Settings: All Sections Hub Bubbles ── */
+.sec-bubbles-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr)); gap: 11px;
+}
+.sec-bubble-card {
+  padding: 13px 15px; border-radius: min(var(--rc, 18px), 18px);
+  background: var(--row); border: 1.5px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+  transition: transform .16s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.sec-bubble-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 10px 24px -10px var(--shadow);
+}
+.sec-bubble-card.is-pinned {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--row));
+}
+.sec-bubble-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.sec-bubble-title {
+  display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .88rem; color: var(--text);
+}
+.sec-bubble-ico {
+  width: 30px; height: 30px; border-radius: 10px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+.sec-bubble-ico svg { width: 15px; height: 15px; }
+.sec-bubble-desc { font-size: .74rem; color: var(--muted); line-height: 1.45; flex: 1; }
+.sec-bubble-acts { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent); }
+
+/* ── Theme Studio: Edit Top Tabs (Drag & Drop + Toggle) ── */
+.etab-list { display: flex; flex-direction: column; gap: 7px; }
+.etab-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 9px 12px; border-radius: 13px;
+  background: var(--row); border: 1.5px solid var(--border);
+  transition: border-color .16s ease, background .16s ease, opacity .16s ease, transform .14s ease;
+  cursor: grab;
+}
+.etab-row:active { cursor: grabbing; }
+.etab-row.is-hidden { opacity: .56; }
+.etab-row.drag-over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, var(--row));
+  transform: scale(1.01);
+}
+.etab-left { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; }
+.etab-grip { color: var(--muted); font-size: .95rem; letter-spacing: -1px; user-select: none; cursor: grab; }
+.etab-ico {
+  width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface)); color: var(--accent);
+}
+.etab-ico svg { width: 14px; height: 14px; }
+.etab-meta { min-width: 0; }
+.etab-meta strong { display: block; font-size: .83rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etab-meta span { display: block; font-size: .7rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etab-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.etab-mv {
+  width: 26px; height: 26px; padding: 0; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  cursor: pointer; font-size: .72rem; display: inline-flex; align-items: center; justify-content: center;
+}
+.etab-mv:hover { border-color: var(--accent); color: var(--accent); }
+.etab-switch {
+  position: relative; display: inline-block; width: 38px; height: 21px; flex-shrink: 0;
+}
+.etab-switch input { opacity: 0; width: 0; height: 0; }
+.etab-slider {
+  position: absolute; inset: 0; border-radius: 999px; cursor: pointer;
+  background: color-mix(in srgb, var(--muted) 32%, transparent);
+  border: 1px solid var(--border); transition: background .18s ease;
+}
+.etab-slider::before {
+  content: ''; position: absolute; width: 15px; height: 15px; left: 2px; top: 2px;
+  border-radius: 50%; background: #fff; transition: transform .18s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,.3);
+}
+.etab-switch input:checked + .etab-slider {
+  background: var(--accent); border-color: var(--accent);
+}
+.etab-switch input:checked + .etab-slider::before {
+  transform: translateX(17px);
+}
+
+
+/* ── Unified Xray Outbound Hub (MDesign) ── */
+.ob-hub-card { display: flex; flex-direction: column; gap: 14px; }
+.ob-sec-div { height: 1px; background: color-mix(in srgb, var(--border) 82%, transparent); margin: 2px 0; }
+.ob-uri-bar {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.ob-uri-input {
+  flex: 1 1 240px; min-width: 0;
+  height: 40px; padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--ff-m); font-size: .8rem;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.ob-uri-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.ob-sub-acc {
+  border-radius: min(var(--rc, 16px), 16px);
+  background: var(--row);
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  transition: border-color .18s ease;
+}
+.ob-sub-acc.open {
+  border-color: color-mix(in srgb, var(--accent) 44%, var(--border));
+}
+.ob-sub-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 11px 14px; cursor: pointer; user-select: none;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+.ob-sub-head:hover { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.ob-sub-chev { font-size: .82rem; color: var(--muted); transition: transform .2s ease; }
+.ob-sub-acc.open .ob-sub-chev { transform: rotate(180deg); color: var(--accent); }
+.ob-sub-usage {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: .72rem; color: var(--muted); margin-top: 4px;
+}
+.ob-usage-bar {
+  width: 92px; height: 6px; border-radius: 999px; overflow: hidden;
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+}
+.ob-usage-bar > i {
+  display: block; height: 100%; border-radius: 999px;
+  background: var(--accent); transition: width .25s ease;
+}
+.ob-sub-body {
+  display: none; flex-direction: column; gap: 6px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  max-height: 360px; overflow-y: auto;
+}
+.ob-sub-acc.open .ob-sub-body { display: flex; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4264,6 +4466,7 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
       <div class="util-items" id="util-items">
         <button class="icon-btn" id="btn-pwa-install" title="Install App (PWA)" onclick="triggerPwaInstall()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
         <button class="icon-btn" id="btn-cmd-k" title="Quick Search (Ctrl+K)" onclick="openCmdPalette()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        <button class="icon-btn" id="btn-local-term" title="Master Server Terminal" onclick="openLocalWebTerm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></button>
         <button class="icon-btn" id="btn-theme-quick" data-i18n-title="nav_themes" title="Themes" onclick="openThemesQuick()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7" r="1.2"/><circle cx="16" cy="10" r="1.2"/><path d="M12 22c-1.5 0-2-1.5-1-2.6.8-.9.4-2.4-1-2.4H8a4 4 0 0 1-4-4"/></svg>
         </button>
@@ -4981,12 +5184,27 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
 
         <div class="sub-tabs" style="justify-content:center;">
           <div class="sub-tab active" id="stab-general" onclick="switchSubTab('general', this)">General &amp; System</div>
+          <div class="sub-tab" id="stab-sections" onclick="switchSubTab('sections', this)">All Sections &amp; Tabs</div>
           <div class="sub-tab" id="stab-profiles" onclick="switchSubTab('profiles', this)">Profiles &amp; Backup</div>
           <div class="sub-tab" id="stab-cf" onclick="switchSubTab('cf', this)">Cloud DNS</div>
           <div class="sub-tab" id="stab-outbound" onclick="switchSubTab('outbound', this)">Outbound (Xray)</div>
           <div class="sub-tab" id="stab-telegram" onclick="switchSubTab('telegram', this)">Telegram Bot</div>
           <div class="sub-tab" id="stab-ops" onclick="switchSubTab('ops', this)">Automation &amp; Ops</div>
           <div class="sub-tab" id="stab-themes" onclick="switchSubTab('themes', this)" data-i18n="nav_themes">Themes</div>
+        </div>
+
+        <!-- 0. All Sections & Quick-Access Bubbles (mirrors every top-bar tab & capability) -->
+        <div id="sub-sections" class="sub-pane">
+          <div class="card sp">
+            <div class="toolbar" style="margin-bottom:12px;">
+              <div>
+                <h4 style="color:var(--accent); margin:0;" id="sec-hub-title">All Panel Sections &amp; Capabilities</h4>
+                <div class="hint" style="margin:3px 0 0;" id="sec-hub-desc">Access every feature here even if hidden from the top bar, or pin/unpin any section directly to the top navigation bar.</div>
+              </div>
+              <button type="button" class="btn btn-sky btn-sm" onclick="switchSubTab('themes', $('stab-themes')); openEditTabsInStudio();">🧭 Edit &amp; Reorder Tabs</button>
+            </div>
+            <div class="sec-bubbles-grid" id="settings-sections-grid"></div>
+          </div>
         </div>
 
         <!-- 1. General & Security (Address/Port + Domain SSL + 2FA + Password) -->
@@ -5284,121 +5502,114 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
 
         <!-- 5. Outbound (Xray Core) -->
         <div id="sub-outbound" class="sub-pane">
-<div class="toolbar">
+      <div class="toolbar">
         <div>
           <h3>Master Outbound (Xray Core)</h3>
           <div class="hint" style="margin:2px 0 0;">Isolated local SOCKS5 (<span class="mono">127.0.0.1:10808</span>) strictly for the Master Panel — completely separate from user tunnels.</div>
         </div>
         <div class="flexw" style="gap:8px;">
           <span class="badge b-foreign mono" id="ob-badge">STOPPED</span>
-          <button class="btn btn-ghost btn-sm" onclick="loadMasterOutbound()">Refresh</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadMasterOutbound()">↻ Refresh</button>
         </div>
       </div>
 
-      <!-- 1. Xray Core Status & Controls -->
-      <div class="card sp" style="margin-bottom:14px;">
-        <div class="toolbar" style="margin-bottom:12px;">
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <strong style="color:var(--accent);">Xray Core Engine</strong>
+      <!-- Unified Xray Core + Single Link + Subscriptions + Load Balance Hub -->
+      <div class="card sp ob-hub-card">
+        <!-- 1. Xray Core Controls (Install/Update, Start, Stop, Test, Logs) -->
+        <div class="toolbar" style="margin:0; gap:10px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <strong style="color:var(--accent);">⚡ Xray Core</strong>
             <span class="badge b-miss mono" id="ob-core-status">CHECKING...</span>
             <span class="badge b-ok mono" id="ob-core-ver" style="display:none;"></span>
           </div>
-          <button class="btn btn-sky btn-sm" id="btn-ob-install" onclick="installXrayCore()">Install Xray Core</button>
+          <div class="flexw" style="gap:6px;">
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-ob-install" onclick="installXrayCore()">⬇ Install Xray</button>
+            <button type="button" class="btn btn-sky btn-sm" id="btn-ob-save" onclick="saveMasterOutbound()">▶ Start / Save</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="stopMasterOutbound()">■ Stop</button>
+            <button type="button" class="btn btn-warn btn-sm" id="btn-ob-test" onclick="testMasterOutbound()">Test</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="viewMasterOutboundLogs()">Logs</button>
+          </div>
         </div>
 
-        <!-- Operation Mode Picker: Single Active Config vs Load Balancing -->
-        <div class="field" style="margin-bottom:12px;">
-          <label>Outbound Operation Mode</label>
+        <!-- 2. Operation Mode (Single Active Config vs Load Balance) & Routing Targets -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
           <input type="hidden" id="ob-mode" value="single">
           <div class="role-picker" id="ob-mode-picker">
             <div class="role-opt active" data-obm="single" onclick="pickOutboundMode('single')">🎯 Single Active Config</div>
             <div class="role-opt" data-obm="loadbalance" onclick="pickOutboundMode('loadbalance')">⚖️ Load Balance &amp; Failover</div>
           </div>
+
+          <!-- Load Balancing Options (shown when Load Balance mode is selected) -->
+          <div class="row2" id="ob-lb-opts" style="display:none;">
+            <div class="field" style="margin:0;">
+              <label>Load Balancing Strategy</label>
+              <select id="ob-lb">
+                <option value="leastPing">Least Ping + Auto-Failover (Recommended)</option>
+                <option value="leastLoad">Least Load + Auto-Failover (Balanced)</option>
+                <option value="roundRobin">Round-Robin + Auto-Failover</option>
+                <option value="random">Random + Auto-Failover</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;">
+              <label>Health Probe Interval</label>
+              <select id="ob-int">
+                <option value="15s">Every 15s (Fast Failover)</option>
+                <option value="30s" selected>Every 30s (Balanced)</option>
+                <option value="60s">Every 60s (Light)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flexw" style="gap:14px;">
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Outbound</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes</span></label>
+            <span class="badge b-iran mono" id="ob-single-active-badge" style="margin-inline-start:auto;">None Selected</span>
+          </div>
         </div>
 
-        <!-- Dedicated Single Active Config Box -->
-        <div id="ob-single-box" style="margin-bottom:12px; padding:12px 14px; border-radius:min(var(--rc,14px),16px); background:color-mix(in srgb, var(--accent) 8%, var(--row)); border:1.5px solid color-mix(in srgb, var(--accent) 36%, var(--border));">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-            <strong style="font-size:.82rem; color:var(--accent);">🎯 Active Single Config</strong>
-            <span class="badge b-ok mono" id="ob-single-active-badge">None Selected</span>
-          </div>
-          <div class="field" style="margin-bottom:8px;">
-            <label>Select Active Node from Pool</label>
-            <select id="ob-active-node" onchange="selectActiveOutboundNode(this.value)"></select>
-          </div>
-          <div class="flexw" style="gap:8px;">
-            <input id="ob-quick-single-uri" class="mono" style="flex:1; min-width:200px;" placeholder="Or paste a single URI here (vless://, vmess://, trojan://, ss://, socks5://)">
+        <pre class="term" id="ob-out" style="height:110px; margin:0; display:none;"></pre>
+
+        <div class="ob-sec-div"></div>
+
+        <!-- 3. Clean Rounded Single Link Input Bar -->
+        <div>
+          <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:7px;">🔗 Quick Single Config (vless / vmess / trojan / ss / socks5)</div>
+          <div class="ob-uri-bar">
+            <input id="ob-quick-single-uri" class="ob-uri-input" placeholder="Paste single URI here (vless://, vmess://, trojan://, ss://, socks5://)">
             <button type="button" class="btn btn-sky btn-sm" onclick="applyQuickSingleOutbound()">⚡ Set &amp; Start</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="addManualFromQuickBar()">+ Add Only</button>
           </div>
         </div>
 
-        <!-- Load Balancing Options (only visible in loadbalance mode) -->
-        <div class="row2" id="ob-lb-opts" style="display:none;">
-          <div class="field" style="margin-bottom:10px;">
-            <label>Load Balancing &amp; Auto-Failover Strategy</label>
-            <select id="ob-lb">
-              <option value="leastPing">Least Ping + Auto-Failover (Recommended)</option>
-              <option value="leastLoad">Least Load + Auto-Failover (Balanced)</option>
-              <option value="roundRobin">Round-Robin + Auto-Failover</option>
-              <option value="random">Random + Auto-Failover</option>
-            </select>
-          </div>
-          <div class="field" style="margin-bottom:10px;">
-            <label>Health Probe Interval</label>
-            <select id="ob-int">
-              <option value="15s">Every 15s (Fast Failover)</option>
-              <option value="30s" selected>Every 30s (Balanced)</option>
-              <option value="60s">Every 60s (Light)</option>
-            </select>
+        <div class="ob-sec-div"></div>
+
+        <!-- 4. Add Subscription Bar -->
+        <div>
+          <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:7px;">📡 Add Subscription (Auto-opens with Servers, Traffic &amp; Ping)</div>
+          <div class="ob-uri-bar">
+            <input id="ob-sub-name" class="ob-uri-input" style="flex:0.45 1 150px;" placeholder="Sub Name (e.g. Main)">
+            <input id="ob-sub-url" class="ob-uri-input" style="flex:1.5 1 260px;" placeholder="https://example.com/sub/...">
+            <button type="button" class="btn btn-sky btn-sm" id="btn-ob-sub-add" onclick="addOutboundSub()">+ Add &amp; Fetch Sub</button>
           </div>
         </div>
 
-        <div class="flexw" style="gap:16px; margin-bottom:12px;">
-          <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Master Outbound</span></label>
-          <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
-          <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
-          <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes Control</span></label>
-        </div>
+        <div class="ob-sec-div"></div>
 
-        <div class="flexw" style="gap:8px;">
-          <button class="btn btn-sky" id="btn-ob-save" onclick="saveMasterOutbound()">Save &amp; Start</button>
-          <button class="btn btn-warn" id="btn-ob-test" onclick="testMasterOutbound()">Test Outbound</button>
-          <button class="btn btn-ghost" onclick="viewMasterOutboundLogs()">View Xray Logs</button>
-          <button class="btn btn-danger" onclick="stopMasterOutbound()">Stop</button>
-        </div>
-        <pre class="term" id="ob-out" style="height:120px; margin-top:12px; display:none;"></pre>
-      </div>
-
-      <!-- 2. Subscriptions -->
-      <div class="card sp" style="margin-bottom:14px;">
-        <h4 style="color:var(--accent); margin-bottom:10px;">Subscriptions (Auto-Import Nodes)</h4>
-        <div class="row2" style="margin-bottom:8px;">
-          <div class="field" style="margin:0;"><label>Subscription Name</label><input id="ob-sub-name" placeholder="e.g. Main Sub"></div>
-          <div class="field" style="margin:0;"><label>Subscription URL</label><input id="ob-sub-url" class="mono" placeholder="https://example.com/sub/..."></div>
-        </div>
-        <div class="flexw" style="margin-bottom:12px;">
-          <button class="btn btn-sky btn-sm" id="btn-ob-sub-add" onclick="addOutboundSub()">+ Add &amp; Fetch Subscription</button>
-        </div>
-        <div id="ob-subs-list" style="display:flex; flex-direction:column; gap:7px;"></div>
-      </div>
-
-      <!-- 3. Outbound Nodes Pool -->
-      <div class="card sp">
-        <div class="toolbar" style="margin-bottom:10px;">
-          <h4 style="color:var(--accent);">Outbound Nodes Pool <span class="badge b-ok mono" id="ob-nodes-cnt">0</span></h4>
-          <div class="flexw" style="gap:6px;">
-            <button class="btn btn-warn btn-sm" id="btn-ob-delay-all" onclick="testOutboundRealDelay('')">⚡ Test Real Delay</button>
-            <button class="btn btn-ghost btn-sm" onclick="disableDeadOutboundNodes()">Disable Dead</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(true)">Enable All</button>
-            <button class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(false)">Disable All</button>
-            <button class="btn btn-danger btn-sm" onclick="clearOutboundNodes()">Clear All</button>
+        <!-- 5. Unified Subscriptions & Manual Servers Accordion List -->
+        <div>
+          <div class="toolbar" style="margin-bottom:8px;">
+            <strong style="font-size:.86rem; color:var(--text);">Servers &amp; Subscriptions <span class="badge b-ok mono" id="ob-nodes-cnt">0</span></strong>
+            <div class="flexw" style="gap:6px;">
+              <button type="button" class="btn btn-warn btn-sm" id="btn-ob-delay-all" onclick="testOutboundRealDelay('','')">⚡ Ping All</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="disableDeadOutboundNodes()">Disable Dead</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(true)">Enable All</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="clearOutboundNodes()">Clear All</button>
+            </div>
           </div>
+          <div id="ob-unified-groups" style="display:flex; flex-direction:column; gap:9px;"></div>
         </div>
-        <div class="flexw" style="gap:8px; margin-bottom:12px;">
-          <input id="ob-manual-uri" class="mono" style="flex:1; min-width:220px;" placeholder="Paste manual URI (vless://, vmess://, trojan://, ss://, socks5://)">
-          <button class="btn btn-sky btn-sm" onclick="addManualOutboundNode()">+ Add Node</button>
-        </div>
-        <div id="ob-nodes-list" style="display:flex; flex-direction:column; gap:6px; max-height:360px; overflow-y:auto;"></div>
       </div>
         </div>
 
@@ -5668,6 +5879,18 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
         </div>
       </details>
 
+      <!-- Edit Top Navigation Tabs (Reorder, Add & Remove) -->
+      <details name="studio-main" class="atelier-group" id="studio-edit-tabs-group">
+        <summary><strong id="etab-studio-title">🧭 Edit Top Navigation Tabs (Add, Remove &amp; Reorder)</strong></summary>
+        <div class="atelier-content">
+          <div class="toolbar" style="margin-bottom:10px;">
+            <div class="hint" style="margin:0;" id="etab-studio-hint">Drag rows or use ▲ / ▼ to reorder tabs. Toggle any section (Themes, Outbound, Telegram Bot, Master Terminal, etc.) on or off in the top bar.</div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="resetNavTabsDefault()">↻ Reset Default</button>
+          </div>
+          <div class="etab-list" id="edit-tabs-list"></div>
+        </div>
+      </details>
+
       <!-- 12 Curated MDesign Presets -->
       <details name="studio-main" class="atelier-group" open>
         <summary><strong>✨ Curated MDesign Presets (12 Ready-to-Use Profiles)</strong></summary>
@@ -5715,15 +5938,24 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
       <!-- Hidden auto-role field (auto-detected via GeoIP on new server, preserved on edit) -->
       <input type="hidden" id="s-role" value="auto">
 
-      <!-- PAGE 1: Server Name + IP/Host + Connection Route -->
+      <!-- PAGE 1: Server Name + IP/Host + Auto-IPv6 Slide-Down + Connection Route -->
       <div class="tun-step-pane active" id="srv-step-1" style="flex:1; min-height:295px;">
         <div class="field" style="margin-bottom:12px;">
           <label data-i18n="lbl_srv_name">Server name</label>
           <input id="s-name" placeholder="Hetzner-DE-01" oninput="updateSrvFloatDock()">
         </div>
-        <div class="field" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:10px;">
           <label data-i18n="lbl_host">IP address / host</label>
-          <input id="s-host" class="mono" placeholder="5.75.203.70" oninput="updateSrvFloatDock()">
+          <input id="s-host" class="mono" placeholder="5.75.203.70" oninput="updateSrvFloatDock(); scheduleSrvIPv6Check();" onblur="scheduleSrvIPv6Check(true)">
+        </div>
+        <div class="ipv6-drawer" id="s-ipv6-drawer">
+          <div class="field" style="margin-bottom:0;">
+            <label style="display:flex; align-items:center; justify-content:space-between;">
+              <span>IPv6 Address</span>
+              <span class="badge b-ok mono" style="font-size:.64rem; padding:1px 7px;">AUTO-DETECTED</span>
+            </label>
+            <input id="s-ipv6" class="mono" placeholder="2a01:..." oninput="updateSrvFloatDock()">
+          </div>
         </div>
         <div class="field" style="margin-bottom:0;">
           <label>Connection Route from Master</label>
@@ -5735,34 +5967,31 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
         </div>
       </div>
 
-      <!-- PAGE 2: SSH Credentials & Authentication -->
+      <!-- PAGE 2: Clean 3-Row SSH Credentials (Row 1: Port + Auth/SSH Key, Row 2: User + Auto Saved Profiles, Row 3: Password + Eye Toggle) -->
       <div class="tun-step-pane" id="srv-step-2" style="flex:1; min-height:295px;">
-        <div class="field" id="s-cred-mode-wrap" style="margin-bottom:10px;">
-          <label>Credentials Source</label>
-          <div class="role-picker" id="cred-mode-picker">
-            <div class="role-opt active" data-cred-mode="custom" onclick="pickCredMode('custom')">Custom</div>
-            <div class="role-opt" data-cred-mode="saved" onclick="pickCredMode('saved')">Saved Profile</div>
-          </div>
-        </div>
-        <div class="field" id="s-prof-wrap" style="display:none;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
-            <label style="margin:0;">Select Saved SSH Profile</label>
-            <button type="button" class="btn btn-sky btn-sm" style="padding:3px 9px; font-size:.71rem;" onclick="startQuickSSHProfile('server')">+ Create Profile</button>
-          </div>
-          <select id="s-prof-sel"></select>
-          <div id="s-prof-empty-hint" class="hint" style="display:none; margin-top:6px; color:var(--yellow);">
-            No saved SSH profiles yet. Click <b>+ Create Profile</b> above to enter user &amp; password and save it directly here.
-          </div>
-        </div>
+        <input type="hidden" id="s-prof-id" value="0">
         <div id="s-custom-fields">
           <div class="row2">
-            <div class="field"><label data-i18n="lbl_ssh_port">SSH port</label><input id="s-port" type="number" value="22"></div>
-            <div class="field"><label data-i18n="lbl_ssh_user">SSH user</label><input id="s-user" value="root" class="mono"></div>
+            <div class="field"><label data-i18n="lbl_ssh_port">SSH port</label><input id="s-port" type="number" value="22" oninput="clearSelectedSSHProfile()"></div>
+            <div class="field"><label data-i18n="lbl_auth">Authentication</label>
+              <select id="s-auth"><option value="password" data-i18n="auth_pass">Password</option><option value="key" data-i18n="auth_key">SSH private key</option></select>
+            </div>
           </div>
-          <div class="field"><label data-i18n="lbl_auth">Authentication</label>
-            <select id="s-auth"><option value="password" data-i18n="auth_pass">Password</option><option value="key" data-i18n="auth_key">SSH private key</option></select>
+          <div class="field">
+            <label data-i18n="lbl_ssh_user">SSH user</label>
+            <div class="user-combo-wrap" id="s-user-combo">
+              <input id="s-user" value="root" class="mono" autocomplete="off" onfocus="openUserProfileDD()" onclick="openUserProfileDD()" oninput="clearSelectedSSHProfile(); renderUserProfileDD(this.value);">
+              <button type="button" class="user-combo-btn" title="Saved SSH Profiles" onclick="event.stopPropagation(); toggleUserProfileDD()">▾</button>
+              <div class="user-prof-dd" id="s-user-prof-dd"></div>
+            </div>
           </div>
-          <div class="field" id="s-pass-wrap"><label data-i18n="lbl_ssh_pass">SSH password</label><input id="s-pass" type="password" autocomplete="new-password"></div>
+          <div class="field" id="s-pass-wrap">
+            <label data-i18n="lbl_ssh_pass">SSH password</label>
+            <div class="pass-eye-wrap">
+              <input id="s-pass" type="password" autocomplete="new-password" oninput="clearSelectedSSHProfile()">
+              <button type="button" class="pass-eye-btn" id="btn-s-pass-eye" title="Show / Hide Password" onclick="toggleSrvPassVis()">👁️</button>
+            </div>
+          </div>
           <div class="field" id="s-key-wrap" style="display:none;"><label data-i18n="lbl_ssh_key">Private key (PEM / OpenSSH, no passphrase)</label><textarea id="s-key" spellcheck="false" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>
         </div>
         <div class="hint" id="s-keep" style="display:none;" data-i18n="ph_keep_secret">Leave the secret empty to keep the stored one.</div>
@@ -6623,7 +6852,227 @@ const IC = {
   pulse: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'
 };
 const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
-const TABS = [['overview', 'nav_overview', 'grid'], ['servers', 'nav_servers', 'server'], ['datacenter', 'nav_datacenter', 'cloud'], ['tunnels', 'nav_tunnels', 'term'], ['domains', 'nav_domains', 'globe'], ['monitor', 'nav_monitor', 'pulse'], ['settings', 'nav_settings', 'sliders']];
+const ALL_TABS_CATALOG = [
+  { id: 'overview',   i18n: 'nav_overview',   fa: 'داشبورد',       en: 'Overview',         icon: 'grid',    def: true,  descEn: 'Live CPU/RAM/Disk telemetry, metrics history & alerts.', descFa: 'آمار زنده سرور مستر، نمودارها و هشدارها.' },
+  { id: 'servers',    i18n: 'nav_servers',    fa: 'سرورها',        en: 'Servers',          icon: 'server',  def: true,  descEn: 'Manage Iran & Foreign nodes, Peer v4, dual/reverse ping & terminal.', descFa: 'مدیریت سرورهای ایران و خارج، Peer v4، پینگ سه‌گانه و ترمینال.' },
+  { id: 'datacenter', i18n: 'nav_datacenter', fa: 'دیتاسنتر',      en: 'Datacenter',       icon: 'cloud',   def: true,  descEn: 'Hetzner, DigitalOcean, Linode, OVH & YottaSrc API + OS Rebuild.', descFa: 'مدیریت ابری Hetzner، DO، Linode، OVH و YottaSrc + ریبیلد OS.' },
+  { id: 'tunnels',    i18n: 'nav_tunnels',    fa: 'تانل‌ها',       en: 'Tunnels',          icon: 'route',   def: true,  descEn: 'Backhaul, Rathole, Realm, Paqet, GRE/IPIP & MSmart auto-failover.', descFa: 'مدیریت تانل‌های Backhaul، Rathole، Realm، Paqet و MSmart.' },
+  { id: 'domains',    i18n: 'nav_domains',    fa: 'دامنه‌ها',      en: 'Domains',          icon: 'globe',   def: true,  descEn: 'Cloudflare & ArvanCloud DNS records & auto-failover.', descFa: 'مدیریت رکوردهای کلودفلر و آروان‌کلود و فیل‌اور خودکار.' },
+  { id: 'monitor',    i18n: 'nav_monitor',    fa: 'آپتایم',        en: 'Uptime',           icon: 'pulse',   def: true,  descEn: 'Uptime monitors, heartbeat bars, alerts & public /status page.', descFa: 'مانیتورینگ آپتایم، نمودار ضربان قلب و صفحه عمومی وضعیت.' },
+  { id: 'outbound',   i18n: 'nav_outbound',   fa: 'اوتباند Xray',  en: 'Outbound (Xray)',  icon: 'send',    def: false, descEn: 'Master isolated Xray SOCKS5 proxy (Single Config & Load Balance).', descFa: 'هسته Xray ایزوله سرور مستر (تک‌کانفیگ فعال و لودبالانس).' },
+  { id: 'telegram',   i18n: 'nav_telegram',   fa: 'ربات تلگرام',   en: 'Telegram Bot',     icon: 'send',    def: false, descEn: 'Telegram control bot, inline menus, alerts & auto-backup.', descFa: 'ربات مدیریت تلگرام، هشدارها و بکاپ خودکار.' },
+  { id: 'themes',     i18n: 'nav_themes',     fa: 'تم‌ها',         en: 'Themes',           icon: 'palette', def: false, descEn: 'MDesign Theme Studio, presets, colors, branding & Edit Tabs.', descFa: 'استودیو تم MDesign، رنگ‌ها، برندینگ و ویرایش تب‌ها.' },
+  { id: 'profiles',   i18n: 'nav_profiles',   fa: 'پروفایل و بکاپ', en: 'Profiles & Backup', icon: 'key',    def: false, descEn: 'Saved SSH profiles, port profiles & encrypted panel backups.', descFa: 'پروفایل‌های SSH ذخیره‌شده، پورت‌ها و بکاپ رمزنگاری‌شده.' },
+  { id: 'terminal',   i18n: 'nav_terminal',   fa: 'ترمینال مستر',  en: 'Master Terminal',  icon: 'term',    def: false, descEn: 'Direct shell terminal on this local Master control server.', descFa: 'ترمینال مستقیم روی همین سرور مستر کنترل.' },
+  { id: 'update',     i18n: 'nav_update',     fa: 'آپدیت',         en: 'Update Center',    icon: 'refresh', def: false, descEn: 'Official GitHub & Iran Mirror updates, beta builds & offline ZIP.', descFa: 'آپدیت از گیت‌هاب و میرور ایران، بتا و آپدیت آفلاین ZIP.' },
+  { id: 'settings',   i18n: 'nav_settings',   fa: 'تنظیمات',       en: 'Settings',         icon: 'sliders', def: true,  locked: true, descEn: 'Panel port/SSL, 2FA, security, all sections hub & configuration.', descFa: 'پورت و دامنه پنل، امنیت، ۲FA و مرکز تمام تنظیمات.' }
+];
+
+function loadNavTabsConfig() {
+  let saved = null;
+  try {
+    const raw = ls.get('mc_nav_tabs_v1', '');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) {}
+  const byId = {};
+  ALL_TABS_CATALOG.forEach(item => { byId[item.id] = item; });
+  const list = [];
+  const seen = new Set();
+  if (Array.isArray(saved)) {
+    saved.forEach(entry => {
+      if (!entry || !entry.id || !byId[entry.id] || seen.has(entry.id)) return;
+      seen.add(entry.id);
+      list.push({ id: entry.id, visible: byId[entry.id].locked ? true : !!entry.visible });
+    });
+  }
+  ALL_TABS_CATALOG.forEach(item => {
+    if (!seen.has(item.id)) {
+      list.push({ id: item.id, visible: item.locked ? true : !!item.def });
+    }
+  });
+  return list;
+}
+
+let NAV_TABS_CFG = loadNavTabsConfig();
+
+function saveNavTabsConfig() {
+  try { ls.set('mc_nav_tabs_v1', JSON.stringify(NAV_TABS_CFG)); } catch (e) {}
+}
+
+function getVisibleTabs() {
+  const byId = {};
+  ALL_TABS_CATALOG.forEach(item => { byId[item.id] = item; });
+  return NAV_TABS_CFG.filter(x => x.visible && byId[x.id]).map(x => {
+    const it = byId[x.id];
+    return [it.id, it.i18n, it.icon];
+  });
+}
+
+function tabLabelOf(item) {
+  if (!item) return '';
+  const tr = (typeof t === 'function') ? t(item.i18n) : '';
+  if (tr && tr !== item.i18n) return tr;
+  return (typeof lang !== 'undefined' && lang === 'fa') ? item.fa : item.en;
+}
+
+let _etabDragIdx = -1;
+function renderEditTabsStudio() {
+  const box = $('edit-tabs-list');
+  if (!box) return;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const byId = {};
+  ALL_TABS_CATALOG.forEach(item => { byId[item.id] = item; });
+  if ($('etab-studio-title')) $('etab-studio-title').textContent = fa ? '🧭 ویرایش تب‌های بالا (افزودن، حذف و جابه‌جایی)' : '🧭 Edit Top Navigation Tabs (Add, Remove & Reorder)';
+  if ($('etab-studio-hint')) $('etab-studio-hint').textContent = fa ? 'ردیف‌ها را بکشید یا با دکمه‌های ▲ / ▼ جابه‌جا کنید. هر بخش (تم‌ها، اوتباند، ربات تلگرام، ترمینال مستر و...) را می‌توانید به نوار بالا اضافه یا حذف کنید.' : 'Drag rows or use ▲ / ▼ to reorder tabs. Toggle any section (Themes, Outbound, Telegram Bot, Master Terminal, etc.) on or off in the top bar.';
+
+  box.innerHTML = NAV_TABS_CFG.map((entry, idx) => {
+    const it = byId[entry.id];
+    if (!it) return '';
+    const lbl = tabLabelOf(it);
+    const desc = fa ? it.descFa : it.descEn;
+    return `<div class="etab-row ${entry.visible ? '' : 'is-hidden'}" draggable="true" data-etab-idx="${idx}"
+      ondragstart="etabDragStart(event, ${idx})" ondragover="etabDragOver(event)" ondragleave="etabDragLeave(event)" ondrop="etabDrop(event, ${idx})">
+      <div class="etab-left">
+        <span class="etab-grip" title="Drag to reorder">⋮⋮</span>
+        <span class="etab-ico">${svg(it.icon)}</span>
+        <div class="etab-meta">
+          <strong>${esc(lbl)}</strong>
+          <span>${esc(desc)}</span>
+        </div>
+      </div>
+      <div class="etab-right">
+        <button type="button" class="etab-mv" title="Move Up" onclick="moveNavTab(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:.35"' : ''}>▲</button>
+        <button type="button" class="etab-mv" title="Move Down" onclick="moveNavTab(${idx}, 1)" ${idx === NAV_TABS_CFG.length - 1 ? 'disabled style="opacity:.35"' : ''}>▼</button>
+        ${it.locked
+          ? `<span class="badge b-ok mono" style="font-size:.64rem;">${fa ? 'ثابت' : 'LOCKED'}</span>`
+          : `<label class="etab-switch" title="${entry.visible ? 'Hide from top bar' : 'Show in top bar'}">
+               <input type="checkbox" ${entry.visible ? 'checked' : ''} onchange="toggleNavTabVisible('${esc(it.id)}', this.checked)">
+               <span class="etab-slider"></span>
+             </label>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSettingsSectionsHub() {
+  const box = $('settings-sections-grid');
+  if (!box) return;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const visMap = {};
+  NAV_TABS_CFG.forEach(x => { visMap[x.id] = !!x.visible; });
+  if ($('sec-hub-title')) $('sec-hub-title').textContent = fa ? 'تمام بخش‌ها و قابلیت‌های پنل' : 'All Panel Sections & Capabilities';
+  if ($('sec-hub-desc')) $('sec-hub-desc').textContent = fa ? 'حتی اگر تبی را از نوار بالا برداشته باشید، از این حباب‌ها مستقیم به آن دسترسی دارید یا می‌توانید با یک کلیک آن را به نوار بالا اضافه/حذف کنید.' : 'Access every feature here even if hidden from the top bar, or pin/unpin any section directly to the top navigation bar.';
+
+  box.innerHTML = ALL_TABS_CATALOG.map(it => {
+    const pinned = !!visMap[it.id];
+    const lbl = tabLabelOf(it);
+    const desc = fa ? it.descFa : it.descEn;
+    return `<div class="sec-bubble-card ${pinned ? 'is-pinned' : ''}">
+      <div class="sec-bubble-top">
+        <span class="sec-bubble-title"><span class="sec-bubble-ico">${svg(it.icon)}</span>${esc(lbl)}</span>
+        <span class="badge mono ${pinned ? 'b-iran' : 'b-miss'}" style="font-size:.62rem;">${pinned ? (fa ? 'در نوار بالا' : 'IN TOP BAR') : (fa ? 'مخفی' : 'HIDDEN')}</span>
+      </div>
+      <div class="sec-bubble-desc">${esc(desc)}</div>
+      <div class="sec-bubble-acts">
+        <button type="button" class="btn btn-sky btn-sm" onclick="openCatalogSection('${esc(it.id)}')">${fa ? 'باز کردن' : 'Open'}</button>
+        ${it.locked
+          ? `<span class="hint" style="margin:0; font-size:.68rem;">${fa ? 'همیشه فعال' : 'Always pinned'}</span>`
+          : `<button type="button" class="btn ${pinned ? 'btn-ghost' : 'btn-warn'} btn-sm" onclick="toggleNavTabVisible('${esc(it.id)}', ${!pinned})">${pinned ? (fa ? 'حذف از بالا' : 'Hide Tab') : (fa ? '+ افزودن به بالا' : '+ Add to Bar')}</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCatalogSection(id) {
+  if (id === 'terminal') { openLocalWebTerm(); return; }
+  if (id === 'update') { openUpdateModal(); return; }
+  if (id === 'outbound') {
+    if (curTab !== 'settings') switchTab('settings');
+    switchSubTab('outbound', $('stab-outbound'));
+    loadMasterOutbound();
+    return;
+  }
+  if (id === 'telegram') {
+    if (curTab !== 'settings') switchTab('settings');
+    switchSubTab('telegram', $('stab-telegram'));
+    loadTelegramStatus();
+    return;
+  }
+  if (id === 'themes') { openThemesQuick(); return; }
+  if (id === 'profiles') {
+    if (curTab !== 'settings') switchTab('settings');
+    switchSubTab('profiles', $('stab-profiles'));
+    loadProfiles();
+    return;
+  }
+  switchTab(id);
+}
+
+function toggleNavTabVisible(id, state) {
+  const entry = NAV_TABS_CFG.find(x => x.id === id);
+  if (!entry) return;
+  const cat = ALL_TABS_CATALOG.find(x => x.id === id);
+  if (cat && cat.locked) return;
+  entry.visible = !!state;
+  saveNavTabsConfig();
+  renderNav();
+  renderEditTabsStudio();
+  renderSettingsSectionsHub();
+}
+
+function moveNavTab(idx, delta) {
+  const nxt = idx + delta;
+  if (nxt < 0 || nxt >= NAV_TABS_CFG.length) return;
+  const tmp = NAV_TABS_CFG[idx];
+  NAV_TABS_CFG[idx] = NAV_TABS_CFG[nxt];
+  NAV_TABS_CFG[nxt] = tmp;
+  saveNavTabsConfig();
+  renderNav();
+  renderEditTabsStudio();
+}
+
+function etabDragStart(ev, idx) {
+  _etabDragIdx = idx;
+  if (ev.dataTransfer) ev.dataTransfer.effectAllowed = 'move';
+}
+function etabDragOver(ev) {
+  ev.preventDefault();
+  const row = ev.currentTarget;
+  if (row) row.classList.add('drag-over');
+}
+function etabDragLeave(ev) {
+  const row = ev.currentTarget;
+  if (row) row.classList.remove('drag-over');
+}
+function etabDrop(ev, targetIdx) {
+  ev.preventDefault();
+  const row = ev.currentTarget;
+  if (row) row.classList.remove('drag-over');
+  if (_etabDragIdx < 0 || _etabDragIdx === targetIdx) return;
+  const [moved] = NAV_TABS_CFG.splice(_etabDragIdx, 1);
+  NAV_TABS_CFG.splice(targetIdx, 0, moved);
+  _etabDragIdx = -1;
+  saveNavTabsConfig();
+  renderNav();
+  renderEditTabsStudio();
+}
+
+function resetNavTabsDefault() {
+  NAV_TABS_CFG = ALL_TABS_CATALOG.map(it => ({ id: it.id, visible: it.locked ? true : !!it.def }));
+  saveNavTabsConfig();
+  renderNav();
+  renderEditTabsStudio();
+  renderSettingsSectionsHub();
+  toast((typeof lang !== 'undefined' && lang === 'fa') ? 'تب‌های بالا به حالت پیش‌فرض برگشتند' : 'Top tabs reset to default');
+}
+
+function openEditTabsInStudio() {
+  const d = $('studio-edit-tabs-group');
+  if (d) { d.open = true; setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }
+  renderEditTabsStudio();
+}
 
 /* ═══════════════ state ═══════════════ */
 let token = ls.get('mc_token', '');
@@ -7176,23 +7625,39 @@ function toggleLang() { setLang(lang === 'fa' ? 'en' : 'fa'); }
 
 /* ═══════════════ navigation ═══════════════ */
 function renderNav() {
-  $('nav').innerHTML = TABS.map(x => `<button class="nav-item${x[0] === curTab ? ' active' : ''}" data-tab="${x[0]}" title="${esc(t(x[1]))}">${svg(x[2])}<span class="lbl">${esc(t(x[1]))}</span>${x[0] === 'update' && updAvail ? '<span class="dot online" style="background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></span>' : ''}</button>`).join('');
+  const byId = {};
+  ALL_TABS_CATALOG.forEach(it => { byId[it.id] = it; });
+  $('nav').innerHTML = getVisibleTabs().map(x => {
+    const lbl = tabLabelOf(byId[x[0]]) || t(x[1]);
+    return `<button class="nav-item${x[0] === curTab ? ' active' : ''}" data-tab="${x[0]}" title="${esc(lbl)}">${svg(x[2])}<span class="lbl">${esc(lbl)}</span>${x[0] === 'update' && updAvail ? '<span class="dot online" style="background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></span>' : ''}</button>`;
+  }).join('');
 }
 function switchTab(name) {
   curTab = name;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
   renderNav();
-  if (name === 'themes') { openThemesQuick(); return; }
+  if (name === 'terminal') { openLocalWebTerm(); return; }
+  if (name === 'update') { openUpdateModal(); return; }
+  if (name === 'themes' || name === 'outbound' || name === 'telegram' || name === 'profiles') {
+    curTab = name;
+    document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-settings'));
+    renderNav();
+    const mapSub = { themes: ['themes', 'stab-themes'], outbound: ['outbound', 'stab-outbound'], telegram: ['telegram', 'stab-telegram'], profiles: ['profiles', 'stab-profiles'] };
+    const [subName, stabId] = mapSub[name];
+    switchSubTab(subName, $(stabId));
+    if (name === 'outbound') loadMasterOutbound();
+    if (name === 'telegram') loadTelegramStatus();
+    if (name === 'profiles') loadProfiles();
+    window.scrollTo(0, 0);
+    return;
+  }
   if (name === 'tunnels') fillCoreSelect();
-  if (name === 'update') checkUpdates(false);
   if (name === 'overview') { pollLocalStats(); loadMetricsHistory(); loadOverviewIncidents(); }
   if (name === 'tunnels') { loadTunnels(); loadLegacyTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'domains') { loadCloudflareStatus(); loadFailoverUI(); }
   if (name === 'monitor') { loadMonitorsTab(); }
   if (name === 'datacenter') { loadDatacenterTab(); }
-  if (name === 'outbound') { loadMasterOutbound(); }
-  if (name === 'telegram') { loadTelegramStatus(); }
-  if (name === 'settings') { initMobileSettingsCollapse(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
+  if (name === 'settings') { initMobileSettingsCollapse(); renderSettingsSectionsHub(); renderEditTabsStudio(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
 }
@@ -7340,23 +7805,31 @@ function renderServerCard(s) {
 
   return `<div class="srv-row-wrap role-${esc(s.role)} ${isOpen}" data-srv-id="${id}">
     <div class="srv-row-head" onclick="toggleServerRow(${id}, this)">
-      <div style="min-width:0;">
-        <div style="display:flex; align-items:center; gap:9px; min-width:0;">
+      <div class="srv-head-name">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
           <span class="dot ${on ? 'online' : 'offline'}"></span>
           ${flagSVG(s.country_code)}
-          <strong style="font-size:.96rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(s.name)}</strong>
+          <strong style="font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(s.name)}</strong>
           ${role}${(SRV_TAGS[String(id)]||[]).map(tg => `<span class="srv-tag-badge">#${esc(tg)}</span>`).join('')}
         </div>
         <div class="srv-mob-meta">
           <span>${esc(s.host)}</span>
-          <span class="badge ${pingBadgeClass(s.ping_ms)}" data-srv-ping="${id}" style="padding:1px 6px; font-size:.62rem;">${esc(s.ping_ms || '---')}</span>
+          <span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 6px; font-size:.62rem;">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>
+          ${s.reverse_ping_ms ? `<span class="badge ${pingBadgeClass(s.reverse_ping_ms)} ping-pill-inline" data-srv-rev-ping-wrap="${id}" style="padding:1px 6px; font-size:.62rem;" title="Reverse Ping (Server → Master)">↩️<span data-srv-rev-ping="${id}">${esc(s.reverse_ping_ms)}</span></span>` : ''}
           <span>CPU <b style="color:var(--accent);">${esc(s.cpu || '0%')}</b> • RAM <b style="color:var(--pink);">${esc(s.ram || '0%')}</b></span>
         </div>
       </div>
-      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}</div>
-      <div class="srv-col-hide mono" style="font-size:.78rem; color:var(--muted);">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
-      <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی همین الان' : 'Ping now'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
-      <div style="display:flex; align-items:center; gap:6px;"><span class="chev">▾</span></div>
+      <div class="srv-col-hide srv-head-pings mono">
+        <span>${esc(s.host)}</span>
+        <span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping (Master → Server)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>
+        ${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Outbound Ping (via Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}
+        ${s.reverse_ping_ms ? `<span class="badge ${pingBadgeClass(s.reverse_ping_ms)} ping-pill-inline" data-srv-rev-ping-wrap="${id}" title="Reverse Ping (Server → Iran Master)">↩️<span data-srv-rev-ping="${id}">${esc(s.reverse_ping_ms)}</span></span>` : ''}
+      </div>
+      <div class="srv-col-hide srv-head-cpu mono">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
+      <div class="srv-head-right">
+        <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی (مستقیم + اوتباند + ریورس)' : 'Ping now (Direct + Outbound + Reverse)'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
+        <span class="chev">▾</span>
+      </div>
     </div>
 
     <div class="srv-detail-body">
@@ -7370,7 +7843,7 @@ function renderServerCard(s) {
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">Network Speed &amp; Uptime</div>
           <div class="srv-mini-val"><span style="color:var(--green);">↓ ${esc(s.net_rx || '0 B/s')}</span> <span style="color:var(--muted);">/</span> <span style="color:var(--yellow);">↑ ${esc(s.net_tx || '0 B/s')}</span></div>
-          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''}</div>
+          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''}${s.reverse_ping_ms ? ` <span class="badge ${pingBadgeClass(s.reverse_ping_ms)} mono ping-pill-inline" data-srv-rev-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Reverse Ping (Server → Iran Master)">↩️<span data-srv-rev-ping="${id}">${esc(s.reverse_ping_ms)}</span></span>` : ''}</div>
         </div>
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">${t('lbl_location')}</div>
@@ -7452,7 +7925,8 @@ async function testServerModal() {
     name: $('s-name').value || 'test', role: $('s-role').value, host: $('s-host').value,
     port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
     auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
-    ssh_profile_id: (credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0,
+    ssh_profile_id: parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10),
+      ipv6: ($('s-ipv6') && $('s-ipv6').value || '').trim(),
       use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
   };
   btn.disabled = true; btn.textContent = 'Testing...';
@@ -7592,6 +8066,12 @@ function openSrvModal(id) {
   $('s-user').value = s ? s.username : (SETTINGS.default_ssh_user || 'root');
   $('s-auth').value = s ? (s.auth_type || 'password') : 'password';
   $('s-pass').value = s ? '' : (SETTINGS.default_ssh_pass || '');
+  if ($('s-pass')) $('s-pass').type = 'password';
+  if ($('btn-s-pass-eye')) $('btn-s-pass-eye').textContent = '👁️';
+  if ($('s-prof-id')) $('s-prof-id').value = '0';
+  _ipv6LastHost = s ? (s.host || '') : '';
+  setSrvIPv6Drawer(s && s.ipv6 && s.ipv6 !== 'N/A' ? s.ipv6 : '');
+  closeUserProfileDD();
   $('s-key').value = '';
   $('s-keep').style.display = s ? 'block' : 'none';
   if ($('srv-edit-pw-sec')) $('srv-edit-pw-sec').style.display = s ? 'block' : 'none';
@@ -7671,13 +8151,14 @@ async function saveServer() {
       name: $('s-name').value, role: $('s-role') ? $('s-role').value : 'auto', host: $('s-host').value,
       port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
       auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
-      ssh_profile_id: (credMode === 'saved') ? parseInt($('s-prof-sel').value || '0', 10) : 0,
+      ssh_profile_id: parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10),
+      ipv6: ($('s-ipv6') && $('s-ipv6').value || '').trim(),
       use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
     };
     const res = editId ? await api('api/servers/' + editId, 'PUT', payload) : await api('api/servers', 'POST', payload);
     if (res.ok) {
       const wasNew = !editId;
-      const enteredPass = (credMode === 'custom' && auth === 'password') ? $('s-pass').value : '';
+      const enteredPass = (parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10) === 0 && auth === 'password') ? $('s-pass').value : '';
       const enteredUser = $('s-user').value.trim() || 'root';
       const enteredPort = parseInt($('s-port').value || '22', 10);
       const suggestedName = $('s-name').value.trim() || $('s-host').value.trim();
@@ -8858,121 +9339,139 @@ async function runSetupAction(action, engine) {
 
 let OB_CFG = { enabled: false, lb_strategy: 'leastPing', probe_interval: '30s', use_github: true, use_telegram: true, use_foreign: false, subs: [], nodes: [] };
 
-function renderOutboundLists() {
-  const subsBox = $('ob-subs-list');
-  if (subsBox) {
-    const subs = OB_CFG.subs || [];
-    subsBox.innerHTML = subs.length ? subs.map((s, idx) => {
-      const dt = s.last_sync ? new Date(s.last_sync * 1000).toLocaleString() : 'Never';
-      return `<div class="kv" style="margin:0;">
-        <div>
-          <strong>${esc(s.name)}</strong>
-          <span class="badge b-ok mono" style="margin-inline-start:6px;">${s.node_count || 0} nodes</span>
-          <div class="mono" style="font-size:.7rem; color:var(--muted); margin-top:2px; word-break:break-all;">${esc(s.url)} • Synced: ${esc(dt)}</div>
-        </div>
-        <div class="flexw" style="gap:6px;">
-          <button class="btn btn-sky btn-sm" onclick="refreshOutboundSub(${idx})">Refresh</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteOutboundSub(${idx})">Delete</button>
-        </div>
-      </div>`;
-    }).join('') : '<div class="hint" style="margin:0;">No subscriptions added yet.</div>';
-  }
+const _obOpenGroups = new Set(['manual']);
 
-  const nodesBox = $('ob-nodes-list');
+function fmtObBytes(b) {
+  b = Number(b || 0);
+  if (b <= 0) return '0 B';
+  const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return (b >= 100 ? b.toFixed(0) : b.toFixed(1)) + ' ' + u[i];
+}
+
+function toggleObGroup(gid) {
+  if (_obOpenGroups.has(gid)) _obOpenGroups.delete(gid);
+  else _obOpenGroups.add(gid);
+  const el = document.querySelector(`[data-ob-grp="${gid}"]`);
+  if (el) el.classList.toggle('open', _obOpenGroups.has(gid));
+}
+
+function renderObNodeRow(n, idx) {
+  const d = n.last_delay_ms || 0;
+  let dBadge = `<span class="badge b-foreign mono" id="ob-d-${esc(n.id)}">---</span>`;
+  if (d > 0) {
+    const cls = d < 350 ? 'b-iran' : (d < 900 ? 'b-ok' : 'b-miss');
+    dBadge = `<span class="badge ${cls} mono" id="ob-d-${esc(n.id)}">${d} ms</span>`;
+  } else if (d < 0) {
+    dBadge = `<span class="badge b-miss mono" id="ob-d-${esc(n.id)}">TIMEOUT</span>`;
+  }
+  const isAct = (n.id === OB_CFG.active_node_id);
+  return `<div class="ob-node-row" style="opacity:${n.enabled ? '1' : '.52'};">
+    <label class="ob-node-main" style="cursor:pointer;">
+      <input type="checkbox" ${n.enabled ? 'checked' : ''} onchange="toggleOutboundNode(${idx}, this.checked)">
+      <span class="badge b-iran mono" style="font-size:.66rem;">${esc(n.proto || 'NODE')}</span>
+      <strong style="font-size:.82rem;">${esc(n.name)}</strong>
+      <span class="mono" style="font-size:.71rem; color:var(--muted);">${esc(n.address || '')}</span>
+    </label>
+    <div class="flexw" style="gap:5px; flex-shrink:0;">
+      ${dBadge}
+      <button type="button" class="btn btn-ghost btn-sm" title="Ping node" onclick="testOutboundRealDelay('${esc(n.id)}','')">⚡</button>
+      <button type="button" class="btn ${isAct ? 'btn-sky' : 'btn-ghost'} btn-sm" style="padding:4px 9px; font-size:.7rem;" onclick="activateSingleOutboundNode('${esc(n.id)}')">${isAct ? '✔ Active' : 'Use'}</button>
+      <button type="button" class="btn btn-danger btn-sm" title="Remove" onclick="deleteOutboundNode(${idx})">✕</button>
+    </div>
+  </div>`;
+}
+
+function renderOutboundLists() {
+  const box = $('ob-unified-groups');
   const nodes = OB_CFG.nodes || [];
+  const subs = OB_CFG.subs || [];
   const enabledCount = nodes.filter(n => n.enabled).length;
   if ($('ob-nodes-cnt')) $('ob-nodes-cnt').textContent = enabledCount + ' / ' + nodes.length + ' active';
-  const actSel = $('ob-active-node'), actBadge = $('ob-single-active-badge');
-  if (actSel) {
-    actSel.innerHTML = nodes.length
-      ? nodes.map(n => `<option value="${esc(n.id)}" ${n.id === OB_CFG.active_node_id ? 'selected' : ''}>[${esc(n.proto)}] ${esc(n.name)} (${esc(n.address || '—')})${n.last_delay_ms > 0 ? ' • ' + n.last_delay_ms + 'ms' : ''}</option>`).join('')
-      : '<option value="">— No nodes yet (paste a config below or import a sub) —</option>';
-    const curNode = nodes.find(n => n.id === OB_CFG.active_node_id) || nodes[0];
-    if (curNode && !OB_CFG.active_node_id) OB_CFG.active_node_id = curNode.id;
-    if (actBadge) {
-      actBadge.textContent = curNode ? (curNode.proto + ' • ' + curNode.name) : 'None Selected';
+
+  const curNode = nodes.find(n => n.id === OB_CFG.active_node_id) || nodes[0];
+  if (curNode && !OB_CFG.active_node_id) OB_CFG.active_node_id = curNode.id;
+  const actBadge = $('ob-single-active-badge');
+  if (actBadge) {
+    if (OB_CFG.mode === 'loadbalance') {
+      actBadge.textContent = `LB: ${enabledCount} nodes (${OB_CFG.lb_strategy || 'leastPing'})`;
+      actBadge.className = 'badge mono b-ok';
+    } else {
+      actBadge.textContent = curNode ? ('🎯 ' + curNode.proto + ' • ' + curNode.name) : 'No Active Config';
       actBadge.className = 'badge mono ' + (curNode ? 'b-iran' : 'b-miss');
     }
   }
-  if (nodesBox) {
-    const subMap = {};
-    (OB_CFG.subs || []).forEach(s => { subMap[s.id] = s.name; });
-    nodesBox.innerHTML = nodes.length ? nodes.map((n, idx) => {
-      const srcLbl = n.source === 'manual' ? 'Manual' : (subMap[n.source] || 'Sub');
-      const d = n.last_delay_ms || 0;
-      let dBadge = `<span class="badge b-foreign mono" id="ob-d-${esc(n.id)}">---</span>`;
-      if (d > 0) {
-        const cls = d < 350 ? 'b-iran' : (d < 900 ? 'b-ok' : 'b-miss');
-        dBadge = `<span class="badge ${cls} mono" id="ob-d-${esc(n.id)}">${d} ms</span>`;
-      } else if (d < 0) {
-        dBadge = `<span class="badge b-miss mono" id="ob-d-${esc(n.id)}">TIMEOUT</span>`;
+
+  if (!box) return;
+  let htmlOut = '';
+
+  // 1. Render each Subscription as a collapsible accordion with traffic usage, Update & Ping buttons
+  subs.forEach((s, sIdx) => {
+    const subNodes = [];
+    nodes.forEach((n, nIdx) => { if (n.source === s.id) subNodes.push({ n, nIdx }); });
+    const isOpen = _obOpenGroups.has(s.id);
+    const used = (s.upload_bytes || 0) + (s.download_bytes || 0);
+    const total = s.total_bytes || 0;
+    let usageHtml = '';
+    if (total > 0 || used > 0 || (s.expire && s.expire > 0)) {
+      const pct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 0;
+      let expTxt = '';
+      if (s.expire && s.expire > 0) {
+        const days = Math.ceil((s.expire * 1000 - Date.now()) / 86400000);
+        expTxt = days >= 0 ? `• ⏳ ${days}d left` : '• ⚠️ Expired';
       }
-      return `<div class="ob-node-row" style="opacity:${n.enabled ? '1' : '.52'};">
-        <label class="ob-node-main" style="cursor:pointer;">
-          <input type="checkbox" ${n.enabled ? 'checked' : ''} onchange="toggleOutboundNode(${idx}, this.checked)">
-          <span class="badge b-iran mono">${esc(n.proto || 'NODE')}</span>
-          <span class="ob-node-name">${esc(n.name || 'Node')}</span>
-          <span class="badge b-foreign">${esc(srcLbl)}</span>
-          ${n.address ? `<span class="ob-node-addr">${esc(n.address)}</span>` : ''}
-        </label>
-        <div class="flexw" style="gap:6px; flex-shrink:0;">
-          ${dBadge}
-          <button class="btn btn-ghost btn-sm" title="Test Real Delay" onclick="testOutboundRealDelay('${esc(n.id)}')">⚡</button>
-          <button class="btn ${n.id === OB_CFG.active_node_id ? 'btn-sky' : 'btn-ghost'} btn-sm" style="padding:4px 9px; font-size:.7rem;" onclick="activateSingleOutboundNode('${esc(n.id)}')">${n.id === OB_CFG.active_node_id ? '✔ Active' : 'Use'}</button>
-          <button class="btn btn-danger btn-sm" title="Remove" onclick="deleteOutboundNode(${idx})">✕</button>
-        </div>
+      const trafTxt = total > 0 ? `${fmtObBytes(used)} / ${fmtObBytes(total)} (${pct}%)` : (used > 0 ? `Used: ${fmtObBytes(used)}` : '');
+      usageHtml = `<div class="ob-sub-usage mono">
+        ${trafTxt ? `<span>📊 ${esc(trafTxt)}</span><span class="ob-usage-bar"><i style="width:${pct}%; ${pct > 85 ? 'background:var(--red);' : ''}"></i></span>` : ''}
+        ${expTxt ? `<span>${esc(expTxt)}</span>` : ''}
       </div>`;
-    }).join('') : '<div class="hint" style="margin:0;">No outbound nodes yet. Add a subscription above or paste a manual URI.</div>';
-  }
-}
-
-async function loadMasterOutbound() {
-  const r = await api('api/outbound/status');
-  if (!r.ok) return;
-  OB_CFG = r.config || OB_CFG;
-  if (!Array.isArray(OB_CFG.subs)) OB_CFG.subs = [];
-  if (!Array.isArray(OB_CFG.nodes)) OB_CFG.nodes = [];
-
-  if ($('ob-en')) $('ob-en').checked = !!OB_CFG.enabled;
-  if ($('ob-gh')) $('ob-gh').checked = OB_CFG.use_github !== false;
-  if ($('ob-tg')) $('ob-tg').checked = OB_CFG.use_telegram !== false;
-  if ($('ob-fr')) $('ob-fr').checked = !!OB_CFG.use_foreign;
-  if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
-  if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
-  pickOutboundMode(OB_CFG.mode === 'loadbalance' ? 'loadbalance' : 'single');
-
-  const b = $('ob-badge');
-  if (b) {
-    b.textContent = r.running ? 'ACTIVE (127.0.0.1:10808)' : 'STOPPED';
-    b.className = 'badge mono ' + (r.running ? 'b-iran' : 'b-foreign');
-  }
-  const cs = $('ob-core-status'), cv = $('ob-core-ver'), ib = $('btn-ob-install');
-  if (cs) {
-    cs.textContent = r.xray_installed ? 'INSTALLED' : 'NOT INSTALLED';
-    cs.className = 'badge mono ' + (r.xray_installed ? 'b-iran' : 'b-miss');
-  }
-  if (cv) {
-    if (r.xray_installed && r.xray_version) {
-      cv.textContent = 'Xray ' + r.xray_version;
-      cv.style.display = 'inline-block';
-    } else {
-      cv.style.display = 'none';
     }
-  }
-  if (ib) {
-    ib.textContent = r.xray_installed ? 'Update Xray Core' : 'Install Xray Core';
-  }
-  renderOutboundLists();
-}
+    htmlOut += `<div class="ob-sub-acc ${isOpen ? 'open' : ''}" data-ob-grp="${esc(s.id)}">
+      <div class="ob-sub-head" onclick="toggleObGroup('${esc(s.id)}')">
+        <div style="min-width:0; flex:1;">
+          <div style="display:flex; align-items:center; gap:7px; flex-wrap:wrap;">
+            <span class="ob-sub-chev">▾</span>
+            <strong style="font-size:.86rem;">📡 ${esc(s.name)}</strong>
+            <span class="badge b-ok mono" style="font-size:.66rem;">${subNodes.length} servers</span>
+          </div>
+          ${usageHtml}
+        </div>
+        <div class="flexw" style="gap:5px; flex-shrink:0;" onclick="event.stopPropagation()">
+          <button type="button" class="btn btn-sky btn-sm" onclick="refreshOutboundSub(${sIdx})">↻ Update</button>
+          <button type="button" class="btn btn-warn btn-sm" onclick="testOutboundRealDelay('','${esc(s.id)}')">⚡ Ping</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="deleteOutboundSub(${sIdx})">🗑️</button>
+        </div>
+      </div>
+      <div class="ob-sub-body">
+        ${subNodes.length ? subNodes.map(x => renderObNodeRow(x.n, x.nIdx)).join('') : '<div class="hint" style="margin:0;">No nodes in this subscription. Click Update to fetch.</div>'}
+      </div>
+    </div>`;
+  });
 
-async function installXrayCore() {
-  const btn = $('btn-ob-install');
-  btn.disabled = true; btn.textContent = 'Installing Xray...';
-  try {
-    const r = await api('api/outbound/install', 'POST');
-    if (r.ok) { toast(r.message || 'Xray Core installed!'); loadMasterOutbound(); }
-    else toast(r.error || 'Install failed', true);
-  } finally { btn.disabled = false; }
+  // 2. Render Manual / Single Configs accordion
+  const manualNodes = [];
+  nodes.forEach((n, nIdx) => { if (!n.source || n.source === 'manual') manualNodes.push({ n, nIdx }); });
+  if (manualNodes.length || !subs.length) {
+    const isOpen = _obOpenGroups.has('manual');
+    htmlOut += `<div class="ob-sub-acc ${isOpen ? 'open' : ''}" data-ob-grp="manual">
+      <div class="ob-sub-head" onclick="toggleObGroup('manual')">
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span class="ob-sub-chev">▾</span>
+          <strong style="font-size:.86rem;">🔗 Manual &amp; Single Configs</strong>
+          <span class="badge b-foreign mono" style="font-size:.66rem;">${manualNodes.length} configs</span>
+        </div>
+        <div class="flexw" style="gap:5px;" onclick="event.stopPropagation()">
+          ${manualNodes.length ? `<button type="button" class="btn btn-warn btn-sm" onclick="testOutboundRealDelay('','manual')">⚡ Ping</button>` : ''}
+        </div>
+      </div>
+      <div class="ob-sub-body">
+        ${manualNodes.length ? manualNodes.map(x => renderObNodeRow(x.n, x.nIdx)).join('') : '<div class="hint" style="margin:0;">No configs yet. Paste a single URI or add a Subscription URL above.</div>'}
+      </div>
+    </div>`;
+  }
+
+  box.innerHTML = htmlOut;
 }
 
 async function addOutboundSub() {
@@ -8984,37 +9483,40 @@ async function addOutboundSub() {
     const r = await api('api/outbound/sub/fetch', 'POST', { name, url });
     if (r.ok) {
       OB_CFG = r.config || OB_CFG;
+      if (r.sub_id) _obOpenGroups.add(r.sub_id);
       $('ob-sub-name').value = ''; $('ob-sub-url').value = '';
       renderOutboundLists();
-      toast(r.message || 'Subscription imported! Click Save & Start to apply.');
+      toast(r.message || 'Subscription imported! Opened server list below.');
     } else toast(r.error || 'Failed to fetch subscription', true);
-  } finally { btn.disabled = false; btn.textContent = '+ Add & Fetch Subscription'; }
+  } finally { btn.disabled = false; btn.textContent = '+ Add & Fetch Sub'; }
 }
 
 async function refreshOutboundSub(idx) {
   const sub = (OB_CFG.subs || [])[idx];
   if (!sub) return;
-  toast('Refreshing ' + sub.name + '...');
+  toast('Updating ' + sub.name + '...');
   const r = await api('api/outbound/sub/fetch', 'POST', { id: sub.id, name: sub.name, url: sub.url });
   if (r.ok) {
     OB_CFG = r.config || OB_CFG;
+    _obOpenGroups.add(sub.id);
     renderOutboundLists();
-    toast(r.message || 'Subscription refreshed!');
-  } else toast(r.error || 'Refresh failed', true);
+    toast(r.message || 'Subscription updated!');
+  } else toast(r.error || 'Update failed', true);
 }
 
 function deleteOutboundSub(idx) {
   const sub = (OB_CFG.subs || [])[idx];
-  if (!sub) return;
+  if (!sub || !confirm(`Remove subscription "${sub.name}" and its nodes?`)) return;
   OB_CFG.subs.splice(idx, 1);
   OB_CFG.nodes = (OB_CFG.nodes || []).filter(n => n.source !== sub.id);
+  _obOpenGroups.delete(sub.id);
   renderOutboundLists();
-  toast('Subscription removed. Click Save & Start to apply.');
+  toast('Subscription removed. Click Start / Save to apply.');
 }
 
-function addManualOutboundNode() {
-  const inp = $('ob-manual-uri');
-  const uri = (inp.value || '').trim();
+function addManualFromQuickBar() {
+  const inp = $('ob-quick-single-uri');
+  const uri = (inp && inp.value || '').trim();
   if (!uri || !uri.includes('://')) { toast('Paste a valid vless://, vmess://, trojan://, ss://, or socks5:// URI', true); return; }
   const proto = uri.split('://')[0].toUpperCase();
   let name = proto + ' Node', addr = '';
@@ -9026,10 +9528,11 @@ function addManualOutboundNode() {
       else if (addr) name = proto + ' • ' + addr;
     }
   } catch (e) {}
-  OB_CFG.nodes.push({ id: 'm-' + Date.now(), name, uri, proto, address: addr, source: 'manual', enabled: true });
+  OB_CFG.nodes.unshift({ id: 'm-' + Date.now(), name, uri, proto, address: addr, source: 'manual', enabled: true });
+  _obOpenGroups.add('manual');
   inp.value = '';
   renderOutboundLists();
-  toast('Node added. Click Save & Start to apply.');
+  toast('Config added to list.');
 }
 
 function toggleOutboundNode(idx, checked) {
@@ -9044,31 +9547,32 @@ function deleteOutboundNode(idx) {
   renderOutboundLists();
 }
 
-async function testOutboundRealDelay(nodeId) {
+async function testOutboundRealDelay(nodeId, subId) {
   const btn = $('btn-ob-delay-all');
-  if (!nodeId && btn) { btn.disabled = true; btn.textContent = 'Testing Real Delay...'; }
+  if (!nodeId && !subId && btn) { btn.disabled = true; btn.textContent = 'Pinging...'; }
   if (nodeId) {
     const b = $('ob-d-' + nodeId);
     if (b) { b.textContent = '...'; b.className = 'badge b-foreign mono'; }
   } else {
     (OB_CFG.nodes || []).forEach(n => {
+      if (subId && n.source !== subId) return;
       const b = $('ob-d-' + n.id);
       if (b) { b.textContent = '...'; b.className = 'badge b-foreign mono'; }
     });
   }
   try {
-    const r = await api('api/outbound/realdelay', 'POST', { node_id: nodeId || '' });
+    const r = await api('api/outbound/realdelay', 'POST', { node_id: nodeId || '', sub_id: subId || '' });
     if (r.ok) {
       OB_CFG = r.config || OB_CFG;
       renderOutboundLists();
       if (!nodeId) {
-        toast(`Real Delay done: ${r.ok_count} OK, ${r.failed_count} failed` + (r.best_ms ? ` (Best: ${r.best_ms} ms)` : ''));
+        toast(`Ping done: ${r.ok_count} OK, ${r.failed_count} failed` + (r.best_ms ? ` (Best: ${r.best_ms} ms)` : ''));
       }
     } else {
       toast(r.error || 'Real delay test failed', true);
     }
   } finally {
-    if (!nodeId && btn) { btn.disabled = false; btn.textContent = '⚡ Test Real Delay'; }
+    if (!nodeId && !subId && btn) { btn.disabled = false; btn.textContent = '⚡ Ping All'; }
   }
 }
 
@@ -9078,12 +9582,14 @@ function disableDeadOutboundNodes() {
     if ((n.last_delay_ms || 0) < 0 && n.enabled) { n.enabled = false; cnt++; }
   });
   renderOutboundLists();
-  toast(cnt > 0 ? `Disabled ${cnt} timed-out nodes. Click Save & Start to apply.` : 'No timed-out nodes found.');
+  toast(cnt > 0 ? `Disabled ${cnt} timed-out nodes. Click Start / Save to apply.` : 'No timed-out nodes found.');
 }
 
 function clearOutboundNodes() {
-  if (!confirm('Remove all outbound nodes?')) return;
+  if (!confirm('Remove all outbound nodes & subscriptions?')) return;
   OB_CFG.nodes = [];
+  OB_CFG.subs = [];
+  OB_CFG.active_node_id = '';
   renderOutboundLists();
 }
 
@@ -9092,12 +9598,7 @@ function pickOutboundMode(m) {
   OB_CFG.mode = mode;
   if ($('ob-mode')) $('ob-mode').value = mode;
   document.querySelectorAll('#ob-mode-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.obm === mode));
-  if ($('ob-single-box')) $('ob-single-box').style.display = (mode === 'single') ? 'block' : 'none';
   if ($('ob-lb-opts')) $('ob-lb-opts').style.display = (mode === 'loadbalance') ? 'grid' : 'none';
-}
-
-function selectActiveOutboundNode(id) {
-  OB_CFG.active_node_id = id;
   renderOutboundLists();
 }
 
@@ -9107,7 +9608,6 @@ async function activateSingleOutboundNode(id) {
   OB_CFG.enabled = true;
   if ($('ob-en')) $('ob-en').checked = true;
   pickOutboundMode('single');
-  renderOutboundLists();
   await saveMasterOutbound();
 }
 
@@ -9133,10 +9633,10 @@ async function applyQuickSingleOutbound() {
   OB_CFG.mode = 'single';
   OB_CFG.active_node_id = newId;
   OB_CFG.enabled = true;
+  _obOpenGroups.add('manual');
   if ($('ob-en')) $('ob-en').checked = true;
   inp.value = '';
   pickOutboundMode('single');
-  renderOutboundLists();
   await saveMasterOutbound();
 }
 
@@ -9150,12 +9650,11 @@ async function viewMasterOutboundLogs() {
 }
 
 async function saveMasterOutbound() {
-  const btn = $('btn-ob-save'); btn.disabled = true; btn.textContent = 'Applying...';
+  const btn = $('btn-ob-save'); btn.disabled = true; btn.textContent = 'Starting...';
   const out = $('ob-out');
   try {
     OB_CFG.enabled = $('ob-en').checked;
     OB_CFG.mode = ($('ob-mode') && $('ob-mode').value) || 'single';
-    if ($('ob-active-node') && $('ob-active-node').value) OB_CFG.active_node_id = $('ob-active-node').value;
     OB_CFG.use_github = $('ob-gh').checked;
     OB_CFG.use_telegram = $('ob-tg').checked;
     OB_CFG.use_foreign = $('ob-fr').checked;
@@ -9163,24 +9662,24 @@ async function saveMasterOutbound() {
     OB_CFG.probe_interval = $('ob-int').value;
     const r = await api('api/outbound/save', 'POST', OB_CFG);
     if (r.ok) {
-      toast(r.message || 'Master Outbound saved');
+      toast(r.message || 'Master Outbound started');
       if (out) { out.style.display = 'block'; out.textContent = r.message || 'Running'; }
       loadMasterOutbound();
     } else {
       toast(r.error || 'Failed to save outbound', true);
       if (out) { out.style.display = 'block'; out.textContent = r.error || 'Failed to start Xray'; }
     }
-  } finally { btn.disabled = false; btn.textContent = 'Save & Start'; }
+  } finally { btn.disabled = false; btn.textContent = '▶ Start / Save'; }
 }
 
 async function testMasterOutbound() {
   const btn = $('btn-ob-test'), out = $('ob-out');
   btn.disabled = true; btn.textContent = 'Testing...';
-  out.style.display = 'block'; out.textContent = 'Testing GitHub & Telegram connectivity through 127.0.0.1:10808...';
+  out.style.display = 'block'; out.textContent = 'Testing Exit IP, GitHub & Telegram via 127.0.0.1:10808...';
   try {
     const r = await api('api/outbound/test', 'POST');
     out.textContent = r.ok ? (r.output || 'OK') : (r.error || 'Test failed');
-  } finally { btn.disabled = false; btn.textContent = 'Test Outbound'; }
+  } finally { btn.disabled = false; btn.textContent = 'Test'; }
 }
 
 async function stopMasterOutbound() {
@@ -10015,9 +10514,27 @@ async function manualPingServer(id) {
           el.classList.add(obCls);
         });
       }
+      const revVal = r.reverse_ping_ms || '';
+      if (revVal) {
+        const revCls = pingBadgeClass(revVal);
+        document.querySelectorAll(`[data-srv-rev-ping="${id}"]`).forEach(el => { el.textContent = revVal; });
+        document.querySelectorAll(`[data-srv-rev-ping-wrap="${id}"]`).forEach(el => {
+          el.classList.remove('ping-good', 'ping-mid', 'ping-bad', 'ping-na', 'b-iran');
+          el.classList.add(revCls);
+        });
+      }
       const s = (SERVERS || []).find(x => +x.id === +id);
-      if (s) { s.ping_ms = val; if (obVal) s.outbound_ping_ms = obVal; }
-      toast(obVal ? `🇮🇷 Direct: ${val} | 🚀 Outbound: ${obVal}` : `🇮🇷 Direct Ping: ${val}`);
+      if (s) {
+        const hadRev = !!s.reverse_ping_ms;
+        s.ping_ms = val;
+        if (obVal) s.outbound_ping_ms = obVal;
+        if (revVal) s.reverse_ping_ms = revVal;
+        if (!hadRev && revVal) renderServers();
+      }
+      const parts = [`🇮🇷 ${val}`];
+      if (obVal) parts.push(`🚀 ${obVal}`);
+      if (revVal) parts.push(`↩️ ${revVal}`);
+      toast(parts.join('  |  '));
     } else {
       toast(r.error || 'Ping failed', true);
     }
@@ -10458,7 +10975,8 @@ function switchSubTab(name, el) {
   if (el) el.classList.add('active');
   const shell = $('settings-shell');
   if (shell) shell.classList.toggle('wide', name === 'themes');
-  if (name === 'themes') { renderThemes(); renderStudio(); }
+  if (name === 'themes') { renderThemes(); renderStudio(); renderEditTabsStudio(); }
+  if (name === 'sections') { renderSettingsSectionsHub(); }
 }
 function openThemesQuick() {
   if (curTab !== 'settings') switchTab('settings');
@@ -10537,11 +11055,104 @@ async function saveSecuritySettings() {
 let SSH_PROFILES = [], PORT_PROFILES = [], credMode = 'custom';
 
 function pickCredMode(m) {
-  credMode = m;
-  document.querySelectorAll('#cred-mode-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.credMode === m));
-  $('s-prof-wrap').style.display = m === 'saved' ? 'block' : 'none';
-  $('s-custom-fields').style.display = m === 'saved' ? 'none' : 'block';
+  credMode = m || 'custom';
 }
+
+let _ipv6CheckTimer = null;
+let _ipv6LastHost = '';
+function setSrvIPv6Drawer(val) {
+  const dr = $('s-ipv6-drawer'), inp = $('s-ipv6');
+  const v = String(val || '').trim();
+  if (inp) inp.value = (v && v !== 'N/A') ? v : '';
+  if (dr) dr.classList.toggle('open', !!(v && v !== 'N/A'));
+}
+function scheduleSrvIPv6Check(immediate) {
+  if (_ipv6CheckTimer) clearTimeout(_ipv6CheckTimer);
+  const host = ($('s-host') && $('s-host').value || '').trim();
+  if (!host) { _ipv6LastHost = ''; setSrvIPv6Drawer(''); return; }
+  if (host.includes(':')) { _ipv6LastHost = host; setSrvIPv6Drawer(host); return; }
+  if (host === _ipv6LastHost && !immediate) return;
+  _ipv6CheckTimer = setTimeout(async () => {
+    const cur = ($('s-host') && $('s-host').value || '').trim();
+    if (!cur || cur.length < 4) { setSrvIPv6Drawer(''); return; }
+    _ipv6LastHost = cur;
+    try {
+      const r = await api('api/servers/resolve-ipv6?host=' + encodeURIComponent(cur));
+      if (($('s-host') && $('s-host').value || '').trim() !== cur) return;
+      if (r && r.ok && r.ipv6) setSrvIPv6Drawer(r.ipv6);
+      else if (!editId) setSrvIPv6Drawer('');
+    } catch (e) {}
+  }, immediate ? 50 : 450);
+}
+
+function clearSelectedSSHProfile() {
+  if ($('s-prof-id')) $('s-prof-id').value = '0';
+}
+function toggleSrvPassVis() {
+  const inp = $('s-pass'), btn = $('btn-s-pass-eye');
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  if (btn) btn.textContent = show ? '🙈' : '👁️';
+}
+function renderUserProfileDD(filterTxt) {
+  const dd = $('s-user-prof-dd');
+  if (!dd) return;
+  const q = String(filterTxt || '').trim().toLowerCase();
+  const list = (SSH_PROFILES || []).filter(p => {
+    if (!q || q === 'root') return true;
+    return (p.name + ' ' + p.username).toLowerCase().includes(q);
+  });
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  let h = '';
+  if (list.length) {
+    h += list.map(p => `<button type="button" class="user-prof-item" onmousedown="event.preventDefault(); applySavedSSHProfile(${p.id})">
+      <span><strong>${esc(p.name)}</strong> <span class="user-prof-meta">(${esc(p.username)})</span></span>
+      <span class="user-prof-meta">:${p.port}</span>
+    </button>`).join('');
+  } else {
+    h += `<div class="hint" style="margin:4px 8px; font-size:.74rem;">${fa ? 'پروفایل ذخیره‌شده‌ای یافت نشد — می‌توانید دستی تایپ کنید.' : 'No saved SSH profiles yet — type manually or create one.'}</div>`;
+  }
+  h += `<div style="border-top:1px solid var(--border); margin-top:3px; padding-top:4px;">
+    <button type="button" class="user-prof-item" style="color:var(--accent); font-weight:700;" onmousedown="event.preventDefault(); closeUserProfileDD(); startQuickSSHProfile('server')">
+      <span>${fa ? '+ ذخیره پروفایل SSH جدید' : '+ Create Saved SSH Profile'}</span>
+    </button>
+  </div>`;
+  dd.innerHTML = h;
+}
+function openUserProfileDD() {
+  renderUserProfileDD('');
+  const dd = $('s-user-prof-dd');
+  if (dd) dd.classList.add('open');
+}
+function closeUserProfileDD() {
+  const dd = $('s-user-prof-dd');
+  if (dd) dd.classList.remove('open');
+}
+function toggleUserProfileDD() {
+  const dd = $('s-user-prof-dd');
+  if (!dd) return;
+  if (dd.classList.contains('open')) closeUserProfileDD();
+  else openUserProfileDD();
+}
+function applySavedSSHProfile(pid) {
+  const p = (SSH_PROFILES || []).find(x => +x.id === +pid);
+  if (!p) return;
+  if ($('s-user')) $('s-user').value = p.username || 'root';
+  if ($('s-port')) $('s-port').value = p.port || 22;
+  if ($('s-auth')) {
+    $('s-auth').value = 'password';
+    $('s-auth').dispatchEvent(new Event('change'));
+  }
+  if ($('s-pass') && p.password) $('s-pass').value = p.password;
+  if ($('s-prof-id')) $('s-prof-id').value = String(p.id);
+  closeUserProfileDD();
+  toast((typeof lang !== 'undefined' && lang === 'fa') ? `پروفایل «${p.name}» اعمال شد` : `Applied profile "${p.name}"`);
+}
+document.addEventListener('click', e => {
+  const wrap = $('s-user-combo');
+  if (wrap && !wrap.contains(e.target)) closeUserProfileDD();
+});
 
 async function loadProfiles() {
   const [r1, r2] = await Promise.all([api('api/profiles/ssh'), api('api/profiles/ports')]);
@@ -11933,8 +12544,25 @@ function showTermAuthBox(show) {
     if ($('term-prof-empty-hint')) $('term-prof-empty-hint').style.display = profs.length ? 'none' : 'block';
   }
 }
+function openLocalWebTerm() {
+  termSrvId = 'local';
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if ($('term-title')) $('term-title').textContent = fa ? '🖥️ ترمینال سرور مستر (این سرور)' : '🖥️ Master Server Terminal (Local)';
+  if ($('term-out')) $('term-out').textContent = fa ? 'متصل به شل محلی سرور مستر (bash). دستور خود را پایین وارد کنید.' : 'Connected to local Master server shell (bash). Type a command below.';
+  if ($('term-inp')) $('term-inp').value = '';
+  if ($('btn-term-chauth')) $('btn-term-chauth').style.display = 'none';
+  if ($('term-view-tabs')) $('term-view-tabs').style.display = 'none';
+  showTermAuthBox(false);
+  switchTermView('shell');
+  populateVaultDropdown();
+  if ($('term-modal')) $('term-modal').classList.add('active');
+  setTimeout(() => $('term-inp') && $('term-inp').focus(), 40);
+}
+
 async function openWebTerm(id) {
   termSrvId = id;
+  if ($('btn-term-chauth')) $('btn-term-chauth').style.display = '';
+  if ($('term-view-tabs')) $('term-view-tabs').style.display = '';
   const s = (SERVERS || []).find(x => +x.id === +id);
   $('term-title').textContent = 'Terminal — ' + (s ? s.name : id);
   $('term-out').textContent = 'Connected to ' + (s ? s.host : id) + '. Type a command below.';
@@ -12005,7 +12633,7 @@ async function runWebTermCmd() {
   $('term-inp').value = '';
   if (btn) { btn.disabled = true; btn.textContent = 'Running...'; }
   try {
-    const r = await api('api/servers/' + termSrvId + '/exec', 'POST', { command: cmd });
+    const r = (termSrvId === 'local') ? await api('api/local/exec', 'POST', { command: cmd }) : await api('api/servers/' + termSrvId + '/exec', 'POST', { command: cmd });
     const out = (r.output || '') + (r.exit ? ('\n[exit: ' + r.exit + ']') : '') + (!r.ok && r.error ? ('\nERROR: ' + r.error) : '');
     $('term-out').textContent = $('term-out').textContent.replace(/\n\.\.\.$/, '\n' + (out.trim() || '(no output)'));
     $('term-out').scrollTop = $('term-out').scrollHeight;

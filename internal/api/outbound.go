@@ -38,11 +38,37 @@ type outboundNode struct {
 }
 
 type outboundSub struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	URL       string `json:"url"`
-	LastSync  int64  `json:"last_sync"`
-	NodeCount int    `json:"node_count"`
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	URL           string `json:"url"`
+	LastSync      int64  `json:"last_sync"`
+	NodeCount     int    `json:"node_count"`
+	UploadBytes   int64  `json:"upload_bytes,omitempty"`
+	DownloadBytes int64  `json:"download_bytes,omitempty"`
+	TotalBytes    int64  `json:"total_bytes,omitempty"`
+	Expire        int64  `json:"expire,omitempty"`
+}
+
+func parseSubUserinfo(hdr string) (up, down, total, expire int64) {
+	for _, part := range strings.Split(hdr, ";") {
+		kv := strings.SplitN(strings.TrimSpace(part), "=", 2)
+		if len(kv) != 2 {
+			continue
+		}
+		k := strings.ToLower(strings.TrimSpace(kv[0]))
+		v, _ := strconv.ParseInt(strings.TrimSpace(kv[1]), 10, 64)
+		switch k {
+		case "upload":
+			up = v
+		case "download":
+			down = v
+		case "total":
+			total = v
+		case "expire":
+			expire = v
+		}
+	}
+	return
 }
 
 type outboundConfig struct {
@@ -375,12 +401,13 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	var bodyStr string
+	var bodyStr, subUserInfo string
 	client := &http.Client{Timeout: 14 * time.Second}
 	httpReq, _ := http.NewRequest("GET", req.URL, nil)
 	httpReq.Header.Set("User-Agent", "MControl/1.5.0 v2rayN/6.0")
 	resp, err := client.Do(httpReq)
 	if err == nil && resp.StatusCode == http.StatusOK {
+		subUserInfo = resp.Header.Get("Subscription-Userinfo")
 		raw, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
 		resp.Body.Close()
 		bodyStr = string(raw)
@@ -389,12 +416,37 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 			resp.Body.Close()
 		}
 		if isOutboundActive() {
-			out, cerr := exec.Command("curl", "-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.5.0 v2rayN/6.0", req.URL).Output()
+			hdrFile, _ := os.CreateTemp("", "mc-sub-hdr-*")
+			hdrPath := ""
+			if hdrFile != nil {
+				hdrPath = hdrFile.Name()
+				_ = hdrFile.Close()
+				defer os.Remove(hdrPath)
+			}
+			args := []string{"-fsSL", "--max-time", "14", "--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), "-A", "MControl/1.5.0 v2rayN/6.0"}
+			if hdrPath != "" {
+				args = append(args, "-D", hdrPath)
+			}
+			args = append(args, req.URL)
+			out, cerr := exec.Command("curl", args...).Output()
 			if cerr == nil {
 				bodyStr = string(out)
+				if hdrPath != "" {
+					if hb, e := os.ReadFile(hdrPath); e == nil {
+						for _, ln := range strings.Split(string(hb), "\n") {
+							if strings.HasPrefix(strings.ToLower(strings.TrimSpace(ln)), "subscription-userinfo:") {
+								parts := strings.SplitN(ln, ":", 2)
+								if len(parts) == 2 {
+									subUserInfo = strings.TrimSpace(parts[1])
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
+	upB, downB, totB, expTs := parseSubUserinfo(subUserInfo)
 	if strings.TrimSpace(bodyStr) == "" {
 		fail(w, http.StatusBadGateway, "failed to download subscription URL (check connectivity or enable Outbound first)")
 		return
@@ -419,17 +471,25 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 			cfg.Subs[i].URL = req.URL
 			cfg.Subs[i].LastSync = time.Now().Unix()
 			cfg.Subs[i].NodeCount = len(parsed)
+			cfg.Subs[i].UploadBytes = upB
+			cfg.Subs[i].DownloadBytes = downB
+			cfg.Subs[i].TotalBytes = totB
+			cfg.Subs[i].Expire = expTs
 			foundSub = true
 			break
 		}
 	}
 	if !foundSub {
 		cfg.Subs = append(cfg.Subs, outboundSub{
-			ID:        subID,
-			Name:      req.Name,
-			URL:       req.URL,
-			LastSync:  time.Now().Unix(),
-			NodeCount: len(parsed),
+			ID:            subID,
+			Name:          req.Name,
+			URL:           req.URL,
+			LastSync:      time.Now().Unix(),
+			NodeCount:     len(parsed),
+			UploadBytes:   upB,
+			DownloadBytes: downB,
+			TotalBytes:    totB,
+			Expire:        expTs,
 		})
 	}
 
@@ -448,6 +508,7 @@ func (h *Handler) handleOutboundFetchSub(w http.ResponseWriter, r *http.Request)
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":      true,
+		"sub_id":  subID,
 		"added":   len(parsed),
 		"config":  cfg,
 		"message": fmt.Sprintf("Synced %d nodes from %s", len(parsed), req.Name),
@@ -1159,7 +1220,8 @@ func freeLocalPort() (int, error) {
 
 func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		NodeID string `json:"node_id"` // optional: empty = test all nodes
+		NodeID string `json:"node_id"` // optional: test single node
+		SubID  string `json:"sub_id"`  // optional: test all nodes in a subscription (or "manual")
 	}
 	_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&req)
 
@@ -1187,6 +1249,9 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 
 	for i, n := range cfg.Nodes {
 		if req.NodeID != "" && n.ID != req.NodeID {
+			continue
+		}
+		if req.SubID != "" && n.Source != req.SubID {
 			continue
 		}
 		if strings.TrimSpace(n.URI) == "" {
