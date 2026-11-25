@@ -72,6 +72,14 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		ForwardMode   string `json:"forward_mode"`    // "nat" | "transparent"
 		MTU           int    `json:"mtu"`             // 0 = auto (1420), or explicit 1280..1500
 		RateLimitMbps int    `json:"rate_limit_mbps"` // 0 = unlimited, >0 = tc CAKE/TBF cap
+		// Phase 3 Backhaul v1.0.0 options (Parallax, Multi-Transport Failover, Game Mode)
+		ParallaxLanes      int    `json:"parallax_lanes"`
+		ParallaxStallSec   int    `json:"parallax_stall_sec"`
+		FailoverTransports string `json:"failover_transports"`
+		FailoverRestoreSec int    `json:"failover_restore_sec"`
+		GameMode           bool   `json:"game_mode"`
+		GameCopies         int    `json:"game_copies"`
+		GamePorts          string `json:"game_ports"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -242,7 +250,14 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		KernelIPsec:     strings.TrimSpace(req.KernelIPsec),
 		ForwardMode:     strings.TrimSpace(req.ForwardMode),
 		MTU:             req.MTU,
-		RateLimitMbps:   req.RateLimitMbps,
+		RateLimitMbps:      req.RateLimitMbps,
+		ParallaxLanes:      req.ParallaxLanes,
+		ParallaxStallSec:   req.ParallaxStallSec,
+		FailoverTransports: strings.TrimSpace(req.FailoverTransports),
+		FailoverRestoreSec: req.FailoverRestoreSec,
+		GameMode:           req.GameMode,
+		GameCopies:         req.GameCopies,
+		GamePorts:          strings.TrimSpace(req.GamePorts),
 	}
 	extraBytes, _ := json.Marshal(extraObj)
 
@@ -440,6 +455,80 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 			}
 			fmt.Fprintf(&srvExtra, "kcp_mode = %q\nkcp_crypt = %q\nkcp_nofec = %v\n", km, kc, ex.KCPNoFEC)
 			fmt.Fprintf(&cliExtra, "kcp_mode = %q\nkcp_crypt = %q\nkcp_nofec = %v\n", km, kc, ex.KCPNoFEC)
+		}
+		if baseTrans == "parallax" || baseTrans == "parallaxmux" || baseTrans == "failover" {
+			lanes := ex.ParallaxLanes
+			if lanes < 2 || lanes > 12 {
+				lanes = 4
+			}
+			stall := ex.ParallaxStallSec
+			if stall < 2 || stall > 30 {
+				stall = 4
+			}
+			fmt.Fprintf(&srvExtra, "parallax_lanes = %d\nparallax_stall_sec = %d\n", lanes, stall)
+			fmt.Fprintf(&cliExtra, "parallax_lanes = %d\nparallax_stall_sec = %d\n", lanes, stall)
+		}
+		if baseTrans == "failover" {
+			rawList := ex.FailoverTransports
+			if rawList == "" {
+				rawList = "tlsmux,xhttpsmux,parallaxmux"
+			}
+			var qItems []string
+			for _, p := range strings.Split(rawList, ",") {
+				v := strings.ToLower(strings.TrimSpace(p))
+				if v != "" && v != "failover" {
+					qItems = append(qItems, fmt.Sprintf("%q", v))
+				}
+			}
+			if len(qItems) < 2 {
+				qItems = []string{`"tlsmux"`, `"xhttpsmux"`}
+			}
+			restoreSec := ex.FailoverRestoreSec
+			if restoreSec < 30 {
+				restoreSec = 300
+			}
+			fmt.Fprintf(&srvExtra, "failover_transports = [%s]\nfailover_probe_sec = 5\nfailover_restore_sec = %d\n", strings.Join(qItems, ", "), restoreSec)
+			fmt.Fprintf(&cliExtra, "failover_transports = [%s]\n", strings.Join(qItems, ", "))
+			// Also include TLS/uTLS & XHTTP defaults so sub-carriers in failover work out of the box
+			sni := ex.SNI
+			if sni == "" {
+				sni = "www.cloudflare.com"
+			}
+			fp := ex.UTLSFingerprint
+			if fp == "" {
+				fp = "chrome"
+			}
+			fmt.Fprintf(&srvExtra, "sni = %q\nxhttp_path = \"/api/v1/stream\"\n", sni)
+			fmt.Fprintf(&cliExtra, "sni = %q\nutls_fingerprint = %q\nxhttp_path = \"/api/v1/stream\"\n", sni, fp)
+			if ex.TLSFragment {
+				cliExtra.WriteString("tls_fragment = true\n")
+			}
+		}
+		if ex.GameMode {
+			copies := ex.GameCopies
+			if copies < 1 || copies > 4 {
+				copies = 3
+			}
+			gBase := t.TunnelPort + 10
+			var gPorts []string
+			srcGP := ex.GamePorts
+			if srcGP == "" {
+				srcGP = t.Ports
+			}
+			for _, raw := range strings.Split(srcGP, ",") {
+				raw = strings.TrimSpace(raw)
+				if raw != "" {
+					if strings.Contains(raw, "=") {
+						gPorts = append(gPorts, fmt.Sprintf("%q", raw))
+					} else {
+						gPorts = append(gPorts, fmt.Sprintf(`"%s=%s"`, raw, raw))
+					}
+				}
+			}
+			if len(gPorts) > 0 {
+				fmt.Fprintf(&srvExtra, "game_mode = true\ngame_copies = %d\ngame_base_port = %d\ngame_ports = [%s]\n", copies, gBase, strings.Join(gPorts, ", "))
+				fmt.Fprintf(&cliExtra, "game_mode = true\ngame_copies = %d\ngame_base_port = %d\n", copies, gBase)
+			}
 		}
 
 		iranToml := fmt.Sprintf(`[server]
@@ -1318,7 +1407,14 @@ type backhaulExtraOpts struct {
 	KernelIPsec     string `json:"kernel_ipsec,omitempty"`
 	ForwardMode     string `json:"forward_mode,omitempty"`
 	MTU             int    `json:"mtu,omitempty"`
-	RateLimitMbps   int    `json:"rate_limit_mbps,omitempty"`
+	RateLimitMbps      int    `json:"rate_limit_mbps,omitempty"`
+	ParallaxLanes      int    `json:"parallax_lanes,omitempty"`
+	ParallaxStallSec   int    `json:"parallax_stall_sec,omitempty"`
+	FailoverTransports string `json:"failover_transports,omitempty"`
+	FailoverRestoreSec int    `json:"failover_restore_sec,omitempty"`
+	GameMode           bool   `json:"game_mode,omitempty"`
+	GameCopies         int    `json:"game_copies,omitempty"`
+	GamePorts          string `json:"game_ports,omitempty"`
 }
 
 func (h *Handler) StartTunnelWatchdog() {

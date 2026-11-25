@@ -97,6 +97,7 @@ func (h *Handler) handleBenchmarkStart(w http.ResponseWriter, r *http.Request) {
 			{Engine: "backhaul", Transport: "xhttps", IPMode: "v4", Underlay: "ip", Label: "Backhaul XHTTPS (H2)"},
 			{Engine: "backhaul", Transport: "kcp", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCP (FEC)"},
 			{Engine: "backhaul", Transport: "kcpmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCPMUX"},
+			{Engine: "backhaul", Transport: "parallaxmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul ParallaxMUX"},
 			{Engine: "rathole", Transport: "tcp", IPMode: "v4", Underlay: "ip", Label: "Rathole TCP"},
 			{Engine: "gre", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "GRE 4-to-4"},
 			{Engine: "vxlan", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "VXLAN IPv4"},

@@ -4791,7 +4791,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.0</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.1</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -6563,7 +6563,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
           </div>
 
           <div class="row2">
-            <div class="field" id="t-trans-wrap" style="margin-bottom:0;"><label>Transport (Backhaul v0.9.3)</label>
+            <div class="field" id="t-trans-wrap" style="margin-bottom:0;"><label>Transport (Backhaul v1.0.0)</label>
               <select id="t-trans" onchange="onBackhaulTransportChange(); updateTunFloatDock()">
                 <optgroup label="Core &amp; Multiplex">
                   <option value="tcp">TCP</option>
@@ -6589,6 +6589,11 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
                 <optgroup label="KCP (High Packet-Loss)">
                   <option value="kcp">KCP (UDP + FEC)</option>
                   <option value="kcpmux">KCPMUX (UDP + FEC + smux)</option>
+                </optgroup>
+                <optgroup label="Next-Gen v1.0 (Anti-Cut &amp; Failover)">
+                  <option value="parallax">Parallax (Multi-Lane TCP + KCP/FEC)</option>
+                  <option value="parallaxmux">ParallaxMUX (Anti-Cut Multi-Lane + smux)</option>
+                  <option value="failover">Failover (2–4 Auto-Switching Carriers)</option>
                 </optgroup>
               </select>
             </div>
@@ -6688,6 +6693,42 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
                 <input type="checkbox" id="t-bh-knofec" style="width:auto;">
                 <span>Disable KCP FEC (Lower bandwidth overhead on clean UDP links)</span>
               </label>
+            </div>
+            <div id="t-bh-parallax-opts" style="display:none; margin-top:6px;">
+              <div class="row2">
+                <div class="field" style="margin-bottom:0;"><label>Parallel TCP Lanes (2–12)</label><input id="t-bh-px-lanes" type="number" value="4" min="2" max="12"></div>
+                <div class="field" style="margin-bottom:0;"><label>Silent-Stall Redial (sec)</label><input id="t-bh-px-stall" type="number" value="4" min="2" max="20"></div>
+              </div>
+            </div>
+            <div id="t-bh-failover-opts" style="display:none; margin-top:6px;">
+              <div class="row2">
+                <div class="field" style="margin-bottom:0;"><label>Failover Carrier Chain (2–4)</label><input id="t-bh-fo-list" class="mono" value="tlsmux,xhttpsmux,parallaxmux" placeholder="tlsmux,xhttpsmux,parallaxmux"></div>
+                <div class="field" style="margin-bottom:0;">
+                  <label>Restore Primary After</label>
+                  <select id="t-bh-fo-restore">
+                    <option value="60">1 Minute (Fast)</option>
+                    <option value="300" selected>5 Minutes (Balanced)</option>
+                    <option value="600">10 Minutes (Stable)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--border);">
+              <label style="display:inline-flex; align-items:center; gap:7px; font-size:.76rem; color:var(--accent); font-weight:700; cursor:pointer;">
+                <input type="checkbox" id="t-bh-game" style="width:auto;" onchange="if($('t-bh-game-opts')) $('t-bh-game-opts').style.display=this.checked?'grid':'none'">
+                <span>🎮 Enable Game Mode (Multi-Copy Encrypted UDP Accelerator)</span>
+              </label>
+              <div id="t-bh-game-opts" class="row2" style="display:none; margin-top:6px;">
+                <div class="field" style="margin-bottom:0;">
+                  <label>UDP Packet Copies</label>
+                  <select id="t-bh-gcopies">
+                    <option value="2">2 Copies (2x Ports)</option>
+                    <option value="3" selected>3 Copies (Recommended)</option>
+                    <option value="4">4 Copies (Max Loss Resistance)</option>
+                  </select>
+                </div>
+                <div class="field" style="margin-bottom:0;"><label>Game UDP Ports (blank = all forward ports)</label><input id="t-bh-gports" class="mono" placeholder="e.g. 3074, 27015"></div>
+              </div>
             </div>
           </div>
 
@@ -9084,12 +9125,16 @@ function pickTunnelUnderlay(ul) {
 
 function onBackhaulTransportChange() {
   const tr = ($('t-trans') && $('t-trans').value) || 'tcp';
-  const isTLS = ['tls','tlsmux','wss','wssmux','xhttps','xhttpsmux'].includes(tr);
+  const isTLS = ['tls','tlsmux','wss','wssmux','xhttps','xhttpsmux','failover'].includes(tr);
   const isXHTTP = tr.startsWith('xhttp');
   const isKCP = tr === 'kcp' || tr === 'kcpmux';
+  const isPX = tr === 'parallax' || tr === 'parallaxmux';
+  const isFO = tr === 'failover';
   if ($('t-bh-tls-opts')) $('t-bh-tls-opts').style.display = isTLS ? 'block' : 'none';
   if ($('t-bh-xhttp-opts')) $('t-bh-xhttp-opts').style.display = isXHTTP ? 'block' : 'none';
-  if ($('t-bh-kcp-opts')) $('t-bh-kcp-opts').style.display = isKCP ? 'block' : 'none';
+  if ($('t-bh-kcp-opts')) $('t-bh-kcp-opts').style.display = (isKCP || isPX) ? 'block' : 'none';
+  if ($('t-bh-parallax-opts')) $('t-bh-parallax-opts').style.display = isPX ? 'block' : 'none';
+  if ($('t-bh-failover-opts')) $('t-bh-failover-opts').style.display = isFO ? 'block' : 'none';
 }
 function onTunnelEngineChange() {
   const eng = $('t-engine').value;
@@ -9603,7 +9648,14 @@ async function deployTunnel() {
       kernel_ipsec: $('t-k-ipsec') ? $('t-k-ipsec').value : '',
       forward_mode: $('t-k-fwd') ? $('t-k-fwd').value : 'nat',
       mtu: $('t-k-mtu') ? (parseInt($('t-k-mtu').value || '0', 10) || 0) : 0,
-      rate_limit_mbps: $('t-k-rate') ? (parseInt($('t-k-rate').value || '0', 10) || 0) : 0
+      rate_limit_mbps: $('t-k-rate') ? (parseInt($('t-k-rate').value || '0', 10) || 0) : 0,
+      parallax_lanes: $('t-bh-px-lanes') ? (parseInt($('t-bh-px-lanes').value || '4', 10) || 4) : 4,
+      parallax_stall_sec: $('t-bh-px-stall') ? (parseInt($('t-bh-px-stall').value || '4', 10) || 4) : 4,
+      failover_transports: $('t-bh-fo-list') ? $('t-bh-fo-list').value.trim() : 'tlsmux,xhttpsmux,parallaxmux',
+      failover_restore_sec: $('t-bh-fo-restore') ? (parseInt($('t-bh-fo-restore').value || '300', 10) || 300) : 300,
+      game_mode: $('t-bh-game') ? !!$('t-bh-game').checked : false,
+      game_copies: $('t-bh-gcopies') ? (parseInt($('t-bh-gcopies').value || '3', 10) || 3) : 3,
+      game_ports: $('t-bh-gports') ? $('t-bh-gports').value.trim() : ''
     };
     const r = await api('api/tunnels', 'POST', payload);
     $('tun-term-card').style.display = 'block';

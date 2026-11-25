@@ -1,4 +1,4 @@
-# MControl v1.5.2 — پنل متمرکز مدیریت سرورها، تانل‌ها، دیتاسنتر و DNS (با موتور تم MDesign)
+# MControl v1.6.1 — پنل متمرکز مدیریت سرورها، تانل‌ها، دیتاسنتر و DNS (با موتور تم MDesign)
 
 [![Release](https://img.shields.io/github/v/release/htzserv/MControl?style=flat-square&color=6366f1)](https://github.com/htzserv/MControl/releases)
 [![Architecture](https://img.shields.io/badge/architecture-Go%20Single%20Binary-22d3ee?style=flat-square)](#)
@@ -12,7 +12,7 @@
 
 ## نصب سریع
 
-### نسخه پایدار (`v1.5.2`)
+### نسخه پایدار (`v1.6.1`)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash
 ```
@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | 
 * **مدیریت کامل سرورها:** ساخت سرور جدید، ریبیلد سیستم‌عامل (OS Rebuild)، ریبوت و پاور، باز کردن فایروال Peer با یک کلیک، ایمپورت خودکار و **اتصال خودکار (Auto-Pair) به Peer Agent v4**.
 
 ### ۳. مدیریت یکپارچه تانل‌های دوطرفه و MSmart
-* **موتورهای پشتیبانی‌شده:** `Backhaul`، `Rathole`، `Paqet` (موجود در باندل میرور ایران)، `Realm`، `GRE`، `IP6GRE` و `VXLAN` با نصب دوطرفه، واچ‌داگ خودکار و فیل‌اور هوشمند `MSmart`.
+* **موتورهای پشتیبانی‌شده:** فورک اختصاصی **Backhaul v1.0.0** (۱۸ پروتکل شامل `TLS`/`TLSMUX` با uTLS و تکه‌تکه‌سازی ClientHello، `XHTTP`/`XHTTPS`، `KCP`/`KCPMUX`، **Parallax چندمسیری ضد-قطعی**، **فیل‌اور چندترنسپورتی** و **Game Mode** چندکپی UDP)، `Rathole`، `Paqet`، `GRE`/`IP6GRE`/`IPIP` (با **FOU** روی UDP و **IPsec کرنلی**)، `VXLAN` و `WireGuard` همراه با **Transparent Forward**، **Auto-PMTU**، **صف هوشمند CAKE**، خروجی **MikroTik RouterOS v7**، **لایه Veil روی Peer Agent v4.1** و **فایروال هوشمند Guard (`nftables` + فقط ایران + Safe Mode)**.
 * **باندل استاتیک بدون نیاز به APT:** نصب یک‌کلیک موتورهای تانل و ابزارهای شبکه (`iperf3`، `speedtest`، `jq`، `socat`) از گیت‌هاب، میرور ایران پارس‌پک (بهینه‌شده برای AMD64) یا کش سرور مستر.
 
 ### ۴. منوی یکپارچه Master Outbound (Xray Core)

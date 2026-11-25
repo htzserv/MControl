@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.1
+- **Phase 3 — Backhaul v1.0.0 Next-Gen Sync (Parallax, Multi-Transport Failover & Game Mode):**
+  - **Parallax Multi-Lane Mode (`parallax` / `parallaxmux`):** added wizard UI & TOML config generation for KCP+FEC over 2–12 parallel TCP lanes with randomized encrypted warm-up and automatic silent-stall redialing.
+  - **Multi-Transport Failover (`failover`):** run 2–4 Backhaul carriers (e.g., `tlsmux,xhttpsmux,parallaxmux`) behind the same user ports with automatic failover & configurable primary hysteresis restoration.
+  - **Game Mode Multi-Copy UDP (`game_mode`):** one-click toggle to duplicate game UDP packets across 2–4 encrypted UDP carrier ports with first-arrival-wins deduplication.
+  - **MSmart Benchmark:** added `Backhaul ParallaxMUX` to default benchmark candidates and refreshed EN/FA READMEs for `v1.6.1`.
+
+
 ## 1.6.0
 - **Phase 2 — Anti-DPI Agent Veil, Advanced Kernel Engines, Smart Guard Firewall & MSmart v2:**
   - **Peer Agent v4.1 Veil Layer (`internal/sshclient/veil.go` & `cmd/mcontrol-agent`):** wraps Master ↔ Peer TLS control traffic in an AES-256-CTR directional keystream with random nonce & padding (`nonce[0] != 0x16`), hiding bare-IP ClientHello packets from DPI while keeping 100% backward compatibility with legacy plain-TLS peers.

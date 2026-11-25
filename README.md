@@ -1,4 +1,4 @@
-# MControl v1.5.2 — Central Server, Tunnel, Cloud & DNS Management Panel (MDesign)
+# MControl v1.6.1 — Central Server, Tunnel, Cloud & DNS Management Panel (MDesign)
 
 [![Release](https://img.shields.io/github/v/release/htzserv/MControl?style=flat-square&color=6366f1)](https://github.com/htzserv/MControl/releases)
 [![Architecture](https://img.shields.io/badge/architecture-Go%20Single%20Binary-22d3ee?style=flat-square)](#)
@@ -12,7 +12,7 @@
 
 ## Quick Install
 
-### Stable Release (`v1.5.2`)
+### Stable Release (`v1.6.1`)
 ```bash
 curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | sudo bash
 ```
@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/htzserv/MControl/main/install.sh | 
 * **Full VM Lifecycle:** Create servers, Rebuild OS, Reboot/Power controls, 1-click Peer v4 Cloud Firewall, Auto-Import, and background **Auto-Pair with Peer Agent v4**.
 
 ### 3. Unified Tunnel Orchestration & MSmart
-* **Supported Engines:** `Backhaul`, `Rathole`, `Paqet` (auto-bundled on Iran Mirror), `Realm`, `GRE`, `IP6GRE`, and `VXLAN` with automated 2-sided deployment, health watchdog, and `MSmart` auto-failover.
+* **Supported Engines:** Custom **Backhaul v1.0.0** (18 transports including `TLS`/`TLSMUX` with uTLS & Record Fragmentation, `XHTTP`/`XHTTPS`, `KCP`/`KCPMUX`, **Parallax Multi-Lane**, **Multi-Transport Failover**, and **Game Mode** multi-copy UDP), `Rathole`, `Paqet`, `GRE`/`IP6GRE`/`IPIP` (with **FOU** over UDP & **Kernel IPsec**), `VXLAN`, and `WireGuard`, with **Transparent Forward**, **Auto-PMTU**, **CAKE Smart Queue**, **MikroTik RouterOS v7** export, and **Smart Guard Firewall (`nftables` + Iran-Only + 90s Safe Mode)**.
 * **Static Zero-APT Bundle:** One-click installation of tunnel engines and network tools (`iperf3`, `speedtest`, `jq`, `socat`) from GitHub, ParsPack Iran Mirror, or Master Cache.
 
 ### 4. Unified Master Outbound (Xray Core)
