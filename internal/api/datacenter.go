@@ -790,6 +790,7 @@ func (h *Handler) handleDCCreateServer(w http.ResponseWriter, r *http.Request) {
 		Image        string `json:"image"`
 		RootPassword string `json:"root_password"`
 		AutoImport   bool   `json:"auto_import"`
+		AutoPair     bool   `json:"auto_pair"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -911,13 +912,41 @@ func (h *Handler) handleDCCreateServer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	importedID := int64(0)
-	if req.AutoImport && createdIP != "" {
+	if (req.AutoImport || req.AutoPair) && createdIP != "" {
 		srv := &db.Server{
 			Name: req.Name, Role: "foreign", Host: createdIP, Port: 22, Username: "root",
 			Password: rootPass, AuthType: "password", Datacenter: strings.ToUpper(req.Provider),
 		}
 		if id, err := h.store.AddServer(srv); err == nil {
 			importedID = id
+			if req.AutoPair && rootPass != "" {
+				go func(sid int64, ip, pass, prov, cid string) {
+					// Wait for cloud VM to finish booting SSH
+					time.Sleep(25 * time.Second)
+					fullSrv, e := h.store.GetServerWithSecret(sid)
+					if e != nil {
+						return
+					}
+					peerCode := "MC-" + shortRandID() + shortRandID()
+					stCfg := h.store.GetSettings()
+					target := h.targetOfSrv(fullSrv)
+					masterIP := h.masterPublicIP()
+					masterURL := h.masterBaseURL()
+					for _, pt := range []int{24819, 7483, 847, 84, 2054} {
+						res := sshclient.InstallPeerAgentV4(target, masterIP, masterURL, peerCode, pt, stCfg.PanelMirrorURL, false, true)
+						if res.Err == nil {
+							if pr := sshclient.ProbePeer(ip, pt, peerCode, h.serverSocksProxy(fullSrv)); pr.Online {
+								_ = h.store.SetServerPeerMode(sid, peerCode, pt)
+								if pr.AgentCertFP != "" {
+									h.saveAgentCertPin(ip, pt, pr.AgentCertFP)
+								}
+								h.applyProbe(fullSrv, pr)
+								break
+							}
+						}
+					}
+				}(id, createdIP, rootPass, req.Provider, createdID)
+			}
 		}
 	}
 

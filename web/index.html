@@ -4168,6 +4168,37 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
   display: block;
 }
 
+
+/* ── Global Centered Page & Sub-Pane Headers/Toolbars ── */
+.page > .toolbar,
+.sub-pane > .toolbar {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+}
+.page > .toolbar > div,
+.sub-pane > .toolbar > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.page > .toolbar .flexw,
+.sub-pane > .toolbar .flexw {
+  justify-content: center;
+}
+.term-snip-bar {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; justify-content: center;
+}
+.term-snip-btn {
+  padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-family: var(--ff-m); font-weight: 700;
+  background: var(--row); color: var(--muted); border: 1px solid var(--border); cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.term-snip-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4350,7 +4381,8 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
     </div>
     <div class="field"><label>OS Image</label><select id="dc-cr-img"></select></div>
     <div class="field"><label>Root Password (required for Linode / optional)</label><input id="dc-cr-pass" type="password" placeholder="Leave blank for auto-generated"></div>
-    <label class="check" style="margin-bottom:14px;"><input type="checkbox" id="dc-cr-imp" checked><span>Auto-import into MControl Servers after creation</span></label>
+    <label class="check" style="margin-bottom:8px;"><input type="checkbox" id="dc-cr-imp" checked><span>Auto-import into MControl Servers after creation</span></label>
+    <label class="check" style="margin-bottom:14px;"><input type="checkbox" id="dc-cr-pair" checked><span>Auto-Pair with Peer Agent v4 in background (~25s after boot)</span></label>
     <div class="flexw" style="justify-content:flex-end; gap:8px;">
       <button class="btn btn-ghost" data-close="dc-create-modal">Cancel</button>
       <button class="btn btn-sky" id="btn-dc-cr-go" onclick="execDCCreate()">Create Server</button>
@@ -4377,6 +4409,17 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 <div id="srv-dd-menu" role="menu"></div>
 <div id="nav-ctx-menu" role="menu"></div>
 <div id="nav-add-pop" role="menu"></div>
+<!-- Multi-Iran Reachability & Filtering Check Modal -->
+<div class="modal-bg" id="iran-chk-modal" style="z-index:1189;">
+  <div class="card modal-box" style="max-width:540px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <h3 style="margin:0; color:var(--accent);" id="ichk-title">🇮🇷 Iran Reachability Check</h3>
+      <button class="btn btn-ghost btn-sm" data-close="iran-chk-modal">✕</button>
+    </div>
+    <div class="hint" id="ichk-sub" style="margin-bottom:12px;">Testing direct ICMP &amp; TCP connectivity from all Iran servers in your panel...</div>
+    <div id="ichk-list" style="display:flex; flex-direction:column; gap:7px; max-height:340px; overflow-y:auto;"></div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <!-- ═════════ FIRST-TIME SETUP ═════════ -->
@@ -6858,6 +6901,19 @@ T('material-folio', 'Material Folio', 'Material', 'underline paper round solid s
 T('studio-proof', 'Studio Proof', 'Studio', 'side-r outline square dots serif roomy grid ribbon 4 1 quadrant dial seal', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
 T('ios-pebble', 'iOS Pebble', 'iOS', 'bubble-bar liquid pill solid round cozy grid tiles 24 1 bubbles tank switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
 T('android-tile', 'Android Tile', 'Android', 'bottom deck round solid sans cozy grid tiles 16 1 quadrant columns material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
+// Additional structural design variants per family (distinct nav, card, button, radius & chart geometry)
+T('prism-orbit', 'Prism Orbit', 'Prism', 'top-glass prism pill mesh sans roomy grid tiles 26 1 bubbles ring circle', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
+T('prism-bento', 'Prism Bento', 'Prism', 'dock deck round mesh sans compact list ribbon 16 1 bento columns circle', '#171c30 #252d47 #f1f2ff #c1c7df #adb3ff #8fe2cc #414d72', '#edf0fa #fafaff #202841 #57627b #52429c #12645d #c6cde3');
+T('neon-pulse', 'Neon Pulse', 'Neon', 'side-float glass pill aurora sans cozy grid tiles 20 1 bubbles wave neon', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
+T('neon-grid', 'Neon Grid', 'Neon', 'islands outline square grid mono compact table ribbon 6 1 quadrant matrix neon', '#0b211b #15382a #f2ffdf #b8d9bd #99ed73 #ffce70 #41634d', '#eef4d9 #fcfff0 #1a3016 #506044 #356918 #93600a #ccd8ac');
+T('material-dock', 'Material Dock', 'Material', 'dock flat pill solid sans cozy grid tiles 24 1 unified line material', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
+T('material-deck', 'Material Deck', 'Material', 'top deck round solid sans compact table ribbon 12 1 bento columns material', '#082321 #103a36 #ecfff2 #b2d6c8 #60e8c2 #ffb18f #36635a', '#e0f2e5 #f7fff4 #153129 #426859 #006d59 #aa4428 #b9d8c7');
+T('studio-glass', 'Studio Glass', 'Studio', 'top-glass glass round solid sans cozy grid tiles 14 1 unified dial round', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
+T('studio-minimal', 'Studio Minimal', 'Studio', 'underline flat square solid sans compact list ribbon 4 1 bands line square', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
+T('ios-dock', 'iOS Dock', 'iOS', 'dock liquid pill mesh round cozy grid tiles 22 1 bubbles ring switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
+T('ios-crisp', 'iOS Crisp', 'iOS', 'side-float glass round solid round compact list ribbon 16 1 bento line switch', '#231829 #392a40 #fff4ee #dac0cf #f4aec4 #a1d9f7 #66516d', '#fae8e6 #fffafa #35222d #745662 #a73463 #286998 #e6cbd0');
+T('android-pill', 'Android Pill', 'Android', 'float-b flat pill solid sans cozy grid tiles 22 1 bubbles wave material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
+T('android-rail', 'Android Rail', 'Android', 'side paper round solid sans roomy list tiles 14 1 bento columns material', '#15201f #22302c #f1f7ee #bfcfc2 #9cdab7 #f2c589 #445b50', '#eaf2ec #f8fcf8 #1a3025 #4d6357 #236b4a #855314 #bed5c8');
 const themeColors = [
   ['ruby','Ruby','یاقوتی','#29151e #40202e #fff1f4 #d8b6c2 #ff91aa #ffc486 #6c394c','#ffebee #fff9fa #371722 #744958 #a42045 #974f17 #edc3cc'],
   ['ocean','Ocean','اقیانوسی','#101e30 #192e45 #eff7ff #b6cade #7bbfff #8de6dc #355878','#e7f2ff #f7fbff #152d49 #4c627c #155b9f #076b69 #bed3ea'],
@@ -6947,7 +7003,61 @@ function loadNavTabsConfig() {
 let NAV_TABS_CFG = loadNavTabsConfig();
 
 function saveNavTabsConfig() {
-  try { ls.set('mc_nav_tabs_v1', JSON.stringify(NAV_TABS_CFG)); } catch (e) {}
+  const raw = JSON.stringify(NAV_TABS_CFG);
+  try { ls.set('mc_nav_tabs_v1', raw); } catch (e) {}
+  if (typeof token !== 'undefined' && token) {
+    api('api/ui/nav-tabs', 'POST', { tabs_json: raw }).catch(() => {});
+  }
+}
+
+async function syncNavTabsFromServer() {
+  try {
+    const r = await api('api/ui/nav-tabs');
+    if (r && r.ok && r.tabs_json) {
+      ls.set('mc_nav_tabs_v1', r.tabs_json);
+      NAV_TABS_CFG = loadNavTabsConfig();
+      renderNav();
+      renderEditTabsStudio();
+      renderSettingsSectionsHub();
+    }
+  } catch (e) {}
+}
+
+function runTermSnippet(cmd) {
+  if (!$('term-inp')) return;
+  $('term-inp').value = cmd;
+  runWebTermCmd();
+}
+
+async function openIranReachabilityCheck(id) {
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if ($('ichk-title')) $('ichk-title').textContent = (fa ? '🇮🇷 تست فیلترینگ و پینگ از ایران — ' : '🇮🇷 Iran Reachability — ') + (s ? s.name : id);
+  if ($('ichk-sub')) $('ichk-sub').textContent = fa ? `در حال تست مستقیم از همه سرورهای ایران به ${s ? s.host : ''}...` : `Testing direct ICMP & TCP from all Iran servers to ${s ? s.host : ''}...`;
+  if ($('ichk-list')) $('ichk-list').innerHTML = '<div class="hint" style="text-align:center; padding:16px;">Testing...</div>';
+  if ($('iran-chk-modal')) $('iran-chk-modal').classList.add('active');
+  const r = await api('api/servers/' + id + '/iran-check', 'POST');
+  const box = $('ichk-list');
+  if (!box) return;
+  if (!r.ok) {
+    box.innerHTML = `<div class="hint" style="color:var(--red);">${esc(r.error || 'Check failed')}</div>`;
+    return;
+  }
+  const rows = r.results || [];
+  if (!rows.length) {
+    box.innerHTML = `<div class="hint">${fa ? 'هیچ سرور ایرانی دیگری در پنل ثبت نشده است.' : 'No Iran servers found in your panel to run the check from.'}</div>`;
+    return;
+  }
+  box.innerHTML = rows.map(x => `<div class="kv" style="margin:0;">
+    <div>
+      <strong>🇮🇷 ${esc(x.iran_name)}</strong>
+      <div class="mono" style="font-size:.7rem; color:var(--muted);">${esc(x.iran_host)}${x.datacenter ? ' · ' + esc(x.datacenter) : ''}</div>
+    </div>
+    <div class="flexw" style="gap:6px;">
+      <span class="badge ${pingBadgeClass(x.ping_ms)} mono">${esc(x.ping_ms)}</span>
+      <span class="badge ${x.tcp_status === 'OPEN' ? 'b-iran' : 'b-miss'} mono">TCP:${esc(x.tcp_status)}</span>
+    </div>
+  </div>`).join('');
 }
 
 function getVisibleTabs() {
@@ -7405,10 +7515,56 @@ function stageColor(key,value) {
   syncColorInputs();
   renderThemes();
 }
+const COLOR_OVERRIDE_KEYS = ['dark_accent','dark_accent2','dark_accent3','light_accent','light_accent2','light_accent3'];
+
 function setTheme(id) {
-  const th=TH.find(x=>x.id===id);
-  if(!th) return;
-  colorDraft=null; custom=profileFor(th); themeId=id; galleryFamily=familyOf(th);
+  const th = TH.find(x => x.id === id);
+  if (!th) return;
+  colorDraft = null;
+  custom = profileFor(th);
+  themeId = id;
+  galleryFamily = familyOf(th);
+  applyTheme(); renderThemes(); renderStudio();
+}
+
+// Switch ONLY the interface design while keeping the user's current color palette & custom accent colors
+function selectDesign(baseId) {
+  const cur = curTheme();
+  const curPalKey = cur.paletteKey || '';
+  const targetId = curPalKey ? (baseId + '-' + curPalKey) : baseId;
+  const target = TH.find(x => x.id === targetId) || TH.find(x => x.id === baseId);
+  if (!target) return;
+  const keepColors = {};
+  for (const k of COLOR_OVERRIDE_KEYS) {
+    if (custom && custom[k]) keepColors[k] = custom[k];
+  }
+  // If user was on another design's Original palette with no manual overrides, preserve its dark/light accents
+  if (!curPalKey && Object.keys(keepColors).length === 0 && cur.base !== baseId && cur.id !== baseId) {
+    const eDark = effective(cur, custom);
+    if (cur.d && cur.d[4]) { keepColors.dark_accent = cur.d[4]; keepColors.dark_accent2 = cur.d[5]; }
+    if (cur.l && cur.l[4]) { keepColors.light_accent = cur.l[4]; keepColors.light_accent2 = cur.l[5]; }
+  }
+  colorDraft = null;
+  const nextCustom = { ...profileFor(target) };
+  for (const k of COLOR_OVERRIDE_KEYS) delete nextCustom[k];
+  Object.assign(nextCustom, keepColors);
+  custom = nextCustom;
+  themeId = target.id;
+  galleryFamily = familyOf(target);
+  applyTheme(); renderThemes(); renderStudio();
+}
+
+// Switch ONLY the color palette immediately (clears manual accent overrides so chosen palette applies cleanly)
+function selectColorTheme(id) {
+  const th = TH.find(x => x.id === id);
+  if (!th) return;
+  colorDraft = null;
+  const nextCustom = { ...profileFor(th) };
+  for (const k of COLOR_OVERRIDE_KEYS) delete nextCustom[k];
+  custom = nextCustom;
+  themeId = th.id;
+  galleryFamily = familyOf(th);
+  ls.set('mc_last_color_' + (th.base || th.id), th.id);
   applyTheme(); renderThemes(); renderStudio();
 }
 function setMode(m) { mode = m; applyTheme(); renderThemes(); renderStudio(); }
@@ -7506,18 +7662,20 @@ function renderThemes() {
     const pal=previewColors(th).pal;
     return `<button type="button" class="variant-choice" data-theme-id="${th.id}" aria-label="${esc(base.n+' · '+name)}" aria-pressed="${th.id===(colorDraft?.id||themeId)}"><i style="background:linear-gradient(90deg,${pal[4]} 33%,${pal[5]} 33% 67%,${pal[12]} 67%)"></i>${esc(name)}</button>`;
   };
-  grid.innerHTML = baseThemes.filter(base=>familyOf(base)===galleryFamily).map(base=>{
-    const selected = themeId===base.id || curTheme().base===base.id;
-    const variants=TH.filter(x=>x.base===base.id);
-    const remembered=ls.get('mc_last_color_'+base.id,base.id);
-    const th=[base,...variants].find(x=>x.id===colorDraft?.id)||(selected?curTheme():(variants.find(x=>x.id===remembered)||base));
-    const profile=previewColors(th);
-    const colors=(label,items)=>`<div class="color-collection"><strong>${label}</strong><div class="family-colors">${items.map(x=>swatch(x,base)).join('')}</div></div>`;
-    const classic=[base,...variants.filter(x=>!x.paletteKey.startsWith('royal-'))];
-    const royal=variants.filter(x=>x.paletteKey.startsWith('royal-'));
-    return `<div class="card tcard ${selected?'sel':''}"><button type="button" class="family-cover" data-theme-id="${th.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><strong>${esc(base.n)}</strong>${selected?`<span class="badge b-ok">${t('theme_active')}</span>`:''}</span></button>
+  const curPalKey = curTheme().paletteKey || '';
+  grid.innerHTML = baseThemes.filter(base => familyOf(base) === galleryFamily).map(base => {
+    const selected = themeId === base.id || curTheme().base === base.id;
+    const variants = TH.filter(x => x.base === base.id);
+    const matchedPal = curPalKey ? variants.find(x => x.paletteKey === curPalKey) : null;
+    const th = selected ? curTheme() : (matchedPal || base);
+    const profile = previewColors(th);
+    const detailsLbl = `${base.nav} · ${base.card} · ${base.btn}`;
+    const colors = (label, items) => `<div class="color-collection"><strong>${label}</strong><div class="family-colors">${items.map(x => swatch(x, base)).join('')}</div></div>`;
+    const classic = [base, ...variants.filter(x => !x.paletteKey.startsWith('royal-'))];
+    const royal = variants.filter(x => x.paletteKey.startsWith('royal-'));
+    return `<div class="card tcard ${selected ? 'sel' : ''}"><button type="button" class="family-cover" data-design-id="${base.id}" aria-pressed="${selected}">${pvHTML(profile)}<span class="tmeta"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;"><strong>${esc(base.n)}</strong><span class="mono" style="font-size:.64rem;color:var(--muted);">${esc(detailsLbl)}</span></span>${selected ? `<span class="badge b-ok">${t('theme_active')}</span>` : ''}</span></button>
       <div data-colors-for="${base.id}">
-      ${colors(studioText('Classic','کلاسیک'),classic)}${colors(studioText('Royal','شاهانه'),royal)}</div></div>`;
+      ${colors(studioText('Classic', 'کلاسیک'), classic)}${colors(studioText('Royal', 'شاهانه'), royal)}</div></div>`;
   }).join('');
 
 }
@@ -10705,7 +10863,8 @@ function openSrvDropdown(ev, id, group, btn) {
       { sep: true },
       { lbl: fa ? '🚀 تست سرعت (Speedtest)' : '🚀 Speedtest', fn: () => runServerSpeedtest(id) },
       { lbl: fa ? '📊 ترافیک و انقضا (Quota)' : '📊 Quota & Expiry', fn: () => openQuotaModal(id) },
-      { lbl: fa ? '↻ پینگ دستی (ایران + اوتباند)' : '↻ Ping Now (Direct + Outbound)', fn: () => manualPingServer(id) }
+      { lbl: fa ? '↻ پینگ دستی (ایران + اوتباند)' : '↻ Ping Now (Direct + Outbound)', fn: () => manualPingServer(id) },
+      { lbl: fa ? '🇮🇷 تست فیلترینگ از همه سرورهای ایران' : '🇮🇷 Check from All Iran Nodes', fn: () => openIranReachabilityCheck(id) }
     ];
   } else if (group === 'mgr') {
     items = [
@@ -12290,7 +12449,8 @@ async function execDCCreate() {
       plan: $('dc-cr-plan').value,
       image: $('dc-cr-img').value,
       root_password: $('dc-cr-pass').value.trim(),
-      auto_import: $('dc-cr-imp').checked
+      auto_import: $('dc-cr-imp').checked,
+      auto_pair: !!($('dc-cr-pair') && $('dc-cr-pair').checked)
     });
     if (r.ok) {
       closeModal('dc-create-modal');
@@ -12339,7 +12499,7 @@ async function boot() {
 document.addEventListener('click', e => {
   const cp = e.target.closest('[data-copy-ip]');
   if (cp) { e.stopPropagation(); copyText(cp.dataset.copyIp, cp.dataset.copyLbl || 'IP'); return; }
-  const el = e.target.closest('[data-tab],[data-go],[data-act],[data-close],[data-svc],[data-install],[data-upd],[data-mode],[data-preset],[data-grp],[data-theme-id]');
+  const el = e.target.closest('[data-tab],[data-go],[data-act],[data-close],[data-svc],[data-install],[data-upd],[data-mode],[data-preset],[data-grp],[data-design-id],[data-theme-id]');
   if (!el) return;
   const d = el.dataset;
   if (d.tab) { if (navEditMode) return; switchTab(d.tab); }
@@ -12352,11 +12512,9 @@ document.addEventListener('click', e => {
   else if (d.mode) setMode(d.mode);
   else if (d.preset !== undefined) { $('core-cmd').value = PRESETS[+d.preset] || ''; $('core-cmd').focus(); }
 
-  else if (d.themeId && (el.classList.contains('variant-choice') || colorDraft?.id===d.themeId)) {
-    if(colorDraft?.id!==d.themeId) colorDraft=d.themeId===themeId?null:{id:d.themeId,edits:{}};
-    syncColorInputs(); renderThemes(); renderStudio();
-    $('theme-grid').querySelector('.variant-choice[data-theme-id="'+d.themeId+'"]')?.focus({preventScroll:true});
-  } else if(d.themeId) setTheme(d.themeId);
+  else if (d.designId) selectDesign(d.designId);
+  else if (d.themeId && el.classList.contains('variant-choice')) selectColorTheme(d.themeId);
+  else if (d.themeId) setTheme(d.themeId);
 });
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.dim && e.target.type === 'range') onStudio(e.target); });
 document.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.dim && e.target.type !== 'range') onStudio(e.target); });
@@ -12562,7 +12720,8 @@ function showPwaNetPill(online) {
 window.addEventListener('offline', () => showPwaNetPill(false));
 window.addEventListener('online', () => {
   showPwaNetPill(true);
-  if (typeof loadServers === 'function' && token) loadServers();
+  if (typeof loadServers === 'function' && token) syncNavTabsFromServer();
+  loadServers();
 });
 
 // Service Worker Registration + Live Update Prompt
@@ -14626,6 +14785,13 @@ boot();
     <div id="term-shell-wrap">
       <div class="flexw" style="gap:6px; margin-bottom:8px;">
         <select id="term-vault-sel" style="flex:1; padding:6px 10px; font-size:.74rem;" onchange="if(this.value){$('term-inp').value=this.value; this.value='';}"><option value="">🧰 Pick from Script Vault...</option></select>
+      </div>
+      <div class="term-snip-bar">
+        <button type="button" class="term-snip-btn" onclick="runTermSnippet('uptime && free -h && df -h /')">📊 System</button>
+        <button type="button" class="term-snip-btn" onclick="runTermSnippet('ss -tulpn | head -n 30')">🔌 Ports</button>
+        <button type="button" class="term-snip-btn" onclick="runTermSnippet('systemctl status mcontrol --no-pager -l | head -n 20')">⚡ MControl</button>
+        <button type="button" class="term-snip-btn" onclick="runTermSnippet('systemctl list-units --type=service --state=running | grep -E "mcontrol|xray|backhaul|rathole|realm"')">🧩 Services</button>
+        <button type="button" class="term-snip-btn" onclick="runTermSnippet('ip -br a')">🌐 IPs</button>
       </div>
       <pre class="term" id="term-out" style="height:290px; margin-bottom:10px;">Ready. Type a Linux command below and press Enter.</pre>
       <div style="display:flex; flex-direction:column; gap:7px;">

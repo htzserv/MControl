@@ -426,6 +426,109 @@ func (h *Handler) handleResolveIPv6(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "ipv6": found})
 }
 
+
+func (h *Handler) handleGetNavTabs(w http.ResponseWriter, r *http.Request) {
+	raw := h.store.GetSetting("ui_nav_tabs_json")
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "tabs_json": raw})
+}
+
+func (h *Handler) handleSaveNavTabs(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		TabsJSON string `json:"tabs_json"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if err := h.store.SetSetting("ui_nav_tabs_json", req.TabsJSON); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (h *Handler) handleIranReachabilityCheck(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	targetSrv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	all, err := h.store.ListServers()
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	var iranNodes []db.Server
+	for _, s := range all {
+		if s.ID == targetSrv.ID {
+			continue
+		}
+		if s.Role == "iran" || strings.EqualFold(s.CountryCode, "IR") {
+			iranNodes = append(iranNodes, s)
+		}
+	}
+	type checkRow struct {
+		IranID     int64  `json:"iran_id"`
+		IranName   string `json:"iran_name"`
+		IranHost   string `json:"iran_host"`
+		Datacenter string `json:"datacenter"`
+		Reachable  bool   `json:"reachable"`
+		PingMs     string `json:"ping_ms"`
+		TCPStatus  string `json:"tcp_status"`
+	}
+	results := make([]checkRow, len(iranNodes))
+	checkPort := targetSrv.Port
+	if checkPort <= 0 {
+		checkPort = 22
+	}
+	cmd := fmt.Sprintf(`P=$(ping -c 2 -W 2 %s 2>/dev/null | sed -n 's/.*time=\([0-9.]*\).*/\1/p' | tail -n1)
+[ -z "$P" ] && P="N/A" || P="${P} ms"
+T="BLOCKED"
+if timeout 3 bash -c "cat < /dev/null > /dev/tcp/%s/%d" 2>/dev/null; then T="OPEN"; fi
+echo "${P}|${T}"`, sshclient.ShQuote(targetSrv.Host), targetSrv.Host, checkPort)
+
+	var wg sync.WaitGroup
+	for idx, ir := range iranNodes {
+		wg.Add(1)
+		go func(i int, node db.Server) {
+			defer wg.Done()
+			row := checkRow{
+				IranID: node.ID, IranName: node.Name, IranHost: node.Host,
+				Datacenter: node.Datacenter, PingMs: "N/A", TCPStatus: "OFFLINE",
+			}
+			full, e := h.store.GetServerWithSecret(node.ID)
+			if e != nil {
+				results[i] = row
+				return
+			}
+			res := h.runOnServer(full, cmd, 10*time.Second)
+			if res.Err == nil {
+				lines := strings.Split(strings.TrimSpace(res.Output), "\n")
+				if len(lines) > 0 {
+					parts := strings.SplitN(strings.TrimSpace(lines[len(lines)-1]), "|", 2)
+					if len(parts) == 2 {
+						row.PingMs = strings.TrimSpace(parts[0])
+						row.TCPStatus = strings.TrimSpace(parts[1])
+						row.Reachable = (row.PingMs != "N/A" || row.TCPStatus == "OPEN")
+					}
+				}
+			}
+			results[i] = row
+		}(idx, ir)
+	}
+	wg.Wait()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":          true,
+		"target_name": targetSrv.Name,
+		"target_host": targetSrv.Host,
+		"check_port":  checkPort,
+		"results":     results,
+	})
+}
+
 func (h *Handler) applyProbe(srv *db.Server, p sshclient.ProbeResult) {
 	status := "offline"
 	if p.Online {
@@ -552,6 +655,9 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/probe-all", h.auth(h.handleProbeAll))
 	mux.HandleFunc("POST /api/servers/ping-all", h.auth(h.handlePingAllServers))
 	mux.HandleFunc("GET /api/servers/resolve-ipv6", h.auth(h.handleResolveIPv6))
+	mux.HandleFunc("POST /api/servers/{id}/iran-check", h.auth(h.handleIranReachabilityCheck))
+	mux.HandleFunc("GET /api/ui/nav-tabs", h.auth(h.handleGetNavTabs))
+	mux.HandleFunc("POST /api/ui/nav-tabs", h.auth(h.handleSaveNavTabs))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/unpair", h.auth(h.handleUnpairPeer))
