@@ -248,16 +248,23 @@ jobs:
             for f in dist/*; do
               [ -f "$f" ] || continue
               b=$(basename "$f")
+              case "$b" in *arm64*) continue ;; esac
               if [ "${1:-}" = "no-beta-meta" ] && [ "$b" = "beta-meta.json" ]; then continue; fi
               aws --endpoint-url "$EP" s3 cp "$f" "${dest}${b}" --acl public-read \
                 || aws --endpoint-url "$EP" s3 cp "$f" "${dest}${b}" \
                 || echo "::warning::Could not upload $b to ParsPack"
             done
           }
-          echo "Syncing Rolling Beta to ${EP}/${PP_BUCKET}/MControl/beta-latest/ ..."
-          sync_retry dist/ "s3://${PP_BUCKET}/MControl/beta-latest/" --acl public-read || put_each "s3://${PP_BUCKET}/MControl/beta-latest/"
+          echo "Syncing Rolling Beta (amd64-only) to ${EP}/${PP_BUCKET}/MControl/beta-latest/ ..."
+          sync_retry dist/ "s3://${PP_BUCKET}/MControl/beta-latest/" --exclude "*arm64*" --acl public-read || put_each "s3://${PP_BUCKET}/MControl/beta-latest/"
           if [ "$MC_MODE" = "release" ]; then
-            echo "Syncing Official Release to ${EP}/${PP_BUCKET}/MControl/ ..."
-            sync_retry dist/ "s3://${PP_BUCKET}/MControl/" --exclude "beta-meta.json" --acl public-read || put_each "s3://${PP_BUCKET}/MControl/" "no-beta-meta"
+            echo "Syncing Official Release (amd64-only) to ${EP}/${PP_BUCKET}/MControl/ ..."
+            sync_retry dist/ "s3://${PP_BUCKET}/MControl/" --exclude "beta-meta.json" --exclude "*arm64*" --acl public-read || put_each "s3://${PP_BUCKET}/MControl/" "no-beta-meta"
           fi
-          echo "ParsPack S3 Mirror sync complete!"
+          # Prune legacy arm64 files from ParsPack mirror to save storage
+          for pfx in "MControl" "MControl/beta-latest"; do
+            for f in MControl-linux-arm64.zip MControl-linux-arm64.zip.sha256 mcontrol-linux-arm64 mcontrol-linux-arm64.sha256 mcontrol-agent-linux-arm64 mcontrol-agent-linux-arm64.sha256; do
+              aws --endpoint-url "$EP" s3 rm "s3://${PP_BUCKET}/${pfx}/${f}" >/dev/null 2>&1 || true
+            done
+          done
+          echo "ParsPack S3 Mirror sync complete (amd64-only)!"

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -246,8 +247,9 @@ func (h *Handler) handleServerFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Action  string `json:"action"` // list | read | write | delete
+		Action  string `json:"action"` // list | read | write | mkdir | rename | copy | delete
 		Path    string `json:"path"`
+		NewPath string `json:"new_path"`
 		Content string `json:"content"`
 	}
 	if !readJSON(w, r, &req) {
@@ -273,13 +275,36 @@ func (h *Handler) handleServerFiles(w http.ResponseWriter, r *http.Request) {
 		cmd := fmt.Sprintf(`printf '%%s' %s | base64 -d > %s && echo "Saved %s"`, sshclient.ShQuote(b64), sshclient.ShQuote(p), p)
 		res := h.runOnServer(srv, cmd, 15*time.Second)
 		writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "message": strings.TrimSpace(res.Output)})
+	case "mkdir":
+		cmd := fmt.Sprintf(`mkdir -p %s 2>&1 && echo "Created folder"`, sshclient.ShQuote(p))
+		res := h.runOnServer(srv, cmd, 15*time.Second)
+		writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "message": strings.TrimSpace(res.Output)})
+	case "rename":
+		np := strings.TrimSpace(req.NewPath)
+		if np == "" {
+			fail(w, http.StatusBadRequest, "new_path is required")
+			return
+		}
+		cmd := fmt.Sprintf(`mv %s %s 2>&1 && echo "Renamed"`, sshclient.ShQuote(p), sshclient.ShQuote(np))
+		res := h.runOnServer(srv, cmd, 15*time.Second)
+		writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "message": strings.TrimSpace(res.Output)})
+	case "copy":
+		np := strings.TrimSpace(req.NewPath)
+		if np == "" {
+			fail(w, http.StatusBadRequest, "new_path is required")
+			return
+		}
+		cmd := fmt.Sprintf(`cp -a %s %s 2>&1 && echo "Copied"`, sshclient.ShQuote(p), sshclient.ShQuote(np))
+		res := h.runOnServer(srv, cmd, 25*time.Second)
+		writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "message": strings.TrimSpace(res.Output)})
 	case "delete":
-		if p == "/" || p == "/etc" || p == "/root" || p == "/usr" || p == "/var" {
+		cleanP := strings.TrimRight(p, "/")
+		if cleanP == "" || cleanP == "/" || cleanP == "/etc" || cleanP == "/root" || cleanP == "/usr" || cleanP == "/var" || cleanP == "/home" || cleanP == "/bin" || cleanP == "/sbin" || cleanP == "/lib" || cleanP == "/boot" || cleanP == "/opt" || cleanP == "/tmp" {
 			fail(w, http.StatusBadRequest, "refusing to delete protected path")
 			return
 		}
-		cmd := fmt.Sprintf(`rm -f %s 2>&1 && echo "Deleted"`, sshclient.ShQuote(p))
-		res := h.runOnServer(srv, cmd, 15*time.Second)
+		cmd := fmt.Sprintf(`rm -rf %s 2>&1 && echo "Deleted"`, sshclient.ShQuote(p))
+		res := h.runOnServer(srv, cmd, 20*time.Second)
 		writeJSON(w, http.StatusOK, map[string]any{"ok": res.Err == nil, "message": strings.TrimSpace(res.Output)})
 	default: // list
 		cmd := fmt.Sprintf(`ls -la --group-directories-first %s 2>&1 | awk 'NR>1{t="file"; if(substr($1,1,1)=="d") t="dir"; name=$9; for(i=10;i<=NF;i++) name=name" "$i; if(name!="." && name!="..") print t"\t"$5"\t"name}' | head -n 120`, sshclient.ShQuote(p))
@@ -298,6 +323,359 @@ func (h *Handler) handleServerFiles(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "path": p, "items": items})
 	}
+}
+
+func (h *Handler) handleServerFileDownload(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	p := strings.TrimSpace(r.URL.Query().Get("path"))
+	if p == "" {
+		fail(w, http.StatusBadRequest, "path is required")
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	// Check file exists, is regular file, and <= 20MB, then output base64
+	cmd := fmt.Sprintf(`if [ ! -f %s ]; then echo "ERR:NOT_FILE"; exit 1; fi
+SZ=$(stat -c %%s %s 2>/dev/null || wc -c < %s)
+if [ "$SZ" -gt 20971520 ]; then echo "ERR:TOO_LARGE"; exit 1; fi
+base64 %s`, sshclient.ShQuote(p), sshclient.ShQuote(p), sshclient.ShQuote(p), sshclient.ShQuote(p))
+	res := h.runOnServer(srv, cmd, 45*time.Second)
+	if res.Err != nil {
+		out := strings.TrimSpace(res.Output)
+		if strings.Contains(out, "ERR:NOT_FILE") {
+			fail(w, http.StatusBadRequest, "path is not a downloadable file")
+			return
+		}
+		if strings.Contains(out, "ERR:TOO_LARGE") {
+			fail(w, http.StatusRequestEntityTooLarge, "file exceeds 20MB web download limit")
+			return
+		}
+		fail(w, http.StatusBadGateway, "download failed: "+res.Err.Error())
+		return
+	}
+	cleanB64 := strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\r' || r == ' ' || r == '\t' {
+			return -1
+		}
+		return r
+	}, res.Output)
+	raw, err := base64.StdEncoding.DecodeString(cleanB64)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, "failed to decode remote file: "+err.Error())
+		return
+	}
+	fname := filepath.Base(p)
+	if fname == "" || fname == "." || fname == "/" {
+		fname = "download.bin"
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, strings.ReplaceAll(fname, `"`, "")))
+	w.Header().Set("Content-Length", strconv.Itoa(len(raw)))
+	_, _ = w.Write(raw)
+}
+
+func (h *Handler) handleServerFileUpload(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	if err := r.ParseMultipartForm(25 << 20); err != nil {
+		fail(w, http.StatusBadRequest, "failed to parse upload (max 25MB): "+err.Error())
+		return
+	}
+	dir := strings.TrimSpace(r.FormValue("path"))
+	if dir == "" {
+		dir = "/root"
+	}
+	files := r.MultipartForm.File["file"]
+	if len(files) == 0 {
+		fail(w, http.StatusBadRequest, "no file provided")
+		return
+	}
+	uploaded := []string{}
+	for _, fh := range files {
+		f, err := fh.Open()
+		if err != nil {
+			fail(w, http.StatusBadRequest, "cannot read uploaded file: "+err.Error())
+			return
+		}
+		data, rerr := io.ReadAll(io.LimitReader(f, 20<<20))
+		_ = f.Close()
+		if rerr != nil {
+			fail(w, http.StatusBadRequest, "read error: "+rerr.Error())
+			return
+		}
+		fname := filepath.Base(fh.Filename)
+		if fname == "" || fname == "." || fname == ".." {
+			continue
+		}
+		dest := strings.TrimRight(dir, "/") + "/" + fname
+		b64 := base64.StdEncoding.EncodeToString(data)
+		cmd := fmt.Sprintf("mkdir -p %s && base64 -d << 'MC_UPLOAD_EOF' > %s\n%s\nMC_UPLOAD_EOF\necho OK", sshclient.ShQuote(dir), sshclient.ShQuote(dest), b64)
+		res := h.runOnServer(srv, cmd, 45*time.Second)
+		if res.Err != nil {
+			fail(w, http.StatusBadGateway, "upload failed for "+fname+": "+res.Err.Error())
+			return
+		}
+		uploaded = append(uploaded, fname)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"files":   uploaded,
+		"message": fmt.Sprintf("Uploaded %d file(s) to %s", len(uploaded), dir),
+	})
+}
+
+func isProtectedFMPath(p string) bool {
+	cleanP := strings.TrimRight(filepath.Clean(p), "/")
+	switch cleanP {
+	case "", "/", "/etc", "/root", "/usr", "/var", "/home", "/bin", "/sbin", "/lib", "/boot", "/opt", "/tmp":
+		return true
+	}
+	return false
+}
+
+func copyLocalRecursive(src, dst string) error {
+	info, err := os.Lstat(src)
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		link, err := os.Readlink(src)
+		if err != nil {
+			return err
+		}
+		return os.Symlink(link, dst)
+	}
+	if info.IsDir() {
+		if err := os.MkdirAll(dst, info.Mode().Perm()); err != nil {
+			return err
+		}
+		entries, err := os.ReadDir(src)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			if err := copyLocalRecursive(filepath.Join(src, e.Name()), filepath.Join(dst, e.Name())); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode().Perm())
+	if err != nil {
+		return err
+	}
+	_, cerr := io.Copy(out, in)
+	_ = out.Close()
+	return cerr
+}
+
+func (h *Handler) handleLocalFiles(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Action  string `json:"action"` // list | read | write | mkdir | rename | copy | delete
+		Path    string `json:"path"`
+		NewPath string `json:"new_path"`
+		Content string `json:"content"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	p := strings.TrimSpace(req.Path)
+	if p == "" {
+		p = "/root"
+	}
+	p = filepath.Clean(p)
+
+	switch req.Action {
+	case "read":
+		f, err := os.Open(p)
+		if err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		defer f.Close()
+		data, err := io.ReadAll(io.LimitReader(f, 200000))
+		if err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "content": string(data), "path": p})
+	case "write":
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err := os.WriteFile(p, []byte(req.Content), 0o644); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Saved " + p})
+	case "mkdir":
+		if err := os.MkdirAll(p, 0o755); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Created folder"})
+	case "rename":
+		np := strings.TrimSpace(req.NewPath)
+		if np == "" {
+			fail(w, http.StatusBadRequest, "new_path is required")
+			return
+		}
+		if err := os.Rename(p, filepath.Clean(np)); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Renamed"})
+	case "copy":
+		np := strings.TrimSpace(req.NewPath)
+		if np == "" {
+			fail(w, http.StatusBadRequest, "new_path is required")
+			return
+		}
+		if err := copyLocalRecursive(p, filepath.Clean(np)); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Copied"})
+	case "delete":
+		if isProtectedFMPath(p) {
+			fail(w, http.StatusBadRequest, "refusing to delete protected path")
+			return
+		}
+		if err := os.RemoveAll(p); err != nil {
+			fail(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Deleted"})
+	default: // list
+		entries, err := os.ReadDir(p)
+		if err != nil {
+			fail(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		type entry struct {
+			Type string `json:"type"`
+			Size string `json:"size"`
+			Name string `json:"name"`
+		}
+		items := make([]entry, 0, len(entries))
+		for _, e := range entries {
+			typ := "file"
+			sz := int64(0)
+			if e.IsDir() {
+				typ = "dir"
+			} else if info, err := e.Info(); err == nil {
+				sz = info.Size()
+			}
+			items = append(items, entry{Type: typ, Size: strconv.FormatInt(sz, 10), Name: e.Name()})
+		}
+		sort.Slice(items, func(i, j int) bool {
+			if items[i].Type != items[j].Type {
+				return items[i].Type == "dir"
+			}
+			return strings.ToLower(items[i].Name) < strings.ToLower(items[j].Name)
+		})
+		if len(items) > 200 {
+			items = items[:200]
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "path": p, "items": items})
+	}
+}
+
+func (h *Handler) handleLocalFileDownload(w http.ResponseWriter, r *http.Request) {
+	p := strings.TrimSpace(r.URL.Query().Get("path"))
+	if p == "" {
+		fail(w, http.StatusBadRequest, "path is required")
+		return
+	}
+	p = filepath.Clean(p)
+	info, err := os.Stat(p)
+	if err != nil || info.IsDir() {
+		fail(w, http.StatusBadRequest, "path is not a downloadable file")
+		return
+	}
+	if info.Size() > 20<<20 {
+		fail(w, http.StatusRequestEntityTooLarge, "file exceeds 20MB web download limit")
+		return
+	}
+	raw, err := os.ReadFile(p)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	fname := filepath.Base(p)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, strings.ReplaceAll(fname, `"`, "")))
+	w.Header().Set("Content-Length", strconv.Itoa(len(raw)))
+	_, _ = w.Write(raw)
+}
+
+func (h *Handler) handleLocalFileUpload(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(25 << 20); err != nil {
+		fail(w, http.StatusBadRequest, "failed to parse upload (max 25MB): "+err.Error())
+		return
+	}
+	dir := strings.TrimSpace(r.FormValue("path"))
+	if dir == "" {
+		dir = "/root"
+	}
+	dir = filepath.Clean(dir)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	files := r.MultipartForm.File["file"]
+	if len(files) == 0 {
+		fail(w, http.StatusBadRequest, "no file provided")
+		return
+	}
+	uploaded := []string{}
+	for _, fh := range files {
+		f, err := fh.Open()
+		if err != nil {
+			fail(w, http.StatusBadRequest, "cannot read uploaded file: "+err.Error())
+			return
+		}
+		data, rerr := io.ReadAll(io.LimitReader(f, 20<<20))
+		_ = f.Close()
+		if rerr != nil {
+			fail(w, http.StatusBadRequest, "read error: "+rerr.Error())
+			return
+		}
+		fname := filepath.Base(fh.Filename)
+		if fname == "" || fname == "." || fname == ".." {
+			continue
+		}
+		dest := filepath.Join(dir, fname)
+		if err := os.WriteFile(dest, data, 0o644); err != nil {
+			fail(w, http.StatusInternalServerError, "write failed for "+fname+": "+err.Error())
+			return
+		}
+		uploaded = append(uploaded, fname)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"files":   uploaded,
+		"message": fmt.Sprintf("Uploaded %d file(s) to %s", len(uploaded), dir),
+	})
 }
 
 // ── 5. Script Vault ──────────────────────────────────────────────────────────

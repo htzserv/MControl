@@ -332,14 +332,14 @@ echo "=== All Prerequisites & Tunnel Engines Installed Successfully ==="
 					return
 				}
 				dlURL := h.masterDistBaseURL(h.createDistToken()) + "/bundle/" + bundleFileName
-				cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -kfsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; ( [ -s "$TMPD/bin/%s" ] && install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s && /usr/local/bin/%s --version >/dev/null 2>&1 )%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, eng, fallbackCmd, eng, eng)
+				cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -kfsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; ( [ -s "$TMPD/bin/%s" ] && install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s && (/usr/local/bin/%s --version >/dev/null 2>&1 || /usr/local/bin/%s version >/dev/null 2>&1 || [ -x /usr/local/bin/%s ]) )%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, eng, eng, eng, fallbackCmd, eng, eng)
 			}
 		} else {
 			dlURL := bundleGH
 			if req.Source == "mirror" {
 				dlURL = bundleIR
 			}
-			cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -fsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; ( [ -s "$TMPD/bin/%s" ] && install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s && /usr/local/bin/%s --version >/dev/null 2>&1 )%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, eng, fallbackCmd, eng, eng)
+			cmd = fmt.Sprintf(`set -e; TMPD=$(mktemp -d); trap 'rm -rf "$TMPD"' EXIT; curl -fsSL %s -o "$TMPD/b.tar.gz"; tar -xzf "$TMPD/b.tar.gz" -C "$TMPD"; ( [ -s "$TMPD/bin/%s" ] && install -m 755 "$TMPD/bin/%s" /usr/local/bin/%s && (/usr/local/bin/%s --version >/dev/null 2>&1 || /usr/local/bin/%s version >/dev/null 2>&1 || [ -x /usr/local/bin/%s ]) )%s; [ "%s" = "bh" ] && ln -sf /usr/local/bin/bh /usr/local/bin/backhaul || true; echo "%s installed."`, sshclient.ShQuote(dlURL), eng, eng, eng, eng, eng, eng, fallbackCmd, eng, eng)
 		}
 	default:
 		fail(w, http.StatusBadRequest, "unsupported setup action")

@@ -4204,6 +4204,105 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 }
 .term-snip-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
+
+/* ── Advanced Per-Tab Control Center CSS ── */
+.tab-cfg-btn {
+  width: 34px; height: 34px; padding: 0 !important; border-radius: 999px !important;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tab-cfg-switcher {
+  display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 2px 2px 10px;
+  margin-bottom: 10px; border-bottom: 1px solid var(--border); scrollbar-width: thin;
+}
+.tab-cfg-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--row); color: var(--muted);
+  font-size: .74rem; font-weight: 700; white-space: nowrap; cursor: pointer; flex-shrink: 0;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.tab-cfg-pill:hover { color: var(--text); border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.tab-cfg-pill.active {
+  background: var(--accent); color: var(--on-accent, #fff); border-color: var(--accent);
+}
+.tab-cfg-pill .tp-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+.tab-cfg-pill .tp-dot.on { background: var(--green); }
+.tab-cfg-pill.active .tp-dot.on { background: #fff; }
+.tab-cfg-sec-lbl {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--accent); margin: 8px 2px 2px;
+}
+.tab-cfg-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 13px; border-radius: 13px; background: var(--row); border: 1px solid var(--border);
+}
+.tab-cfg-row.pin-row {
+  background: color-mix(in srgb, var(--accent) 9%, var(--row));
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+}
+.tab-cfg-row strong { display: block; font-size: .83rem; color: var(--text); }
+.tab-cfg-row span { display: block; font-size: .71rem; color: var(--muted); margin-top: 1px; }
+.tab-cfg-sel {
+  width: auto !important; min-width: 132px; max-width: 195px;
+  padding: 5px 10px !important; font-size: .76rem !important; border-radius: 10px !important;
+}
+
+/* ── Live CSS Bindings for All Per-Tab Settings ── */
+body.tp-ov-stats #tab-overview .stats-strip { display: none !important; }
+body.tp-ov-master #tab-overview .master-head-card { display: none !important; }
+body.tp-ov-metrics #tab-overview .row2 { display: none !important; }
+body.tp-ov-radar #overview-grid { display: none !important; }
+
+body.tp-srv-dir  [data-srv-ping-wrap] { display: none !important; }
+body.tp-srv-rev  [data-srv-rev-ping-wrap] { display: none !important; }
+body.tp-srv-ob   [data-srv-ob-ping-wrap] { display: none !important; }
+body.tp-srv-cpu  .srv-head-cpu { display: none !important; }
+body.tp-srv-pbtn [data-srv-ping-btn] { display: none !important; }
+body.tp-srv-peer .peer-ver-badge { display: none !important; }
+body.tp-srv-tags #srv-tag-filter { display: none !important; }
+body.tp-srv-compact .srv-row-head { padding: 9px 15px !important; min-height: 50px !important; }
+body.tp-srv-compact .srv-list { gap: 8px !important; }
+
+body.tp-dc-provs #dc-prov-cards { display: none !important; }
+body.tp-dc-compact #dc-servers-list .srv-row-head { padding: 9px 14px !important; min-height: 48px !important; }
+
+body.tp-tun-tools #tab-tunnels .toolbar .btn-ghost:not([onclick*="loadTunnels"]),
+body.tp-tun-tools #tab-tunnels .toolbar #btn-open-msmart { display: none !important; }
+body.tp-tun-legacy #legacy-tunnels-wrap { display: none !important; }
+body.tp-tun-stopped #tunnels-list .srv-row-wrap[data-tun-active="0"] { display: none !important; }
+body.tp-tun-compact #tunnels-list .srv-row-head { padding: 9px 14px !important; min-height: 50px !important; }
+
+body.tp-dom-bubbles .dom-prov-bubbles { display: none !important; }
+body.tp-dom-compact #cf-records-wrap td,
+body.tp-dom-compact #cf-records-wrap th { padding: 6px 8px !important; font-size: .76rem !important; }
+
+body.tp-mon-stats #tab-monitor .stats-strip { display: none !important; }
+body.tp-mon-beats #tab-monitor .hb-bars,
+body.tp-mon-beats #tab-monitor .mon-beats { display: none !important; }
+body.tp-mon-compact #monitors-list .card { padding: 10px 14px !important; }
+
+body.tp-ob-badges #ob-core-status,
+body.tp-ob-badges #ob-core-ver { display: none !important; }
+
+body.tp-term-snips .term-snip-bar { display: none !important; }
+body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
+
+
+/* ── Terminal & File Manager Right-Click Context Menu ── */
+#fm-ctx-menu {
+  position: fixed; z-index: 9800; min-width: 190px; padding: 6px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  backdrop-filter: blur(22px) saturate(170%); -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 36%, var(--border));
+  box-shadow: 0 18px 42px -10px rgba(0,0,0,.46);
+  display: none; flex-direction: column; gap: 2px;
+}
+#fm-ctx-menu.show { display: flex; }
+.fm-ctx-sep { height: 1px; background: var(--border); margin: 3px 6px; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4425,6 +4524,28 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
     <div id="ichk-list" style="display:flex; flex-direction:column; gap:7px; max-height:340px; overflow-y:auto;"></div>
   </div>
 </div>
+<!-- Advanced Per-Tab Control Center Modal (Active & Hidden Tabs) -->
+<div class="modal-bg" id="tab-cfg-modal" style="z-index:1190;">
+  <div class="card modal-box" style="max-width:650px; width:96%;">
+    <div class="toolbar" style="margin-bottom:8px;">
+      <div>
+        <h3 style="margin:0; color:var(--accent);" id="tab-cfg-title">Tab Settings</h3>
+        <div class="hint" style="margin:2px 0 0;" id="tab-cfg-sub">Configure display, behavior &amp; top-bar visibility for active or hidden tabs (synced to DB).</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-close="tab-cfg-modal">✕</button>
+    </div>
+    <div class="tab-cfg-switcher" id="tab-cfg-switcher"></div>
+    <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:8px; max-height:56vh; overflow-y:auto; padding-inline-end:3px; margin-bottom:14px;"></div>
+    <div class="toolbar" style="margin:0;">
+      <div class="flexw" style="gap:6px;">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="resetCurrentTabPrefs()" id="btn-tp-reset-one">↻ Reset Tab</button>
+        <button type="button" class="btn btn-danger btn-sm" onclick="resetTabPrefs()" id="btn-tp-reset-all">Reset All</button>
+      </div>
+      <button type="button" class="btn btn-sky btn-sm" data-close="tab-cfg-modal" id="btn-tp-done">✓ Done</button>
+    </div>
+  </div>
+</div>
+<div id="fm-ctx-menu" role="menu"></div>
 <div id="toast"></div>
 
 <!-- ═════════ FIRST-TIME SETUP ═════════ -->
@@ -4823,10 +4944,12 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
         <h3 data-i18n="fleet_radar">Fleet hardware radar</h3>
         <div class="flexw">
           <button class="btn btn-sky" id="btn-live-ov" onclick="toggleLiveServers()">LIVE: ON</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('overview')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
           <button class="btn btn-ghost" onclick="openSSLSyncModal()">🔒 SSL Sync</button>
           <button class="btn btn-ghost" id="btn-ping-all" onclick="pingAllServers()">↻ Ping All</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('servers')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
       <!-- 24h / 7d Metrics History & Incident Timeline -->
@@ -4899,6 +5022,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
           <button class="btn btn-ghost" onclick="openLinkTestModal()">Link Test (iperf3)</button>
           <button class="btn btn-ghost" onclick="loadTunnels()">Refresh</button>
           <button class="btn btn-sky" onclick="openNewTunnelModal()">+ New Tunnel</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('tunnels')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
 
@@ -4974,6 +5098,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
         <div class="dom-actions-row">
           <button class="btn btn-warn btn-sm" id="btn-cf-add" style="display:none;" onclick="openCFRecordModal(null)">+ Add DNS Record</button>
           <button class="btn btn-ghost btn-sm" onclick="openCFSettingsInTab()">⚙ DNS Settings</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('domains')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
 
@@ -5273,6 +5398,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
           <button class="btn btn-ghost btn-sm" onclick="openDCConfigModal()">⚙ API Keys</button>
           <button class="btn btn-ghost btn-sm" id="btn-dc-refresh" onclick="loadDCServers()">↻ Sync Cloud</button>
           <button class="btn btn-sky btn-sm" onclick="openDCCreateModal()">+ Create Server</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('datacenter')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
 
@@ -5339,7 +5465,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 <section id="tab-settings" class="page">
       <div id="settings-shell">
         <div class="toolbar" style="justify-content:center; margin-bottom:10px;">
-          <h3 data-i18n="nav_settings">Settings</h3>
+          <div class="flexw" style="gap:8px; justify-content:center;"><h3 data-i18n="nav_settings" style="margin:0;">Settings</h3><button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('settings')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button></div>
         </div>
 
         <div class="sub-tabs" style="justify-content:center;">
@@ -5670,6 +5796,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
         <div class="flexw" style="gap:8px;">
           <span class="badge b-foreign mono" id="ob-badge">STOPPED</span>
           <button class="btn btn-ghost btn-sm" onclick="loadMasterOutbound()">↻ Refresh</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('outbound')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
 
@@ -5798,6 +5925,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
           <span class="badge b-foreign mono" id="tg-badge">DISCONNECTED</span>
           <span class="badge b-iran mono" id="tg-ob-badge" style="display:none;">via Outbound</span>
           <button class="btn btn-ghost btn-sm" onclick="loadTelegramStatus()">Refresh</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('telegram')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
 
@@ -6088,7 +6216,7 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
             <label data-i18n="lbl_ssh_pass">SSH password</label>
             <div class="pass-eye-wrap">
               <input id="s-pass" type="password" autocomplete="new-password" oninput="clearSelectedSSHProfile()">
-              <button type="button" class="pass-eye-btn" id="btn-s-pass-eye" title="Show / Hide Password" onclick="toggleSrvPassVis()">👁️</button>
+              <button type="button" class="pass-eye-btn" id="btn-s-pass-eye" title="Show / Hide Password" onclick="toggleSrvPassVis()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
           </div>
           <div class="field" id="s-key-wrap" style="display:none;"><label data-i18n="lbl_ssh_key">Private key (PEM / OpenSSH, no passphrase)</label><textarea id="s-key" spellcheck="false" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></div>
@@ -7141,7 +7269,10 @@ function renderSettingsSectionsHub() {
       </div>
       <div class="sec-bubble-desc">${esc(desc)}</div>
       <div class="sec-bubble-acts">
-        <button type="button" class="btn btn-sky btn-sm" onclick="openCatalogSection('${esc(it.id)}')">${fa ? 'باز کردن' : 'Open'}</button>
+        <div style="display:flex; align-items:center; gap:5px;">
+          <button type="button" class="btn btn-sky btn-sm" onclick="openCatalogSection('${esc(it.id)}')">${fa ? 'باز کردن' : 'Open'}</button>
+          ${TAB_PREFS_SCHEMA[it.id] ? `<button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" style="width:28px;height:28px;" title="${fa ? 'تنظیمات این تب' : 'Configure Tab'}" onclick="openTabSettings('${esc(it.id)}')">` + _GEAR_SVG + `</button>` : ''}
+        </div>
         ${it.locked
           ? `<span class="hint" style="margin:0; font-size:.68rem;">${fa ? 'همیشه فعال' : 'Always pinned'}</span>`
           : `<button type="button" class="btn ${pinned ? 'btn-ghost' : 'btn-warn'} btn-sm" onclick="toggleNavTabVisible('${esc(it.id)}', ${!pinned})">${pinned ? (fa ? 'حذف از بالا' : 'Hide Tab') : (fa ? '+ افزودن به بالا' : '+ Add to Bar')}</button>`
@@ -8033,7 +8164,8 @@ function switchTab(name) {
     return;
   }
   if (name === 'tunnels') fillCoreSelect();
-  if (name === 'overview') { pollLocalStats(); loadMetricsHistory(); loadOverviewIncidents(); }
+  if (name === 'overview') { pollLocalStats(); loadMetricsHistory(); loadOverviewIncidents(); syncServersQuiet(); }
+  if (name === 'servers') { syncServersQuiet(); backgroundProbeServers(); }
   if (name === 'tunnels') { loadTunnels(); loadLegacyTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'domains') { loadCloudflareStatus(); loadFailoverUI(); }
   if (name === 'monitor') { loadMonitorsTab(); }
@@ -8250,14 +8382,35 @@ function renderServerCard(s) {
     </div>
   </div>`;
 }
+function _parsePingNum(v) {
+  const m = String(v || '').match(/([0-9]+(?:\.[0-9]+)?)/);
+  return m ? parseFloat(m[1]) : 999999;
+}
+function _parsePctNum(v) {
+  const m = String(v || '').match(/([0-9]+(?:\.[0-9]+)?)/);
+  return m ? parseFloat(m[1]) : 0;
+}
 function renderServers() {
-  const list = SERVERS;
-  $('st-total').textContent = list.length;
-  $('st-iran').textContent = list.filter(x => x.role === 'iran').length;
-  $('st-foreign').textContent = list.filter(x => x.role === 'foreign').length;
-  $('st-online').textContent = list.filter(x => x.status === 'online').length;
-  const html = list.length ? list.map(renderServerCard).join('') : `<div class="card" style="color:var(--muted);">${t('no_servers')}</div>`;
-  $('overview-grid').innerHTML = html; $('servers-grid').innerHTML = html;
+  const all = SERVERS || [];
+  $('st-total').textContent = all.length;
+  $('st-iran').textContent = all.filter(x => x.role === 'iran').length;
+  $('st-foreign').textContent = all.filter(x => x.role === 'foreign').length;
+  $('st-online').textContent = all.filter(x => x.status === 'online').length;
+
+  const filt = (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.srv_filter) || 'all';
+  const sortBy = (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.srv_sort) || 'manual';
+  let list = all.slice();
+  if (filt === 'iran') list = list.filter(x => x.role === 'iran');
+  else if (filt === 'foreign') list = list.filter(x => x.role !== 'iran');
+  else if (filt === 'online') list = list.filter(x => x.status === 'online');
+
+  if (sortBy === 'name') list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  else if (sortBy === 'online') list.sort((a, b) => (b.status === 'online' ? 1 : 0) - (a.status === 'online' ? 1 : 0));
+  else if (sortBy === 'ping') list.sort((a, b) => _parsePingNum(a.ping_ms) - _parsePingNum(b.ping_ms));
+  else if (sortBy === 'cpu') list.sort((a, b) => _parsePctNum(b.cpu) - _parsePctNum(a.cpu));
+
+  const htmlOut = list.length ? list.map(renderServerCard).join('') : `<div class="card" style="color:var(--muted);">${t('no_servers')}</div>`;
+  $('overview-grid').innerHTML = htmlOut; $('servers-grid').innerHTML = htmlOut;
 }
 async function loadServers() {
   const res = await api('api/servers');
@@ -8448,7 +8601,7 @@ function openSrvModal(id) {
   $('s-auth').value = s ? (s.auth_type || 'password') : 'password';
   $('s-pass').value = s ? '' : (SETTINGS.default_ssh_pass || '');
   if ($('s-pass')) $('s-pass').type = 'password';
-  if ($('btn-s-pass-eye')) $('btn-s-pass-eye').textContent = '👁️';
+  if ($('btn-s-pass-eye')) $('btn-s-pass-eye').innerHTML = _EYE_SVG;
   if ($('s-prof-id')) $('s-prof-id').value = '0';
   _ipv6LastHost = s ? (s.host || '') : '';
   setSrvIPv6Drawer(s && s.ipv6 && s.ipv6 !== 'N/A' ? s.ipv6 : '');
@@ -9734,7 +9887,9 @@ async function loadMasterOutbound() {
   if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
   if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
   pickOutboundMode(OB_CFG.mode === 'loadbalance' ? 'loadbalance' : 'single');
-  toggleObSubSection(false);
+  toggleObSubSection(!!(typeof TAB_PREFS !== 'undefined' && TAB_PREFS.ob_auto_sub));
+  if (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.ob_auto_lb && OB_CFG.mode !== 'loadbalance') pickOutboundMode('loadbalance');
+  if (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.ob_auto_manual === false) _obOpenGroups.delete('manual');
 
   const b = $('ob-badge');
   if (b) {
@@ -11529,12 +11684,14 @@ function scheduleSrvIPv6Check(immediate) {
 function clearSelectedSSHProfile() {
   if ($('s-prof-id')) $('s-prof-id').value = '0';
 }
+const _EYE_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const _EYE_OFF_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
 function toggleSrvPassVis() {
   const inp = $('s-pass'), btn = $('btn-s-pass-eye');
   if (!inp) return;
   const show = inp.type === 'password';
   inp.type = show ? 'text' : 'password';
-  if (btn) btn.textContent = show ? '🙈' : '👁️';
+  if (btn) btn.innerHTML = show ? _EYE_OFF_SVG : _EYE_SVG;
 }
 function renderUserProfileDD(filterTxt) {
   const dd = $('s-user-prof-dd');
@@ -11562,6 +11719,7 @@ function renderUserProfileDD(filterTxt) {
   dd.innerHTML = h;
 }
 function openUserProfileDD() {
+  if (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.prof_auto_dd === false) return;
   renderUserProfileDD('');
   const dd = $('s-user-prof-dd');
   if (dd) dd.classList.add('open');
@@ -12109,27 +12267,55 @@ function toggleLiveServers() {
   });
   if (liveServers) backgroundProbeServers();
 }
-async function backgroundProbeServers() {
-  if (!token || !liveServers || liveProbeBusy || SERVERS.length === 0) return;
+let liveProbeStartedAt = 0;
+let srvSyncTimer = null;
+
+async function syncServersQuiet() {
+  if (!token || !liveServers) return;
   if (curTab !== 'overview' && curTab !== 'servers') return;
+  if (document.querySelector('.modal-bg.active')) return;
+  try {
+    const r = await api('api/servers');
+    if (r && r.ok && Array.isArray(r.servers)) {
+      SERVERS = r.servers;
+      renderServers();
+    }
+  } catch (e) {}
+}
+
+async function backgroundProbeServers() {
+  if (!token || !liveServers || SERVERS.length === 0) return;
+  if (curTab !== 'overview' && curTab !== 'servers') return;
+  if (liveProbeBusy && (Date.now() - liveProbeStartedAt) < 18000) return;
   liveProbeBusy = true;
+  liveProbeStartedAt = Date.now();
   try {
     const res = await api('api/servers/probe-all', 'POST');
-    if (res.ok && res.servers) { SERVERS = res.servers; renderServers(); }
-  } finally { liveProbeBusy = false; }
+    if (res && res.ok && Array.isArray(res.servers)) {
+      SERVERS = res.servers;
+      renderServers();
+    }
+  } catch (e) {
+  } finally {
+    liveProbeBusy = false;
+  }
 }
 
 function startTimers() {
   stopTimers();
-  pollLocalStats(); localTimer = setInterval(pollLocalStats, 2000);
-  setTimeout(backgroundProbeServers, 1500);
-  srvTimer = setInterval(backgroundProbeServers, 4000);
+  const ovMs = parseInt((typeof TAB_PREFS !== 'undefined' && TAB_PREFS.ov_interval) || '2500', 10) || 2500;
+  const srvMs = parseInt((typeof TAB_PREFS !== 'undefined' && TAB_PREFS.srv_interval) || '8000', 10) || 8000;
+  pollLocalStats(); localTimer = setInterval(pollLocalStats, ovMs);
+  setTimeout(backgroundProbeServers, 1200);
+  srvTimer = setInterval(backgroundProbeServers, srvMs);
+  srvSyncTimer = setInterval(syncServersQuiet, Math.max(3000, Math.min(srvMs, 5000)));
   setTimeout(() => checkUpdates(false), 800);
   updAutoTimer = setInterval(() => checkUpdates(false), 60000);
 }
 function stopTimers() {
   if (localTimer) clearInterval(localTimer);
   if (srvTimer) clearInterval(srvTimer);
+  if (srvSyncTimer) clearInterval(srvSyncTimer);
   if (updAutoTimer) clearInterval(updAutoTimer);
   localTimer = srvTimer = updAutoTimer = null;
 }
@@ -12481,6 +12667,262 @@ async function importDCServer(idx) {
   else toast(r.error || 'Import failed', true);
 }
 
+
+/* ═══════════════ Advanced Per-Tab Control Center (Active + Hidden Tabs + DB Sync) ═══════════════ */
+const _GEAR_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>';
+const TAB_PREFS_SCHEMA = {
+  overview: {
+    titleEn: 'Overview', titleFa: 'داشبورد',
+    items: [
+      { key: 'ov_interval', type: 'select', def: '2500', en: 'Telemetry Refresh Rate', fa: 'سرعت بروزرسانی آمار زنده', descEn: 'How often Master CPU/RAM/Network updates', descFa: 'بازه زمانی آپدیت لحظه‌ای CPU و شبکه مستر',
+        options: [['1500','1.5s (Fast)'],['2500','2.5s (Balanced)'],['5000','5s (Light)'],['10000','10s (Eco)']] },
+      { key: 'ov_stats',   cls: 'tp-ov-stats',   en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / Iran / Foreign / Online counters', descFa: 'شمارنده‌های کل / ایران / خارج / آنلاین' },
+      { key: 'ov_master',  cls: 'tp-ov-master',  en: 'Master Control Strip', fa: 'کارت کنترل سرور مستر', descEn: 'Master IP, CPU/RAM/Network gauges & Toolbox', descFa: 'گیج‌های سرور مستر و دکمه‌های Speedtest / Tweak' },
+      { key: 'ov_metrics', cls: 'tp-ov-metrics', en: 'Metrics History & Incidents', fa: 'نمودار تاریخچه و رخدادها', descEn: '24h/7d SQLite charts & live incident timeline', descFa: 'نمودارهای ۲۴ ساعته و تایم‌لاین رخدادها' },
+      { key: 'ov_radar',   cls: 'tp-ov-radar',   en: 'Fleet Hardware Radar', fa: 'لیست سرورها در داشبورد', descEn: 'Show server cards inside Overview', descFa: 'نمایش کارت سرورها در پایین داشبورد' }
+    ]
+  },
+  servers: {
+    titleEn: 'Servers', titleFa: 'سرورها',
+    items: [
+      { key: 'srv_interval', type: 'select', def: '8000', en: 'Auto-Ping & Reload Interval', fa: 'بازه پینگ و ریلود خودکار', descEn: 'Background live probe cadence (LIVE: ON)', descFa: 'بازه زمانی پینگ و آپدیت زنده سرورها',
+        options: [['5000','5s (Fast)'],['8000','8s (Balanced)'],['15000','15s (Normal)'],['30000','30s (Light)'],['60000','60s (Eco)']] },
+      { key: 'srv_sort', type: 'select', def: 'manual', en: 'Default Sort Order', fa: 'مرتب‌سازی پیش‌فرض سرورها', descEn: 'Automatically sort server rows', descFa: 'ترتیب نمایش کارت‌های سرور',
+        options: [['manual','Manual / Custom'],['name','Name (A → Z)'],['online','Online First'],['ping','Lowest Direct Ping'],['cpu','Highest CPU Load']] },
+      { key: 'srv_filter', type: 'select', def: 'all', en: 'Default Role Filter', fa: 'فیلتر نمایش سرورها', descEn: 'Filter visible server cards', descFa: 'فیلتر کردن لیست سرورها بر اساس نوع',
+        options: [['all','All Servers'],['iran','Iran Nodes Only'],['foreign','Foreign Nodes Only'],['online','Online Only']] },
+      { key: 'srv_compact', cls: 'tp-srv-compact', def: false, invert: true, en: 'Compact Row Mode', fa: 'حالت فشرده ردیف‌ها', descEn: 'Slimmer rows to fit more servers on screen', descFa: 'ارتفاع کمتر کارت‌ها برای نمایش سرورهای بیشتر' },
+      { key: 'srv_dir',  cls: 'tp-srv-dir',  en: 'Direct Iran Ping (🇮🇷)', fa: 'نمایش پینگ مستقیم ایران (🇮🇷)', descEn: 'Direct Master → Server latency badge', descFa: 'حباب پینگ مستقیم از مستر به سرور' },
+      { key: 'srv_ob',   cls: 'tp-srv-ob',   en: 'Outbound Ping (🚀)', fa: 'نمایش پینگ اوتباند (🚀)', descEn: 'Latency through Master Xray Outbound', descFa: 'پینگ از طریق Xray Outbound' },
+      { key: 'srv_rev',  cls: 'tp-srv-rev',  en: 'Reverse Ping (↩️)', fa: 'نمایش پینگ ریورس (↩️)', descEn: 'Latency from remote server back to Iran Master', descFa: 'پینگ برگشت از سرور مقصد به مستر ایران' },
+      { key: 'srv_cpu',  cls: 'tp-srv-cpu',  en: 'Header CPU & RAM', fa: 'نمایش CPU و RAM در هدر', descEn: 'Show inline CPU/RAM on collapsed server rows', descFa: 'نمایش مصرف منابع روی ردیف بسته سرور' },
+      { key: 'srv_peer', cls: 'tp-srv-peer', en: 'Peer Version Badge', fa: 'نمایش بج نسخه Peer', descEn: 'Show PEER V4 / SSH mode badge', descFa: 'نمایش بج PEER V4 روی هدر سرور' },
+      { key: 'srv_pbtn', cls: 'tp-srv-pbtn', en: 'Quick Ping Button', fa: 'نمایش دکمه پینگ سریع', descEn: 'One-click Ping button in server header', descFa: 'دکمه بابل پینگ سریع کنار بج Peer' },
+      { key: 'srv_tags', cls: 'tp-srv-tags', en: 'Tag Filter Bar', fa: 'نوار فیلتر تگ‌ها', descEn: 'Show custom tag filter pills above servers', descFa: 'نمایش فیلتر تگ‌ها بالای لیست سرورها' }
+    ]
+  },
+  datacenter: {
+    titleEn: 'Datacenter', titleFa: 'دیتاسنتر',
+    items: [
+      { key: 'dc_provs',     cls: 'tp-dc-provs',   en: 'Provider Summary Cards', fa: 'کارت وضعیت دیتاسنترها', descEn: 'Top 5 cloud provider summary cards', descFa: '۵ کارت وضعیت بالای صفحه دیتاسنتر' },
+      { key: 'dc_auto_imp',  def: true,  en: 'Default Auto-Import New Servers', fa: 'ایمپورت خودکار سرور جدید', descEn: 'Pre-check Auto-Import when creating a cloud VM', descFa: 'فعال بودن پیش‌فرض ایمپورت هنگام ساخت سرور' },
+      { key: 'dc_auto_pair', def: true,  en: 'Default Auto-Pair Peer v4', fa: 'اتصال خودکار Peer v4', descEn: 'Pre-check Auto-Pair Peer v4 when creating a cloud VM', descFa: 'فعال بودن پیش‌فرض Pair شدن بعد از ساخت سرور' },
+      { key: 'dc_compact',   cls: 'tp-dc-compact', def: false, invert: true, en: 'Compact Cloud Rows', fa: 'حالت فشرده لیست ابری', descEn: 'Tighter spacing on cloud server rows', descFa: 'نمایش فشرده‌تر لیست سرورهای دیتاسنتر' }
+    ]
+  },
+  tunnels: {
+    titleEn: 'Tunnels', titleFa: 'تانل‌ها',
+    items: [
+      { key: 'tun_tools',   cls: 'tp-tun-tools',   en: 'Advanced Toolbar Tools', fa: 'دکمه‌های ابزار پیشرفته', descEn: 'Topology Map, v4/v6 Matrix, MSmart & iperf3 buttons', descFa: 'نمایش دکمه‌های Topology، Matrix، MSmart و iperf3' },
+      { key: 'tun_stopped', cls: 'tp-tun-stopped', def: false, invert: true, en: 'Hide Stopped Tunnels', fa: 'مخفی کردن تانل‌های متوقف', descEn: 'Only show currently active/running tunnels', descFa: 'فقط تانل‌های فعال و در حال اجرا نمایش داده شوند' },
+      { key: 'tun_legacy',  cls: 'tp-tun-legacy',  en: 'Legacy MTunnel Section', fa: 'بخش تانل‌های قدیمی MTunnel', descEn: 'Show detected legacy MTunnel services', descFa: 'نمایش بخش سرویس‌های قدیمی MTunnel' },
+      { key: 'tun_compact', cls: 'tp-tun-compact', def: false, invert: true, en: 'Compact Tunnel Cards', fa: 'حالت فشرده کارت تانل‌ها', descEn: 'Slimmer tunnel row height', descFa: 'ارتفاع کمتر ردیف تانل‌ها' }
+    ]
+  },
+  domains: {
+    titleEn: 'Domains', titleFa: 'دامنه‌ها',
+    items: [
+      { key: 'dom_bubbles', cls: 'tp-dom-bubbles', en: 'Provider Sync Bubbles', fa: 'حباب‌های سینک کلودفلر و آروان', descEn: 'Show Cloudflare & ArvanCloud sync chips at top', descFa: 'نمایش حباب‌های وضعیت سینک بالای صفحه' },
+      { key: 'dom_compact', cls: 'tp-dom-compact', def: false, invert: true, en: 'Compact DNS Records Table', fa: 'جدول فشرده رکوردهای DNS', descEn: 'Fit more DNS records per screen', descFa: 'نمایش فشرده‌تر رکوردهای دامنه' }
+    ]
+  },
+  monitor: {
+    titleEn: 'Uptime', titleFa: 'آپتایم',
+    items: [
+      { key: 'mon_stats',   cls: 'tp-mon-stats',   en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / UP / DOWN / Avg Uptime counters', descFa: 'شمارنده‌های وضعیت مانیتورها' },
+      { key: 'mon_beats',   cls: 'tp-mon-beats',   en: 'Heartbeat History Bars', fa: 'میله‌های ضربان قلب', descEn: 'Show visual heartbeat uptime bars', descFa: 'نمایش نوار تاریخچه آپتایم' },
+      { key: 'mon_compact', cls: 'tp-mon-compact', def: false, invert: true, en: 'Compact Monitor Cards', fa: 'کارت‌های فشرده مانیتور', descEn: 'Tighter vertical padding on monitors', descFa: 'فشرده‌سازی کارت‌های آپتایم' }
+    ]
+  },
+  outbound: {
+    titleEn: 'Outbound (Xray)', titleFa: 'اوتباند Xray',
+    items: [
+      { key: 'ob_auto_sub',    def: false, en: 'Auto-Open Subscriptions Card', fa: 'باز بودن پیش‌فرض بخش ساب‌اسکریپشن', descEn: 'Automatically expand Subscriptions when opening Xray', descFa: 'باز شدن خودکار کارت Subscriptions هنگام ورود' },
+      { key: 'ob_auto_lb',     def: false, en: 'Auto-Open Load Balance Card', fa: 'باز بودن پیش‌فرض بخش لودبالانس', descEn: 'Automatically expand Load Balance when opening Xray', descFa: 'باز شدن خودکار کارت Load Balance هنگام ورود' },
+      { key: 'ob_auto_manual', def: true,  en: 'Auto-Expand Manual Configs', fa: 'باز بودن پیش‌فرض کانفیگ‌های دستی', descEn: 'Keep Manual & Single Configs accordion expanded', descFa: 'باز ماندن آکاردئون کانفیگ‌های دستی' },
+      { key: 'ob_badges',      cls: 'tp-ob-badges', en: 'Core Status & Version Badges', fa: 'نمایش بج نسخه Xray Core', descEn: 'Show INSTALLED and Xray version pills', descFa: 'نمایش وضعیت نصب و شماره نسخه Xray' }
+    ]
+  },
+  telegram: {
+    titleEn: 'Telegram Bot', titleFa: 'ربات تلگرام',
+    items: [
+      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Cards Layout', fa: 'چیدمان فشرده کارت‌ها', descEn: 'Tighter spacing inside Settings & Bot cards', descFa: 'فاصله کمتر در کارت‌های تنظیمات و ربات' }
+    ]
+  },
+  profiles: {
+    titleEn: 'Profiles & Backup', titleFa: 'پروفایل و بکاپ',
+    items: [
+      { key: 'prof_auto_dd', def: true, en: 'Auto-Open Profiles on Add Server', fa: 'باز شدن خودکار پروفایل‌ها در Add Server', descEn: 'Automatically pop up saved SSH profiles when clicking Username', descFa: 'نمایش کشویی پروفایل‌های SSH با کلیک روی کادر یوزرنیم' }
+    ]
+  },
+  terminal: {
+    titleEn: 'Terminal', titleFa: 'ترمینال',
+    items: [
+      { key: 'term_snips', cls: 'tp-term-snips', en: 'Quick Command Snippets Bar', fa: 'نوار اسنیپت‌های سریع ترمینال', descEn: 'Show 1-click System/Ports/Services buttons above output', descFa: 'نمایش دکمه‌های آماده بالای خروجی ترمینال' },
+      { key: 'term_font', type: 'select', def: '12', en: 'Terminal Font Size', fa: 'اندازه فونت ترمینال', descEn: 'Output & input font size inside Web Terminal', descFa: 'سایز متن خروجی و ورودی ترمینال',
+        options: [['11','11px (Compact)'],['12','12px (Default)'],['13','13px (Readable)'],['14','14px (Large)']] }
+    ]
+  },
+  settings: {
+    titleEn: 'Settings', titleFa: 'تنظیمات',
+    items: [
+      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Settings Cards', fa: 'کارت‌های فشرده تنظیمات', descEn: 'Tighter vertical padding inside Settings cards', descFa: 'فضای عمودی کمتر داخل کارت‌های تنظیمات' }
+    ]
+  }
+};
+
+let TAB_PREFS = {};
+let _activeTabCfgKey = 'servers';
+try { TAB_PREFS = JSON.parse(ls.get('mc_tab_prefs_v1', '{}') || '{}') || {}; } catch (e) { TAB_PREFS = {}; }
+
+function saveTabPrefs() {
+  const raw = JSON.stringify(TAB_PREFS);
+  try { ls.set('mc_tab_prefs_v1', raw); } catch (e) {}
+  if (typeof token !== 'undefined' && token) {
+    api('api/ui/tab-prefs', 'POST', { prefs_json: raw }).catch(() => {});
+  }
+}
+
+async function syncTabPrefsFromServer() {
+  try {
+    const r = await api('api/ui/tab-prefs');
+    if (r && r.ok && r.prefs_json) {
+      const parsed = JSON.parse(r.prefs_json);
+      if (parsed && typeof parsed === 'object') {
+        TAB_PREFS = parsed;
+        ls.set('mc_tab_prefs_v1', r.prefs_json);
+        applyTabPrefs();
+        if (typeof renderServers === 'function' && SERVERS && SERVERS.length) renderServers();
+      }
+    }
+  } catch (e) {}
+}
+
+function getTabPrefVal(it) {
+  if (Object.prototype.hasOwnProperty.call(TAB_PREFS, it.key)) return TAB_PREFS[it.key];
+  if (it.type === 'select') return it.def;
+  return (it.def !== undefined) ? it.def : true;
+}
+
+function applyTabPrefs() {
+  Object.values(TAB_PREFS_SCHEMA).forEach(sec => {
+    sec.items.forEach(it => {
+      const val = getTabPrefVal(it);
+      if (it.cls) {
+        const addCls = it.invert ? !!val : (val === false);
+        document.body.classList.toggle(it.cls, addCls);
+      }
+    });
+  });
+  const tf = parseInt(TAB_PREFS.term_font || '12', 10) || 12;
+  if ($('term-out')) $('term-out').style.fontSize = tf + 'px';
+  if ($('term-inp')) $('term-inp').style.fontSize = tf + 'px';
+  if ($('dc-cr-imp') && Object.prototype.hasOwnProperty.call(TAB_PREFS, 'dc_auto_imp')) $('dc-cr-imp').checked = !!TAB_PREFS.dc_auto_imp;
+  if ($('dc-cr-pair') && Object.prototype.hasOwnProperty.call(TAB_PREFS, 'dc_auto_pair')) $('dc-cr-pair').checked = !!TAB_PREFS.dc_auto_pair;
+}
+
+function openTabSettings(tabKey) {
+  _activeTabCfgKey = TAB_PREFS_SCHEMA[tabKey] ? tabKey : 'servers';
+  renderTabSettingsModal();
+  if ($('tab-cfg-modal')) $('tab-cfg-modal').classList.add('active');
+}
+
+function renderTabSettingsModal() {
+  const key = _activeTabCfgKey;
+  const sec = TAB_PREFS_SCHEMA[key];
+  if (!sec) return;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = fa ? ('تنظیمات تب ' + sec.titleFa) : (sec.titleEn + ' Settings');
+  if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'شخصی‌سازی کامل ظاهر، رفتار و نمایش در نوار بالا برای همه تب‌ها (فعال یا مخفی) با سینک دیتابیس.' : 'Configure display, behavior & top-bar visibility for all tabs (active or hidden) — synced to DB.';
+  if ($('btn-tp-reset-one')) $('btn-tp-reset-one').textContent = fa ? '↻ ریست همین تب' : '↻ Reset Tab';
+  if ($('btn-tp-reset-all')) $('btn-tp-reset-all').textContent = fa ? 'ریست همه تب‌ها' : 'Reset All';
+  if ($('btn-tp-done')) $('btn-tp-done').textContent = fa ? '✓ بستن' : '✓ Done';
+
+  const visMap = {};
+  (NAV_TABS_CFG || []).forEach(x => { visMap[x.id] = !!x.visible; });
+
+  const sw = $('tab-cfg-switcher');
+  if (sw) {
+    sw.innerHTML = Object.keys(TAB_PREFS_SCHEMA).map(k => {
+      const s = TAB_PREFS_SCHEMA[k];
+      const isOn = !!visMap[k];
+      return `<button type="button" class="tab-cfg-pill ${k === key ? 'active' : ''}" onclick="openTabSettings('${k}')"><i class="tp-dot ${isOn ? 'on' : ''}" title="${isOn ? 'In Top Bar' : 'Hidden'}"></i>${esc(fa ? s.titleFa : s.titleEn)}</button>`;
+    }).join('');
+  }
+
+  const box = $('tab-cfg-list');
+  if (!box) return;
+  const cat = (ALL_TABS_CATALOG || []).find(x => x.id === key);
+  let out = '';
+
+  if (cat) {
+    const pinned = !!visMap[key];
+    out += `<div class="tab-cfg-row pin-row">
+      <div>
+        <strong>${fa ? 'نمایش این تب در نوار بالای صفحه' : 'Show Tab in Top Navigation Bar'}</strong>
+        <span>${pinned ? (fa ? 'این تب در حال حاضر در نوار بالا فعال است' : 'Currently active & visible in the top bar') : (fa ? 'این تب مخفی است — می‌توانید همین‌جا تنظیم یا فعالش کنید' : 'Currently hidden from top bar — configure or enable it here')}</span>
+      </div>
+      ${cat.locked
+        ? `<span class="badge b-ok mono" style="font-size:.66rem;">${fa ? 'ثابت' : 'LOCKED'}</span>`
+        : `<label class="etab-switch"><input type="checkbox" ${pinned ? 'checked' : ''} onchange="toggleNavTabVisible('${esc(key)}', this.checked); renderTabSettingsModal();"><span class="etab-slider"></span></label>`
+      }
+    </div>`;
+  }
+
+  out += `<div class="tab-cfg-sec-lbl">${fa ? 'گزینه‌های پیشرفته این تب' : 'Advanced Tab Options'}</div>`;
+  out += sec.items.map(it => {
+    const val = getTabPrefVal(it);
+    const lbl = fa ? it.fa : it.en;
+    const desc = fa ? it.descFa : it.descEn;
+    if (it.type === 'select') {
+      const opts = (it.options || []).map(([ov, ol]) => `<option value="${esc(ov)}" ${String(val) === String(ov) ? 'selected' : ''}>${esc(ol)}</option>`).join('');
+      return `<div class="tab-cfg-row">
+        <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
+        <select class="tab-cfg-sel" onchange="setTabPref('${esc(it.key)}', this.value)">${opts}</select>
+      </div>`;
+    }
+    return `<div class="tab-cfg-row">
+      <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
+      <label class="etab-switch"><input type="checkbox" ${val ? 'checked' : ''} onchange="setTabPref('${esc(it.key)}', this.checked)"><span class="etab-slider"></span></label>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = out;
+}
+
+function setTabPref(key, val) {
+  TAB_PREFS[key] = val;
+  saveTabPrefs();
+  applyTabPrefs();
+  if (key === 'srv_sort' || key === 'srv_filter') renderServers();
+  if (key === 'ov_interval' || key === 'srv_interval') {
+    if (typeof token !== 'undefined' && token && typeof startTimers === 'function') startTimers();
+  }
+  if (key === 'ob_auto_sub') toggleObSubSection(!!val);
+  if (key === 'ob_auto_lb') pickOutboundMode(val ? 'loadbalance' : 'single');
+}
+
+function resetCurrentTabPrefs() {
+  const sec = TAB_PREFS_SCHEMA[_activeTabCfgKey];
+  if (!sec) return;
+  sec.items.forEach(it => { delete TAB_PREFS[it.key]; });
+  saveTabPrefs();
+  applyTabPrefs();
+  renderTabSettingsModal();
+  if (_activeTabCfgKey === 'servers') renderServers();
+  toast((typeof lang !== 'undefined' && lang === 'fa') ? 'تنظیمات همین تب بازنشانی شد' : 'Current tab settings reset');
+}
+
+function resetTabPrefs() {
+  TAB_PREFS = {};
+  saveTabPrefs();
+  applyTabPrefs();
+  renderTabSettingsModal();
+  renderServers();
+  toast((typeof lang !== 'undefined' && lang === 'fa') ? 'تنظیمات همه تب‌ها به حالت پیش‌فرض برگشت' : 'All tab settings reset to default');
+}
+applyTabPrefs();
+
 async function boot() {
   applyLang();
   setLoginFX(ls.get('mc_login_fx', 'aurora'));
@@ -12726,6 +13168,7 @@ window.addEventListener('offline', () => showPwaNetPill(false));
 window.addEventListener('online', () => {
   showPwaNetPill(true);
   if (typeof loadServers === 'function' && token) syncNavTabsFromServer();
+  syncTabPrefsFromServer();
   loadServers();
 });
 
@@ -12988,11 +13431,12 @@ function showTermAuthBox(show) {
 function openLocalWebTerm() {
   termSrvId = 'local';
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
-  if ($('term-title')) $('term-title').textContent = fa ? '🖥️ ترمینال سرور مستر (این سرور)' : '🖥️ Master Server Terminal (Local)';
+  if ($('term-title')) $('term-title').textContent = fa ? '🖥️ ترمینال و فایل‌منیجر سرور مستر' : '🖥️ Master Server Terminal & Files';
   if ($('term-out')) $('term-out').textContent = fa ? 'متصل به شل محلی سرور مستر (bash). دستور خود را پایین وارد کنید.' : 'Connected to local Master server shell (bash). Type a command below.';
   if ($('term-inp')) $('term-inp').value = '';
   if ($('btn-term-chauth')) $('btn-term-chauth').style.display = 'none';
-  if ($('term-view-tabs')) $('term-view-tabs').style.display = 'none';
+  if ($('term-mode-tabs')) $('term-mode-tabs').style.display = '';
+  if (typeof fmCloseEditor === 'function') fmCloseEditor();
   showTermAuthBox(false);
   switchTermView('shell');
   populateVaultDropdown();
@@ -13710,39 +14154,250 @@ function fmGoUp() {
   $('fm-path').value = idx <= 0 ? '/' : cur.slice(0, idx);
   fmList();
 }
+function fmBaseUrl() {
+  return (termSrvId === 'local') ? 'api/local/files' : ('api/servers/' + termSrvId + '/files');
+}
+function fmtFmSize(sz) {
+  const n = parseInt(sz, 10);
+  if (isNaN(n) || n < 0) return String(sz || '0') + ' B';
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1048576).toFixed(2) + ' MB';
+}
+function fmEscJs(s) {
+  return String(s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+function closeFmCtxMenu() {
+  const m = $('fm-ctx-menu');
+  if (m) m.classList.remove('show');
+}
+function showFmCtxMenu(ev, items) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  const m = $('fm-ctx-menu');
+  if (!m) return;
+  m.innerHTML = '';
+  items.forEach(it => {
+    if (it === 'sep') {
+      const d = document.createElement('div');
+      d.className = 'fm-ctx-sep';
+      m.appendChild(d);
+      return;
+    }
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'srv-dd-item ' + (it.cls || '');
+    b.textContent = it.lbl;
+    b.onclick = () => { closeFmCtxMenu(); it.fn(); };
+    m.appendChild(b);
+  });
+  m.classList.add('show');
+  const mw = m.offsetWidth || 205;
+  const mh = m.offsetHeight || 220;
+  let x = ev.clientX, y = ev.clientY;
+  if (x + mw > window.innerWidth - 10) x = Math.max(10, window.innerWidth - mw - 10);
+  if (y + mh > window.innerHeight - 10) y = Math.max(10, window.innerHeight - mh - 10);
+  m.style.left = x + 'px';
+  m.style.top = y + 'px';
+}
+function openFmRowCtx(ev, fullPath, isDir) {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const items = [];
+  if (isDir) {
+    items.push({ lbl: fa ? '📂 باز کردن پوشه' : '📂 Open Folder', fn: () => { $('fm-path').value = fullPath; fmList(); } });
+  } else {
+    items.push({ lbl: fa ? '✏️ ویرایش فایل' : '✏️ Edit File', fn: () => fmOpenFile(fullPath) });
+    items.push({ lbl: fa ? '⬇ دانلود فایل' : '⬇ Download File', fn: () => fmDownloadFile(fullPath) });
+  }
+  items.push('sep');
+  items.push({ lbl: fa ? '📋 کپی مسیر' : '📋 Copy Path', fn: () => copyText(fullPath, 'Path') });
+  items.push({ lbl: fa ? '📄 کپی کردن (تکثیر)' : '📄 Copy / Duplicate', fn: () => fmCopyItem(fullPath) });
+  items.push({ lbl: fa ? '🏷️ تغییر نام' : '🏷️ Rename', fn: () => fmRenameItem(fullPath) });
+  items.push('sep');
+  items.push({ lbl: fa ? '🗑️ حذف' : '🗑️ Delete', cls: 'danger', fn: () => fmDelFile(fullPath, isDir) });
+  showFmCtxMenu(ev, items);
+}
+function openFmBlankCtx(ev) {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  showFmCtxMenu(ev, [
+    { lbl: fa ? '⬆ آپلود فایل' : '⬆ Upload File', fn: () => $('fm-upload-inp') && $('fm-upload-inp').click() },
+    { lbl: fa ? '+ فایل جدید' : '+ New File', fn: () => fmNewFile() },
+    { lbl: fa ? '+ پوشه جدید' : '+ New Folder', fn: () => fmNewFolder() },
+    'sep',
+    { lbl: fa ? '↻ رفرش لیست' : '↻ Refresh', fn: () => fmList() }
+  ]);
+}
+function openTermShellCtx(ev) {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const sel = (window.getSelection && window.getSelection().toString()) || '';
+  const items = [];
+  if (sel.trim()) {
+    items.push({ lbl: fa ? '📋 کپی متن انتخاب‌شده' : '📋 Copy Selection', fn: () => copyText(sel, 'Text') });
+  }
+  items.push({ lbl: fa ? '📋 کپی کل خروجی ترمینال' : '📋 Copy All Output', fn: () => copyText(($('term-out') && $('term-out').textContent) || '', 'Output') });
+  items.push({
+    lbl: fa ? '📥 پیست در ورودی دستور' : '📥 Paste to Input',
+    fn: async () => {
+      try {
+        const txt = await navigator.clipboard.readText();
+        if (txt && $('term-inp')) {
+          $('term-inp').value += txt;
+          $('term-inp').focus();
+        }
+      } catch (e) {
+        toast(fa ? 'اجازه خواندن کلیپ‌بورد داده نشد (از Ctrl+V استفاده کنید)' : 'Clipboard read blocked (use Ctrl+V)', true);
+      }
+    }
+  });
+  items.push('sep');
+  items.push({ lbl: fa ? '🧹 پاک کردن صفحه ترمینال' : '🧹 Clear Terminal', cls: 'danger', fn: () => { if ($('term-out')) $('term-out').textContent = ''; } });
+  showFmCtxMenu(ev, items);
+}
 async function fmList() {
   const path = $('fm-path').value.trim() || '/root';
   $('fm-list').innerHTML = '<div class="hint">Loading...</div>';
-  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'list', path });
+  const r = await api(fmBaseUrl(), 'POST', { action: 'list', path });
   if (!r.ok) { $('fm-list').innerHTML = `<div class="hint" style="color:var(--red);">${esc(r.error||'Failed')}</div>`; return; }
   const items = r.items || [];
   $('fm-list').innerHTML = items.map(it => {
     const full = (path.endsWith('/') ? path : path + '/') + it.name;
+    const jsPath = fmEscJs(full);
     if (it.type === 'dir') {
-      return `<div class="fm-row" onclick="$('fm-path').value='${esc(full)}'; fmList();"><span>📁 <b>${esc(it.name)}</b></span><span class="mono" style="color:var(--muted);">DIR</span></div>`;
+      return `<div class="fm-row" onclick="$('fm-path').value='${jsPath}'; fmList();" oncontextmenu="openFmRowCtx(event,'${jsPath}',true)"><span>📁 <b>${esc(it.name)}</b></span><div class="flexw" style="gap:5px;"><span class="mono" style="color:var(--muted); font-size:.72rem;">DIR</span><button type="button" class="btn btn-danger btn-sm" style="padding:1px 6px;" title="Delete folder" onclick="event.stopPropagation(); fmDelFile('${jsPath}', true)">✕</button></div></div>`;
     }
-    return `<div class="fm-row" onclick="fmOpenFile('${esc(full)}')"><span>📄 ${esc(it.name)}</span><div class="flexw" style="gap:6px;"><span class="mono" style="color:var(--muted);">${esc(it.size)} B</span><button class="btn btn-danger btn-sm" style="padding:1px 6px;" onclick="event.stopPropagation(); fmDelFile('${esc(full)}')">✕</button></div></div>`;
-  }).join('') || '<div class="hint">Empty directory.</div>';
+    return `<div class="fm-row" onclick="fmOpenFile('${jsPath}')" oncontextmenu="openFmRowCtx(event,'${jsPath}',false)"><span>📄 ${esc(it.name)}</span><div class="flexw" style="gap:5px;"><span class="mono" style="color:var(--muted); font-size:.72rem;">${fmtFmSize(it.size)}</span><button type="button" class="btn btn-ghost btn-sm" style="padding:1px 7px;" title="Download file" onclick="event.stopPropagation(); fmDownloadFile('${jsPath}')">⬇</button><button type="button" class="btn btn-danger btn-sm" style="padding:1px 6px;" title="Delete file" onclick="event.stopPropagation(); fmDelFile('${jsPath}', false)">✕</button></div></div>`;
+  }).join('') || '<div class="hint">Empty directory. Right-click to upload or create files.</div>';
 }
 async function fmOpenFile(fullPath) {
-  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'read', path: fullPath });
+  const r = await api(fmBaseUrl(), 'POST', { action: 'read', path: fullPath });
   if (r.ok) {
     $('fm-edit-path').textContent = fullPath;
     $('fm-content').value = r.content || '';
     $('fm-editor-wrap').style.display = 'block'; if ($('fm-split')) $('fm-split').classList.add('has-editor');
-  }
+  } else toast(r.error || 'Failed to read file', true);
 }
 async function fmSaveFile() {
   const p = $('fm-edit-path').textContent;
-  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'write', path: p, content: $('fm-content').value });
+  const r = await api(fmBaseUrl(), 'POST', { action: 'write', path: p, content: $('fm-content').value });
   toast(r.message || r.error || 'Saved', !r.ok);
+  if (r.ok) fmList();
 }
-async function fmDelFile(fullPath) {
-  if (!confirm('Delete file ' + fullPath + '?')) return;
-  const r = await api('api/servers/' + termSrvId + '/files', 'POST', { action: 'delete', path: fullPath });
+async function fmDelFile(fullPath, isDir) {
+  const msg = isDir ? ('Delete folder and ALL contents inside ' + fullPath + '?') : ('Delete file ' + fullPath + '?');
+  if (!confirm(msg)) return;
+  const r = await api(fmBaseUrl(), 'POST', { action: 'delete', path: fullPath });
   toast(r.message || r.error || 'Deleted', !r.ok);
+  if (r.ok && $('fm-edit-path') && $('fm-edit-path').textContent === fullPath) fmCloseEditor();
   fmList();
 }
+async function fmRenameItem(fullPath) {
+  const curName = fullPath.split('/').pop() || '';
+  const dir = fullPath.slice(0, fullPath.lastIndexOf('/')) || '/';
+  const nextName = prompt('Rename "' + curName + '" to:', curName);
+  if (!nextName || !nextName.trim() || nextName.trim() === curName) return;
+  const newPath = (dir.endsWith('/') ? dir : dir + '/') + nextName.trim();
+  const r = await api(fmBaseUrl(), 'POST', { action: 'rename', path: fullPath, new_path: newPath });
+  toast(r.message || r.error || 'Renamed', !r.ok);
+  if (r.ok) fmList();
+}
+async function fmCopyItem(fullPath) {
+  const curName = fullPath.split('/').pop() || '';
+  const dir = fullPath.slice(0, fullPath.lastIndexOf('/')) || '/';
+  const defaultDest = (dir.endsWith('/') ? dir : dir + '/') + curName + '.copy';
+  const dest = prompt('Copy "' + fullPath + '" to path:', defaultDest);
+  if (!dest || !dest.trim() || dest.trim() === fullPath) return;
+  const r = await api(fmBaseUrl(), 'POST', { action: 'copy', path: fullPath, new_path: dest.trim() });
+  toast(r.message || r.error || 'Copied', !r.ok);
+  if (r.ok) fmList();
+}
+async function fmDownloadFile(fullPath) {
+  if (!fullPath || !termSrvId) return;
+  toast('Downloading ' + fullPath.split('/').pop() + '...');
+  try {
+    const resp = await fetch(fmBaseUrl() + '/download?path=' + encodeURIComponent(fullPath), {
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+    });
+    if (!resp.ok) {
+      let errMsg = 'Download failed (HTTP ' + resp.status + ')';
+      try { const j = await resp.json(); if (j && j.error) errMsg = j.error; } catch (e) {}
+      toast(errMsg, true);
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fullPath.split('/').pop() || 'file';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (e) {
+    toast('Download error: ' + e.message, true);
+  }
+}
+async function fmUploadFiles(inp) {
+  const files = inp && inp.files;
+  if (!files || !files.length || !termSrvId) return;
+  const dir = ($('fm-path') && $('fm-path').value.trim()) || '/root';
+  const btn = $('btn-fm-upload');
+  if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+  try {
+    const fd = new FormData();
+    fd.append('path', dir);
+    for (let i = 0; i < files.length; i++) fd.append('file', files[i]);
+    const resp = await fetch(fmBaseUrl() + '/upload', {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: fd
+    });
+    const r = await resp.json().catch(() => ({ ok: false, error: 'HTTP ' + resp.status }));
+    toast(r.message || r.error || (r.ok ? 'Uploaded!' : 'Upload failed'), !r.ok);
+    if (r.ok) fmList();
+  } catch (e) {
+    toast('Upload error: ' + e.message, true);
+  } finally {
+    if (inp) inp.value = '';
+    if (btn) { btn.disabled = false; btn.textContent = '⬆ Upload'; }
+  }
+}
+async function fmNewFile() {
+  const name = prompt('New file name (e.g. config.yaml):');
+  if (!name || !name.trim()) return;
+  const dir = ($('fm-path') && $('fm-path').value.trim()) || '/root';
+  const full = (dir.endsWith('/') ? dir : dir + '/') + name.trim();
+  const r = await api(fmBaseUrl(), 'POST', { action: 'write', path: full, content: '' });
+  if (r.ok) {
+    toast('Created ' + name.trim());
+    await fmList();
+    fmOpenFile(full);
+  } else toast(r.error || 'Failed to create file', true);
+}
+async function fmNewFolder() {
+  const name = prompt('New folder name:');
+  if (!name || !name.trim()) return;
+  const dir = ($('fm-path') && $('fm-path').value.trim()) || '/root';
+  const full = (dir.endsWith('/') ? dir : dir + '/') + name.trim();
+  const r = await api(fmBaseUrl(), 'POST', { action: 'mkdir', path: full });
+  toast(r.message || r.error || (r.ok ? 'Folder created' : 'Failed'), !r.ok);
+  if (r.ok) fmList();
+}
+(function initTermCtxWiring() {
+  const fl = $('fm-list');
+  if (fl) fl.addEventListener('contextmenu', e => {
+    if (!e.target.closest('.fm-row')) openFmBlankCtx(e);
+  });
+  const to = $('term-out'), ti = $('term-inp');
+  if (to) to.addEventListener('contextmenu', openTermShellCtx);
+  if (ti) ti.addEventListener('contextmenu', openTermShellCtx);
+  document.addEventListener('click', e => {
+    const m = $('fm-ctx-menu');
+    if (m && m.classList.contains('show') && !m.contains(e.target)) closeFmCtxMenu();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeFmCtxMenu();
+  });
+})();
 
 function populateVaultDropdown() {
   const sel = $('term-vault-sel');
@@ -14812,12 +15467,16 @@ boot();
       </div>
     </div>
 
-    <!-- Web File Manager View -->
+    <!-- Web File Manager View (Upload / Download / New File / New Folder / Edit / Delete) -->
     <div id="term-files-wrap" style="display:none;">
       <div class="flexw" style="gap:6px; margin-bottom:8px;">
         <button class="btn btn-ghost btn-sm" onclick="fmGoUp()">⬆ Up</button>
-        <input id="fm-path" class="mono" style="flex:1;" value="/root" onkeydown="if(event.key==='Enter') fmList()">
+        <input id="fm-path" class="mono" style="flex:1; min-width:140px;" value="/root" onkeydown="if(event.key==='Enter') fmList()">
         <button class="btn btn-sky btn-sm" onclick="fmList()">Open</button>
+        <input type="file" id="fm-upload-inp" multiple hidden onchange="fmUploadFiles(this)">
+        <button class="btn btn-warn btn-sm" id="btn-fm-upload" onclick="$('fm-upload-inp').click()">⬆ Upload</button>
+        <button class="btn btn-ghost btn-sm" onclick="fmNewFile()">+ File</button>
+        <button class="btn btn-ghost btn-sm" onclick="fmNewFolder()">+ Folder</button>
       </div>
       <div class="fm-split" id="fm-split">
         <div id="fm-list" class="fm-list"></div>
@@ -14825,6 +15484,7 @@ boot();
           <div class="toolbar" style="margin-bottom:6px;">
             <span class="mono" style="font-size:.78rem; color:var(--accent); word-break:break-all;" id="fm-edit-path"></span>
             <div class="flexw" style="gap:6px;">
+              <button class="btn btn-ghost btn-sm" onclick="fmDownloadFile($('fm-edit-path').textContent)">⬇ Download</button>
               <button class="btn btn-sky btn-sm" onclick="fmSaveFile()">💾 Save File</button>
               <button class="btn btn-ghost btn-sm" onclick="fmCloseEditor()">Close Editor</button>
             </div>

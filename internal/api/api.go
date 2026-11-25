@@ -446,6 +446,25 @@ func (h *Handler) handleSaveNavTabs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
+func (h *Handler) handleGetTabPrefs(w http.ResponseWriter, r *http.Request) {
+	raw := h.store.GetSetting("ui_tab_prefs_json")
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "prefs_json": raw})
+}
+
+func (h *Handler) handleSaveTabPrefs(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PrefsJSON string `json:"prefs_json"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if err := h.store.SetSetting("ui_tab_prefs_json", req.PrefsJSON); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (h *Handler) handleIranReachabilityCheck(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -658,6 +677,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/iran-check", h.auth(h.handleIranReachabilityCheck))
 	mux.HandleFunc("GET /api/ui/nav-tabs", h.auth(h.handleGetNavTabs))
 	mux.HandleFunc("POST /api/ui/nav-tabs", h.auth(h.handleSaveNavTabs))
+	mux.HandleFunc("GET /api/ui/tab-prefs", h.auth(h.handleGetTabPrefs))
+	mux.HandleFunc("POST /api/ui/tab-prefs", h.auth(h.handleSaveTabPrefs))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/unpair", h.auth(h.handleUnpairPeer))
@@ -668,6 +689,9 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/servers/{id}/service", h.auth(h.handleService))
 	mux.HandleFunc("POST /api/servers/{id}/exec", h.auth(h.handleExec))
 	mux.HandleFunc("POST /api/local/exec", h.auth(h.handleLocalExec))
+	mux.HandleFunc("POST /api/local/files", h.auth(h.handleLocalFiles))
+	mux.HandleFunc("GET /api/local/files/download", h.auth(h.handleLocalFileDownload))
+	mux.HandleFunc("POST /api/local/files/upload", h.auth(h.handleLocalFileUpload))
 	mux.HandleFunc("POST /api/servers/{id}/hostkey/reset", h.auth(h.handleResetHostKey))
 	mux.HandleFunc("GET /api/settings", h.auth(h.handleGetSettings))
 	mux.HandleFunc("POST /api/settings", h.auth(h.handleSaveSettings))
@@ -732,6 +756,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/monitors/test-notify", h.auth(h.handleMonitorTestNotify))
 	mux.HandleFunc("POST /api/servers/{id}/replace", h.auth(h.handleReplaceServer))
 	mux.HandleFunc("POST /api/servers/{id}/files", h.auth(h.handleServerFiles))
+	mux.HandleFunc("GET /api/servers/{id}/files/download", h.auth(h.handleServerFileDownload))
+	mux.HandleFunc("POST /api/servers/{id}/files/upload", h.auth(h.handleServerFileUpload))
 	mux.HandleFunc("GET /api/tunnels/{id}/mikrotik", h.auth(h.handleTunnelMikrotik))
 	mux.HandleFunc("GET /api/pro/topology", h.auth(h.handleTopology))
 	mux.HandleFunc("POST /api/pro/matrix", h.auth(h.handleReachabilityMatrix))

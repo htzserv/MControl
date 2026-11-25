@@ -66,6 +66,30 @@ jobs:
 
           if [ -f assets/engines/paqet ]; then
             install -m 755 assets/engines/paqet bundle/bin/paqet
+          else
+            PQ_URL=$(curl -fsSL "https://api.github.com/repos/hanselime/paqet/releases/latest" | python3 -c '
+import json, sys
+data = json.load(sys.stdin)
+for a in data.get("assets", []):
+    n = a.get("name", "").lower()
+    if "linux" in n and ("amd64" in n or "x86_64" in n) and not n.endswith(".sha256") and not n.endswith(".txt"):
+        print(a["browser_download_url"])
+        break
+' || true)
+            if [ -n "$PQ_URL" ]; then
+              echo "Downloading Paqet from $PQ_URL ..."
+              mkdir -p tmp_dl/pq
+              curl -fsSL "$PQ_URL" -o tmp_dl/pq/pkg
+              case "$PQ_URL" in
+                *.tar.gz|*.tgz) tar -xzf tmp_dl/pq/pkg -C tmp_dl/pq ;;
+                *.zip)          unzip -qo tmp_dl/pq/pkg -d tmp_dl/pq ;;
+                *)              mv tmp_dl/pq/pkg tmp_dl/pq/paqet ;;
+              esac
+              PQ_BIN=$(find tmp_dl/pq -maxdepth 3 -type f -name 'paqet*' ! -name '*.tar.gz' ! -name '*.zip' | head -n1)
+              if [ -n "$PQ_BIN" ]; then
+                install -m 755 "$PQ_BIN" bundle/bin/paqet
+              fi
+            fi
           fi
 
           if [ -f assets/engines/realm ]; then
@@ -125,8 +149,10 @@ jobs:
             done
             return 1
           }
-          echo "Uploading static bundle & Xray Core to ${EP}/${PP_BUCKET}/MControl/ ..."
-          for f in mcontrol-bundle-linux-amd64.tar.gz mcontrol-bundle-linux-amd64.tar.gz.sha256 xray-linux-amd64 xray-linux-amd64.sha256 xray-linux-arm64 xray-linux-arm64.sha256; do
+          echo "Uploading static bundle & Xray Core (amd64-only) to ${EP}/${PP_BUCKET}/MControl/ ..."
+          for f in mcontrol-bundle-linux-amd64.tar.gz mcontrol-bundle-linux-amd64.tar.gz.sha256 xray-linux-amd64 xray-linux-amd64.sha256; do
             cp_retry "dist/${f}" "s3://${PP_BUCKET}/MControl/${f}"
           done
-          echo "ParsPack S3 Bundle & Xray upload complete!"
+          aws --endpoint-url "$EP" s3 rm "s3://${PP_BUCKET}/MControl/xray-linux-arm64" >/dev/null 2>&1 || true
+          aws --endpoint-url "$EP" s3 rm "s3://${PP_BUCKET}/MControl/xray-linux-arm64.sha256" >/dev/null 2>&1 || true
+          echo "ParsPack S3 Bundle & Xray upload complete (amd64-only)!"
