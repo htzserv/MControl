@@ -394,11 +394,10 @@ func MeasurePingFromMaster(host string, port int) string {
 	return MeasurePingSmart(host, port, 0, "")
 }
 
-// MeasurePingSmart measures RTT from Master to host:
-// 1) Direct ICMP ping (fast, accurate when direct route is open)
-// 2) Direct TCP dial (sshPort or agentPort)
-// 3) SOCKS5 Outbound dial (when server uses Via Master Outbound or direct ICMP/TCP is blocked)
-func MeasurePingSmart(host string, sshPort, agentPort int, socksProxy string) string {
+// MeasurePingSmart always measures real direct RTT from the Master server itself (e.g. Iran -> Foreign)
+// via ICMP ping first, then direct TCP connect (SSH / Agent port), even when management traffic uses Outbound.
+// It deliberately avoids timing local Xray SOCKS5 CONNECT replies (which return in ~0.5ms on loopback).
+func MeasurePingSmart(host string, sshPort, agentPort int, _ string) string {
 	host = strings.TrimSpace(host)
 	if host == "" {
 		return "N/A"
@@ -406,46 +405,7 @@ func MeasurePingSmart(host string, sshPort, agentPort int, socksProxy string) st
 	if sshPort <= 0 {
 		sshPort = 22
 	}
-	// Try direct ICMP first when not forced through outbound
-	if socksProxy == "" {
-		out, err := exec.Command("ping", "-c", "1", "-W", "2", host).CombinedOutput()
-		if err == nil {
-			s := string(out)
-			if idx := strings.Index(s, "time="); idx >= 0 {
-				rest := s[idx+5:]
-				if sp := strings.IndexAny(rest, " \n"); sp > 0 {
-					return strings.TrimSpace(rest[:sp]) + " ms"
-				}
-			}
-		}
-		for _, p := range []int{sshPort, agentPort} {
-			if p <= 0 {
-				continue
-			}
-			start := time.Now()
-			c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(p)), 2500*time.Millisecond)
-			if err == nil {
-				c.Close()
-				return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
-			}
-		}
-		return "N/A"
-	}
-	// Outbound mode: measure TCP connect RTT via SOCKS5 proxy (agentPort first, then sshPort)
-	ports := []int{}
-	if agentPort > 0 {
-		ports = append(ports, agentPort)
-	}
-	ports = append(ports, sshPort)
-	for _, p := range ports {
-		start := time.Now()
-		c, err := dialViaSOCKS5(socksProxy, net.JoinHostPort(host, strconv.Itoa(p)), 4*time.Second)
-		if err == nil {
-			c.Close()
-			return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
-		}
-	}
-	// Fallback to direct ICMP just in case ICMP is reachable directly
+	// 1) Direct ICMP ping from Master (true Iran -> Target latency)
 	out, err := exec.Command("ping", "-c", "1", "-W", "2", host).CombinedOutput()
 	if err == nil {
 		s := string(out)
@@ -456,6 +416,19 @@ func MeasurePingSmart(host string, sshPort, agentPort int, socksProxy string) st
 			}
 		}
 	}
+	// 2) Direct TCP connect RTT from Master (if ICMP is filtered)
+	for _, p := range []int{sshPort, agentPort} {
+		if p <= 0 {
+			continue
+		}
+		start := time.Now()
+		c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(p)), 2500*time.Millisecond)
+		if err == nil {
+			c.Close()
+			return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
+		}
+	}
+	// Direct route unreachable: caller falls back to real end-to-end ProbePeer HTTP/TLS RTT
 	return "N/A"
 }
 
