@@ -4136,6 +4136,38 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 }
 #nav-ctx-menu.show, #nav-add-pop.show { display: flex; }
 
+
+/* ── Xray Feature Toggle Cards (Subscriptions & Load Balance) ── */
+.ob-feat-card {
+  border-radius: min(var(--rc, 18px), 18px);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  transition: border-color .2s ease, opacity .2s ease;
+}
+.ob-feat-card.is-off {
+  opacity: .78;
+}
+.ob-feat-card.is-on {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.ob-feat-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 13px 16px;
+}
+.ob-feat-info { min-width: 0; }
+.ob-feat-info strong { display: block; font-size: .88rem; color: var(--text); }
+.ob-feat-info span { display: block; font-size: .73rem; color: var(--muted); margin-top: 2px; }
+.ob-feat-body {
+  display: none;
+  padding: 12px 16px 15px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--row) 55%, transparent);
+}
+.ob-feat-card.is-on .ob-feat-body {
+  display: block;
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -5593,101 +5625,116 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
         </div>
       </div>
 
-      <!-- Unified Xray Core + Single Link + Subscriptions + Load Balance Hub -->
-      <div class="card sp ob-hub-card">
-        <!-- 1. Xray Core Controls (Install/Update, Start, Stop, Test, Logs) -->
-        <div class="toolbar" style="margin:0; gap:10px;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <strong style="color:var(--accent);">⚡ Xray Core</strong>
-            <span class="badge b-miss mono" id="ob-core-status">CHECKING...</span>
-            <span class="badge b-ok mono" id="ob-core-ver" style="display:none;"></span>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <!-- Card 1: Xray Core Engine + Quick Single Config + Active Servers -->
+        <div class="card sp ob-hub-card">
+          <div class="toolbar" style="margin:0; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <strong style="color:var(--accent);">⚡ Xray Core</strong>
+              <span class="badge b-miss mono" id="ob-core-status">CHECKING...</span>
+              <span class="badge b-ok mono" id="ob-core-ver" style="display:none;"></span>
+              <span class="badge b-iran mono" id="ob-single-active-badge">None Selected</span>
+            </div>
+            <div class="flexw" style="gap:6px;">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-ob-install" onclick="installXrayCore()">⬇ Install Xray</button>
+              <button type="button" class="btn btn-sky btn-sm" id="btn-ob-save" onclick="saveMasterOutbound()">▶ Start / Save</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="stopMasterOutbound()">■ Stop</button>
+              <button type="button" class="btn btn-warn btn-sm" id="btn-ob-test" onclick="testMasterOutbound()">Test</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="viewMasterOutboundLogs()">Logs</button>
+            </div>
           </div>
-          <div class="flexw" style="gap:6px;">
-            <button type="button" class="btn btn-ghost btn-sm" id="btn-ob-install" onclick="installXrayCore()">⬇ Install Xray</button>
-            <button type="button" class="btn btn-sky btn-sm" id="btn-ob-save" onclick="saveMasterOutbound()">▶ Start / Save</button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="stopMasterOutbound()">■ Stop</button>
-            <button type="button" class="btn btn-warn btn-sm" id="btn-ob-test" onclick="testMasterOutbound()">Test</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="viewMasterOutboundLogs()">Logs</button>
-          </div>
-        </div>
 
-        <!-- 2. Feature Toggles (Load Balance & Subscriptions OFF by default) & Routing Targets -->
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <input type="hidden" id="ob-mode" value="single">
           <div class="flexw" style="gap:14px; align-items:center;">
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Outbound</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-lb-toggle" onchange="pickOutboundMode(this.checked ? 'loadbalance' : 'single')"><span>⚖️ Load Balance</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-sub-toggle" onchange="toggleObSubSection(this.checked)"><span>📡 Subscriptions</span></label>
-            <span class="badge b-iran mono" id="ob-single-active-badge" style="margin-inline-start:auto;">None Selected</span>
-          </div>
-
-          <!-- Load Balancing Options (OFF & hidden by default until Load Balance is toggled ON) -->
-          <div class="row2" id="ob-lb-opts" style="display:none;">
-            <div class="field" style="margin:0;">
-              <label>Load Balancing Strategy</label>
-              <select id="ob-lb">
-                <option value="leastPing">Least Ping + Auto-Failover (Recommended)</option>
-                <option value="leastLoad">Least Load + Auto-Failover (Balanced)</option>
-                <option value="roundRobin">Round-Robin + Auto-Failover</option>
-                <option value="random">Random + Auto-Failover</option>
-              </select>
-            </div>
-            <div class="field" style="margin:0;">
-              <label>Health Probe Interval</label>
-              <select id="ob-int">
-                <option value="15s">Every 15s (Fast Failover)</option>
-                <option value="30s" selected>Every 30s (Balanced)</option>
-                <option value="60s">Every 60s (Light)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="flexw" style="gap:14px;">
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes</span></label>
           </div>
-        </div>
 
-        <pre class="term" id="ob-out" style="height:110px; margin:0; display:none;"></pre>
+          <pre class="term" id="ob-out" style="height:110px; margin:0; display:none;"></pre>
 
-        <div class="ob-sec-div"></div>
+          <div class="ob-sec-div"></div>
 
-        <!-- 3. Clean Rounded Single Link Input Bar -->
-        <div>
-          <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:7px;">🔗 Quick Single Config (vless / vmess / trojan / ss / socks5)</div>
-          <div class="ob-uri-bar">
-            <input id="ob-quick-single-uri" class="ob-uri-input" placeholder="Paste single URI here (vless://, vmess://, trojan://, ss://, socks5://)">
-            <button type="button" class="btn btn-sky btn-sm" onclick="applyQuickSingleOutbound()">⚡ Set &amp; Start</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="addManualFromQuickBar()">+ Add Only</button>
-          </div>
-        </div>
-
-        <!-- 4. Add Subscription Bar (OFF & hidden by default until Subscriptions toggle is ON) -->
-        <div id="ob-sub-section" style="display:none;">
-          <div class="ob-sec-div" style="margin-bottom:12px;"></div>
-          <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:7px;">📡 Add Subscription (Auto-opens with Servers, Traffic &amp; Ping)</div>
-          <div class="ob-uri-bar">
-            <input id="ob-sub-name" class="ob-uri-input" style="flex:0.45 1 150px;" placeholder="Sub Name (e.g. Main)">
-            <input id="ob-sub-url" class="ob-uri-input" style="flex:1.5 1 260px;" placeholder="https://example.com/sub/...">
-            <button type="button" class="btn btn-sky btn-sm" id="btn-ob-sub-add" onclick="addOutboundSub()">+ Add &amp; Fetch Sub</button>
-          </div>
-        </div>
-
-        <div class="ob-sec-div"></div>
-
-        <!-- 5. Unified Subscriptions & Manual Servers Accordion List -->
-        <div>
-          <div class="toolbar" style="margin-bottom:8px;">
-            <strong style="font-size:.86rem; color:var(--text);">Servers &amp; Subscriptions <span class="badge b-ok mono" id="ob-nodes-cnt">0</span></strong>
-            <div class="flexw" style="gap:6px;">
-              <button type="button" class="btn btn-warn btn-sm" id="btn-ob-delay-all" onclick="testOutboundRealDelay('','')">⚡ Ping All</button>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="disableDeadOutboundNodes()">Disable Dead</button>
-              <button type="button" class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(true)">Enable All</button>
-              <button type="button" class="btn btn-danger btn-sm" onclick="clearOutboundNodes()">Clear All</button>
+          <div>
+            <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:7px;">🔗 Quick Single Config (vless / vmess / trojan / ss / socks5)</div>
+            <div class="ob-uri-bar">
+              <input id="ob-quick-single-uri" class="ob-uri-input" placeholder="Paste single URI here (vless://, vmess://, trojan://, ss://, socks5://)">
+              <button type="button" class="btn btn-sky btn-sm" onclick="applyQuickSingleOutbound()">⚡ Set &amp; Start</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="addManualFromQuickBar()">+ Add Only</button>
             </div>
           </div>
-          <div id="ob-unified-groups" style="display:flex; flex-direction:column; gap:9px;"></div>
+
+          <div class="ob-sec-div"></div>
+
+          <div>
+            <div class="toolbar" style="margin-bottom:8px;">
+              <strong style="font-size:.86rem; color:var(--text);">Servers &amp; Configs <span class="badge b-ok mono" id="ob-nodes-cnt">0</span></strong>
+              <div class="flexw" style="gap:6px;">
+                <button type="button" class="btn btn-warn btn-sm" id="btn-ob-delay-all" onclick="testOutboundRealDelay('','')">⚡ Ping All</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="disableDeadOutboundNodes()">Disable Dead</button>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="toggleAllOutboundNodes(true)">Enable All</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="clearOutboundNodes()">Clear All</button>
+              </div>
+            </div>
+            <div id="ob-unified-groups" style="display:flex; flex-direction:column; gap:9px;"></div>
+          </div>
+        </div>
+
+        <!-- Card 2: Separate Subscriptions Section (OFF by default with ON/OFF toggle switch) -->
+        <div class="ob-feat-card is-off" id="ob-sub-card">
+          <div class="ob-feat-head">
+            <div class="ob-feat-info">
+              <strong>📡 Subscriptions</strong>
+              <span>Import subscription URLs with auto-expanding server list, traffic usage &amp; per-sub ping.</span>
+            </div>
+            <label class="etab-switch" title="Enable / Disable Subscriptions">
+              <input type="checkbox" id="ob-sub-toggle" onchange="toggleObSubSection(this.checked)">
+              <span class="etab-slider"></span>
+            </label>
+          </div>
+          <div class="ob-feat-body">
+            <div class="ob-uri-bar">
+              <input id="ob-sub-name" class="ob-uri-input" style="flex:0.45 1 150px;" placeholder="Sub Name (e.g. Main)">
+              <input id="ob-sub-url" class="ob-uri-input" style="flex:1.5 1 260px;" placeholder="https://example.com/sub/...">
+              <button type="button" class="btn btn-sky btn-sm" id="btn-ob-sub-add" onclick="addOutboundSub()">+ Add &amp; Fetch Sub</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Separate Load Balance Section (OFF by default with ON/OFF toggle switch) -->
+        <div class="ob-feat-card is-off" id="ob-lb-card">
+          <input type="hidden" id="ob-mode" value="single">
+          <div class="ob-feat-head">
+            <div class="ob-feat-info">
+              <strong>⚖️ Load Balance &amp; Auto-Failover</strong>
+              <span>Distribute traffic across multiple enabled configs with automatic health probing.</span>
+            </div>
+            <label class="etab-switch" title="Enable / Disable Load Balancing">
+              <input type="checkbox" id="ob-lb-toggle" onchange="pickOutboundMode(this.checked ? 'loadbalance' : 'single')">
+              <span class="etab-slider"></span>
+            </label>
+          </div>
+          <div class="ob-feat-body">
+            <div class="row2">
+              <div class="field" style="margin:0;">
+                <label>Load Balancing Strategy</label>
+                <select id="ob-lb">
+                  <option value="leastPing">Least Ping + Auto-Failover (Recommended)</option>
+                  <option value="leastLoad">Least Load + Auto-Failover (Balanced)</option>
+                  <option value="roundRobin">Round-Robin + Auto-Failover</option>
+                  <option value="random">Random + Auto-Failover</option>
+                </select>
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Health Probe Interval</label>
+                <select id="ob-int">
+                  <option value="15s">Every 15s (Fast Failover)</option>
+                  <option value="30s" selected>Every 30s (Balanced)</option>
+                  <option value="60s">Every 60s (Light)</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
         </div>
@@ -5884,30 +5931,14 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
         <button type="button" class="chip" id="btn-eco-mode" onclick="toggleEcoMode()" title="Low-Power / Eco Mode (disable blur &amp; heavy animations)">⚡ Eco Mode</button>
       </div>
 
-      <!-- Dedicated Accent Palette Bar (Instant Live Apply — no Apply button) -->
+      <!-- Dedicated Accent Palette Bar (Instant Live Apply) -->
       <div class="theme-accent-bar">
         <div class="theme-accent-pills ink-controls">
           <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
           <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label>
           <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="third_ink"></span><input type="color" id="third-accent" data-i18n-title="third_ink"></label>
         </div>
-        <div class="flexw" style="gap:6px;">
-          <button type="button" class="btn btn-ghost btn-sm" onclick="copyThemeShareCode()">📋 Copy Code</button>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="pasteThemeShareCode()">📥 Paste Code</button>
-        </div>
       </div>
-
-      <!-- Edit Top Navigation Tabs (Reorder, Add & Remove) -->
-      <details name="studio-main" class="atelier-group" id="studio-edit-tabs-group">
-        <summary><strong id="etab-studio-title">🧭 Edit Top Navigation Tabs (Add, Remove &amp; Reorder)</strong></summary>
-        <div class="atelier-content">
-          <div class="toolbar" style="margin-bottom:10px;">
-            <div class="hint" style="margin:0;" id="etab-studio-hint">Drag rows or use ▲ / ▼ to reorder tabs. You can also right-click or long-press (3s) the top bar directly!</div>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="resetNavTabsDefault()">↻ Reset Default</button>
-          </div>
-          <div class="etab-list" id="edit-tabs-list"></div>
-        </div>
-      </details>
 
       <details name="studio-main" class="atelier-group"><summary><strong data-i18n="gallery_title"></strong></summary><div class="atelier-content">
       <div class="chips" id="family-tabs"></div>
@@ -5915,6 +5946,16 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 
       </div></details>
       <div class="studio" id="studio"></div>
+      <details name="studio-main" class="atelier-group" id="studio-edit-tabs-group">
+        <summary><strong id="etab-studio-title">Tabs</strong></summary>
+        <div class="atelier-content">
+          <div class="toolbar" style="margin-bottom:10px;">
+            <div class="hint" style="margin:0;" id="etab-studio-hint">Drag rows or use ▲ / ▼ to reorder tabs, or right-click / hold (0.5s) directly on the top bar.</div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="resetNavTabsDefault()">↻ Reset Default</button>
+          </div>
+          <div class="etab-list" id="edit-tabs-list"></div>
+        </div>
+      </details>
       <div id="studio-actions" hidden>            <button class="btn btn-ghost btn-sm" id="btn-rand-mix" data-i18n="btn_random_mix">Random mix</button>
             <button class="btn btn-ghost btn-sm" id="style-export" data-i18n="style_export"></button>
             <button class="btn btn-ghost btn-sm" id="style-import" data-i18n="style_import"></button>
@@ -6932,7 +6973,7 @@ function renderEditTabsStudio() {
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
   const byId = {};
   ALL_TABS_CATALOG.forEach(item => { byId[item.id] = item; });
-  if ($('etab-studio-title')) $('etab-studio-title').textContent = fa ? '🧭 ویرایش تب‌های بالا (افزودن، حذف و جابه‌جایی)' : '🧭 Edit Top Navigation Tabs (Add, Remove & Reorder)';
+  if ($('etab-studio-title')) $('etab-studio-title').textContent = fa ? 'تب‌ها (Tabs)' : 'Tabs';
   if ($('etab-studio-hint')) $('etab-studio-hint').textContent = fa ? 'ردیف‌ها را بکشید یا با دکمه‌های ▲ / ▼ جابه‌جا کنید. هر بخش (تم‌ها، اوتباند، ربات تلگرام، ترمینال مستر و...) را می‌توانید به نوار بالا اضافه یا حذف کنید.' : 'Drag rows or use ▲ / ▼ to reorder tabs. Toggle any section (Themes, Outbound, Telegram Bot, Master Terminal, etc.) on or off in the top bar.';
 
   box.innerHTML = NAV_TABS_CFG.map((entry, idx) => {
@@ -7792,7 +7833,7 @@ function renderNav() {
       cancelNavHold();
       setNavEditMode(true);
       toast((typeof lang !== 'undefined' && lang === 'fa') ? 'حالت ویرایش تب‌ها فعال شد — بکشید، با − حذف یا با + اضافه کنید' : 'Tab Edit Mode active — drag to reorder, − to remove, + to add');
-    }, 3000);
+    }, 500);
   });
   nav.addEventListener('pointerup', cancelNavHold);
   nav.addEventListener('pointercancel', cancelNavHold);
@@ -9821,16 +9862,20 @@ function clearOutboundNodes() {
 }
 
 function toggleObSubSection(show) {
-  if ($('ob-sub-toggle')) $('ob-sub-toggle').checked = !!show;
-  if ($('ob-sub-section')) $('ob-sub-section').style.display = show ? 'block' : 'none';
+  const on = !!show;
+  if ($('ob-sub-toggle')) $('ob-sub-toggle').checked = on;
+  const card = $('ob-sub-card');
+  if (card) { card.classList.toggle('is-on', on); card.classList.toggle('is-off', !on); }
 }
 
 function pickOutboundMode(m) {
   const mode = (m === 'loadbalance') ? 'loadbalance' : 'single';
+  const on = (mode === 'loadbalance');
   OB_CFG.mode = mode;
   if ($('ob-mode')) $('ob-mode').value = mode;
-  if ($('ob-lb-toggle')) $('ob-lb-toggle').checked = (mode === 'loadbalance');
-  if ($('ob-lb-opts')) $('ob-lb-opts').style.display = (mode === 'loadbalance') ? 'grid' : 'none';
+  if ($('ob-lb-toggle')) $('ob-lb-toggle').checked = on;
+  const card = $('ob-lb-card');
+  if (card) { card.classList.toggle('is-on', on); card.classList.toggle('is-off', !on); }
   renderOutboundLists();
 }
 
