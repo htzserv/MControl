@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0
+- **Official Stable Release `v1.5.0`:**
+  - **Peer Agent v4 Ultimate:** zero-dependency static Go binary (`cmd/mcontrol-agent`) with Python v4 fallback, Master-IP key sync (`MASTER_IP|PEER_CODE`), 5 fixed ports (`84`, `847`, `7483`, `24819`, `2054`), auto-discovery, TLS certificate pinning, auto-outbound route detection, and reverse heartbeat push (`/_mc_agent/heartbeat`).
+  - **Datacenter Cloud Hub (`Datacenter` tab):** unified encrypted API integration for **Hetzner Cloud, DigitalOcean, Linode (Akamai), OVHcloud & YottaSrc** with OS Rebuild, Create/Delete/Reboot/Power controls, 1-click Peer v4 Cloud Firewall, and 1-click Import.
+  - **Master Outbound (Xray Core) Rebuild:** dedicated Single Active Config mode alongside Load Balance, fixed VMess/VLESS Reality/Trojan URI parser, `xray run -test` pre-flight validation, live logs, and Xray Core bundled in Iran Mirror & prereqs bundle.
+  - **Server Controls & Dual Ping UX:** centered 5-button dropdown bar (`Terminal`, `System Controls`, `MControl & Peer`, `Network & Stats`, `Manage`), single-line `PEER V4` badge, quick `📡 Ping` header bubble, `↻ Ping All`, dynamic latency-colored dual ping (`🇮🇷` Direct + `🚀` Outbound), and Advanced 4-mode Delete modal.
+  - **MDesign PWA Pro:** crisp PNG/maskable icons, animated splash screen, install banner, iOS guide, pull-to-refresh, and branded offline mode.
+
+
 ## 1.0.2
 - **Stable Release `v1.0.2`:**
   - **Dynamic Peer Version Badge (`PEER V4`):** replaced the hardcoded `PEER V2` badge with dynamic version detection (`PEER V4` / `PEER V3` / `PEER V2` from `core_version` with agent tooltip).
