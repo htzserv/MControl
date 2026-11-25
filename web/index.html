@@ -4252,7 +4252,11 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 /* ── Live CSS Bindings for All Per-Tab Settings ── */
 body.tp-ov-stats #tab-overview .stats-strip { display: none !important; }
 body.tp-ov-master #tab-overview .master-head-card { display: none !important; }
-body.tp-ov-metrics #tab-overview .row2 { display: none !important; }
+body.tp-ov-metrics #ov-metrics-card { display: none !important; }
+body.tp-ov-incidents #ov-incidents-card { display: none !important; }
+body.tp-ov-metrics.tp-ov-incidents #tab-overview .ov-pro-grid { display: none !important; }
+body.tp-ov-metrics #tab-overview .ov-pro-grid,
+body.tp-ov-incidents #tab-overview .ov-pro-grid { grid-template-columns: 1fr !important; }
 body.tp-ov-radar #overview-grid { display: none !important; }
 body.tp-ov-fbar #ov-fleet-bar { display: none !important; }
 body.tp-hide-gears .page .tab-cfg-btn,
@@ -4968,7 +4972,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
       </div>
       <!-- 24h / 7d Metrics History & Incident Timeline -->
       <div class="ov-pro-grid">
-        <div class="card" style="padding:16px 18px !important;">
+        <div class="card" id="ov-metrics-card" style="padding:16px 18px !important;">
           <div class="toolbar" style="margin-bottom:8px;">
             <div>
               <h4 style="color:var(--accent);">📈 Metrics History (24h / 7d)</h4>
@@ -4985,7 +4989,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
           <div id="hist-chart-wrap" style="height:135px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:.76rem;">Loading history...</div>
         </div>
 
-        <div class="card" style="padding:16px 18px !important;">
+        <div class="card" id="ov-incidents-card" style="padding:16px 18px !important;">
           <div class="toolbar" style="margin-bottom:8px;">
             <div>
               <h4 style="color:var(--accent);">⚡ Live Incident Timeline</h4>
@@ -12693,7 +12697,8 @@ const TAB_PREFS_SCHEMA = {
         options: [['1500','1.5s (Fast)'],['2500','2.5s (Balanced)'],['5000','5s (Light)'],['10000','10s (Eco)']] },
       { key: 'ov_stats',   cls: 'tp-ov-stats',   en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / Iran / Foreign / Online counters', descFa: 'شمارنده‌های کل / ایران / خارج / آنلاین' },
       { key: 'ov_master',  cls: 'tp-ov-master',  en: 'Master Control Strip', fa: 'کارت کنترل سرور مستر', descEn: 'Master IP, CPU/RAM/Network gauges & Toolbox', descFa: 'گیج‌های سرور مستر و دکمه‌های Speedtest / Tweak' },
-      { key: 'ov_metrics', cls: 'tp-ov-metrics', en: 'Metrics History & Incidents', fa: 'نمودار تاریخچه و رخدادها', descEn: '24h/7d SQLite charts & live incident timeline', descFa: 'نمودارهای ۲۴ ساعته و تایم‌لاین رخدادها' },
+      { key: 'ov_metrics',   cls: 'tp-ov-metrics',   en: 'Metrics History (24h / 7d)', fa: 'نمودار تاریخچه (Metrics History)', descEn: '5-minute SQLite snapshots of CPU, RAM & Ping', descFa: 'نمودار ۲۴ ساعته و ۷ روزه مصرف منابع و پینگ' },
+      { key: 'ov_incidents', cls: 'tp-ov-incidents', en: 'Live Incident Timeline', fa: 'تایم‌لاین رخدادها (Live Incidents)', descEn: 'Uptime alerts, auto-heals, failovers & recoveries', descFa: 'هشدارهای آپتایم، قطعی‌ها و بازیابی سرورها' },
       { key: 'ov_valign', type: 'select', def: 'top', en: 'Cards Vertical Position', fa: 'جایگاه عمودی کارت‌ها در صفحه', descEn: 'Place remaining Overview cards at Top, Center, or Bottom of screen', descFa: 'تنظیم محل قرارگیری کارت‌های باقی‌مانده در بالا، وسط یا پایین صفحه',
         options: [['top','Top / بالا (پیش‌فرض)'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
       { key: 'ov_fbar',    cls: 'tp-ov-fbar',    en: 'Fleet Radar Toolbar', fa: 'نوار ابزار Fleet Hardware Radar', descEn: 'Show LIVE, SSL Sync, Ping All & Add Server buttons bar', descFa: 'نمایش نوار دکمه‌های LIVE، SSL Sync، Ping All و Add Server' },
