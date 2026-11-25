@@ -4254,6 +4254,21 @@ body.tp-ov-stats #tab-overview .stats-strip { display: none !important; }
 body.tp-ov-master #tab-overview .master-head-card { display: none !important; }
 body.tp-ov-metrics #tab-overview .row2 { display: none !important; }
 body.tp-ov-radar #overview-grid { display: none !important; }
+body.tp-ov-fbar #ov-fleet-bar { display: none !important; }
+body.tp-hide-gears .page .tab-cfg-btn,
+body.tp-hide-gears .sub-pane .tab-cfg-btn { display: none !important; }
+body.tp-ov-pos-center #tab-overview.active {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100vh - 130px);
+}
+body.tp-ov-pos-bottom #tab-overview.active {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: calc(100vh - 130px);
+}
 
 body.tp-srv-dir  [data-srv-ping-wrap] { display: none !important; }
 body.tp-srv-rev  [data-srv-rev-ping-wrap] { display: none !important; }
@@ -4940,16 +4955,15 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
         </div>
       </div>
 
-      <div class="toolbar">
+      <div class="toolbar" id="ov-fleet-bar">
         <h3 data-i18n="fleet_radar">Fleet hardware radar</h3>
         <div class="flexw">
           <button class="btn btn-sky" id="btn-live-ov" onclick="toggleLiveServers()">LIVE: ON</button>
-          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('overview')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
           <button class="btn btn-ghost" onclick="openSSLSyncModal()">🔒 SSL Sync</button>
           <button class="btn btn-ghost" id="btn-ping-all" onclick="pingAllServers()">↻ Ping All</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
-          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('servers')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('overview')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
       <!-- 24h / 7d Metrics History & Incident Timeline -->
@@ -4995,6 +5009,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
           <button class="btn btn-ghost" id="btn-canary-rollout" onclick="runCanaryRollout()" title="Update 1 canary Peer Agent first, verify health, then roll out to all nodes">🐤 Canary Rollout</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
+          <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('servers')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
       <div class="tag-filter-bar" id="srv-tag-filter"></div>
@@ -12679,6 +12694,9 @@ const TAB_PREFS_SCHEMA = {
       { key: 'ov_stats',   cls: 'tp-ov-stats',   en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / Iran / Foreign / Online counters', descFa: 'شمارنده‌های کل / ایران / خارج / آنلاین' },
       { key: 'ov_master',  cls: 'tp-ov-master',  en: 'Master Control Strip', fa: 'کارت کنترل سرور مستر', descEn: 'Master IP, CPU/RAM/Network gauges & Toolbox', descFa: 'گیج‌های سرور مستر و دکمه‌های Speedtest / Tweak' },
       { key: 'ov_metrics', cls: 'tp-ov-metrics', en: 'Metrics History & Incidents', fa: 'نمودار تاریخچه و رخدادها', descEn: '24h/7d SQLite charts & live incident timeline', descFa: 'نمودارهای ۲۴ ساعته و تایم‌لاین رخدادها' },
+      { key: 'ov_valign', type: 'select', def: 'top', en: 'Cards Vertical Position', fa: 'جایگاه عمودی کارت‌ها در صفحه', descEn: 'Place remaining Overview cards at Top, Center, or Bottom of screen', descFa: 'تنظیم محل قرارگیری کارت‌های باقی‌مانده در بالا، وسط یا پایین صفحه',
+        options: [['top','Top / بالا (پیش‌فرض)'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
+      { key: 'ov_fbar',    cls: 'tp-ov-fbar',    en: 'Fleet Radar Toolbar', fa: 'نوار ابزار Fleet Hardware Radar', descEn: 'Show LIVE, SSL Sync, Ping All & Add Server buttons bar', descFa: 'نمایش نوار دکمه‌های LIVE، SSL Sync، Ping All و Add Server' },
       { key: 'ov_radar',   cls: 'tp-ov-radar',   en: 'Fleet Hardware Radar', fa: 'لیست سرورها در داشبورد', descEn: 'Show server cards inside Overview', descFa: 'نمایش کارت سرورها در پایین داشبورد' }
     ]
   },
@@ -12766,7 +12784,8 @@ const TAB_PREFS_SCHEMA = {
   settings: {
     titleEn: 'Settings', titleFa: 'تنظیمات',
     items: [
-      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Settings Cards', fa: 'کارت‌های فشرده تنظیمات', descEn: 'Tighter vertical padding inside Settings cards', descFa: 'فضای عمودی کمتر داخل کارت‌های تنظیمات' }
+      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Settings Cards', fa: 'کارت‌های فشرده تنظیمات', descEn: 'Tighter vertical padding inside Settings cards', descFa: 'فضای عمودی کمتر داخل کارت‌های تنظیمات' },
+      { key: 'hide_gears', cls: 'tp-hide-gears', def: false, invert: true, en: 'Hide Tab ⚙ Gear Buttons', fa: 'مخفی کردن دکمه‌های ⚙ تنظیمات تب‌ها', descEn: 'Hide gear icons on toolbars (still accessible in Settings → All Sections)', descFa: 'حذف آیکون چرخ‌دنده از بالای صفحات (همچنان از Settings → All Sections در دسترس است)' }
     ]
   }
 };
@@ -12814,6 +12833,9 @@ function applyTabPrefs() {
       }
     });
   });
+  const ovPos = TAB_PREFS.ov_valign || 'top';
+  document.body.classList.toggle('tp-ov-pos-center', ovPos === 'center');
+  document.body.classList.toggle('tp-ov-pos-bottom', ovPos === 'bottom');
   const tf = parseInt(TAB_PREFS.term_font || '12', 10) || 12;
   if ($('term-out')) $('term-out').style.fontSize = tf + 'px';
   if ($('term-inp')) $('term-inp').style.fontSize = tf + 'px';
