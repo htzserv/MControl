@@ -4058,6 +4058,84 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
 }
 .ob-sub-acc.open .ob-sub-body { display: flex; }
 
+
+/* ── Theme Studio: Centered Appearance Row & Dedicated Accent Bar ── */
+.theme-mode-row {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 8px; margin-bottom: 12px;
+}
+.theme-accent-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 10px; padding: 11px 15px; margin-bottom: 14px;
+  border-radius: min(var(--rc, 16px), 16px);
+  background: var(--row); border: 1px solid var(--border);
+}
+.theme-accent-pills {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; flex: 1;
+}
+
+/* ── Floating Top Bar Direct Edit Mode (Right-Click / 3s Long-Press) ── */
+@keyframes navJiggle {
+  0%, 100% { transform: rotate(-1.1deg); }
+  50% { transform: rotate(1.1deg); }
+}
+.nav.is-editing {
+  outline: 1.5px dashed color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+.nav.is-editing .nav-item {
+  position: relative;
+  cursor: grab;
+  animation: navJiggle .34s ease-in-out infinite;
+  user-select: none;
+}
+body.eco-mode .nav.is-editing .nav-item { animation: none; }
+.nav.is-editing .nav-item:active { cursor: grabbing; }
+.nav.is-editing .nav-item.nav-drag-over {
+  box-shadow: 0 0 0 2px var(--accent) !important;
+  transform: scale(1.06);
+}
+.nav-tab-rm {
+  position: absolute; top: -6px; inset-inline-end: -6px; z-index: 5;
+  width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--surface);
+  background: var(--red); color: #fff; font-size: .78rem; font-weight: 900; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0; box-shadow: 0 2px 6px rgba(0,0,0,.35);
+  transition: transform .14s ease;
+}
+.nav-tab-rm:hover { transform: scale(1.18); }
+.nav-edit-add {
+  width: 30px; height: 30px; border-radius: 50%; border: 1.5px dashed var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent); font-size: 1.05rem; font-weight: 900; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: transform .15s ease, background .15s ease;
+}
+.nav-edit-add:hover { background: var(--accent); color: #fff; transform: scale(1.08); }
+.nav-edit-done {
+  height: 28px; padding: 0 11px; border-radius: 999px; border: none;
+  background: var(--green); color: #fff; font-size: .72rem; font-weight: 800;
+  cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;
+  box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--green) 65%, transparent);
+}
+.nav-edit-done:hover { filter: brightness(1.08); }
+.nav-item.is-holding {
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 70%, transparent) !important;
+  transition: box-shadow .25s ease;
+}
+
+#nav-ctx-menu, #nav-add-pop {
+  position: fixed; z-index: 9700; min-width: 195px; padding: 6px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  backdrop-filter: blur(22px) saturate(170%); -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  box-shadow: 0 18px 40px -10px rgba(0,0,0,.42);
+  display: none; flex-direction: column; gap: 3px;
+}
+#nav-ctx-menu.show, #nav-add-pop.show { display: flex; }
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -4265,6 +4343,8 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
   </div>
 </div>
 <div id="srv-dd-menu" role="menu"></div>
+<div id="nav-ctx-menu" role="menu"></div>
+<div id="nav-add-pop" role="menu"></div>
 <div id="toast"></div>
 
 <!-- ═════════ FIRST-TIME SETUP ═════════ -->
@@ -5531,15 +5611,17 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
           </div>
         </div>
 
-        <!-- 2. Operation Mode (Single Active Config vs Load Balance) & Routing Targets -->
+        <!-- 2. Feature Toggles (Load Balance & Subscriptions OFF by default) & Routing Targets -->
         <div style="display:flex; flex-direction:column; gap:10px;">
           <input type="hidden" id="ob-mode" value="single">
-          <div class="role-picker" id="ob-mode-picker">
-            <div class="role-opt active" data-obm="single" onclick="pickOutboundMode('single')">🎯 Single Active Config</div>
-            <div class="role-opt" data-obm="loadbalance" onclick="pickOutboundMode('loadbalance')">⚖️ Load Balance &amp; Failover</div>
+          <div class="flexw" style="gap:14px; align-items:center;">
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Outbound</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-lb-toggle" onchange="pickOutboundMode(this.checked ? 'loadbalance' : 'single')"><span>⚖️ Load Balance</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-sub-toggle" onchange="toggleObSubSection(this.checked)"><span>📡 Subscriptions</span></label>
+            <span class="badge b-iran mono" id="ob-single-active-badge" style="margin-inline-start:auto;">None Selected</span>
           </div>
 
-          <!-- Load Balancing Options (shown when Load Balance mode is selected) -->
+          <!-- Load Balancing Options (OFF & hidden by default until Load Balance is toggled ON) -->
           <div class="row2" id="ob-lb-opts" style="display:none;">
             <div class="field" style="margin:0;">
               <label>Load Balancing Strategy</label>
@@ -5561,11 +5643,9 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
           </div>
 
           <div class="flexw" style="gap:14px;">
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Outbound</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes</span></label>
-            <span class="badge b-iran mono" id="ob-single-active-badge" style="margin-inline-start:auto;">None Selected</span>
           </div>
         </div>
 
@@ -5583,10 +5663,9 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
           </div>
         </div>
 
-        <div class="ob-sec-div"></div>
-
-        <!-- 4. Add Subscription Bar -->
-        <div>
+        <!-- 4. Add Subscription Bar (OFF & hidden by default until Subscriptions toggle is ON) -->
+        <div id="ob-sub-section" style="display:none;">
+          <div class="ob-sec-div" style="margin-bottom:12px;"></div>
           <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:7px;">📡 Add Subscription (Auto-opens with Servers, Traffic &amp; Ping)</div>
           <div class="ob-uri-bar">
             <input id="ob-sub-name" class="ob-uri-input" style="flex:0.45 1 150px;" placeholder="Sub Name (e.g. Main)">
@@ -5797,50 +5876,20 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
         <div id="sub-themes" class="sub-pane">
 <header class="atelier-head"><h3 data-i18n="theme_title">Theme studio</h3><div class="atelier-current"><i></i><strong id="atelier-current"></strong></div></header>
 
-<!-- Live Mini-Preview (reacts immediately to every slider, preset & color) -->
-<div class="atelier-preview" id="atelier-live-preview">
-  <div>
-    <div class="ap-head">
-      <span class="dot online"></span>
-      <strong style="font-size:.82rem;">MDesign Live Preview</strong>
-      <span class="badge b-ok mono" id="ap-contrast-badge" style="font-size:.66rem;">Contrast OK</span>
-      <span class="badge b-foreign mono" id="ap-sync-badge" style="font-size:.66rem;">DB Synced</span>
-    </div>
-    <div class="ap-gauge"><i></i></div>
-  </div>
-  <div style="display:flex; flex-direction:column; gap:4px;">
-    <div style="font-size:.68rem; color:var(--muted);">Uptime Heartbeat &amp; Status</div>
-    <div class="ap-bars" aria-hidden="true">
-      <i style="height:60%"></i><i style="height:75%"></i><i style="height:85%"></i><i class="w" style="height:55%"></i>
-      <i style="height:90%"></i><i style="height:78%"></i><i class="d" style="height:35%"></i><i style="height:82%"></i>
-      <i style="height:95%"></i><i style="height:88%"></i><i style="height:72%"></i><i style="height:92%"></i>
-    </div>
-  </div>
-  <div class="ap-actions">
-    <button type="button" class="btn btn-sky btn-sm" style="pointer-events:none;">Primary</button>
-    <button type="button" class="btn btn-ghost btn-sm" style="pointer-events:none;">Secondary</button>
-  </div>
-</div>
-
-<div class="appearance-modes ink-controls">
+      <!-- Centered Dark / Light / Auto / Eco Mode Row -->
+      <div class="appearance-modes theme-mode-row">
         <button class="chip" data-mode="dark" id="m-dark"><i class="mode-sample night"></i><span data-i18n="mode_dark"></span></button>
         <button class="chip" data-mode="light" id="m-light"><i class="mode-sample day"></i><span data-i18n="mode_light"></span></button>
         <button class="chip" data-mode="auto" id="m-auto"><i class="mode-sample auto"></i><span data-i18n="mode_auto"></span></button>
         <button type="button" class="chip" id="btn-eco-mode" onclick="toggleEcoMode()" title="Low-Power / Eco Mode (disable blur &amp; heavy animations)">⚡ Eco Mode</button>
-        <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
-        <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label>
-        <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="third_ink"></span><input type="color" id="third-accent" data-i18n-title="third_ink"></label>
-        <button type="button" class="btn btn-sm btn-sky" id="apply-colors" data-i18n="apply_colors" disabled></button>
       </div>
 
-      <!-- Cloud Sync, White-Label /status & Share Code Toolbar -->
-      <div class="flexw" style="gap:7px; margin-bottom:12px; align-items:center; justify-content:space-between;">
-        <div class="flexw" style="gap:8px; align-items:center;">
-          <label class="check" style="margin:0; font-size:.76rem;">
-            <input type="checkbox" id="chk-theme-pubsync" onchange="onPublicThemeSyncToggle()">
-            <span>Sync Theme to Public <code>/status</code> (White-Label)</span>
-          </label>
-          <button type="button" class="btn btn-warn btn-sm" id="btn-set-default-theme" style="display:none;" onclick="saveDefaultTenantTheme()">★ Set Default for New Tenants</button>
+      <!-- Dedicated Accent Palette Bar (Instant Live Apply — no Apply button) -->
+      <div class="theme-accent-bar">
+        <div class="theme-accent-pills ink-controls">
+          <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="quick_accent"></span><input type="color" id="quick-accent" data-i18n-title="quick_accent"></label>
+          <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="second_ink"></span><input type="color" id="secondary-accent" data-i18n-title="second_ink"></label>
+          <label class="chip accent-shortcut"><i aria-hidden="true"></i><span data-i18n="third_ink"></span><input type="color" id="third-accent" data-i18n-title="third_ink"></label>
         </div>
         <div class="flexw" style="gap:6px;">
           <button type="button" class="btn btn-ghost btn-sm" onclick="copyThemeShareCode()">📋 Copy Code</button>
@@ -5848,54 +5897,15 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
         </div>
       </div>
 
-      <!-- White-Label Brand Name & Logo (Per-Tenant & Public /status) -->
-      <details name="studio-main" class="atelier-group">
-        <summary><strong>🏷️ White-Label Brand Name &amp; Logo (Panel + /status)</strong></summary>
-        <div class="atelier-content">
-          <div class="row2" style="align-items:end; margin-bottom:10px;">
-            <div class="field" style="margin:0;">
-              <label>Custom Brand / Panel Name</label>
-              <input id="wl-brand-name" maxlength="48" placeholder="e.g. DEDPROXY Cloud">
-            </div>
-            <div class="field" style="margin:0;">
-              <label>Custom Logo (PNG / JPG / WEBP / SVG · max 180KB)</label>
-              <div class="flexw" style="gap:6px; flex-wrap:nowrap;">
-                <input id="wl-brand-logo-url" class="mono" placeholder="https://... or upload image" style="flex:1;">
-                <input type="file" id="wl-brand-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onchange="onBrandLogoFilePick(this)">
-                <button type="button" class="btn btn-ghost btn-sm" onclick="$('wl-brand-file').click()">Upload</button>
-              </div>
-            </div>
-          </div>
-          <div class="flexw" style="justify-content:space-between; align-items:center; gap:8px;">
-            <div class="flexw" style="gap:8px; align-items:center;">
-              <img id="wl-brand-preview" alt="" style="display:none; width:34px; height:34px; object-fit:contain; border-radius:9px; border:1px solid var(--border); background:var(--row); padding:3px;">
-              <span style="font-size:.74rem; color:var(--muted);">Applied to this workspace header &amp; your public <code>/status</code> page.</span>
-            </div>
-            <div class="flexw" style="gap:6px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="clearBrandLogo()">Reset Logo</button>
-              <button type="button" class="btn btn-sky btn-sm" onclick="saveBrandProfile()">💾 Save Branding</button>
-            </div>
-          </div>
-        </div>
-      </details>
-
       <!-- Edit Top Navigation Tabs (Reorder, Add & Remove) -->
       <details name="studio-main" class="atelier-group" id="studio-edit-tabs-group">
         <summary><strong id="etab-studio-title">🧭 Edit Top Navigation Tabs (Add, Remove &amp; Reorder)</strong></summary>
         <div class="atelier-content">
           <div class="toolbar" style="margin-bottom:10px;">
-            <div class="hint" style="margin:0;" id="etab-studio-hint">Drag rows or use ▲ / ▼ to reorder tabs. Toggle any section (Themes, Outbound, Telegram Bot, Master Terminal, etc.) on or off in the top bar.</div>
+            <div class="hint" style="margin:0;" id="etab-studio-hint">Drag rows or use ▲ / ▼ to reorder tabs. You can also right-click or long-press (3s) the top bar directly!</div>
             <button type="button" class="btn btn-ghost btn-sm" onclick="resetNavTabsDefault()">↻ Reset Default</button>
           </div>
           <div class="etab-list" id="edit-tabs-list"></div>
-        </div>
-      </details>
-
-      <!-- 12 Curated MDesign Presets -->
-      <details name="studio-main" class="atelier-group" open>
-        <summary><strong>✨ Curated MDesign Presets (12 Ready-to-Use Profiles)</strong></summary>
-        <div class="atelier-content">
-          <div class="mc-presets-grid" id="atelier-presets-grid"></div>
         </div>
       </details>
 
@@ -7346,7 +7356,7 @@ function syncColorInputs() {
     input.value=pal[index];
     input.parentElement.querySelector('i').style.background=pal[index];
   }
-  $('apply-colors').disabled=!colorDraft;
+  if ($('apply-colors')) $('apply-colors').disabled=!colorDraft;
 }
 function stageColor(key,value) {
   if(!colorDraft) colorDraft={id:themeId,edits:{}};
@@ -7624,14 +7634,181 @@ function setLang(l) { lang = (l === 'fa') ? 'fa' : 'en'; ls.set('mc_lang', lang)
 function toggleLang() { setLang(lang === 'fa' ? 'en' : 'fa'); }
 
 /* ═══════════════ navigation ═══════════════ */
+let navEditMode = false;
+let _navDragId = '';
+let _navHoldTimer = null;
+let _navHoldEl = null;
+
+function closeNavPopups() {
+  if ($('nav-ctx-menu')) $('nav-ctx-menu').classList.remove('show');
+  if ($('nav-add-pop')) $('nav-add-pop').classList.remove('show');
+}
+
+function setNavEditMode(on) {
+  navEditMode = !!on;
+  closeNavPopups();
+  renderNav();
+}
+
+function navBarRemoveTab(ev, id) {
+  ev.stopPropagation();
+  ev.preventDefault();
+  toggleNavTabVisible(id, false);
+}
+
+function openNavAddPopover(ev, btn) {
+  ev.stopPropagation();
+  const pop = $('nav-add-pop');
+  if (!pop) return;
+  if (pop.classList.contains('show')) { pop.classList.remove('show'); return; }
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const visSet = new Set(NAV_TABS_CFG.filter(x => x.visible).map(x => x.id));
+  const hidden = ALL_TABS_CATALOG.filter(it => !visSet.has(it.id));
+  pop.innerHTML = '';
+  if (!hidden.length) {
+    pop.innerHTML = `<div class="hint" style="margin:6px 8px; font-size:.74rem;">${fa ? 'همه تب‌ها در نوار بالا فعال هستند.' : 'All tabs are already in the top bar.'}</div>`;
+  } else {
+    hidden.forEach(it => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'srv-dd-item';
+      b.innerHTML = `<span style="display:inline-flex;align-items:center;width:16px;height:16px;color:var(--accent);">${svg(it.icon)}</span><span>+ ${esc(tabLabelOf(it))}</span>`;
+      b.onclick = () => {
+        toggleNavTabVisible(it.id, true);
+        pop.classList.remove('show');
+      };
+      pop.appendChild(b);
+    });
+  }
+  pop.classList.add('show');
+  const r = btn.getBoundingClientRect();
+  const pw = pop.offsetWidth || 205;
+  let left = r.left;
+  if (left + pw > window.innerWidth - 10) left = Math.max(10, window.innerWidth - pw - 10);
+  pop.style.top = (r.bottom + 8) + 'px';
+  pop.style.left = left + 'px';
+}
+
+function openNavContextMenu(ev) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  const m = $('nav-ctx-menu');
+  if (!m) return;
+  closeNavPopups();
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  m.innerHTML = '';
+  const mk = (lbl, fn, cls) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'srv-dd-item ' + (cls || '');
+    b.textContent = lbl;
+    b.onclick = () => { closeNavPopups(); fn(); };
+    m.appendChild(b);
+  };
+  if (navEditMode) {
+    mk(fa ? '✓ اتمام ویرایش تب‌ها' : '✓ Done Editing Tabs', () => setNavEditMode(false));
+  } else {
+    mk(fa ? '✏️ ویرایش تب‌های بالا' : '✏️ Edit Top Tabs', () => setNavEditMode(true));
+  }
+  mk(fa ? '↻ بازنشانی پیش‌فرض' : '↻ Reset Default Tabs', () => { setNavEditMode(false); resetNavTabsDefault(); });
+  m.classList.add('show');
+  const mw = m.offsetWidth || 200;
+  let x = ev.clientX, y = ev.clientY;
+  if (x + mw > window.innerWidth - 10) x = Math.max(10, window.innerWidth - mw - 10);
+  m.style.top = (y + 6) + 'px';
+  m.style.left = x + 'px';
+}
+
+function navBarDragStart(ev, id) {
+  _navDragId = id;
+  if (ev.dataTransfer) { ev.dataTransfer.effectAllowed = 'move'; ev.dataTransfer.setData('text/plain', id); }
+}
+function navBarDragOver(ev) {
+  ev.preventDefault();
+  if (ev.currentTarget) ev.currentTarget.classList.add('nav-drag-over');
+}
+function navBarDragLeave(ev) {
+  if (ev.currentTarget) ev.currentTarget.classList.remove('nav-drag-over');
+}
+function navBarDrop(ev, targetId) {
+  ev.preventDefault();
+  if (ev.currentTarget) ev.currentTarget.classList.remove('nav-drag-over');
+  if (!_navDragId || _navDragId === targetId) return;
+  const fromIdx = NAV_TABS_CFG.findIndex(x => x.id === _navDragId);
+  const toIdx = NAV_TABS_CFG.findIndex(x => x.id === targetId);
+  if (fromIdx < 0 || toIdx < 0) return;
+  const [moved] = NAV_TABS_CFG.splice(fromIdx, 1);
+  NAV_TABS_CFG.splice(toIdx, 0, moved);
+  _navDragId = '';
+  saveNavTabsConfig();
+  renderNav();
+  renderEditTabsStudio();
+}
+
+function cancelNavHold() {
+  if (_navHoldTimer) { clearTimeout(_navHoldTimer); _navHoldTimer = null; }
+  if (_navHoldEl) { _navHoldEl.classList.remove('is-holding'); _navHoldEl = null; }
+}
+
 function renderNav() {
+  const nav = $('nav');
+  if (!nav) return;
   const byId = {};
   ALL_TABS_CATALOG.forEach(it => { byId[it.id] = it; });
-  $('nav').innerHTML = getVisibleTabs().map(x => {
-    const lbl = tabLabelOf(byId[x[0]]) || t(x[1]);
-    return `<button class="nav-item${x[0] === curTab ? ' active' : ''}" data-tab="${x[0]}" title="${esc(lbl)}">${svg(x[2])}<span class="lbl">${esc(lbl)}</span>${x[0] === 'update' && updAvail ? '<span class="dot online" style="background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></span>' : ''}</button>`;
+  nav.classList.toggle('is-editing', navEditMode);
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+
+  let out = getVisibleTabs().map(x => {
+    const it = byId[x[0]] || {};
+    const lbl = tabLabelOf(it) || t(x[1]);
+    const rmBtn = (navEditMode && !it.locked)
+      ? `<span class="nav-tab-rm" title="${fa ? 'حذف تب' : 'Remove tab'}" onclick="navBarRemoveTab(event,'${esc(x[0])}')">−</span>`
+      : '';
+    const dndAttrs = navEditMode
+      ? `draggable="true" ondragstart="navBarDragStart(event,'${esc(x[0])}')" ondragover="navBarDragOver(event)" ondragleave="navBarDragLeave(event)" ondrop="navBarDrop(event,'${esc(x[0])}')"`
+      : '';
+    return `<button class="nav-item${x[0] === curTab ? ' active' : ''}" data-tab="${x[0]}" title="${esc(lbl)}" ${dndAttrs}>${rmBtn}${svg(x[2])}<span class="lbl">${esc(lbl)}</span>${x[0] === 'update' && updAvail ? '<span class="dot online" style="background:var(--yellow);box-shadow:0 0 8px var(--yellow);"></span>' : ''}</button>`;
   }).join('');
+
+  if (navEditMode) {
+    out += `<button type="button" class="nav-edit-add" title="${fa ? 'افزودن تب' : 'Add Tab'}" onclick="openNavAddPopover(event, this)">+</button>`;
+    out += `<button type="button" class="nav-edit-done" onclick="event.stopPropagation(); setNavEditMode(false)">✓ ${fa ? 'اتمام' : 'Done'}</button>`;
+  }
+  nav.innerHTML = out;
 }
+
+(function initNavDirectEdit() {
+  const nav = $('nav');
+  if (!nav) return;
+  nav.addEventListener('contextmenu', openNavContextMenu);
+  nav.addEventListener('pointerdown', e => {
+    if (e.button === 2 || navEditMode) return;
+    const item = e.target.closest('.nav-item');
+    if (!item) return;
+    cancelNavHold();
+    _navHoldEl = item;
+    item.classList.add('is-holding');
+    _navHoldTimer = setTimeout(() => {
+      cancelNavHold();
+      setNavEditMode(true);
+      toast((typeof lang !== 'undefined' && lang === 'fa') ? 'حالت ویرایش تب‌ها فعال شد — بکشید، با − حذف یا با + اضافه کنید' : 'Tab Edit Mode active — drag to reorder, − to remove, + to add');
+    }, 3000);
+  });
+  nav.addEventListener('pointerup', cancelNavHold);
+  nav.addEventListener('pointercancel', cancelNavHold);
+  nav.addEventListener('pointerleave', cancelNavHold);
+  document.addEventListener('click', e => {
+    const cm = $('nav-ctx-menu'), ap = $('nav-add-pop');
+    if (cm && cm.classList.contains('show') && !cm.contains(e.target)) cm.classList.remove('show');
+    if (ap && ap.classList.contains('show') && !ap.contains(e.target) && !e.target.closest('.nav-edit-add')) ap.classList.remove('show');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeNavPopups();
+      if (navEditMode) setNavEditMode(false);
+    }
+  });
+})();
 function switchTab(name) {
   curTab = name;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
@@ -9339,6 +9516,56 @@ async function runSetupAction(action, engine) {
 
 let OB_CFG = { enabled: false, lb_strategy: 'leastPing', probe_interval: '30s', use_github: true, use_telegram: true, use_foreign: false, subs: [], nodes: [] };
 
+async function loadMasterOutbound() {
+  const r = await api('api/outbound/status');
+  if (!r.ok) return;
+  OB_CFG = r.config || OB_CFG;
+  if (!Array.isArray(OB_CFG.subs)) OB_CFG.subs = [];
+  if (!Array.isArray(OB_CFG.nodes)) OB_CFG.nodes = [];
+
+  if ($('ob-en')) $('ob-en').checked = !!OB_CFG.enabled;
+  if ($('ob-gh')) $('ob-gh').checked = OB_CFG.use_github !== false;
+  if ($('ob-tg')) $('ob-tg').checked = OB_CFG.use_telegram !== false;
+  if ($('ob-fr')) $('ob-fr').checked = !!OB_CFG.use_foreign;
+  if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
+  if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
+  pickOutboundMode(OB_CFG.mode === 'loadbalance' ? 'loadbalance' : 'single');
+  toggleObSubSection(false);
+
+  const b = $('ob-badge');
+  if (b) {
+    b.textContent = r.running ? 'ACTIVE (127.0.0.1:10808)' : 'STOPPED';
+    b.className = 'badge mono ' + (r.running ? 'b-iran' : 'b-foreign');
+  }
+  const cs = $('ob-core-status'), cv = $('ob-core-ver'), ib = $('btn-ob-install');
+  if (cs) {
+    cs.textContent = r.xray_installed ? 'INSTALLED' : 'NOT INSTALLED';
+    cs.className = 'badge mono ' + (r.xray_installed ? 'b-iran' : 'b-miss');
+  }
+  if (cv) {
+    if (r.xray_installed && r.xray_version) {
+      cv.textContent = 'Xray ' + r.xray_version;
+      cv.style.display = 'inline-block';
+    } else {
+      cv.style.display = 'none';
+    }
+  }
+  if (ib) {
+    ib.textContent = r.xray_installed ? '↻ Update Xray' : '⬇ Install Xray';
+  }
+  renderOutboundLists();
+}
+
+async function installXrayCore() {
+  const btn = $('btn-ob-install');
+  btn.disabled = true; btn.textContent = 'Installing...';
+  try {
+    const r = await api('api/outbound/install', 'POST');
+    if (r.ok) { toast(r.message || 'Xray Core installed!'); loadMasterOutbound(); }
+    else toast(r.error || 'Install failed', true);
+  } finally { btn.disabled = false; }
+}
+
 const _obOpenGroups = new Set(['manual']);
 
 function fmtObBytes(b) {
@@ -9593,11 +9820,16 @@ function clearOutboundNodes() {
   renderOutboundLists();
 }
 
+function toggleObSubSection(show) {
+  if ($('ob-sub-toggle')) $('ob-sub-toggle').checked = !!show;
+  if ($('ob-sub-section')) $('ob-sub-section').style.display = show ? 'block' : 'none';
+}
+
 function pickOutboundMode(m) {
   const mode = (m === 'loadbalance') ? 'loadbalance' : 'single';
   OB_CFG.mode = mode;
   if ($('ob-mode')) $('ob-mode').value = mode;
-  document.querySelectorAll('#ob-mode-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.obm === mode));
+  if ($('ob-lb-toggle')) $('ob-lb-toggle').checked = (mode === 'loadbalance');
   if ($('ob-lb-opts')) $('ob-lb-opts').style.display = (mode === 'loadbalance') ? 'grid' : 'none';
   renderOutboundLists();
 }
@@ -12065,7 +12297,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-tab],[data-go],[data-act],[data-close],[data-svc],[data-install],[data-upd],[data-mode],[data-preset],[data-grp],[data-theme-id]');
   if (!el) return;
   const d = el.dataset;
-  if (d.tab) switchTab(d.tab);
+  if (d.tab) { if (navEditMode) return; switchTab(d.tab); }
   else if (d.go) switchTab(d.go);
   else if (d.act) act(d.act, parseInt(d.id || '0', 10));
   else if (d.close) closeModal(d.close);
@@ -12109,17 +12341,17 @@ if ($('btn-core-install')) $('btn-core-install').onclick = () => { const id = $(
 if ($('btn-core-run')) $('btn-core-run').onclick = runCmd;
 if ($('core-cmd')) $('core-cmd').addEventListener('keydown', e => { if (e.key === 'Enter') runCmd(); });
 if ($('btn-core-clear')) $('btn-core-clear').onclick = () => coreOut('—');
-for(const [id,role] of accentInputs) $(id).oninput=event=>{
-  stageColor(effMode()+'_'+role,event.target.value);
-  renderStudio();
-};
-$('apply-colors').onclick=()=>{
-  if(!colorDraft) return;
-  const th=TH.find(x=>x.id===colorDraft.id);
-  custom={...profileFor(th),...colorDraft.edits};
-  themeId=th.id; galleryFamily=familyOf(th); colorDraft=null;
-  applyTheme(); renderThemes(); renderStudio();
-};
+for(const [id,role] of accentInputs) {
+  const inp = $(id);
+  if (inp) inp.oninput = event => {
+    const th = curTheme();
+    custom = { ...profileFor(th), [effMode() + '_' + role]: event.target.value };
+    colorDraft = null;
+    applyTheme();
+    renderThemes();
+    renderStudio();
+  };
+}
 $('btn-rand-theme').onclick = randTheme;
 $('btn-rand-mix').onclick = randMix;
 for(const studioBox of [$('studio'),$('mon-theme-bar')]) {
