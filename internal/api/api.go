@@ -1611,6 +1611,17 @@ func (h *Handler) handleServerSpeedtest(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "speed": sr})
 }
 
+func (h *Handler) masterPublicIP() string {
+	stats := sysinfo.Collect()
+	if ip := strings.TrimSpace(stats.IPv4); ip != "" && ip != "N/A" {
+		return ip
+	}
+	if st := h.store.GetSettings(); strings.TrimSpace(st.ListenDomain) != "" {
+		return strings.TrimSpace(st.ListenDomain)
+	}
+	return ""
+}
+
 func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -1651,13 +1662,13 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	target := h.targetOfSrv(srv)
 	socksPx := h.serverSocksProxy(srv)
 
-	probeWithRetry := func(port int) sshclient.ProbeResult {
+	probeWithRetry := func(port int, code string) sshclient.ProbeResult {
 		var pr sshclient.ProbeResult
 		for attempt := 0; attempt < 3; attempt++ {
 			if attempt > 0 {
 				time.Sleep(1100 * time.Millisecond)
 			}
-			pr = sshclient.ProbePeer(srv.Host, port, peerCode, socksPx)
+			pr = sshclient.ProbePeer(srv.Host, port, code, socksPx)
 			if pr.Online {
 				return pr
 			}
@@ -1665,17 +1676,28 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		return pr
 	}
 
+	masterIP := h.masterPublicIP()
 	chosenPort := 0
+	keySynced := false
 	var p sshclient.ProbeResult
 	var portNotes []string
 
 	for _, tryPort := range candPorts {
 		// Preserve any port already occupied by another panel's agent unless it is this server's own saved port
 		skipBusy := (srv.AgentPort <= 0 || tryPort != srv.AgentPort)
-		res := sshclient.InstallPeerAgentPreserveBusy(target, peerCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
+		tryCode := peerCode
+		res := sshclient.InstallPeerAgentV3(target, masterIP, tryCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
 		joined := false
+		syncedHere := false
+		if idx := strings.Index(res.Output, "SYNCED_KEY:"); idx >= 0 {
+			sc := strings.TrimSpace(strings.SplitN(res.Output[idx+len("SYNCED_KEY:"):], "\n", 2)[0])
+			if sc != "" {
+				tryCode = sc
+				syncedHere = true
+			}
+		}
 		if res.Err != nil && strings.Contains(res.Output, "JOINED:") {
-			// Port is held by another panel's v3 agent: our code was added to its peers file (no restart needed)
+			// Port is held by an existing v3 agent: our Master IP key was synced or added (no restart needed)
 			joined = true
 			res.Err = nil
 		}
@@ -1689,11 +1711,13 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		p = probeWithRetry(tryPort)
+		p = probeWithRetry(tryPort, tryCode)
 		if !p.Online && joined {
-			// undo: remove only our code from the shared agent, never touch the other panel's service
-			undo := fmt.Sprintf(`F="/etc/mcontrol-agent/peers-%d.txt"; [ -f "$F" ] && { grep -vxF %s "$F" > "$F.tmp" || true; mv -f "$F.tmp" "$F"; }`, tryPort, sshclient.ShQuote(peerCode))
-			_ = sshclient.Run(target, undo, 10*time.Second, 20*time.Second)
+			if !syncedHere {
+				// undo: remove only our newly added code from the shared agent, never touch other panels
+				undo := fmt.Sprintf(`F="/etc/mcontrol-agent/peers-%d.txt"; [ -f "$F" ] && { grep -vF %s "$F" > "$F.tmp" || true; mv -f "$F.tmp" "$F"; }`, tryPort, sshclient.ShQuote(tryCode))
+				_ = sshclient.Run(target, undo, 10*time.Second, 20*time.Second)
+			}
 			portNotes = append(portNotes, fmt.Sprintf(":%d joined shared agent but unreachable from panel (%s)", tryPort, p.Error))
 			continue
 		}
@@ -1722,10 +1746,12 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 				}
 				continue
 			}
-			p = probeWithRetry(tryPort)
+			p = probeWithRetry(tryPort, tryCode)
 		}
 		if p.Online {
 			chosenPort = tryPort
+			peerCode = tryCode
+			keySynced = syncedHere
 			break
 		}
 		portNotes = append(portNotes, fmt.Sprintf(":%d unreachable (%s)", tryPort, p.Error))
@@ -1744,9 +1770,13 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 	if isIran {
 		srcUsed = "iran_mirror"
 	}
-	msg := fmt.Sprintf("Paired via Peer Code on port :%d! SSH password wiped from database.", chosenPort)
+	syncNote := ""
+	if keySynced {
+		syncNote = " (Synced previous Master-IP key)"
+	}
+	msg := fmt.Sprintf("Paired via Peer v3 on port :%d%s! SSH password wiped from database.", chosenPort, syncNote)
 	if isIran {
-		msg = fmt.Sprintf("Paired via Peer Code (Iran Mirror · :%d)! SSH password wiped from database.", chosenPort)
+		msg = fmt.Sprintf("Paired via Peer v3 (Iran Mirror · :%d)%s! SSH password wiped from database.", chosenPort, syncNote)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":           true,
@@ -2299,7 +2329,7 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 	}
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	script := sshclient.PeerAgentInstallScriptWithSource(srv.PeerCode, srv.AgentPort, stCfg.PanelMirrorURL, isIran)
+	script := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), srv.PeerCode, "", srv.AgentPort, stCfg.PanelMirrorURL, isIran, false)
 	var res sshclient.Result
 	if srv.AuthMode == "peer" {
 		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v2 upgrade triggered.'", sshclient.ShQuote(script))
@@ -2343,7 +2373,7 @@ func (h *Handler) handleRotatePeerKey(w http.ResponseWriter, r *http.Request) {
 	}
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	script := sshclient.PeerAgentInstallScriptFull(newCode, srv.PeerCode, agentPort, stCfg.PanelMirrorURL, isIran, false)
+	script := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), newCode, srv.PeerCode, agentPort, stCfg.PanelMirrorURL, isIran, false)
 	bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-rot.log 2>&1 & echo 'ROTATE_STARTED'", sshclient.ShQuote("sleep 1\n"+script))
 	res := sshclient.PeerExec(srv.Host, agentPort, srv.PeerCode, bgCmd, 15*time.Second)
 	if res.Err != nil {
@@ -2385,7 +2415,7 @@ func (h *Handler) handleCanaryAgentRollout(w http.ResponseWriter, r *http.Reques
 	stCfg := h.store.GetSettings()
 	canary := peers[0]
 	isIranC := canary.Role == "iran" || strings.EqualFold(canary.CountryCode, "IR")
-	cScript := sshclient.PeerAgentInstallScriptWithSource(canary.PeerCode, canary.AgentPort, stCfg.PanelMirrorURL, isIranC)
+	cScript := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), canary.PeerCode, "", canary.AgentPort, stCfg.PanelMirrorURL, isIranC, false)
 	cBg := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'CANARY_OK'", sshclient.ShQuote("sleep 1\n"+cScript))
 	if res := sshclient.PeerExec(canary.Host, canary.AgentPort, canary.PeerCode, cBg, 15*time.Second); res.Err != nil {
 		fail(w, http.StatusBadGateway, fmt.Sprintf("Canary node %s failed before rollout: %s", canary.Name, res.Err.Error()))
@@ -2399,7 +2429,7 @@ func (h *Handler) handleCanaryAgentRollout(w http.ResponseWriter, r *http.Reques
 	updated := 1
 	for _, s := range peers[1:] {
 		isIran := s.Role == "iran" || strings.EqualFold(s.CountryCode, "IR")
-		sc := sshclient.PeerAgentInstallScriptWithSource(s.PeerCode, s.AgentPort, stCfg.PanelMirrorURL, isIran)
+		sc := sshclient.PeerAgentInstallScriptV3(h.masterPublicIP(), s.PeerCode, "", s.AgentPort, stCfg.PanelMirrorURL, isIran, false)
 		bg := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'OK'", sshclient.ShQuote("sleep 1\n"+sc))
 		if r2 := sshclient.PeerExec(s.Host, s.AgentPort, s.PeerCode, bg, 15*time.Second); r2.Err == nil {
 			updated++

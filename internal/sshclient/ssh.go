@@ -533,29 +533,32 @@ func PeerExec(host string, agentPort int, peerCode, command string, timeout time
 }
 
 func PeerAgentInstallScript(peerCode string, agentPort int) string {
-	return PeerAgentInstallScriptOpts(peerCode, agentPort, "", false, false)
+	return PeerAgentInstallScriptV3("", peerCode, "", agentPort, "", false, false)
 }
 
 func PeerAgentInstallScriptWithSource(peerCode string, agentPort int, mirrorURL string, isIran bool) string {
-	return PeerAgentInstallScriptOpts(peerCode, agentPort, mirrorURL, isIran, false)
+	return PeerAgentInstallScriptV3("", peerCode, "", agentPort, mirrorURL, isIran, false)
 }
 
-// PeerAgentInstallScriptOpts installs a per-port systemd service (mcontrol-agent-<port>.service)
-// so multiple MControl panels can connect to the same server on different ports simultaneously.
-// When skipIfPortBusy is true, any port already actively listening (including another panel's agent)
-// is left untouched and exits 42 with PORT_BUSY:<process> so the caller tries the next port.
 func PeerAgentInstallScriptOpts(peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
-	return PeerAgentInstallScriptFull(peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy)
+	return PeerAgentInstallScriptV3("", peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy)
 }
 
-// PeerAgentInstallScriptFull is the multi-panel installer. The agent on a given port accepts
-// several peer codes (the unit's MC_PEER + /etc/mcontrol-agent/peers-<port>.txt), so a second
-// panel pairing with the same server ADDS its code and never locks the first panel out.
-// dropCode (optional) is this panel's previous code that must be removed (key rotation).
 func PeerAgentInstallScriptFull(peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
+	return PeerAgentInstallScriptV3("", peerCode, dropCode, agentPort, mirrorURL, isIran, skipIfPortBusy)
+}
+
+// PeerAgentInstallScriptV3 installs or syncs Peer Agent v3 (Master-IP bound multi-panel auth).
+// - Stores master entries as `master_ip|peer_code` in `/etc/mcontrol-agent/peers-<port>.txt`.
+// - Multiple Master panels can share the same agent simultaneously without overwriting each other.
+// - If a Master panel is wiped and reinstalled on the SAME `masterIP`, re-pairing automatically
+//   finds the existing `master_ip|peer_code` entry and returns `SYNCED_KEY:<existing_code>` so
+//   the new Master adopts and syncs the exact previous key seamlessly!
+func PeerAgentInstallScriptV3(masterIP, peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
+	masterIP = strings.TrimSpace(masterIP)
 	svcName := fmt.Sprintf("mcontrol-agent-%d.service", agentPort)
 	mirrorClean := strings.TrimRight(strings.TrimSpace(mirrorURL), "/")
 	skipFlag := "0"
@@ -604,11 +607,21 @@ if [ -n "$BUSY_PIDS" ]; then
       [ -d "/proc/$pid" ] || continue
       comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
       cmdline=$(tr '\000' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
-      if echo "$cmdline" | grep -q 'mcontrol-agent' && grep -q 'PEERS_FILE' /usr/local/bin/mcontrol-agent.py 2>/dev/null; then
+      if echo "$cmdline" | grep -q 'mcontrol-agent' && grep -q 'MASTER_IP_SYNC' /usr/local/bin/mcontrol-agent.py 2>/dev/null; then
         mkdir -p /etc/mcontrol-agent
         PF="/etc/mcontrol-agent/peers-${AGENT_PORT}.txt"
         touch "$PF"; chmod 600 "$PF" 2>/dev/null || true
-        grep -qxF "$NEW_CODE" "$PF" 2>/dev/null || echo "$NEW_CODE" >> "$PF"
+        if [ -n "$MASTER_IP" ] && [ -z "$DROP_CODE" ]; then
+          EXISTING=$(awk -F'|' -v ip="$MASTER_IP" '$1 == ip && $2 != "" {print $2; exit}' "$PF" 2>/dev/null || true)
+          if [ -n "$EXISTING" ]; then
+            echo "SYNCED_KEY:${EXISTING}"
+            echo "JOINED:${AGENT_PORT}"
+            exit 43
+          fi
+        fi
+        ENTRY="$NEW_CODE"
+        [ -n "$MASTER_IP" ] && ENTRY="${MASTER_IP}|${NEW_CODE}"
+        grep -qxF "$ENTRY" "$PF" 2>/dev/null || echo "$ENTRY" >> "$PF"
         echo "JOINED:${AGENT_PORT}"
         exit 43
       fi
@@ -638,12 +651,12 @@ if [ -n "$BUSY_PIDS" ]; then
   fi
 fi`
 	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort, agentPort, agentPort, svcName, skipFlag)
-	prepRendered = "NEW_CODE=" + ShQuote(peerCode) + "\n" + prepRendered
+	prepRendered = "MASTER_IP=" + ShQuote(masterIP) + "\nNEW_CODE=" + ShQuote(peerCode) + "\nDROP_CODE=" + ShQuote(dropCode) + "\n" + prepRendered
 	mirrorFetch := ""
 	if isIran && mirrorClean != "" {
 		mirrorFetch = fmt.Sprintf(`
 if command -v curl >/dev/null 2>&1; then
-  if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "AGENT_VER" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "PEERS_FILE" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
+  if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "MASTER_IP_SYNC" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
     mv -f /usr/local/bin/mcontrol-agent.py.dl /usr/local/bin/mcontrol-agent.py
     chmod 755 /usr/local/bin/mcontrol-agent.py
     echo "AGENT_SOURCE=iran_mirror"
@@ -654,6 +667,7 @@ if command -v curl >/dev/null 2>&1; then
 fi`, ShQuote(mirrorClean+"/beta-latest/mcontrol-agent.py"))
 	}
 	peersBlock := fmt.Sprintf(`
+MASTER_IP=%s
 NEW_CODE=%s
 DROP_CODE=%s
 PEERS_FILE="/etc/mcontrol-agent/peers-${AGENT_PORT}.txt"
@@ -663,18 +677,36 @@ UNITS="/etc/systemd/system/${SVC_NAME}"
 for U in $UNITS; do
   [ -f "$U" ] || continue
   OLD=$(grep -oE 'MC_PEER=[A-Za-z0-9_-]+' "$U" 2>/dev/null | head -1 | cut -d= -f2)
+  OLD_IP=$(grep -oE 'MC_MASTER_IP=[0-9a-fA-F.:_-]+' "$U" 2>/dev/null | head -1 | cut -d= -f2)
   if [ -n "$OLD" ] && [ "$OLD" != "$DROP_CODE" ] && [ "$OLD" != "$NEW_CODE" ]; then
-    grep -qxF "$OLD" "$PEERS_FILE" 2>/dev/null || echo "$OLD" >> "$PEERS_FILE"
+    OLD_ENTRY="$OLD"
+    [ -n "$OLD_IP" ] && OLD_ENTRY="${OLD_IP}|${OLD}"
+    grep -qF "$OLD" "$PEERS_FILE" 2>/dev/null || echo "$OLD_ENTRY" >> "$PEERS_FILE"
   fi
 done
+# If same Master IP already has a synced key and we are not rotating (DROP_CODE empty), reuse it!
+EFFECTIVE_CODE="$NEW_CODE"
+if [ -n "$MASTER_IP" ] && [ -z "$DROP_CODE" ]; then
+  EXISTING=$(awk -F'|' -v ip="$MASTER_IP" '$1 == ip && $2 != "" {print $2; exit}' "$PEERS_FILE" 2>/dev/null || true)
+  if [ -n "$EXISTING" ]; then
+    EFFECTIVE_CODE="$EXISTING"
+    echo "SYNCED_KEY:${EXISTING}"
+  fi
+fi
 if [ -n "$DROP_CODE" ]; then
-  grep -vxF "$DROP_CODE" "$PEERS_FILE" > "$PEERS_FILE.tmp" 2>/dev/null || true
+  awk -F'|' -v dc="$DROP_CODE" '$0 != dc && $2 != dc {print}' "$PEERS_FILE" > "$PEERS_FILE.tmp" 2>/dev/null || true
   mv -f "$PEERS_FILE.tmp" "$PEERS_FILE"
 fi
-grep -vxF "$NEW_CODE" "$PEERS_FILE" > "$PEERS_FILE.tmp" 2>/dev/null || true
-mv -f "$PEERS_FILE.tmp" "$PEERS_FILE"
+if [ -n "$MASTER_IP" ]; then
+  awk -F'|' -v ip="$MASTER_IP" -v ec="$EFFECTIVE_CODE" '$1 != ip && $0 != ec && $2 != ec {print}' "$PEERS_FILE" > "$PEERS_FILE.tmp" 2>/dev/null || true
+  mv -f "$PEERS_FILE.tmp" "$PEERS_FILE"
+  echo "${MASTER_IP}|${EFFECTIVE_CODE}" >> "$PEERS_FILE"
+else
+  grep -qxF "$EFFECTIVE_CODE" "$PEERS_FILE" 2>/dev/null || echo "$EFFECTIVE_CODE" >> "$PEERS_FILE"
+fi
 if [ "$AGENT_PORT" = "2054" ]; then systemctl disable mcontrol-agent.service >/dev/null 2>&1 || true; fi
-`, ShQuote(peerCode), ShQuote(dropCode))
+`, ShQuote(masterIP), ShQuote(peerCode), ShQuote(dropCode))
+
 	return prepRendered + "\n" + fmt.Sprintf(`mkdir -p /etc/mcontrol-agent
 `+peersBlock+`
 if command -v openssl >/dev/null 2>&1; then
@@ -688,19 +720,37 @@ cat <<'PYEOF' > /usr/local/bin/mcontrol-agent.py
 import http.server, json, os, ssl, subprocess, time
 
 PEER = os.environ.get("MC_PEER", "")
+MASTER_IP = os.environ.get("MC_MASTER_IP", "")
 PORT = int(os.environ.get("MC_PORT", "2054"))
 AGENT_VER = "v3"
+MASTER_IP_SYNC = True
 PEERS_FILE = "/etc/mcontrol-agent/peers-" + str(PORT) + ".txt"
 
-def peer_ok(code):
-    # v3: several panels can share one agent. The unit's MC_PEER plus every line of PEERS_FILE is accepted.
-    if not code: return False
-    if PEER and code == PEER: return True
+def load_peer_entries():
+    entries = []
+    if PEER:
+        entries.append((MASTER_IP, PEER))
     try:
         with open(PEERS_FILE) as f:
             for ln in f:
-                if ln.strip() == code: return True
-    except Exception: pass
+                s = ln.strip()
+                if not s or s.startswith("#"): continue
+                if "|" in s:
+                    mip, code = s.split("|", 1)
+                    if code.strip():
+                        entries.append((mip.strip(), code.strip()))
+                else:
+                    entries.append(("", s))
+    except Exception:
+        pass
+    return entries
+
+def peer_ok(code):
+    # v3 MASTER_IP_SYNC: multiple Master servers share one agent via `master_ip|peer_code` entries.
+    if not code: return False
+    for _, c in load_peer_entries():
+        if c == code:
+            return True
     return False
 
 def read_net_totals():
@@ -839,14 +889,15 @@ chmod 755 /usr/local/bin/mcontrol-agent.py
 %s
 cat <<SVCEOF > /etc/systemd/system/%s
 [Unit]
-Description=MControl Peer Agent v2 (TLS · Port %d)
+Description=MControl Peer Agent v3 (TLS · Multi-Master IP Sync · Port %d)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=0
 
 [Service]
 Type=simple
-Environment="MC_PEER=%s"
+Environment="MC_MASTER_IP=%s"
+Environment="MC_PEER=${EFFECTIVE_CODE}"
 Environment="MC_PORT=%d"
 ExecStartPre=-/bin/bash -c 'P=${MC_PORT:-2054}; if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi active; then ufw allow ${P}/tcp >/dev/null 2>&1 || true; elif command -v firewall-cmd >/dev/null 2>&1 && systemctl is-active --quiet firewalld 2>/dev/null; then firewall-cmd --add-port=${P}/tcp >/dev/null 2>&1 || true; elif command -v iptables >/dev/null 2>&1; then iptables -C INPUT -p tcp --dport ${P} -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport ${P} -j ACCEPT 2>/dev/null || true; fi'
 ExecStart=__PYBIN__ /usr/local/bin/mcontrol-agent.py
@@ -868,7 +919,7 @@ for _i in 1 2 3 4 5 6; do
   sleep 0.5
 done
 systemctl is-active "%s"
-`, mirrorFetch, svcName, agentPort, peerCode, agentPort, svcName, svcName, svcName, svcName, svcName)
+`, mirrorFetch, svcName, agentPort, masterIP, agentPort, svcName, svcName, svcName, svcName, svcName)
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
@@ -876,9 +927,13 @@ func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
 }
 
 func InstallPeerAgentFromSource(t Target, peerCode string, agentPort int, mirrorURL string, isIran bool) Result {
-	return Run(t, PeerAgentInstallScriptOpts(peerCode, agentPort, mirrorURL, isIran, false), 10*time.Second, 45*time.Second)
+	return Run(t, PeerAgentInstallScriptV3("", peerCode, "", agentPort, mirrorURL, isIran, false), 10*time.Second, 45*time.Second)
 }
 
 func InstallPeerAgentPreserveBusy(t Target, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
-	return Run(t, PeerAgentInstallScriptOpts(peerCode, agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 45*time.Second)
+	return Run(t, PeerAgentInstallScriptV3("", peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 45*time.Second)
+}
+
+func InstallPeerAgentV3(t Target, masterIP, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
+	return Run(t, PeerAgentInstallScriptV3(masterIP, peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 45*time.Second)
 }

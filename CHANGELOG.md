@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.4.6
+- **Peer Agent v3 (Master-IP Key Sync):** each paired panel registers `master_ip|peer_code` in `/etc/mcontrol-agent/peers-<port>.txt`. Multiple Master servers share one agent simultaneously, and if a Master is wiped and reinstalled on the same IP, pairing automatically syncs and reuses its previous key (`SYNCED_KEY`).
+- **ParsPack S3 Mirror Sync Fix:** restored clean S3 sync with 3x retry in `.github/workflows/release.yml` (removed `aws configure set` / `continue-on-error` masking issues).
 - **Multi-panel Peer Agent (agent v3):** one server can now be paired with several MControl panels (even different versions) at the same time. The agent accepts the unit's `MC_PEER` plus every code in `/etc/mcontrol-agent/peers-<port>.txt`. Pairing from a second panel *adds* its code and keeps the first panel's code (read from the existing unit / legacy `mcontrol-agent.service`) instead of overwriting it.
 - **Key rotation only drops this panel's own old code** (`PeerAgentInstallScriptFull`), other panels keep working.
 - **Pair no longer aborts on the first blocked port:** if the agent is listening but unreachable (cloud firewall / route), the next candidate port (18443, 29443) is tried, extra services created for failed ports are removed, and the final error explains which ports to open.
