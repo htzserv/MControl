@@ -3842,6 +3842,19 @@ body.light-mode .badge.ping-bad  { background: rgba(239, 68, 68, .16) !important
   transform: translateY(-1px);
   box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--accent) 60%, transparent);
 }
+.hdr-bubble-btn.is-busy {
+  opacity: .65; pointer-events: none;
+}
+.peer-ver-badge {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  padding: 3px 12px !important;
+  min-width: 72px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 </style>
 </head>
@@ -7295,7 +7308,7 @@ function peerModeBadge(s) {
   else if (cv.includes('v3')) lbl = 'PEER V3';
   else if (cv.includes('v2')) lbl = 'PEER V2';
   const tip = cv ? ('Agent: ' + s.core_version) : 'MControl Peer Agent v4';
-  return `<span class="badge b-iran mono" title="${esc(tip)}">${lbl}</span>`;
+  return `<span class="badge b-iran mono peer-ver-badge" title="${esc(tip)}">${lbl}</span>`;
 }
 
 function pingBadgeClass(val) {
@@ -7340,9 +7353,9 @@ function renderServerCard(s) {
           <span>CPU <b style="color:var(--accent);">${esc(s.cpu || '0%')}</b> • RAM <b style="color:var(--pink);">${esc(s.ram || '0%')}</b></span>
         </div>
       </div>
-      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}<button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" onclick="event.stopPropagation(); manualPingServer(${id})">↻</button></div>
+      <div class="srv-col-hide mono" style="font-size:.82rem; display:flex; align-items:center; gap:6px; flex-wrap:nowrap; white-space:nowrap;"><span>${esc(s.host)}</span><span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}</div>
       <div class="srv-col-hide mono" style="font-size:.78rem; color:var(--muted);">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
-      <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" title="${lang === 'fa' ? 'باز کردن سریع ترمینال' : 'Quick Terminal'}" onclick="event.stopPropagation(); openWebTerm(${id})">🖥️ ${lang === 'fa' ? 'ترمینال' : 'Term'}</button></div>
+      <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی همین الان' : 'Ping now'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
       <div style="display:flex; align-items:center; gap:6px;"><span class="chev">▾</span></div>
     </div>
 
@@ -7357,7 +7370,7 @@ function renderServerCard(s) {
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">Network Speed &amp; Uptime</div>
           <div class="srv-mini-val"><span style="color:var(--green);">↓ ${esc(s.net_rx || '0 B/s')}</span> <span style="color:var(--muted);">/</span> <span style="color:var(--yellow);">↑ ${esc(s.net_tx || '0 B/s')}</span></div>
-          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''} <button type="button" class="ping-btn" data-srv-ping-btn="${id}" title="Ping now" style="width:19px; height:19px; font-size:.66rem; vertical-align:middle;" onclick="manualPingServer(${id})">↻</button></div>
+          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''}</div>
         </div>
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">${t('lbl_location')}</div>
@@ -9964,7 +9977,7 @@ async function pingAllServers() {
   const btn = $('btn-ping-all');
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
   if (btn) { btn.disabled = true; btn.textContent = fa ? '↻ در حال پینگ...' : '↻ Pinging...'; }
-  document.querySelectorAll('[data-srv-ping-btn]').forEach(b => b.classList.add('spinning'));
+  document.querySelectorAll('[data-srv-ping-btn]').forEach(b => b.classList.add('is-busy'));
   try {
     const r = await api('api/servers/ping-all', 'POST');
     if (r.ok && r.servers) {
@@ -9975,13 +9988,14 @@ async function pingAllServers() {
       toast((r && r.error) || 'Ping All failed', true);
     }
   } finally {
-    document.querySelectorAll('[data-srv-ping-btn]').forEach(b => b.classList.remove('spinning'));
+    document.querySelectorAll('[data-srv-ping-btn]').forEach(b => b.classList.remove('is-busy'));
     if (btn) { btn.disabled = false; btn.textContent = fa ? '↻ پینگ همه' : '↻ Ping All'; }
   }
 }
 async function manualPingServer(id) {
   const btns = document.querySelectorAll(`[data-srv-ping-btn="${id}"]`);
-  btns.forEach(b => b.classList.add('spinning'));
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  btns.forEach(b => { b.classList.add('is-busy'); b.textContent = '📡 ...'; });
   try {
     const r = await api('api/servers/' + id + '/ping', 'POST');
     if (r.ok) {
@@ -10008,7 +10022,7 @@ async function manualPingServer(id) {
       toast(r.error || 'Ping failed', true);
     }
   } finally {
-    btns.forEach(b => b.classList.remove('spinning'));
+    btns.forEach(b => { b.classList.remove('is-busy'); b.textContent = fa ? '📡 پینگ' : '📡 Ping'; });
   }
 }
 async function probeOne(id) { toast(t('toast_probing')); await api('api/servers/' + id + '/probe', 'POST'); loadServers(); }
