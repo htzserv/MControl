@@ -4169,24 +4169,29 @@ body.eco-mode .nav.is-editing .nav-item { animation: none; }
 }
 
 
-/* ── Global Centered Page & Sub-Pane Headers/Toolbars ── */
+/* ── Global Horizontally Centered Page & Sub-Pane Headers/Toolbars ── */
 .page > .toolbar,
 .sub-pane > .toolbar {
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   gap: 10px;
 }
-.page > .toolbar > div,
-.sub-pane > .toolbar > div {
+.page > .toolbar > div:not(.flexw),
+.sub-pane > .toolbar > div:not(.flexw) {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
 }
-.page > .toolbar .flexw,
-.sub-pane > .toolbar .flexw {
+.page > .toolbar > .flexw,
+.sub-pane > .toolbar > .flexw {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
 }
 .term-snip-bar {
