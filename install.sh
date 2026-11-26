@@ -122,56 +122,201 @@ mc_footer() {
         "$FR" "$NC" "$W" "$NC" "$DIM" "$NC" "$DIM" "$1" "$NC"
 }
 
-# ── 2-Step Interactive Wizard (Step 1: Source -> Step 2: Channel & Engines) ──
-if [[ "$INTERACTIVE" -eq 1 ]] && [[ -r /dev/tty ]]; then
-    STEP=1
-    while true; do
-        if [[ "$STEP" -eq 1 ]]; then
-            draw_banner "STEP 1 / 2 · DOWNLOAD SOURCE" "$Y"
+# ── Helper functions for Terminal Installer Menu (No Token Required) ─────────
+mc_check_ip_info() {
+    IP4=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}' || true)
+    [[ -n "${IP4:-}" ]] || IP4=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+    [[ -n "${IP4:-}" ]] || IP4="127.0.0.1"
+    IP6=$(ip -6 addr show scope global 2>/dev/null | awk '/inet6/{split($2,a,"/"); if(a[1] !~ /^f[cd]/){print a[1]; exit}}' || true)
+    [[ -n "${IP6:-}" ]] || IP6="OFF"
+}
 
-            mc_group "SELECT DOWNLOAD SOURCE (IRAN / FOREIGN)" first
-            mc_row "1" "Iran Mirror (ParsPack)"  "$G" " ${DIM}(Direct & Fast inside Iran)${NC}"
-            mc_row "2" "Foreign (GitHub Direct)" "$C" " ${DIM}(Official GitHub Releases)${NC}"
+mc_show_info() {
+    mc_check_ip_info
+    local svc_st="inactive" active_p="$PORT"
+    systemctl is-active --quiet mcontrol.service 2>/dev/null && svc_st="active"
+    if [[ -f "${DATA_DIR}/mcontrol.db" ]] && command -v python3 >/dev/null 2>&1; then
+        local db_p
+        db_p=$(python3 - "${DATA_DIR}/mcontrol.db" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+try:
+    con = sqlite3.connect(sys.argv[1])
+    r = con.execute("SELECT value FROM settings WHERE key='panel_port'").fetchone()
+    if r and r[0]: print(r[0])
+except Exception:
+    pass
+PY
+)
+        [[ -n "$db_p" ]] && active_p="$db_p"
+    fi
+    echo ""
+    echo -e "  ${FR}┌─[ MCONTROL INFO ]${NC}"
+    echo -e "  ${FR}├─${NC} ${DIM}Version  :${NC} ${C}v${MODULE_VERSION}${NC}"
+    echo -e "  ${FR}├─${NC} ${DIM}Service  :${NC} ${G}${svc_st}${NC}"
+    echo -e "  ${FR}├─${NC} ${DIM}IPv4     :${NC} ${M}${IP4}${NC}"
+    echo -e "  ${FR}├─${NC} ${DIM}IPv6     :${NC} ${M}${IP6}${NC}"
+    echo -e "  ${FR}├─${NC} ${DIM}Port     :${NC} ${C}${active_p}${NC}"
+    echo -e "  ${FR}└─${NC} ${DIM}URL      :${NC} ${C}http://${IP4}:${active_p}/${NC}"
+    echo ""
+    printf "  ${DIM}Press Enter to continue...${NC}"
+    read -r _ < /dev/tty || true
+}
 
-            mc_footer "Exit"
+mc_reset_user_pass() {
+    local db_file="${DATA_DIR}/mcontrol.db"
+    if [[ ! -f "$db_file" ]]; then
+        echo -e "
+  ${R}✖ Database not found at ${db_file}.${NC}"
+        sleep 1
+        return 0
+    fi
+    echo ""
+    printf "  ${C}New username (empty = keep): ${NC}"
+    read -r nu < /dev/tty || nu=""
+    nu=$(printf '%s' "$nu" | xargs)
+    printf "  ${C}New password (min 8 chars): ${NC}"
+    read -rs np < /dev/tty || np=""
+    echo ""
+    if [[ ${#np} -lt 8 ]]; then
+        echo -e "  ${R}✖ Password must be at least 8 characters.${NC}"
+        sleep 1
+        return 0
+    fi
+    local hashed=""
+    if command -v python3 >/dev/null 2>&1; then
+        hashed=$(python3 - "$np" <<'PY' 2>/dev/null || true
+import sys
+try:
+    import bcrypt
+    print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt()).decode())
+except Exception:
+    pass
+PY
+)
+    fi
+    if [[ -z "$hashed" ]] && command -v go >/dev/null 2>&1 && [[ -d "$INSTALL_DIR" ]]; then
+        local tf
+        tf=$(mktemp /tmp/mc_pw_XXXXXX.go)
+        printf 'package main
+import ("fmt";"os";"golang.org/x/crypto/bcrypt")
+func main(){h,_:=bcrypt.GenerateFromPassword([]byte(os.Args[1]),bcrypt.DefaultCost);fmt.Print(string(h))}
+' > "$tf"
+        hashed=$(cd "$INSTALL_DIR" && go run "$tf" "$np" 2>/dev/null || true)
+        rm -f "$tf"
+    fi
+    if [[ -z "$hashed" ]]; then
+        echo -e "  ${R}✖ Could not generate bcrypt hash on this system.${NC}"
+        sleep 1
+        return 0
+    fi
+    python3 - "$db_file" "$nu" "$hashed" <<'PY'
+import sqlite3, sys
+db_p, u, h = sys.argv[1], sys.argv[2], sys.argv[3]
+con = sqlite3.connect(db_p)
+cols = [r[1] for r in con.execute("PRAGMA table_info(users)").fetchall()]
+if "token_version" in cols:
+    if u:
+        con.execute("UPDATE users SET username=?, password_hash=?, token_version=COALESCE(token_version,1)+1", (u, h))
+    else:
+        con.execute("UPDATE users SET password_hash=?, token_version=COALESCE(token_version,1)+1", (h,))
+else:
+    if u:
+        con.execute("UPDATE users SET username=?, password_hash=?", (u, h))
+    else:
+        con.execute("UPDATE users SET password_hash=?", (h,))
+con.commit()
+con.close()
+PY
+    systemctl restart mcontrol.service 2>/dev/null || true
+    echo -e "  ${G}✓ Username/password updated & service restarted.${NC}"
+    sleep 1
+}
 
-            printf "  ${C}Select source [1-2, 0] ❯❯ ${NC}"
-            read -r s_choice < /dev/tty || exit 0
-            case "$s_choice" in
-                1) SOURCE="mirror"; STEP=2 ;;
-                2) SOURCE="direct"; STEP=2 ;;
-                0|q|Q) echo ""; exit 0 ;;
-                *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
-            esac
-        else
-            local_src_lbl="FOREIGN (GITHUB)"; local_src_col="$C"
-            [[ "$SOURCE" == "mirror" ]] && { local_src_lbl="IRAN MIRROR"; local_src_col="$G"; }
-
-            draw_banner "STEP 2 / 2 · ${local_src_lbl}" "$local_src_col"
-
-            mc_group "SELECT INSTALL PACKAGE (${local_src_lbl})" first
-            mc_row "1" "Stable"                  "$G" " ${DIM}(Official Release · Panel Only)${NC}"
-            mc_row "2" "Stable + Engines Bundle" "$G" " ${DIM}(Official Release + Static Engines)${NC}"
-            mc_row "3" "Beta"                    "$Y" " ${DIM}(Rolling beta-latest · Panel Only)${NC}"
-            mc_row "4" "Beta + Engines Bundle"   "$Y" " ${DIM}(Rolling beta-latest + Static Engines)${NC}"
-
-            mc_group "NAVIGATION"
-            mc_row "9" "Back to Source Selection" "$DIM" ""
-
-            mc_footer "Exit"
-
-            printf "  ${C}Select package [1-4, 9=Back, 0=Exit] ❯❯ ${NC}"
-            read -r p_choice < /dev/tty || exit 0
-            case "$p_choice" in
-                1) CHANNEL="stable"; WITH_ENGINES=0; break ;;
-                2) CHANNEL="stable"; WITH_ENGINES=1; break ;;
-                3) CHANNEL="beta";   WITH_ENGINES=0; break ;;
-                4) CHANNEL="beta";   WITH_ENGINES=1; break ;;
-                9|b|B) STEP=1 ;;
-                0|q|Q) echo ""; exit 0 ;;
-                *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
-            esac
+mc_reset_port() {
+    echo ""
+    printf "  ${C}Enter new port (1-65535): ${NC}"
+    read -r np_port < /dev/tty || np_port=""
+    if [[ "$np_port" =~ ^[0-9]+$ ]] && (( np_port >= 1 && np_port <= 65535 )); then
+        PORT="$np_port"
+        if [[ -f "${DATA_DIR}/mcontrol.db" ]] && command -v python3 >/dev/null 2>&1; then
+            python3 - "${DATA_DIR}/mcontrol.db" "$PORT" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+con.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('panel_port', ?)", (sys.argv[2],))
+con.commit()
+con.close()
+PY
         fi
+        if [[ -f /etc/systemd/system/mcontrol.service ]]; then
+            sed -i -E "s/-port [0-9]+/-port ${PORT}/" /etc/systemd/system/mcontrol.service 2>/dev/null || true
+            systemctl daemon-reload 2>/dev/null || true
+            systemctl restart mcontrol.service 2>/dev/null || true
+        fi
+        echo -e "  ${G}✓ Port set to ${PORT}.${NC}"
+    else
+        echo -e "  ${R}✖ Invalid port.${NC}"
+    fi
+    sleep 1
+}
+
+mc_full_uninstall() {
+    echo ""
+    printf "  ${R}⚠ Uninstall MControl and delete ALL files & database? [y/N]: ${NC}"
+    read -r yn < /dev/tty || yn=""
+    if [[ "$yn" =~ ^[Yy]$ ]]; then
+        systemctl disable --now mcontrol.service 2>/dev/null || true
+        rm -f /etc/systemd/system/mcontrol.service /usr/local/bin/mcontrol /usr/local/bin/mcontrol-menu
+        rm -rf "$INSTALL_DIR" "$DATA_DIR" /root/mcontrol /etc/mcontrol
+        systemctl daemon-reload 2>/dev/null || true
+        echo -e "
+  ${G}✓ MControl completely uninstalled.${NC}
+"
+        exit 0
+    fi
+}
+
+if [[ "$INTERACTIVE" -eq 1 ]] && [[ -r /dev/tty ]]; then
+    while true; do
+        mc_check_ip_info
+        draw_banner "INSTALLER MENU" "$C"
+        mc_group "ACTIONS" first
+        mc_row "1" "Install"                  "$G"
+        mc_row "2" "Update"                   "$C"
+        mc_row "3" "Uninstall"                "$R"
+        mc_row "4" "Show Info"                "$M"
+        mc_row "5" "Reset Username / Password" "$Y"
+        mc_row "6" "Reset Port"               "$Y"
+        mc_row "7" "Check IP & Status"        "$G"
+        mc_footer "Exit"
+        printf "  ${C}Select [1-7, 0] ❯❯ ${NC}"
+        read -r menu_opt < /dev/tty || exit 0
+        case "$menu_opt" in
+            1)
+                CHANNEL="beta"
+                SOURCE="direct"
+                break ;;
+            2)
+                CHANNEL="beta"
+                SOURCE="direct"
+                break ;;
+            3)
+                mc_full_uninstall ;;
+            4)
+                mc_show_info ;;
+            5)
+                mc_reset_user_pass ;;
+            6)
+                mc_reset_port ;;
+            7)
+                mc_check_ip_info
+                echo -e "
+  ${G}✓ Checked — IPv4: ${M}${IP4}${G} | IPv6: ${M}${IP6}${G} | Port: ${C}${PORT}${NC}"
+                sleep 1 ;;
+            0|q|Q)
+                echo ""; exit 0 ;;
+            *)
+                echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
+        esac
     done
 fi
 
@@ -377,3 +522,6 @@ else
     echo -e "  ${FR}├─${NC} ${W}Setup Token :${NC} ${DIM}already configured${NC}"
 fi
 echo -e "  ${FR}└─${NC} ${W}CLI Menu    :${NC} ${Y}mcontrol${NC}\n"
+if [[ -t 0 && -t 1 && -x /usr/local/bin/mcontrol ]]; then
+    exec /usr/local/bin/mcontrol
+fi

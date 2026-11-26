@@ -227,30 +227,7 @@ PY
     return 1
 }
 
-mc_get_beta_build() {
-    if [[ -f "${DATA_DIR}/.beta_build" ]]; then
-        local bnum
-        bnum=$(tr -d '[:space:]' < "${DATA_DIR}/.beta_build" 2>/dev/null || true)
-        [[ -n "$bnum" ]] && { echo "$bnum"; return; }
-    fi
-    if [[ -f "${DATA_DIR}/beta-meta.json" ]]; then
-        python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("build") or d.get("tag") or "latest")' "${DATA_DIR}/beta-meta.json" 2>/dev/null || echo "latest"
-        return
-    fi
-    echo "latest"
-}
 
-mc_get_channel() {
-    if [[ -f "$CHANNEL_FILE" ]]; then
-        local ch
-        ch=$(tr -d '[:space:]' < "$CHANNEL_FILE" 2>/dev/null || true)
-        [[ "$ch" == "beta" ]] && { echo "beta"; return; }
-    fi
-    if [[ "$(db_get beta_builds)" == "1" ]]; then
-        echo "beta"; return
-    fi
-    echo "stable"
-}
 
 mc_get_mirror() {
     local m
@@ -259,22 +236,6 @@ mc_get_mirror() {
     echo "${m%/}"
 }
 
-mc_channel_base() {
-    local ch="$1" src="${2:-}"
-    if [[ -z "$src" && -f "${DATA_DIR}/.source" ]]; then
-        src=$(tr -d '[:space:]' < "${DATA_DIR}/.source" 2>/dev/null || true)
-    fi
-    if [[ "$src" == "mirror" ]]; then
-        local mb; mb=$(mc_get_mirror)
-        if [[ "$ch" == "beta" ]]; then echo "${mb}/beta-latest"; else echo "${mb}"; fi
-    else
-        if [[ "$ch" == "beta" ]]; then
-            echo "https://github.com/${REPO}/releases/download/beta-latest"
-        else
-            echo "https://github.com/${REPO}/releases/latest/download"
-        fi
-    fi
-}
 
 mc_get_port() {
     local p
@@ -292,11 +253,6 @@ mc_detect_ips() {
     [[ -n "${MC_IP6:-}" ]] || MC_IP6="OFF"
 }
 
-mc_download() {
-    local url="$1" dest="$2"
-    curl -fsSL --connect-timeout 8 --max-time 60 "$url" -o "$dest" 2>/dev/null \
-        || curl -fsSL --connect-timeout 10 --max-time 60 "https://gh-proxy.com/${url}" -o "$dest" 2>/dev/null
-}
 
 # ── Static Gold Double-Line Header (IPs Only, No Live Refresh Loop) ──────────
 
@@ -315,18 +271,8 @@ draw_header() {
     clear 2>/dev/null || true
     mc_detect_ips
 
-    local ch ch_lbl ch_col port
-    ch=$(mc_get_channel)
+    local port
     port=$(mc_get_port)
-    local bnum
-    bnum=$(mc_get_beta_build)
-    if [[ "$ch" == "beta" ]]; then
-        ch_lbl="BETA #${bnum} (beta-latest)"
-        ch_col="$Y"
-    else
-        ch_lbl="STABLE (latest)"
-        ch_col="$G"
-    fi
 
     local term_cols boxw content_w inner_w border
     term_cols=$(tput cols 2>/dev/null || echo 80)
@@ -345,8 +291,8 @@ draw_header() {
     echo ""
     printf "  ${FR}╔%s╗${NC}\n" "$border"
     mc_hdr_line \
-        "MControl  v${MODULE_VERSION}  |  ${ch_lbl}" \
-        "${W}MControl${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${ch_col}${ch_lbl}${NC}" \
+        "MControl  v${MODULE_VERSION}  |  CLI" \
+        "${W}MControl${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${C}CLI${NC}" \
         "$inner_w"
     mc_hdr_line \
         "IPv4: ${MC_IP4}  |  Port: ${port}" \
@@ -388,57 +334,6 @@ mc_pause() {
     read -r _
 }
 
-install_channel() {
-    local target_ch="$1"
-    local arch base_url tmp_bin tmp_sha exp got
-    arch=$(mc_arch)
-    base_url=$(mc_channel_base "$target_ch")
-    tmp_bin="${BIN}.new"
-    tmp_sha="/tmp/mcontrol.sha256"
-
-    mkdir -p "$INSTALL_DIR" "$DATA_DIR"
-    echo -e "\n  ${C}● Downloading MControl (${target_ch^^}) for linux-${arch}...${NC}"
-    if ! mc_download "${base_url}/mcontrol-linux-${arch}" "$tmp_bin"; then
-        echo -e "  ${R}✖ Download failed from GitHub & Mirror.${NC}"
-        rm -f "$tmp_bin"
-        return 1
-    fi
-    if mc_download "${base_url}/mcontrol-linux-${arch}.sha256" "$tmp_sha"; then
-        exp=$(awk '{print $1}' "$tmp_sha" | tr -d '[:space:]')
-        got=$(sha256sum "$tmp_bin" | awk '{print $1}')
-        rm -f "$tmp_sha"
-        if [[ -n "$exp" && "${exp,,}" != "${got,,}" ]]; then
-            echo -e "  ${R}✖ SHA-256 mismatch! Update aborted.${NC}"
-            rm -f "$tmp_bin"
-            return 1
-        fi
-        echo -e "  ${G}✓ SHA-256 checksum verified.${NC}"
-    fi
-    chmod 755 "$tmp_bin"
-    mv -f "$tmp_bin" "$BIN"
-    printf '%s\n' "$target_ch" > "$CHANNEL_FILE"
-    if [[ "$target_ch" == "beta" ]]; then
-        db_set beta_builds "1" || true
-        if curl -fsSL --connect-timeout 8 --max-time 20 "${base}/beta-meta.json" -o "${DATA_DIR}/beta-meta.json" 2>/dev/null && [[ -s "${DATA_DIR}/beta-meta.json" ]]; then
-            local fetched_b
-            fetched_b=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("build") or d.get("tag") or "")' "${DATA_DIR}/beta-meta.json" 2>/dev/null || true)
-            [[ -n "$fetched_b" ]] && printf '%s\n' "$fetched_b" > "${DATA_DIR}/.beta_build"
-        fi
-    else
-        db_set beta_builds "0" || true
-    fi
-
-    if mc_download "${base_url}/mcontrol-cli.sh" "${CLI_BIN}.new"; then
-        chmod 755 "${CLI_BIN}.new"
-        mv -f "${CLI_BIN}.new" "$CLI_BIN"
-    else
-        rm -f "${CLI_BIN}.new"
-    fi
-
-    systemctl daemon-reload 2>/dev/null || true
-    systemctl restart "$SVC" 2>/dev/null || systemctl enable --now "$SVC" 2>/dev/null || true
-    echo -e "  ${G}✓ Updated to ${target_ch^^} and service restarted.${NC}"
-}
 
 show_settings() {
     local ch port wpath dom strict_dom tls_state twofa_state probe_iv repo_url mirror_url svc_name active_url
@@ -489,7 +384,6 @@ show_settings() {
 
 while true; do
     draw_header
-    cur_ch=$(mc_get_channel)
 
     mc_group "PANEL SERVICE" first
     mc_row "1"  "Restart MControl Service" "$G"
@@ -503,11 +397,6 @@ while true; do
     mc_row "6"  "Change Secret Web Path" "$M"
     mc_row "7"  "Disable 2FA" "$Y" " ${DIM}(Emergency Reset)${NC}"
     mc_row "8"  "Disable HTTPS" "$Y" " ${DIM}(Switch back to HTTP)${NC}"
-
-    mc_group "UPDATE & CHANNELS (STABLE / BETA)"
-    mc_row "9"  "Update on Current Channel" "$C" " ${DIM}(${cur_ch^^})${NC}"
-    mc_row "10" "Switch to STABLE Channel" "$G" " ${DIM}(releases/latest)${NC}"
-    mc_row "11" "Switch to BETA Channel" "$Y" " ${DIM}(Rolling Action · beta-latest)${NC}"
 
     mc_group "MAINTENANCE"
     mc_row "12" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
@@ -558,9 +447,6 @@ while true; do
             rm -f "$DATA_DIR/tls.crt" "$DATA_DIR/tls.key" && systemctl restart "$SVC"
             echo -e "\n  ${Y}● HTTPS certificates removed. Switched to HTTP.${NC}"
             mc_pause ;;
-        9)  install_channel "$cur_ch"; mc_pause ;;
-        10) install_channel "stable"; mc_pause ;;
-        11) install_channel "beta"; mc_pause ;;
         12)
             out="/root/mcontrol-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
             if [[ -d "$DATA_DIR" ]]; then
@@ -572,21 +458,14 @@ while true; do
             mc_pause ;;
         13)
             echo ""
-            printf "  ${R}⚠ Uninstall MControl? [y/N]: ${NC}"
+            printf "  ${R}⚠ Uninstall MControl and remove ALL files & database (${DATA_DIR})? [y/N]: ${NC}"
             read -r yn
             if [[ "$yn" =~ ^[Yy]$ ]]; then
-                printf "  ${C}Keep database & data (${DATA_DIR})? [Y/n]: ${NC}"
-                read -r keep_db
                 systemctl disable --now "$SVC" 2>/dev/null || true
                 rm -f /etc/systemd/system/mcontrol.service "$CLI_BIN"
-                rm -rf "$INSTALL_DIR"
+                rm -rf "$INSTALL_DIR" "$DATA_DIR"
                 systemctl daemon-reload 2>/dev/null || true
-                if [[ "$keep_db" =~ ^[Nn]$ ]]; then
-                    rm -rf "$DATA_DIR"
-                    echo -e "\n  ${R}✓ MControl and database (${DATA_DIR}) completely removed.${NC}\n"
-                else
-                    echo -e "\n  ${Y}✓ MControl uninstalled (database kept at ${DATA_DIR}).${NC}\n"
-                fi
+                echo -e "\n  ${R}✓ MControl and all data/databases completely removed.${NC}\n"
                 exit 0
             fi
             mc_pause ;;
