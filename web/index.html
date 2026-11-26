@@ -4386,20 +4386,56 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
 .fm-ctx-sep { height: 1px; background: var(--border); margin: 3px 6px; }
 
 
-/* ── Vertical Left-Side Country Filter Bubble Dock (Servers Tab) ── */
+/* ── Content-Responsive Shrink-to-Fit Lists (Servers, Tunnels, Datacenter, Overview) ── */
+.srv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: fit-content;
+  min-width: min(520px, 100%);
+  max-width: 100%;
+  margin-inline: auto;
+  transition: width .22s ease;
+}
+.srv-list:has(.srv-row-wrap.open) {
+  width: 100%;
+}
+.srv-list > .srv-row-wrap {
+  width: 100%;
+}
+.srv-row-head {
+  gap: 10px 18px !important;
+}
+.srv-head-name {
+  flex: 0 1 auto !important;
+}
+.srv-head-ip {
+  flex: 0 1 auto !important;
+}
+.srv-head-right {
+  margin-inline-start: auto;
+}
+@media (max-width: 900px) {
+  .srv-list {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* ── Vertical Left-Side Country Filter Bubble Dock (Visible Only on Servers Tab) ── */
 .srv-country-dock {
   position: fixed;
   left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 80;
-  display: flex;
+  z-index: 95;
+  display: none;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   padding: 8px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
   backdrop-filter: blur(20px) saturate(165%);
   -webkit-backdrop-filter: blur(20px) saturate(165%);
   border: 1.3px solid color-mix(in srgb, var(--border) 90%, transparent);
@@ -4408,8 +4444,11 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
   overflow-y: auto;
   scrollbar-width: none;
 }
+body[data-tab="servers"] .srv-country-dock {
+  display: flex;
+}
 .srv-country-dock::-webkit-scrollbar { display: none; }
-.srv-country-dock:empty { display: none; }
+.srv-country-dock:empty { display: none !important; }
 
 .sc-bubble {
   position: relative;
@@ -4471,14 +4510,13 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
 
 @media (max-width: 1180px) {
   .srv-country-dock {
-    position: static;
-    transform: none;
+    left: 50%;
+    top: auto;
+    bottom: 14px;
+    transform: translateX(-50%);
     flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 0 auto 12px;
-    width: fit-content;
-    max-width: 100%;
+    max-width: 92vw;
+    overflow-x: auto;
     padding: 6px 10px;
   }
 }
@@ -4776,6 +4814,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
     </div>
   </div>
 </div>
+<div class="srv-country-dock" id="srv-country-dock" aria-label="Filter servers by country"></div>
 <div id="toast"></div>
 
 <!-- ═════════ FIRST-TIME SETUP ═════════ -->
@@ -4961,7 +5000,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.2</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.3</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -5230,7 +5269,6 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
           <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('servers')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
-      <div class="srv-country-dock" id="srv-country-dock" aria-label="Filter servers by country"></div>
       <div class="tag-filter-bar" id="srv-tag-filter"></div>
       <div class="cf-bulk-bar" id="fleet-bulk-bar">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -8564,6 +8602,7 @@ function renderNav() {
 })();
 function switchTab(name) {
   curTab = name;
+  document.body.dataset.tab = name;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
   renderNav();
   if (name === 'terminal') { openLocalWebTerm(); return; }
@@ -12829,6 +12868,7 @@ function stopTimers() {
 
 /* ═══════════════ auth & boot ═══════════════ */
 function enterApp() {
+  document.body.dataset.tab = curTab || 'overview';
   $('login-screen').style.display = 'none'; $('setup-screen').style.display = 'none'; $('app').style.display = 'block';
   applyLang(); applyUtilCollapsed(); const _pwaTab = new URLSearchParams(location.search).get('tab'); switchTab(['overview','servers','datacenter','tunnels','domains','monitor','settings'].includes(_pwaTab) ? _pwaTab : 'overview');
   loadServers(); loadSettings(); loadProfiles(); startTimers();
