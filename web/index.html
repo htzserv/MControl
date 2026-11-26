@@ -4422,34 +4422,37 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
   }
 }
 
-/* ── Vertical Left-Side Country Filter Bubble Dock (Visible Only on Servers Tab) ── */
+/* ── Centered Left-Side Country Flag Bubbles Directly Beside Server Cards ── */
+.srv-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+body[dir="rtl"] .srv-stage {
+  flex-direction: row-reverse;
+}
+.srv-stage > .srv-list {
+  margin-inline: 0 !important;
+}
 .srv-country-dock {
-  position: fixed;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 95;
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 8px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
   backdrop-filter: blur(20px) saturate(165%);
   -webkit-backdrop-filter: blur(20px) saturate(165%);
-  border: 1.3px solid color-mix(in srgb, var(--border) 90%, transparent);
-  box-shadow: 0 14px 36px -10px var(--shadow);
-  max-height: 76vh;
-  overflow-y: auto;
-  scrollbar-width: none;
+  border: 1.3px solid color-mix(in srgb, var(--border) 92%, transparent);
+  box-shadow: 0 12px 32px -10px var(--shadow);
+  flex-shrink: 0;
+  align-self: center;
 }
-body[data-tab="servers"] .srv-country-dock {
-  display: flex;
-}
-.srv-country-dock::-webkit-scrollbar { display: none; }
 .srv-country-dock:empty { display: none !important; }
-
 .sc-bubble {
   position: relative;
   width: 42px;
@@ -4474,51 +4477,161 @@ body[data-tab="servers"] .srv-country-dock {
 .sc-bubble.active {
   border-color: var(--cc, var(--accent));
   background: color-mix(in srgb, var(--cc, var(--accent)) 18%, var(--card));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc, var(--accent)) 28%, transparent), 0 8px 20px -6px color-mix(in srgb, var(--cc, var(--accent)) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc, var(--accent)) 28%, transparent);
   transform: scale(1.08);
 }
-.sc-bubble .flag-svg,
-.sc-bubble svg {
-  width: 22px;
-  height: 16px;
-  border-radius: 3px;
-  display: block;
+.sc-bubble .flag-svg, .sc-bubble svg {
+  width: 22px; height: 16px; border-radius: 3px; display: block;
 }
-.sc-bubble .sc-all-ico {
-  font-size: 1.05rem;
-  line-height: 1;
-}
+.sc-bubble .sc-all-ico { font-size: 1.05rem; line-height: 1; }
 .sc-bubble .sc-cnt {
-  position: absolute;
-  bottom: -3px;
-  right: -3px;
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--cc, var(--accent));
-  color: #fff;
-  font-size: .62rem;
-  font-weight: 800;
-  line-height: 17px;
-  text-align: center;
+  position: absolute; bottom: -3px; right: -3px;
+  min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+  background: var(--cc, var(--accent)); color: #fff;
+  font-size: .62rem; font-weight: 800; line-height: 17px; text-align: center;
   border: 1.5px solid var(--surface);
-  box-shadow: 0 2px 6px rgba(0,0,0,.22);
+}
+body.tp-srv-cdock #srv-country-dock { display: none !important; }
+@media (max-width: 820px) {
+  .srv-stage, body[dir="rtl"] .srv-stage { flex-direction: column; }
+  .srv-country-dock { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 }
 
-body.tp-srv-cdock #srv-country-dock { display: none !important; }
 
-@media (max-width: 1180px) {
-  .srv-country-dock {
-    left: 50%;
-    top: auto;
-    bottom: 14px;
-    transform: translateX(-50%);
-    flex-direction: row;
-    max-width: 92vw;
-    overflow-x: auto;
-    padding: 6px 10px;
-  }
+/* ── Top-Bar Settings Bubble Active State & Bottom-Right Tab Settings Pill ── */
+.top-settings-bubble {
+  padding: 0 13px !important;
+  height: 34px;
+  gap: 7px;
+  font-weight: 700;
+  font-size: .78rem;
+}
+.top-settings-bubble.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface)) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.tab-settings-fab {
+  position: fixed;
+  bottom: 18px;
+  inset-inline-end: 18px;
+  z-index: 960;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(165%);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  border: 1.4px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  color: var(--text);
+  font-weight: 700;
+  font-size: .78rem;
+  box-shadow: 0 12px 32px -8px var(--shadow);
+  cursor: pointer;
+  transition: transform .18s cubic-bezier(.22, 1, .36, 1), border-color .18s ease, box-shadow .18s ease;
+}
+.tab-settings-fab svg { color: var(--accent); transition: transform .25s ease; }
+.tab-settings-fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 16px 36px -8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.tab-settings-fab:hover svg { transform: rotate(45deg); }
+body.tp-hide-fab .tab-settings-fab { display: none !important; }
+
+/* ── Non-Blocking Floating Side-Drawer for Tab Settings (Empty Space Overlay) ── */
+.tp-drawer-wrap {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  display: none;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 72px 16px 68px;
+}
+.tp-drawer-wrap.active { display: flex; }
+.tp-drawer-wrap.dock-left { justify-content: flex-start; }
+.tp-drawer-box {
+  pointer-events: auto;
+  width: min(440px, calc(100vw - 24px));
+  max-width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px !important;
+  border-radius: 22px !important;
+  background: color-mix(in srgb, var(--surface) 92%, transparent) !important;
+  backdrop-filter: blur(24px) saturate(175%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(175%) !important;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 36%, var(--border)) !important;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, .48) !important;
+  animation: tpSlideIn .22s cubic-bezier(.22, 1, .36, 1);
+}
+@keyframes tpSlideIn {
+  from { opacity: 0; transform: translateX(18px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+.tp-drawer-wrap.dock-left .tp-drawer-box {
+  animation-name: tpSlideInLeft;
+}
+@keyframes tpSlideInLeft {
+  from { opacity: 0; transform: translateX(-18px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Miniature Visual Preview Badges inside Tab Settings Rows */
+.tp-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.tp-prev {
+  width: 56px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 5px;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-size: .58rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.tp-prev .pv-bar { height: 5px; border-radius: 99px; background: var(--accent); display: block; }
+.tp-prev .pv-pill { padding: 1px 4px; border-radius: 99px; background: color-mix(in srgb, var(--accent) 18%, transparent); font-size: .52rem; line-height: 1.2; white-space: nowrap; }
+.tp-prev .pv-box { width: 10px; height: 14px; border-radius: 3px; border: 1.3px solid var(--accent); background: color-mix(in srgb, var(--accent) 15%, transparent); }
+
+/* Server Country Flag & Country Name Badge Visibility Toggles */
+body.tp-srv-flag .srv-flag-ico { display: none !important; }
+body.tp-srv-cname .srv-cc-badge { display: none !important; }
+
+/* Clean 2-Column Organized Settings Grid */
+.settings-clean-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.settings-clean-grid > .card {
+  margin-top: 0 !important;
+  height: 100%;
+}
+.settings-clean-grid > .card:last-child {
+  grid-column: 1 / -1;
+}
+@media (max-width: 920px) {
+  .settings-clean-grid { grid-template-columns: 1fr; }
 }
 
 </style>
@@ -4742,33 +4855,42 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
     <div id="ichk-list" style="display:flex; flex-direction:column; gap:7px; max-height:340px; overflow-y:auto;"></div>
   </div>
 </div>
-<!-- Advanced Per-Tab Control Center Modal (Top-Bar Accessible, Active & Hidden Tabs) -->
-<div class="modal-bg" id="tab-cfg-modal" style="z-index:1190;">
-  <div class="card modal-box" style="max-width:700px; width:96%;">
-    <div class="toolbar" style="margin-bottom:8px;">
-      <div>
-        <h3 style="margin:0; color:var(--accent);" id="tab-cfg-title">Tab &amp; Workspace Settings</h3>
-        <div class="hint" style="margin:2px 0 0;" id="tab-cfg-sub">Configure display, layout, presets &amp; top-bar visibility for all active or hidden tabs (DB synced).</div>
+<!-- Floating Bottom-Right Tab Settings Pill -->
+<button type="button" class="tab-settings-fab" id="tab-settings-fab" onclick="openActiveTabSettings()" title="Tab Settings / تنظیمات تب">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+  <span id="tab-settings-fab-lbl">Tab Settings</span>
+</button>
+
+<!-- Non-Blocking Live-Preview Floating Drawer for Tab Settings -->
+<div class="tp-drawer-wrap" id="tab-cfg-modal" style="z-index:1190;">
+  <div class="card tp-drawer-box">
+    <div class="toolbar" style="margin-bottom:8px; gap:8px;">
+      <div style="min-width:0;">
+        <h3 style="margin:0; font-size:1rem; color:var(--accent);" id="tab-cfg-title">Tab Settings</h3>
+        <div class="hint" style="margin:2px 0 0; font-size:.72rem;" id="tab-cfg-sub">Live preview &amp; instant toggles — see changes directly on the page behind.</div>
       </div>
-      <button class="btn btn-ghost btn-sm" data-close="tab-cfg-modal">✕</button>
+      <div class="flexw" style="gap:5px; flex-shrink:0;">
+        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.72rem;" onclick="toggleTabDrawerSide()" title="Switch Left / Right Dock">⇄</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="closeModal('tab-cfg-modal')">✕</button>
+      </div>
     </div>
     <div class="tp-preset-bar" id="tp-preset-bar">
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('minimal')">✨ Minimal Clean</button>
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('noc')">🖥️ NOC Full Monitor</button>
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco Low-Power</button>
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('minimal')">✨ Minimal</button>
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('noc')">🖥️ NOC Full</button>
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco</button>
       <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('default')">↺ Default</button>
     </div>
     <input type="text" id="tab-cfg-search" class="tp-search-inp" placeholder="🔍 Search settings..." oninput="renderTabSettingsModal()">
     <div class="tab-cfg-switcher" id="tab-cfg-switcher"></div>
-    <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto; padding-inline-end:3px; margin-bottom:14px;"></div>
-    <div class="toolbar" style="margin:0; gap:6px;">
-      <div class="flexw" style="gap:6px;">
-        <button type="button" class="btn btn-ghost btn-sm" onclick="exportTabPrefsJSON()" title="Copy settings JSON">📤 Export</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="importTabPrefsJSON()" title="Import settings JSON">📥 Import</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="resetCurrentTabPrefs()" id="btn-tp-reset-one">↻ Reset Tab</button>
-        <button type="button" class="btn btn-danger btn-sm" onclick="resetTabPrefs()" id="btn-tp-reset-all">Reset All</button>
+    <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:7px; flex:1 1 auto; overflow-y:auto; padding-inline-end:3px; margin-bottom:10px;"></div>
+    <div class="toolbar" style="margin:0; gap:5px; padding-top:8px; border-top:1px solid var(--border);">
+      <div class="flexw" style="gap:5px;">
+        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="exportTabPrefsJSON()" title="Copy settings JSON">📤 Export</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="importTabPrefsJSON()" title="Import settings JSON">📥 Import</button>
+        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="resetCurrentTabPrefs()" id="btn-tp-reset-one">↻ Reset</button>
+        <button type="button" class="btn btn-danger btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="resetTabPrefs()" id="btn-tp-reset-all">All</button>
       </div>
-      <button type="button" class="btn btn-sky btn-sm" data-close="tab-cfg-modal" id="btn-tp-done">✓ Done</button>
+      <button type="button" class="btn btn-sky btn-sm" style="padding:5px 12px;" onclick="closeModal('tab-cfg-modal')" id="btn-tp-done">✓ Done</button>
     </div>
   </div>
 </div>
@@ -4814,7 +4936,6 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
     </div>
   </div>
 </div>
-<div class="srv-country-dock" id="srv-country-dock" aria-label="Filter servers by country"></div>
 <div id="toast"></div>
 
 <!-- ═════════ FIRST-TIME SETUP ═════════ -->
@@ -5000,7 +5121,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.3</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.5</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -5012,8 +5133,9 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;color:var(--purple);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span class="bak-bubble-lbl" data-i18n="btn_bak_short">Backup</span>
     </button>
-    <button type="button" class="ver-bubble top-tabcfg-bubble" id="nav-tabcfg-bubble" onclick="openActiveTabSettings()" title="Tab &amp; Layout Settings">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+    <button type="button" class="ver-bubble top-settings-bubble" id="nav-settings-bubble" onclick="switchTab('settings')" title="Settings">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent);"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      <span class="bak-bubble-lbl" data-i18n="nav_settings">Settings</span>
     </button>
     <div class="util" id="util-bar">
       <div class="util-items" id="util-items">
@@ -5263,7 +5385,6 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
         <h3 data-i18n="nav_servers">Servers</h3>
         <div class="flexw">
           <button class="btn btn-sky" id="btn-live-srv" onclick="toggleLiveServers()">LIVE: ON</button>
-          <button class="btn btn-ghost" id="btn-canary-rollout" onclick="runCanaryRollout()" title="Update 1 canary Peer Agent first, verify health, then roll out to all nodes">🐤 Canary Rollout</button>
           <button class="btn btn-ghost" data-act="probe-all" data-i18n="btn_refresh">Refresh all (SSH)</button>
           <button class="btn btn-sky" data-act="add" data-i18n="btn_add_srv">+ Add server</button>
           <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('servers')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
@@ -5280,7 +5401,10 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
           <button type="button" class="btn btn-ghost btn-sm" onclick="clearFleetSel()">Clear</button>
         </div>
       </div>
-      <div class="srv-list" id="servers-grid"></div>
+      <div class="srv-stage">
+        <div class="srv-country-dock" id="srv-country-dock" aria-label="Filter servers by country"></div>
+        <div class="srv-list" id="servers-grid"></div>
+      </div>
     </section>
 
     <!-- TUNNELS (Phase 2 Unified Tunnel Manager) -->
@@ -5767,6 +5891,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
 
         <!-- 1. General & Security (Address/Port + Domain SSL + 2FA + Password) -->
         <div id="sub-general" class="sub-pane active">
+          <div class="settings-clean-grid">
 <div class="card">
             <h4 style="color:var(--accent); margin-bottom:14px;" data-i18n="st_addr_title">Panel Address, Port &amp; Listen Domain</h4>
             <div class="kv" style="margin-bottom:14px;"><span data-i18n="set_path_port">Active web path / port</span><span id="set-path-port">---</span></div>
@@ -5786,7 +5911,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
             <button class="btn btn-sky" onclick="saveAddressSettings()" data-i18n="btn_save_addr">Save &amp; Restart Panel</button>
           </div>
 
-          <div class="card" style="margin-top:16px;">
+          <div class="card">
             <div class="toolbar" style="margin-bottom:10px;">
               <h4 style="color:var(--green);">Auto Domain SSL (Let's Encrypt) &amp; HTTPS</h4>
               <span class="badge b-miss" id="tls-status-badge">HTTP (Unencrypted)</span>
@@ -5832,7 +5957,6 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
             </div>
             <button class="btn btn-sky btn-sm" onclick="saveCustomTLS()">Save Custom SSL &amp; Restart</button>
           </div>
-<div style="height:14px;"></div>
 <div class="card">
             <h4 style="color:var(--accent); margin-bottom:14px;" data-i18n="st_sec_title">Admin Credentials &amp; 2FA</h4>
             <div class="field"><label data-i18n="lbl_admin_user">Admin username</label><input id="set-uname" placeholder="admin"></div>
@@ -5871,7 +5995,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
 
                     
 
-<div class="card" style="margin-top:16px;">
+<div class="card">
             <div class="toolbar" style="margin-bottom:10px;">
               <h4 style="color:var(--green);">Master Local Package Cache (Direct Distribution)</h4>
               <button class="btn btn-ghost btn-sm" onclick="loadMasterCache()">Refresh</button>
@@ -5906,6 +6030,7 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
               </div>
               <button class="btn btn-ghost btn-sm" id="btn-logs" data-i18n="btn_logs">Live logs</button>
             </div>
+          </div>
           </div>
         </div>
 
@@ -7561,7 +7686,6 @@ const ALL_TABS_CATALOG = [
   { id: 'profiles',   i18n: 'nav_profiles',   fa: 'پروفایل و بکاپ', en: 'Profiles & Backup', icon: 'key',    def: false, descEn: 'Saved SSH profiles, port profiles & encrypted panel backups.', descFa: 'پروفایل‌های SSH ذخیره‌شده، پورت‌ها و بکاپ رمزنگاری‌شده.' },
   { id: 'terminal',   i18n: 'nav_terminal',   fa: 'ترمینال مستر',  en: 'Master Terminal',  icon: 'term',    def: false, descEn: 'Direct shell terminal on this local Master control server.', descFa: 'ترمینال مستقیم روی همین سرور مستر کنترل.' },
   { id: 'update',     i18n: 'nav_update',     fa: 'آپدیت',         en: 'Update Center',    icon: 'refresh', def: false, descEn: 'Official GitHub & Iran Mirror updates, beta builds & offline ZIP.', descFa: 'آپدیت از گیت‌هاب و میرور ایران، بتا و آپدیت آفلاین ZIP.' },
-  { id: 'settings',   i18n: 'nav_settings',   fa: 'تنظیمات',       en: 'Settings',         icon: 'sliders', def: true,  locked: true, descEn: 'Panel port/SSL, 2FA, security, all sections hub & configuration.', descFa: 'پورت و دامنه پنل، امنیت، ۲FA و مرکز تمام تنظیمات.' }
 ];
 
 function loadNavTabsConfig() {
@@ -8566,6 +8690,8 @@ function renderNav() {
     out += `<button type="button" class="nav-edit-done" onclick="event.stopPropagation(); setNavEditMode(false)">✓ ${fa ? 'اتمام' : 'Done'}</button>`;
   }
   nav.innerHTML = out;
+  const sb = $('nav-settings-bubble');
+  if (sb) sb.classList.toggle('active', ['settings','themes','outbound','telegram','profiles'].includes(curTab));
 }
 
 (function initNavDirectEdit() {
@@ -8602,7 +8728,6 @@ function renderNav() {
 })();
 function switchTab(name) {
   curTab = name;
-  document.body.dataset.tab = name;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
   renderNav();
   if (name === 'terminal') { openLocalWebTerm(); return; }
@@ -8763,8 +8888,8 @@ function renderServerCard(s) {
   const countryLbl = (s.country && String(s.country).trim()) ? String(s.country).trim() : (s.role === 'iran' ? t('badge_iran') : t('badge_foreign'));
   const ccCol = countryColor(s.country_code || (s.role === 'iran' ? 'IR' : ''));
   const role = ccCol
-    ? `<span class="badge b-cc" style="--cc:${ccCol}">${esc(countryLbl)}</span>`
-    : (s.role === 'iran' ? `<span class="badge b-iran">${esc(countryLbl)}</span>` : `<span class="badge b-foreign">${esc(countryLbl)}</span>`);
+    ? `<span class="badge b-cc srv-cc-badge" style="--cc:${ccCol}">${esc(countryLbl)}</span>`
+    : (s.role === 'iran' ? `<span class="badge b-iran srv-cc-badge">${esc(countryLbl)}</span>` : `<span class="badge b-foreign srv-cc-badge">${esc(countryLbl)}</span>`);
   const core = s.core_installed ? `<span class="badge b-ok">${t('badge_core')}${s.core_version ? ' ' + esc(s.core_version) : ''}</span>` : `<span class="badge b-miss">${t('badge_notinst')}</span>`;
   const hk = String(s.last_error || '').indexOf('HOST KEY CHANGED') >= 0;
   const err = s.last_error ? `<div class="srv-err">${esc(s.last_error)}${hk ? ` <button class="btn btn-warn btn-sm" data-act="trust" data-id="${id}">${t('btn_trust_key')}</button>` : ''}</div>` : '';
@@ -8778,7 +8903,7 @@ function renderServerCard(s) {
       <div class="srv-head-name">
         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
           <span class="dot ${on ? 'online' : 'offline'}"></span>
-          ${flagSVG(s.country_code)}
+          <span class="srv-flag-ico">${flagSVG(s.country_code)}</span>
           <strong style="font-size:.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(s.name)}</strong>
           ${role}${(SRV_TAGS[String(id)]||[]).map(tg => `<span class="srv-tag-badge">#${esc(tg)}</span>`).join('')}
         </div>
@@ -12868,7 +12993,6 @@ function stopTimers() {
 
 /* ═══════════════ auth & boot ═══════════════ */
 function enterApp() {
-  document.body.dataset.tab = curTab || 'overview';
   $('login-screen').style.display = 'none'; $('setup-screen').style.display = 'none'; $('app').style.display = 'block';
   applyLang(); applyUtilCollapsed(); const _pwaTab = new URLSearchParams(location.search).get('tab'); switchTab(['overview','servers','datacenter','tunnels','domains','monitor','settings'].includes(_pwaTab) ? _pwaTab : 'overview');
   loadServers(); loadSettings(); loadProfiles(); startTimers();
@@ -13215,15 +13339,70 @@ async function importDCServer(idx) {
 }
 
 
-/* ═══════════════ Advanced Per-Tab Control Center v2 (Top-Bar + Presets + Granular Cards + DB Sync) ═══════════════ */
-const _GEAR_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>';
+/* ═══════════════ Advanced Per-Tab Control Center v3 (Non-Blocking Live Drawer + Visual Previews) ═══════════════ */
+const _TP_PREVIEWS = {
+  ov_interval: '<span class="pv-pill">2.5s</span>',
+  ov_valign: '<div style="display:flex;flex-direction:column;gap:2px;width:28px;"><span class="pv-bar" style="width:100%;opacity:.35;"></span><span class="pv-bar" style="width:100%;"></span><span class="pv-bar" style="width:100%;opacity:.35;"></span></div>',
+  ov_stats: '<span class="pv-box"></span><span class="pv-box"></span><span class="pv-box"></span><span class="pv-box"></span>',
+  ov_master: '<div style="width:100%;display:flex;align-items:center;justify-content:space-between;"><span class="pv-bar" style="width:45%;"></span><span class="pv-pill">IP</span></div>',
+  ov_cpu: '<span style="font-size:.66rem;color:var(--accent);">CPU%</span>',
+  ov_ram: '<span style="font-size:.66rem;color:var(--pink);">RAM%</span>',
+  ov_net: '<span style="font-size:.62rem;color:var(--green);">↓↑B/s</span>',
+  ov_tbx: '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;width:34px;"><span class="pv-bar"></span><span class="pv-bar"></span><span class="pv-bar"></span><span class="pv-bar"></span></div>',
+  ov_fbar: '<span class="pv-pill">LIVE</span><span class="pv-pill">+</span>',
+  ov_metrics: '<svg viewBox="0 0 44 20" width="42" height="18"><polyline fill="none" stroke="currentColor" stroke-width="2" points="2,16 11,10 20,13 30,4 42,8"/></svg>',
+  ov_incidents: '<div style="display:flex;flex-direction:column;gap:2px;width:36px;"><span class="pv-bar" style="background:var(--red);width:90%;"></span><span class="pv-bar" style="background:var(--green);width:75%;"></span></div>',
+  ov_radar: '<div style="display:flex;flex-direction:column;gap:2px;width:38px;"><span class="pv-bar"></span><span class="pv-bar"></span><span class="pv-bar"></span></div>',
+  srv_flag: '<svg viewBox="0 0 30 20" width="24" height="16" style="border-radius:3px;"><rect width="30" height="6.6" fill="#239f40"/><rect y="6.6" width="30" height="6.7" fill="#fff"/><rect y="13.3" width="30" height="6.7" fill="#da0000"/></svg>',
+  srv_cname: '<span class="pv-pill" style="color:var(--yellow);">GERMANY</span>',
+  srv_cdock: '<div style="display:flex;flex-direction:column;gap:2px;align-items:center;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--green);"></span></div>',
+  srv_dir: '<span class="pv-pill" style="color:var(--green);">🇮🇷 41ms</span>',
+  srv_ob: '<span class="pv-pill" style="color:var(--yellow);">🚀 95ms</span>',
+  srv_rev: '<span class="pv-pill" style="color:var(--sky);">↩️ 42ms</span>',
+  srv_cpu: '<span style="font-size:.54rem;">CPU • RAM</span>',
+  srv_peer: '<span class="pv-pill">PEER V4</span>',
+  srv_pbtn: '<span class="pv-pill">📡 Ping</span>',
+  srv_tags: '<span class="pv-pill">#VIP</span>',
+  srv_compact: '<div style="display:flex;flex-direction:column;gap:2px;width:36px;"><span class="pv-bar" style="height:3px;"></span><span class="pv-bar" style="height:3px;"></span><span class="pv-bar" style="height:3px;"></span></div>',
+  srv_interval: '<span class="pv-pill">8s ↻</span>',
+  srv_sort: '<span class="pv-pill">A→Z</span>',
+  srv_filter: '<span class="pv-pill">🇮🇷/🌍</span>',
+  dc_provs: '<span class="pv-box"></span><span class="pv-box"></span><span class="pv-box"></span>',
+  dc_auto_imp: '<span class="pv-pill">+Import</span>',
+  dc_auto_pair: '<span class="pv-pill">Pair V4</span>',
+  dc_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
+  tun_tools: '<span class="pv-pill">MSmart</span>',
+  tun_stopped: '<span class="pv-pill" style="color:var(--green);">ACTIVE</span>',
+  tun_legacy: '<span class="pv-pill">MTunnel</span>',
+  tun_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
+  dom_bubbles: '<span class="pv-pill">CF</span><span class="pv-pill">AR</span>',
+  dom_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
+  mon_stats: '<span class="pv-pill" style="color:var(--green);">UP</span><span class="pv-pill" style="color:var(--red);">DN</span>',
+  mon_beats: '<span style="width:4px;height:14px;background:var(--green);border-radius:2px;"></span><span style="width:4px;height:14px;background:var(--green);border-radius:2px;"></span><span style="width:4px;height:14px;background:var(--red);border-radius:2px;"></span><span style="width:4px;height:14px;background:var(--green);border-radius:2px;"></span>',
+  mon_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
+  ob_auto_sub: '<span class="pv-pill">SUB ▾</span>',
+  ob_auto_lb: '<span class="pv-pill">LB ▾</span>',
+  ob_auto_manual: '<span class="pv-pill">URI ▾</span>',
+  ob_badges: '<span class="pv-pill" style="color:var(--green);">XRAY</span>',
+  term_snips: '<span class="pv-pill">$_</span><span class="pv-pill">Ports</span>',
+  term_font: '<span class="pv-pill">12px</span>',
+  ui_width: '<span class="pv-pill">↔ 1320</span>',
+  ui_density: '<span class="pv-pill">Density</span>',
+  page_valign: '<span class="pv-pill">↕ Align</span>',
+  ui_eco: '<span class="pv-pill" style="color:var(--green);">⚡ FPS</span>',
+  hide_fab: '<span class="pv-pill">⚙ Pill</span>',
+  show_inline_gears: '<span class="pv-pill">+ ⚙</span>',
+  set_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
+  prof_auto_dd: '<span class="pv-pill">SSH ▾</span>'
+};
+
 const TAB_PREFS_SCHEMA = {
   overview: {
     titleEn: 'Overview', titleFa: 'داشبورد',
     items: [
-      { key: 'ov_interval', type: 'select', def: '2500', en: 'Telemetry Refresh Rate', fa: 'سرعت بروزرسانی آمار زنده', descEn: 'How often Master CPU/RAM/Network updates', descFa: 'بازه زمانی آپدیت لحظه‌ای CPU و شبکه مستر',
+      { key: 'ov_interval', type: 'select', def: '2500', en: 'Telemetry Refresh Rate', fa: 'سرعت بروزرسانی آمار زنده', descEn: 'Master CPU/RAM/Network update cadence', descFa: 'بازه زمانی آپدیت لحظه‌ای CPU و شبکه مستر',
         options: [['1500','1.5s (Fast)'],['2500','2.5s (Balanced)'],['5000','5s (Light)'],['10000','10s (Eco)']] },
-      { key: 'ov_valign', type: 'select', def: 'top', en: 'Overview Vertical Position', fa: 'جایگاه عمودی کارت‌های داشبورد', descEn: 'Place remaining Overview cards at Top, Center, or Bottom of screen', descFa: 'محل قرارگیری کارت‌های باقی‌مانده در بالا، وسط یا پایین صفحه',
+      { key: 'ov_valign', type: 'select', def: 'top', en: 'Overview Vertical Position', fa: 'جایگاه عمودی کارت‌های داشبورد', descEn: 'Place Overview cards at Top, Center, or Bottom of screen', descFa: 'قرارگیری کارت‌های داشبورد در بالا، وسط یا پایین صفحه',
         options: [['top','Top / بالا (پیش‌فرض)'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
       { key: 'ov_stats',     cls: 'tp-ov-stats',     en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / Iran / Foreign / Online counters', descFa: 'شمارنده‌های کل / ایران / خارج / آنلاین' },
       { key: 'ov_master',    cls: 'tp-ov-master',    en: 'Master Server Header Bar', fa: 'نوار مشخصات سرور مستر', descEn: 'Master hostname, IPv4/IPv6 & Disk badge strip', descFa: 'نام سرور مستر، آی‌پی‌ها و درصد دیسک' },
@@ -13240,21 +13419,23 @@ const TAB_PREFS_SCHEMA = {
   servers: {
     titleEn: 'Servers', titleFa: 'سرورها',
     items: [
-      { key: 'srv_interval', type: 'select', def: '8000', en: 'Auto-Ping & Reload Interval', fa: 'بازه پینگ و ریلود خودکار', descEn: 'Background live probe cadence (LIVE: ON)', descFa: 'بازه زمانی پینگ و آپدیت زنده سرورها',
+      { key: 'srv_flag',  cls: 'tp-srv-flag',  en: 'Country Flag Icon', fa: 'نمایش پرچم کشور', descEn: 'Show country flag SVG next to server name', descFa: 'نمایش پرچم کشور کنار نام هر سرور' },
+      { key: 'srv_cname', cls: 'tp-srv-cname', en: 'Country Name Badge', fa: 'نمایش اسم کشور (Badge)', descEn: 'Show IRAN / GERMANY / TÜRKIYE pill next to server name', descFa: 'نمایش حباب اسم کشور کنار نام سرور' },
+      { key: 'srv_cdock', cls: 'tp-srv-cdock', en: 'Left Country Flag Bubbles', fa: 'بابل‌های عمودی پرچم کشورها (سمت چپ)', descEn: 'Vertical country filter dock beside server list', descFa: 'نوار عمودی پرچم کشورها کنار لیست سرورها' },
+      { key: 'srv_dir',   cls: 'tp-srv-dir',   en: 'Direct Iran Ping (🇮🇷)', fa: 'نمایش پینگ مستقیم ایران (🇮🇷)', descEn: 'Direct Master → Server latency badge', descFa: 'حباب پینگ مستقیم از مستر به سرور' },
+      { key: 'srv_ob',    cls: 'tp-srv-ob',    en: 'Outbound Ping (🚀)', fa: 'نمایش پینگ اوتباند (🚀)', descEn: 'Latency through Master Xray Outbound', descFa: 'پینگ از طریق Xray Outbound' },
+      { key: 'srv_rev',   cls: 'tp-srv-rev',   en: 'Reverse Ping (↩️)', fa: 'نمایش پینگ ریورس (↩️)', descEn: 'Latency from remote server back to Iran Master', descFa: 'پینگ برگشت از سرور مقصد به مستر ایران' },
+      { key: 'srv_cpu',   cls: 'tp-srv-cpu',   en: 'Header CPU & RAM', fa: 'نمایش CPU و RAM در هدر', descEn: 'Show inline CPU/RAM on collapsed server rows', descFa: 'نمایش مصرف منابع روی ردیف بسته سرور' },
+      { key: 'srv_peer',  cls: 'tp-srv-peer',  en: 'Peer Version Badge', fa: 'نمایش بج نسخه Peer', descEn: 'Show PEER V4 / SSH mode badge', descFa: 'نمایش بج PEER V4 روی هدر سرور' },
+      { key: 'srv_pbtn',  cls: 'tp-srv-pbtn',  en: 'Quick Ping Button', fa: 'نمایش دکمه پینگ سریع', descEn: 'One-click Ping button in server header', descFa: 'دکمه بابل پینگ سریع کنار بج Peer' },
+      { key: 'srv_tags',  cls: 'tp-srv-tags',  en: 'Tag Filter Bar', fa: 'نوار فیلتر تگ‌ها', descEn: 'Show custom tag filter pills above servers', descFa: 'نمایش فیلتر تگ‌ها بالای لیست سرورها' },
+      { key: 'srv_compact', cls: 'tp-srv-compact', def: false, invert: true, en: 'Compact Row Mode', fa: 'حالت فشرده ردیف‌ها', descEn: 'Slimmer rows to fit more servers on screen', descFa: 'ارتفاع کمتر کارت‌ها برای نمایش سرورهای بیشتر' },
+      { key: 'srv_interval', type: 'select', def: '8000', en: 'Auto-Ping Interval', fa: 'بازه پینگ خودکار', descEn: 'Background live probe cadence (LIVE: ON)', descFa: 'بازه زمانی پینگ و آپدیت زنده سرورها',
         options: [['5000','5s (Fast)'],['8000','8s (Balanced)'],['15000','15s (Normal)'],['30000','30s (Light)'],['60000','60s (Eco)']] },
       { key: 'srv_sort', type: 'select', def: 'manual', en: 'Default Sort Order', fa: 'مرتب‌سازی پیش‌فرض سرورها', descEn: 'Automatically sort server rows', descFa: 'ترتیب نمایش کارت‌های سرور',
         options: [['manual','Manual / Custom'],['name','Name (A → Z)'],['online','Online First'],['ping','Lowest Direct Ping'],['cpu','Highest CPU Load']] },
       { key: 'srv_filter', type: 'select', def: 'all', en: 'Default Role Filter', fa: 'فیلتر نمایش سرورها', descEn: 'Filter visible server cards', descFa: 'فیلتر کردن لیست سرورها بر اساس نوع',
-        options: [['all','All Servers'],['iran','Iran Nodes Only'],['foreign','Foreign Nodes Only'],['online','Online Only']] },
-      { key: 'srv_compact', cls: 'tp-srv-compact', def: false, invert: true, en: 'Compact Row Mode', fa: 'حالت فشرده ردیف‌ها', descEn: 'Slimmer rows to fit more servers on screen', descFa: 'ارتفاع کمتر کارت‌ها برای نمایش سرورهای بیشتر' },
-      { key: 'srv_dir',  cls: 'tp-srv-dir',  en: 'Direct Iran Ping (🇮🇷)', fa: 'نمایش پینگ مستقیم ایران (🇮🇷)', descEn: 'Direct Master → Server latency badge', descFa: 'حباب پینگ مستقیم از مستر به سرور' },
-      { key: 'srv_ob',   cls: 'tp-srv-ob',   en: 'Outbound Ping (🚀)', fa: 'نمایش پینگ اوتباند (🚀)', descEn: 'Latency through Master Xray Outbound', descFa: 'پینگ از طریق Xray Outbound' },
-      { key: 'srv_rev',  cls: 'tp-srv-rev',  en: 'Reverse Ping (↩️)', fa: 'نمایش پینگ ریورس (↩️)', descEn: 'Latency from remote server back to Iran Master', descFa: 'پینگ برگشت از سرور مقصد به مستر ایران' },
-      { key: 'srv_cpu',  cls: 'tp-srv-cpu',  en: 'Header CPU & RAM', fa: 'نمایش CPU و RAM در هدر', descEn: 'Show inline CPU/RAM on collapsed server rows', descFa: 'نمایش مصرف منابع روی ردیف بسته سرور' },
-      { key: 'srv_peer', cls: 'tp-srv-peer', en: 'Peer Version Badge', fa: 'نمایش بج نسخه Peer', descEn: 'Show PEER V4 / SSH mode badge', descFa: 'نمایش بج PEER V4 روی هدر سرور' },
-      { key: 'srv_pbtn', cls: 'tp-srv-pbtn', en: 'Quick Ping Button', fa: 'نمایش دکمه پینگ سریع', descEn: 'One-click Ping button in server header', descFa: 'دکمه بابل پینگ سریع کنار بج Peer' },
-      { key: 'srv_tags', cls: 'tp-srv-tags', en: 'Tag Filter Bar', fa: 'نوار فیلتر تگ‌ها', descEn: 'Show custom tag filter pills above servers', descFa: 'نمایش فیلتر تگ‌ها بالای لیست سرورها' },
-      { key: 'srv_cdock', cls: 'tp-srv-cdock', en: 'Left Country Flag Bubbles', fa: 'بابل‌های عمودی پرچم کشورها (سمت چپ)', descEn: 'Floating vertical country filter dock on the left of Servers', descFa: 'نوار عمودی پرچم کشورها برای دسته‌بندی سریع سرورها' }
+        options: [['all','All Servers'],['iran','Iran Nodes Only'],['foreign','Foreign Nodes Only'],['online','Online Only']] }
     ]
   },
   datacenter: {
@@ -13320,7 +13501,7 @@ const TAB_PREFS_SCHEMA = {
     ]
   },
   settings: {
-    titleEn: 'Global Layout', titleFa: 'ظاهر و چیدمان کل پنل',
+    titleEn: 'Global Layout', titleFa: 'چیدمان کل پنل',
     items: [
       { key: 'ui_width', type: 'select', def: 'standard', en: 'Page Container Width', fa: 'عرض محتوای صفحات پنل', descEn: 'Control horizontal spread across wide screens', descFa: 'تنظیم عرض کانتینر اصلی روی مانیتورهای عریض',
         options: [['compact','Compact (1120px)'],['standard','Standard (1320px)'],['wide','Wide (1620px)'],['full','Full Screen (96%)']] },
@@ -13328,15 +13509,15 @@ const TAB_PREFS_SCHEMA = {
         options: [['normal','Normal / استاندارد'],['compact','Compact / فشرده'],['ultra','Ultra-Compact / خیلی فشرده']] },
       { key: 'page_valign', type: 'select', def: 'top', en: 'All-Tabs Vertical Alignment', fa: 'جایگاه عمودی همه صفحات', descEn: 'Align content vertically across all main pages', descFa: 'تنظیم بالا / وسط / پایین برای تمام تب‌های اصلی',
         options: [['top','Top / بالا'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
-      { key: 'ui_eco', def: false, en: 'Eco / Low-Power Mode (No Blur)', fa: 'حالت سبک (بدون بلور و انیمیشن سنگین)', descEn: 'Disables heavy backdrop blur & animations for max FPS', descFa: 'حذف افکت‌های شیشه‌ای سنگین برای سرعت بالا روی همه دستگاه‌ها' },
-      { key: 'show_inline_gears', cls: 'tp-show-inline-gears', def: false, invert: true, en: 'Show Extra ⚙ Buttons Inside Pages', fa: 'نمایش دکمه‌های ⚙ اضافه داخل صفحات', descEn: 'Keep toolbar gear icons visible in addition to the top-bar ⚙ button', descFa: 'علاوه بر دکمه ⚙ نوار بالا، دکمه‌های داخل صفحات هم نمایش داده شوند' },
-      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Settings Cards', fa: 'کارت‌های فشرده تنظیمات', descEn: 'Tighter vertical padding inside Settings cards', descFa: 'فضای عمودی کمتر داخل کارت‌های تنظیمات' }
+      { key: 'ui_eco', def: false, en: 'Eco / Low-Power Mode (No Blur)', fa: 'حالت سبک (بدون بلور سنگین)', descEn: 'Disables heavy backdrop blur & animations for max FPS', descFa: 'حذف افکت‌های شیشه‌ای سنگین برای سرعت بالا' },
+      { key: 'hide_fab', cls: 'tp-hide-fab', def: false, invert: true, en: 'Hide Bottom Tab Settings Button', fa: 'مخفی کردن دکمه شناور پایین', descEn: 'Hide the bottom-right Tab Settings pill', descFa: 'پنهان کردن دکمه تنظیمات تب در پایین صفحه' }
     ]
   }
 };
 
 let TAB_PREFS = {};
 let _activeTabCfgKey = 'overview';
+let _tabDrawerLeft = false;
 try { TAB_PREFS = JSON.parse(ls.get('mc_tab_prefs_v1', '{}') || '{}') || {}; } catch (e) { TAB_PREFS = {}; }
 
 function saveTabPrefs() {
@@ -13378,13 +13559,11 @@ function applyTabPrefs() {
       }
     });
   });
-  // Dynamic local-grid columns when some Master cards are hidden
   const lg = document.querySelector('#tab-overview .local-grid');
   if (lg) {
     const visCnt = ['ov_cpu','ov_ram','ov_net','ov_tbx'].filter(k => TAB_PREFS[k] !== false).length;
     lg.style.gridTemplateColumns = (visCnt > 0 && visCnt < 4) ? `repeat(${visCnt}, minmax(0, 1fr))` : '';
   }
-  // Vertical alignment (Overview-specific or global all-tabs)
   const ovPos = TAB_PREFS.ov_valign || 'top';
   document.body.classList.toggle('tp-ov-pos-center', ovPos === 'center');
   document.body.classList.toggle('tp-ov-pos-bottom', ovPos === 'bottom');
@@ -13392,7 +13571,6 @@ function applyTabPrefs() {
   document.body.classList.toggle('tp-pg-pos-center', pgPos === 'center');
   document.body.classList.toggle('tp-pg-pos-bottom', pgPos === 'bottom');
 
-  // Global width, density & eco mode
   const w = TAB_PREFS.ui_width || 'standard';
   document.body.classList.toggle('tp-w-compact', w === 'compact');
   document.body.classList.toggle('tp-w-wide', w === 'wide');
@@ -13403,11 +13581,20 @@ function applyTabPrefs() {
   if (TAB_PREFS.ui_eco) document.body.setAttribute('data-eco', '1');
   else document.body.removeAttribute('data-eco');
 
+  const fabLbl = $('tab-settings-fab-lbl');
+  if (fabLbl) fabLbl.textContent = (typeof lang !== 'undefined' && lang === 'fa') ? 'تنظیمات تب' : 'Tab Settings';
+
   const tf = parseInt(TAB_PREFS.term_font || '12', 10) || 12;
   if ($('term-out')) $('term-out').style.fontSize = tf + 'px';
   if ($('term-inp')) $('term-inp').style.fontSize = tf + 'px';
   if ($('dc-cr-imp') && Object.prototype.hasOwnProperty.call(TAB_PREFS, 'dc_auto_imp')) $('dc-cr-imp').checked = !!TAB_PREFS.dc_auto_imp;
   if ($('dc-cr-pair') && Object.prototype.hasOwnProperty.call(TAB_PREFS, 'dc_auto_pair')) $('dc-cr-pair').checked = !!TAB_PREFS.dc_auto_pair;
+}
+
+function toggleTabDrawerSide() {
+  _tabDrawerLeft = !_tabDrawerLeft;
+  const wrap = $('tab-cfg-modal');
+  if (wrap) wrap.classList.toggle('dock-left', _tabDrawerLeft);
 }
 
 function openActiveTabSettings() {
@@ -13431,7 +13618,7 @@ function applyWorkspacePreset(name) {
       ov_cpu: true, ov_ram: true, ov_net: true, ov_tbx: true,
       ov_valign: 'center', ui_density: 'compact', srv_compact: true, tun_compact: true, ui_eco: false
     };
-    toast(fa ? '✨ چیدمان مینیمال اعمال شد' : '✨ Minimal Clean workspace applied');
+    toast(fa ? '✨ چیدمان مینیمال اعمال شد' : '✨ Minimal workspace applied');
   } else if (name === 'noc') {
     TAB_PREFS = {
       ...TAB_PREFS,
@@ -13440,7 +13627,7 @@ function applyWorkspacePreset(name) {
       ov_interval: '1500', srv_interval: '5000', ov_valign: 'top', page_valign: 'top',
       ui_width: 'wide', ui_density: 'normal', ui_eco: false
     };
-    toast(fa ? '🖥️ چیدمان کامل NOC اعمال شد' : '🖥️ NOC Full Monitor workspace applied');
+    toast(fa ? '🖥️ چیدمان کامل NOC اعمال شد' : '🖥️ NOC Full workspace applied');
   } else if (name === 'eco') {
     TAB_PREFS = {
       ...TAB_PREFS,
@@ -13484,15 +13671,16 @@ function _renderTabCfgItem(it, fa, badgeTab) {
   const val = getTabPrefVal(it);
   const lbl = (fa ? it.fa : it.en) + (badgeTab ? ` · [${badgeTab}]` : '');
   const desc = fa ? it.descFa : it.descEn;
+  const prevHtml = `<div class="tp-prev" aria-hidden="true">${_TP_PREVIEWS[it.key] || '<span class="pv-pill">UI</span>'}</div>`;
   if (it.type === 'select') {
     const opts = (it.options || []).map(([ov, ol]) => `<option value="${esc(ov)}" ${String(val) === String(ov) ? 'selected' : ''}>${esc(ol)}</option>`).join('');
     return `<div class="tab-cfg-row">
-      <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
+      <div class="tp-item-left">${prevHtml}<div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div></div>
       <select class="tab-cfg-sel" onchange="setTabPref('${esc(it.key)}', this.value)">${opts}</select>
     </div>`;
   }
   return `<div class="tab-cfg-row">
-    <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
+    <div class="tp-item-left">${prevHtml}<div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div></div>
     <label class="etab-switch"><input type="checkbox" ${val ? 'checked' : ''} onchange="setTabPref('${esc(it.key)}', this.checked)"><span class="etab-slider"></span></label>
   </div>`;
 }
@@ -13504,11 +13692,11 @@ function renderTabSettingsModal() {
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
   const q = ($('tab-cfg-search') ? $('tab-cfg-search').value.trim().toLowerCase() : '');
 
-  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = q ? (fa ? 'نتایج جستجو در همه تب‌ها' : 'Search All Tab Settings') : (fa ? ('تنظیمات ' + sec.titleFa) : (sec.titleEn + ' Settings'));
-  if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'کنترل کامل ظاهر، چیدمان، پریست‌ها و نمایش در نوار بالا برای همه تب‌ها (با سینک دیتابیس).' : 'Full control over display, layout, presets & top-bar visibility for all tabs (DB synced).';
+  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = q ? (fa ? 'نتایج جستجو' : 'Search Settings') : (fa ? ('تنظیمات تب ' + sec.titleFa) : (sec.titleEn + ' Tab Settings'));
+  if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'پیش‌نمایش زنده — تغییر هر گزینه بلافاصله روی صفحه پشت دیده می‌شود.' : 'Live preview — toggle any option to see its effect immediately on the page behind.';
   if ($('tab-cfg-search')) $('tab-cfg-search').placeholder = fa ? '🔍 جستجو در بین تمام تنظیمات تب‌ها...' : '🔍 Search across all tab settings...';
-  if ($('btn-tp-reset-one')) $('btn-tp-reset-one').textContent = fa ? '↻ ریست همین تب' : '↻ Reset Tab';
-  if ($('btn-tp-reset-all')) $('btn-tp-reset-all').textContent = fa ? 'ریست همه' : 'Reset All';
+  if ($('btn-tp-reset-one')) $('btn-tp-reset-one').textContent = fa ? '↻ ریست' : '↻ Reset';
+  if ($('btn-tp-reset-all')) $('btn-tp-reset-all').textContent = fa ? 'همه' : 'All';
   if ($('btn-tp-done')) $('btn-tp-done').textContent = fa ? '✓ بستن' : '✓ Done';
 
   const visMap = {};
@@ -13545,10 +13733,10 @@ function renderTabSettingsModal() {
   if (cat) {
     const pinned = !!visMap[key];
     out += `<div class="tab-cfg-row pin-row">
-      <div>
+      <div class="tp-item-left"><div class="tp-prev"><span class="pv-pill">TOP</span></div><div>
         <strong>${fa ? 'نمایش این تب در نوار بالای صفحه' : 'Show Tab in Top Navigation Bar'}</strong>
-        <span>${pinned ? (fa ? 'این تب در حال حاضر در نوار بالا فعال است' : 'Currently active & visible in the top bar') : (fa ? 'این تب مخفی است — می‌توانید همین‌جا تنظیم یا فعالش کنید' : 'Currently hidden from top bar — configure or enable it here')}</span>
-      </div>
+        <span>${pinned ? (fa ? 'این تب در نوار بالا فعال است' : 'Active & visible in the top navigation bar') : (fa ? 'این تب مخفی است — همین‌جا فعالش کنید' : 'Hidden from top bar — enable it here')}</span>
+      </div></div>
       ${cat.locked
         ? `<span class="badge b-ok mono" style="font-size:.66rem;">${fa ? 'ثابت' : 'LOCKED'}</span>`
         : `<label class="etab-switch"><input type="checkbox" ${pinned ? 'checked' : ''} onchange="toggleNavTabVisible('${esc(key)}', this.checked); renderTabSettingsModal();"><span class="etab-slider"></span></label>`

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# MControl v1.6.3 — 2-Step MDesign Interactive Installer (Step 1: Iran/Foreign -> Step 2: Stable/Beta ± Engines)
-MODULE_VERSION="1.6.3"
+# MControl v1.6.5 — 2-Step MDesign Interactive Installer (Step 1: Iran/Foreign -> Step 2: Stable/Beta ± Engines)
+MODULE_VERSION="1.6.5"
 set -euo pipefail
 umask 077
 

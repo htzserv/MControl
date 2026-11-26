@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.6.5
+- **Non-Blocking Live-Preview Tab Settings Drawer, Clean Settings Layout & Country Flag/Name Toggles:**
+  - Turned the top-bar bubble next to `Backup` into the main **`Settings`** tab button (removing duplicate `Settings` from the top tab bar) and added a dedicated bottom-right **`Tab Settings` (`تنظیمات تب`)** floating pill.
+  - Converted the Tab Settings modal into a non-blocking floating side-drawer (`⇄` Left/Right dockable) in empty screen space with miniature visual preview thumbnails beside every option so changes can be seen live on the page behind it.
+  - Added independent **`Country Flag Icon`** and **`Country Name Badge`** visibility toggles in `Servers` tab settings.
+  - Reorganized the main `Settings` (`General & System`) page into a clean, balanced 2-column responsive grid.
+
+
+## 1.6.4
+- **Servers Tab Country Dock Fix & Cleanup:**
+  - Placed `#srv-country-dock` inside a vertically-centered `.srv-stage` flex container directly beside `#servers-grid` so country flag bubbles always appear reliably beside the server rows at any screen width or zoom level (switching to a centered horizontal row below `820px`).
+  - Removed `document.body.dataset.tab` to eliminate global `[data-tab]` click handler collisions.
+  - Removed the `🐤 Canary Rollout` button from the Servers toolbar for a cleaner header.
+
+
 ## 1.6.2
 - **Top-Bar Permanent `⚙` Button & Advanced Workspace Control Center:**
   - Moved the Tab & Layout Settings (`⚙`) button permanently into the top floating navigation bar next to `Backup` so it remains accessible on every tab even when page toolbars (such as `Fleet Hardware Radar`) are hidden.
