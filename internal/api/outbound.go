@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -1255,6 +1254,92 @@ func freeLocalPort() (int, error) {
 	return port, nil
 }
 
+func measureSingleOutboundDelay(bin, uri, probeURL string) int {
+	outObj, err := parseLinkToXrayOutbound(uri, "tout-0")
+	if err != nil {
+		return -1
+	}
+	p, err := freeLocalPort()
+	if err != nil {
+		return -1
+	}
+	tmpCfg := map[string]any{
+		"log": map[string]any{"loglevel": "none"},
+		"inbounds": []any{
+			map[string]any{
+				"tag":      "tin-0",
+				"listen":   "127.0.0.1",
+				"port":     p,
+				"protocol": "socks",
+				"settings": map[string]any{"auth": "noauth", "udp": false},
+			},
+		},
+		"outbounds": []any{outObj},
+		"routing": map[string]any{
+			"rules": []any{
+				map[string]any{
+					"type":        "field",
+					"inboundTag":  []string{"tin-0"},
+					"outboundTag": "tout-0",
+				},
+			},
+		},
+	}
+	tmpFile, err := os.CreateTemp("", "mc-xray-one-*.json")
+	if err != nil {
+		return -1
+	}
+	tmpPath := tmpCfgPath(tmpFile)
+	b, _ := json.Marshal(tmpCfg)
+	_, _ = tmpFile.Write(b)
+	_ = tmpFile.Close()
+	defer os.Remove(tmpPath)
+
+	cmd := exec.Command(bin, "run", "-c", tmpPath)
+	if err := cmd.Start(); err != nil {
+		return -1
+	}
+	defer func() {
+		if cmd.Process != nil {
+			_ = cmd.Process.Kill()
+		}
+		_ = cmd.Wait()
+	}()
+
+	ready := false
+	for i := 0; i < 8; i++ {
+		time.Sleep(150 * time.Millisecond)
+		if c, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", p), 180*time.Millisecond); err == nil {
+			_ = c.Close()
+			ready = true
+			break
+		}
+	}
+	if !ready {
+		return -1
+	}
+
+	proxy := fmt.Sprintf("127.0.0.1:%d", p)
+	out, err := exec.Command("curl", "-sS", "--max-time", "5", "--socks5-hostname", proxy, "-o", "/dev/null", "-w", "%{http_code} %{time_total}", probeURL).Output()
+	if err != nil {
+		return -1
+	}
+	parts := strings.Fields(strings.TrimSpace(string(out)))
+	if len(parts) != 2 {
+		return -1
+	}
+	code, _ := strconv.Atoi(parts[0])
+	sec, _ := strconv.ParseFloat(parts[1], 64)
+	if code >= 200 && code < 400 && sec > 0 {
+		ms := int(sec * 1000)
+		if ms < 1 {
+			ms = 1
+		}
+		return ms
+	}
+	return -1
+}
+
 func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		NodeID string `json:"node_id"` // optional: test single node
@@ -1274,16 +1359,7 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	type testItem struct {
-		idx  int
-		id   string
-		port int
-	}
-	var items []testItem
-	var inbounds []any
-	var outbounds []any
-	var rules []any
-
+	var targetIdxs []int
 	for i, n := range cfg.Nodes {
 		if req.NodeID != "" && n.ID != req.NodeID {
 			continue
@@ -1291,129 +1367,41 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 		if req.SubID != "" && n.Source != req.SubID {
 			continue
 		}
-		if strings.TrimSpace(n.URI) == "" {
-			cfg.Nodes[i].LastDelayMs = -1
-			continue
-		}
-		inTag := fmt.Sprintf("tin-%d", i)
-		outTag := fmt.Sprintf("tout-%d", i)
-		outObj, err := parseLinkToXrayOutbound(n.URI, outTag)
-		if err != nil {
-			cfg.Nodes[i].LastDelayMs = -1
-			continue
-		}
-		p, err := freeLocalPort()
-		if err != nil {
-			cfg.Nodes[i].LastDelayMs = -1
-			continue
-		}
-		inbounds = append(inbounds, map[string]any{
-			"tag":      inTag,
-			"listen":   "127.0.0.1",
-			"port":     p,
-			"protocol": "socks",
-			"settings": map[string]any{"auth": "noauth", "udp": false},
-		})
-		outbounds = append(outbounds, outObj)
-		rules = append(rules, map[string]any{
-			"type":        "field",
-			"inboundTag":  []string{inTag},
-			"outboundTag": outTag,
-		})
-		items = append(items, testItem{idx: i, id: n.ID, port: p})
+		targetIdxs = append(targetIdxs, i)
 	}
 
-	if len(items) == 0 {
-		h.saveOutboundCfg(cfg)
+	if len(targetIdxs) == 0 {
+		_ = h.saveOutboundCfg(cfg)
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "config": cfg, "ok_count": 0, "failed_count": 0})
 		return
 	}
 
-	tmpCfg := map[string]any{
-		"log":       map[string]any{"loglevel": "error"},
-		"inbounds":  inbounds,
-		"outbounds": outbounds,
-		"routing":   map[string]any{"rules": rules},
-	}
-	tmpFile, err := os.CreateTemp("", "mc-xray-delay-*.json")
-	if err != nil {
-		fail(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	tmpPath := tmpCfgPath(tmpFile)
-	b, _ := json.Marshal(tmpCfg)
-	_, _ = tmpFile.Write(b)
-	_ = tmpFile.Close()
-	defer os.Remove(tmpPath)
-
-	var stderrBuf bytes.Buffer
-	cmd := exec.Command(bin, "run", "-c", tmpPath)
-	cmd.Stderr = &stderrBuf
-	if err := cmd.Start(); err != nil {
-		fail(w, http.StatusInternalServerError, "failed to start xray tester: "+err.Error())
-		return
-	}
-	defer func() {
-		if cmd.Process != nil {
-			_ = cmd.Process.Kill()
-		}
-		_ = cmd.Wait()
-	}()
-
-	ready := false
-	for i := 0; i < 8; i++ {
-		time.Sleep(250 * time.Millisecond)
-		if c, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", items[0].port), 200*time.Millisecond); err == nil {
-			_ = c.Close()
-			ready = true
-			break
-		}
-	}
-	if !ready {
-		msg := strings.TrimSpace(stderrBuf.String())
-		if msg == "" {
-			msg = "Xray tester exited before opening SOCKS ports (check node URI parameters)"
-		}
-		fail(w, http.StatusBadRequest, "Xray delay tester failed: "+msg)
-		return
-	}
-
-	probeURL := cfg.ProbeURL
+	probeURL := strings.TrimSpace(cfg.ProbeURL)
 	if probeURL == "" {
 		probeURL = "https://www.gstatic.com/generate_204"
 	}
 
 	var mu sync.Mutex
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 10)
+	sem := make(chan struct{}, 6)
 	okCount, failCount := 0, 0
 	bestMs := 0
 
-	for _, it := range items {
+	for _, idx := range targetIdxs {
 		wg.Add(1)
-		go func(item testItem) {
+		go func(i int) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			proxy := fmt.Sprintf("127.0.0.1:%d", item.port)
-			out, err := exec.Command("curl", "-sS", "--max-time", "6", "--socks5-hostname", proxy, "-o", "/dev/null", "-w", "%{http_code} %{time_total}", probeURL).Output()
+			uri := strings.TrimSpace(cfg.Nodes[i].URI)
 			delayMs := -1
-			if err == nil {
-				parts := strings.Fields(strings.TrimSpace(string(out)))
-				if len(parts) == 2 {
-					code, _ := strconv.Atoi(parts[0])
-					sec, _ := strconv.ParseFloat(parts[1], 64)
-					if code >= 200 && code < 400 && sec > 0 {
-						delayMs = int(sec * 1000)
-						if delayMs < 1 {
-							delayMs = 1
-						}
-					}
-				}
+			if uri != "" {
+				delayMs = measureSingleOutboundDelay(bin, uri, probeURL)
 			}
+
 			mu.Lock()
-			cfg.Nodes[item.idx].LastDelayMs = delayMs
+			cfg.Nodes[i].LastDelayMs = delayMs
 			if delayMs > 0 {
 				okCount++
 				if bestMs == 0 || delayMs < bestMs {
@@ -1423,11 +1411,11 @@ func (h *Handler) handleOutboundRealDelay(w http.ResponseWriter, r *http.Request
 				failCount++
 			}
 			mu.Unlock()
-		}(it)
+		}(idx)
 	}
 	wg.Wait()
 
-	h.saveOutboundCfg(cfg)
+	_ = h.saveOutboundCfg(cfg)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":           true,
 		"config":       cfg,

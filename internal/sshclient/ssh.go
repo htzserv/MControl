@@ -417,15 +417,19 @@ func MeasurePingSmart(host string, sshPort, agentPort int, _ string) string {
 		}
 	}
 	// 2) Direct TCP connect RTT from Master (if ICMP is filtered)
-	for _, p := range []int{sshPort, agentPort} {
+	for _, p := range []int{sshPort, agentPort, 443, 80} {
 		if p <= 0 {
 			continue
 		}
 		start := time.Now()
-		c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(p)), 2500*time.Millisecond)
+		c, err := net.DialTimeout("tcp", net.JoinHostPort(host, strconv.Itoa(p)), 2200*time.Millisecond)
 		if err == nil {
 			c.Close()
-			return fmt.Sprintf("%.1f ms", float64(time.Since(start).Microseconds())/1000.0)
+			ms := float64(time.Since(start).Microseconds()) / 1000.0
+			if ms < 0.1 {
+				ms = 0.1
+			}
+			return fmt.Sprintf("%.1f ms", ms)
 		}
 	}
 	return "N/A"

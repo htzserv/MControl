@@ -9244,6 +9244,7 @@ function peerModeBadge(s) {
 
 function pingBadgeClass(val) {
   const s = String(val || '').trim();
+  if (!s || s === '---' || s === 'N/A') return 'ping-na';
   const m = s.match(/([0-9]+(?:\.[0-9]+)?)/);
   if (!m) return 'ping-na';
   const ms = parseFloat(m[1]);
@@ -11074,7 +11075,13 @@ async function persistOutboundConfigOnly(silent) {
 
 async function loadMasterOutbound() {
   const r = await api('api/outbound/status');
-  if (!r.ok) return;
+  if (!r || !r.ok) {
+    if ($('ob-core-status')) {
+      $('ob-core-status').textContent = 'OFFLINE / ERROR';
+      $('ob-core-status').className = 'badge mono b-miss';
+    }
+    return;
+  }
   _obLoaded = true;
   OB_CFG = r.config || OB_CFG;
   if (!Array.isArray(OB_CFG.subs)) OB_CFG.subs = [];
