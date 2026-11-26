@@ -4385,6 +4385,104 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
 #fm-ctx-menu.show { display: flex; }
 .fm-ctx-sep { height: 1px; background: var(--border); margin: 3px 6px; }
 
+
+/* ── Vertical Left-Side Country Filter Bubble Dock (Servers Tab) ── */
+.srv-country-dock {
+  position: fixed;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  backdrop-filter: blur(20px) saturate(165%);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  border: 1.3px solid color-mix(in srgb, var(--border) 90%, transparent);
+  box-shadow: 0 14px 36px -10px var(--shadow);
+  max-height: 76vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.srv-country-dock::-webkit-scrollbar { display: none; }
+.srv-country-dock:empty { display: none; }
+
+.sc-bubble {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--border) 92%, transparent);
+  background: var(--card);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform .18s cubic-bezier(.22, 1, .36, 1), border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.sc-bubble:hover {
+  transform: scale(1.12);
+  border-color: var(--cc, var(--accent));
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--cc, var(--accent)) 55%, transparent);
+}
+.sc-bubble.active {
+  border-color: var(--cc, var(--accent));
+  background: color-mix(in srgb, var(--cc, var(--accent)) 18%, var(--card));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cc, var(--accent)) 28%, transparent), 0 8px 20px -6px color-mix(in srgb, var(--cc, var(--accent)) 50%, transparent);
+  transform: scale(1.08);
+}
+.sc-bubble .flag-svg,
+.sc-bubble svg {
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  display: block;
+}
+.sc-bubble .sc-all-ico {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.sc-bubble .sc-cnt {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--cc, var(--accent));
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 800;
+  line-height: 17px;
+  text-align: center;
+  border: 1.5px solid var(--surface);
+  box-shadow: 0 2px 6px rgba(0,0,0,.22);
+}
+
+body.tp-srv-cdock #srv-country-dock { display: none !important; }
+
+@media (max-width: 1180px) {
+  .srv-country-dock {
+    position: static;
+    transform: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 0 auto 12px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 6px 10px;
+  }
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -5132,6 +5230,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
           <button type="button" class="btn btn-ghost btn-sm tab-cfg-btn" title="Tab Settings" onclick="openTabSettings('servers')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
         </div>
       </div>
+      <div class="srv-country-dock" id="srv-country-dock" aria-label="Filter servers by country"></div>
       <div class="tag-filter-bar" id="srv-tag-filter"></div>
       <div class="cf-bulk-bar" id="fleet-bulk-bar">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -8709,12 +8808,52 @@ function _parsePctNum(v) {
   const m = String(v || '').match(/([0-9]+(?:\.[0-9]+)?)/);
   return m ? parseFloat(m[1]) : 0;
 }
+let _srvCountryFilter = 'ALL';
+
+function setSrvCountryFilter(cc) {
+  _srvCountryFilter = (_srvCountryFilter === cc && cc !== 'ALL') ? 'ALL' : cc;
+  renderServers();
+}
+
+function renderSrvCountryDock(all) {
+  const dock = $('srv-country-dock');
+  if (!dock) return;
+  if (!all || !all.length) { dock.innerHTML = ''; return; }
+  const map = new Map();
+  all.forEach(s => {
+    const cc = String(s.country_code || (s.role === 'iran' ? 'IR' : '')).toUpperCase().trim() || 'OTHER';
+    const cur = map.get(cc) || { cc, name: s.country || (cc === 'IR' ? 'Iran' : cc), count: 0 };
+    cur.count++;
+    map.set(cc, cur);
+  });
+  if (_srvCountryFilter !== 'ALL' && !map.has(_srvCountryFilter)) _srvCountryFilter = 'ALL';
+
+  const countries = Array.from(map.values()).sort((a, b) => {
+    if (a.cc === 'IR') return -1;
+    if (b.cc === 'IR') return 1;
+    return b.count - a.count || a.cc.localeCompare(b.cc);
+  });
+
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const allTitle = (fa ? 'همه کشورها' : 'All Countries') + ` (${all.length})`;
+  let out = `<button type="button" class="sc-bubble ${_srvCountryFilter === 'ALL' ? 'active' : ''}" title="${esc(allTitle)}" onclick="setSrvCountryFilter('ALL')"><span class="sc-all-ico">🌐</span><span class="sc-cnt">${all.length}</span></button>`;
+  out += countries.map(c => {
+    const col = (typeof countryColor === 'function' ? countryColor(c.cc) : '') || 'var(--accent)';
+    const act = _srvCountryFilter === c.cc ? 'active' : '';
+    const ico = c.cc === 'OTHER' ? '<span class="sc-all-ico">🌍</span>' : flagSVG(c.cc);
+    return `<button type="button" class="sc-bubble ${act}" style="--cc:${col};" title="${esc(c.name)} (${c.count})" onclick="setSrvCountryFilter('${esc(c.cc)}')">${ico}<span class="sc-cnt">${c.count}</span></button>`;
+  }).join('');
+  dock.innerHTML = out;
+}
+
 function renderServers() {
   const all = SERVERS || [];
   $('st-total').textContent = all.length;
   $('st-iran').textContent = all.filter(x => x.role === 'iran').length;
   $('st-foreign').textContent = all.filter(x => x.role === 'foreign').length;
   $('st-online').textContent = all.filter(x => x.status === 'online').length;
+
+  renderSrvCountryDock(all);
 
   const filt = (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.srv_filter) || 'all';
   const sortBy = (typeof TAB_PREFS !== 'undefined' && TAB_PREFS.srv_sort) || 'manual';
@@ -8728,8 +8867,14 @@ function renderServers() {
   else if (sortBy === 'ping') list.sort((a, b) => _parsePingNum(a.ping_ms) - _parsePingNum(b.ping_ms));
   else if (sortBy === 'cpu') list.sort((a, b) => _parsePctNum(b.cpu) - _parsePctNum(a.cpu));
 
-  const htmlOut = list.length ? list.map(renderServerCard).join('') : `<div class="card" style="color:var(--muted);">${t('no_servers')}</div>`;
-  $('overview-grid').innerHTML = htmlOut; $('servers-grid').innerHTML = htmlOut;
+  const ovHtml = list.length ? list.map(renderServerCard).join('') : `<div class="card" style="color:var(--muted);">${t('no_servers')}</div>`;
+  let srvList = list;
+  if (_srvCountryFilter !== 'ALL') {
+    srvList = list.filter(s => (String(s.country_code || (s.role === 'iran' ? 'IR' : '')).toUpperCase().trim() || 'OTHER') === _srvCountryFilter);
+  }
+  const srvHtml = srvList.length ? srvList.map(renderServerCard).join('') : `<div class="card" style="color:var(--muted);">${t('no_servers')}</div>`;
+  $('overview-grid').innerHTML = ovHtml;
+  $('servers-grid').innerHTML = srvHtml;
 }
 async function loadServers() {
   const res = await api('api/servers');
@@ -13068,7 +13213,8 @@ const TAB_PREFS_SCHEMA = {
       { key: 'srv_cpu',  cls: 'tp-srv-cpu',  en: 'Header CPU & RAM', fa: 'نمایش CPU و RAM در هدر', descEn: 'Show inline CPU/RAM on collapsed server rows', descFa: 'نمایش مصرف منابع روی ردیف بسته سرور' },
       { key: 'srv_peer', cls: 'tp-srv-peer', en: 'Peer Version Badge', fa: 'نمایش بج نسخه Peer', descEn: 'Show PEER V4 / SSH mode badge', descFa: 'نمایش بج PEER V4 روی هدر سرور' },
       { key: 'srv_pbtn', cls: 'tp-srv-pbtn', en: 'Quick Ping Button', fa: 'نمایش دکمه پینگ سریع', descEn: 'One-click Ping button in server header', descFa: 'دکمه بابل پینگ سریع کنار بج Peer' },
-      { key: 'srv_tags', cls: 'tp-srv-tags', en: 'Tag Filter Bar', fa: 'نوار فیلتر تگ‌ها', descEn: 'Show custom tag filter pills above servers', descFa: 'نمایش فیلتر تگ‌ها بالای لیست سرورها' }
+      { key: 'srv_tags', cls: 'tp-srv-tags', en: 'Tag Filter Bar', fa: 'نوار فیلتر تگ‌ها', descEn: 'Show custom tag filter pills above servers', descFa: 'نمایش فیلتر تگ‌ها بالای لیست سرورها' },
+      { key: 'srv_cdock', cls: 'tp-srv-cdock', en: 'Left Country Flag Bubbles', fa: 'بابل‌های عمودی پرچم کشورها (سمت چپ)', descEn: 'Floating vertical country filter dock on the left of Servers', descFa: 'نوار عمودی پرچم کشورها برای دسته‌بندی سریع سرورها' }
     ]
   },
   datacenter: {
