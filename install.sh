@@ -74,6 +74,39 @@ IP4=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src
 [[ -n "${IP4:-}" ]] || IP4="127.0.0.1"
 IP6=$(ip -6 addr show scope global 2>/dev/null | awk '/inet6/{split($2,a,"/"); if(a[1] !~ /^f[cd]/){print a[1]; exit}}' || true)
 [[ -n "${IP6:-}" ]] || IP6="OFF"
+BETA_NUM=""
+
+mc_detect_beta_num() {
+    local b=""
+    if [[ -f "${DATA_DIR}/.beta_build" ]]; then
+        b=$(tr -d '[:space:]' < "${DATA_DIR}/.beta_build" 2>/dev/null || true)
+    fi
+    if [[ -z "$b" && -f "${DATA_DIR}/mcontrol.db" ]] && command -v python3 >/dev/null 2>&1; then
+        b=$(python3 - "${DATA_DIR}/mcontrol.db" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+try:
+    con = sqlite3.connect(sys.argv[1])
+    r = con.execute("SELECT value FROM settings WHERE key='installed_beta_build'").fetchone()
+    if r and r[0] and r[0] != "0": print(r[0])
+except Exception:
+    pass
+PY
+)
+    fi
+    if [[ -z "$b" ]]; then
+        local meta_url="${GH_BETA_BASE}/beta-meta.json"
+        [[ "$SOURCE" == "mirror" ]] && meta_url="${MIRROR_BETA_BASE}/beta-meta.json"
+        local meta_json=""
+        meta_json=$(curl -fsSL --connect-timeout 4 --max-time 6 "$meta_url" 2>/dev/null || true)
+        if [[ -z "$meta_json" && "$SOURCE" != "mirror" ]]; then
+            meta_json=$(curl -fsSL --connect-timeout 4 --max-time 6 "${MIRROR_BETA_BASE}/beta-meta.json" 2>/dev/null || true)
+        fi
+        if [[ -n "$meta_json" ]]; then
+            b=$(printf '%s' "$meta_json" | grep -oE '"build"[[:space:]]*:[[:space:]]*[0-9]+' | grep -oE '[0-9]+' | head -n1 || true)
+        fi
+    fi
+    BETA_NUM="$b"
+}
 
 draw_banner() {
     local sub_lbl="${1:-INSTALL MENU}" sub_col="${2:-$C}"
@@ -90,8 +123,10 @@ draw_banner() {
     echo ""
     printf "  ${FR}╔%s╗${NC}\n" "$border"
     local beta_tag=""
-    if [[ "$CHANNEL" == "beta" ]]; then
-        beta_tag=" [Beta #${BETA_NUM:-latest}]"
+    if [[ -n "${BETA_NUM:-}" ]]; then
+        beta_tag=" [Beta #${BETA_NUM}]"
+    elif [[ "$CHANNEL" == "beta" ]]; then
+        beta_tag=" [Beta]"
     fi
     hdr_line "MControl Installer  v${MODULE_VERSION}${beta_tag}  |  ${sub_lbl}" "${W}MControl Installer${NC}  ${C}v${MODULE_VERSION}${NC}${Y}${beta_tag}${NC}  ${DIM}|${NC}  ${sub_col}${sub_lbl}${NC}"
     hdr_line "IPv4: ${IP4}  |  Port: ${PORT}" "${DIM}IPv4:${NC} ${M}${IP4}${NC}  ${DIM}|  Port:${NC} ${C}${PORT}${NC}"
@@ -151,7 +186,10 @@ PY
     fi
     echo ""
     echo -e "  ${FR}┌─[ MCONTROL INFO ]${NC}"
-    echo -e "  ${FR}├─${NC} ${DIM}Version  :${NC} ${C}v${MODULE_VERSION}${NC}"
+    mc_detect_beta_num
+    local ver_disp="v${MODULE_VERSION}"
+    [[ -n "${BETA_NUM:-}" ]] && ver_disp="${ver_disp} (Beta #${BETA_NUM})"
+    echo -e "  ${FR}├─${NC} ${DIM}Version  :${NC} ${C}${ver_disp}${NC}"
     echo -e "  ${FR}├─${NC} ${DIM}Service  :${NC} ${G}${svc_st}${NC}"
     echo -e "  ${FR}├─${NC} ${DIM}IPv4     :${NC} ${M}${IP4}${NC}"
     echo -e "  ${FR}├─${NC} ${DIM}IPv6     :${NC} ${M}${IP6}${NC}"
@@ -261,21 +299,23 @@ PY
 
 mc_full_uninstall() {
     echo ""
-    printf "  ${R}⚠ Uninstall MControl and delete ALL files & database? [y/N]: ${NC}"
+    printf "  ${R}⚠ Uninstall MControl and delete ALL services, files & databases? [y/N]: ${NC}"
     read -r yn < /dev/tty || yn=""
     if [[ "$yn" =~ ^[Yy]$ ]]; then
-        systemctl disable --now mcontrol.service 2>/dev/null || true
-        rm -f /etc/systemd/system/mcontrol.service /usr/local/bin/mcontrol /usr/local/bin/mcontrol-menu
+        systemctl stop mcontrol.service mcontrol-outbound.service 2>/dev/null || true
+        systemctl disable mcontrol.service mcontrol-outbound.service 2>/dev/null || true
+        pkill -f "${INSTALL_DIR}/mcontrol" 2>/dev/null || true
+        rm -f /etc/systemd/system/mcontrol.service               /etc/systemd/system/mcontrol-outbound.service               /etc/systemd/system/multi-user.target.wants/mcontrol.service               /etc/systemd/system/multi-user.target.wants/mcontrol-outbound.service               /usr/local/bin/mcontrol /usr/local/bin/mcontrol-menu
         rm -rf "$INSTALL_DIR" "$DATA_DIR" /root/mcontrol /etc/mcontrol
         systemctl daemon-reload 2>/dev/null || true
-        echo -e "
-  ${G}✓ MControl completely uninstalled.${NC}
-"
+        systemctl reset-failed mcontrol.service mcontrol-outbound.service 2>/dev/null || true
+        echo -e "\n  ${G}✓ MControl, services, configs & databases completely uninstalled.${NC}\n"
         exit 0
     fi
 }
 
 if [[ "$INTERACTIVE" -eq 1 ]] && [[ -r /dev/tty ]]; then
+    mc_detect_beta_num
     while true; do
         mc_check_ip_info
         draw_banner "INSTALLER MENU" "$C"
@@ -309,8 +349,7 @@ if [[ "$INTERACTIVE" -eq 1 ]] && [[ -r /dev/tty ]]; then
                 mc_reset_port ;;
             7)
                 mc_check_ip_info
-                echo -e "
-  ${G}✓ Checked — IPv4: ${M}${IP4}${G} | IPv6: ${M}${IP6}${G} | Port: ${C}${PORT}${NC}"
+                echo -e "\n  ${G}✓ Checked — IPv4: ${M}${IP4}${G} | IPv6: ${M}${IP6}${G} | Port: ${C}${PORT}${NC}"
                 sleep 1 ;;
             0|q|Q)
                 echo ""; exit 0 ;;
@@ -348,6 +387,7 @@ PKG_LBL="${CHANNEL^^}"
 [[ "$WITH_ENGINES" -eq 1 ]] && PKG_LBL="${CHANNEL^^} + ENGINES"
 [[ "$BUNDLE_ONLY" -eq 1 ]] && PKG_LBL="ENGINES BUNDLE"
 
+[[ "$CHANNEL" == "beta" ]] && mc_detect_beta_num
 draw_banner "${PKG_LBL} · ${SRC_LBL}" "$( [[ "$SOURCE" == "mirror" ]] && echo "$G" || echo "$C" )"
 echo ""
 echo -e "  ${FR}┌─[ EXECUTION ]${NC}"
@@ -434,10 +474,9 @@ TMPD="$(mktemp -d)"
 cleanup() { [[ -n "${TMPD:-}" ]] && rm -rf "$TMPD"; }
 trap cleanup EXIT
 
-BETA_NUM=""
 if [[ "$CHANNEL" == "beta" ]]; then
     if mc_dl "${RELEASE_BASE}/beta-meta.json" "${TMPD}/beta-meta.json" && [[ -s "${TMPD}/beta-meta.json" ]]; then
-        BETA_NUM=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("build") or d.get("tag") or "")' "${TMPD}/beta-meta.json" 2>/dev/null || true)
+        BETA_NUM=$(grep -oE '"build"[[:space:]]*:[[:space:]]*[0-9]+' "${TMPD}/beta-meta.json" 2>/dev/null | grep -oE '[0-9]+' | head -n1 || true)
     fi
     [[ -n "$BETA_NUM" ]] || BETA_NUM="latest"
 fi
@@ -467,6 +506,7 @@ chmod 700 "$DATA_DIR"
 printf '%s\n' "$CHANNEL" > "${DATA_DIR}/.channel"
 if [[ "$CHANNEL" == "beta" && -n "$BETA_NUM" ]]; then
     printf '%s\n' "$BETA_NUM" > "${DATA_DIR}/.beta_build"
+    [[ -s "${TMPD}/beta-meta.json" ]] && cp -f "${TMPD}/beta-meta.json" "${DATA_DIR}/beta-meta.json"
 fi
 printf '%s\n' "$SOURCE"  > "${DATA_DIR}/.source"
 install -m 0755 "$BIN" "$INSTALL_DIR/mcontrol"

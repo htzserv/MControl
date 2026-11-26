@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
@@ -19,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -27,7 +29,64 @@ import com.mdesign.mcontrol.data.MControlApi
 import com.mdesign.mcontrol.data.PanelProfile
 import com.mdesign.mcontrol.ui.theme.MDesignAccent
 import kotlinx.coroutines.launch
+import java.net.URI
 import java.util.UUID
+
+private data class UrlParts(
+    val address: String,
+    val port: String,
+    val webPath: String
+)
+
+private fun parseBaseUrlParts(rawUrl: String?): UrlParts {
+    val cleaned = (rawUrl ?: "").trim().trimEnd('/')
+    if (cleaned.isEmpty() || cleaned == "http://" || cleaned == "https://") {
+        return UrlParts(address = cleaned.ifEmpty { "https://" }, port = "", webPath = "")
+    }
+    return try {
+        val withScheme = if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) cleaned else "https://$cleaned"
+        val uri = URI(withScheme)
+        val scheme = uri.scheme ?: "https"
+        val host = uri.host ?: ""
+        if (host.isEmpty()) {
+            UrlParts(address = cleaned, port = "", webPath = "")
+        } else {
+            val portStr = if (uri.port > 0) uri.port.toString() else ""
+            val pathStr = (uri.path ?: "").trim('/')
+            UrlParts(address = "$scheme://$host", port = portStr, webPath = pathStr)
+        }
+    } catch (_: Exception) {
+        UrlParts(address = cleaned, port = "", webPath = "")
+    }
+}
+
+private fun buildPanelBaseUrl(addressInput: String, portInput: String, webPathInput: String): String {
+    var addr = addressInput.trim().trimEnd('/')
+    if (addr.isEmpty()) return ""
+    if (!addr.startsWith("http://") && !addr.startsWith("https://")) {
+        addr = "http://$addr"
+    }
+    val port = portInput.trim()
+    val path = webPathInput.trim().trim('/')
+    val baseWithPort = if (port.isNotEmpty()) {
+        try {
+            val uri = URI(addr)
+            if (uri.port <= 0 && !uri.host.isNullOrEmpty()) {
+                val hostPart = if (uri.host.contains(":") && !uri.host.startsWith("[")) "[${uri.host}]" else uri.host
+                val existingPath = (uri.path ?: "").trim('/')
+                val prefix = "${uri.scheme}://$hostPart:$port"
+                if (existingPath.isNotEmpty() && path.isEmpty()) "$prefix/$existingPath" else prefix
+            } else {
+                addr
+            }
+        } catch (_: Exception) {
+            "$addr:$port"
+        }
+    } else {
+        addr
+    }
+    return if (path.isNotEmpty()) "${baseWithPort.trimEnd('/')}/$path" else baseWithPort.trimEnd('/')
+}
 
 @Composable
 fun LoginScreen(
@@ -36,8 +95,11 @@ fun LoginScreen(
     onLoginSuccess: (PanelProfile) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val initParts = remember(initialProfile?.id) { parseBaseUrlParts(initialProfile?.baseUrl) }
     var name by remember { mutableStateOf(initialProfile?.name ?: "My MControl") }
-    var baseUrl by remember { mutableStateOf(initialProfile?.baseUrl ?: "https://") }
+    var address by remember { mutableStateOf(initParts.address) }
+    var port by remember { mutableStateOf(initParts.port) }
+    var webPath by remember { mutableStateOf(initParts.webPath) }
     var username by remember { mutableStateOf(initialProfile?.username ?: "admin") }
     var password by remember { mutableStateOf(initialProfile?.password ?: "") }
     var totpCode by remember { mutableStateOf("") }
@@ -81,9 +143,12 @@ fun LoginScreen(
                         color = if (p.id == editingId) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surface,
                         border = BorderStroke(1.dp, if (p.id == editingId) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
                         modifier = Modifier.clickable {
+                            val parts = parseBaseUrlParts(p.baseUrl)
                             editingId = p.id
                             name = p.name
-                            baseUrl = p.baseUrl
+                            address = parts.address
+                            port = parts.port
+                            webPath = parts.webPath
                             username = p.username
                             password = p.password
                             trustSsl = p.trustAllSsl
@@ -118,15 +183,39 @@ fun LoginScreen(
                     shape = RoundedCornerShape(14.dp)
                 )
                 OutlinedTextField(
-                    value = baseUrl,
-                    onValueChange = { baseUrl = it },
-                    label = { Text("Panel URL (with secret path)") },
-                    placeholder = { Text("https://ip:2053/webpath") },
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Server Address (IP / Domain)") },
+                    placeholder = { Text("https://panel.example.com") },
                     leadingIcon = { Icon(Icons.Default.Public, null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = port,
+                        onValueChange = { v -> port = v.filter { it.isDigit() }.take(5) },
+                        label = { Text("Port") },
+                        placeholder = { Text("2053") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(0.42f),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                    OutlinedTextField(
+                        value = webPath,
+                        onValueChange = { webPath = it.trim() },
+                        label = { Text("Web Path") },
+                        placeholder = { Text("mc_panel") },
+                        singleLine = true,
+                        modifier = Modifier.weight(0.58f),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                }
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
@@ -176,7 +265,17 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        val cleanUrl = baseUrl.trim().trimEnd('/')
+                        val trimmedAddr = address.trim()
+                        if (trimmedAddr.isEmpty() || trimmedAddr == "http://" || trimmedAddr == "https://") {
+                            errMsg = "Enter a valid server address (IP or domain)"
+                            return@Button
+                        }
+                        val portInt = port.trim().toIntOrNull()
+                        if (port.isNotBlank() && (portInt == null || portInt !in 1..65535)) {
+                            errMsg = "Port must be between 1 and 65535"
+                            return@Button
+                        }
+                        val cleanUrl = buildPanelBaseUrl(trimmedAddr, port, webPath)
                         if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
                             errMsg = "URL must start with http:// or https://"
                             return@Button

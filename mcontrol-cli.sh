@@ -229,6 +229,36 @@ PY
 
 
 
+mc_get_channel() {
+    if [[ -f "$CHANNEL_FILE" ]]; then
+        local ch
+        ch=$(tr -d '[:space:]' < "$CHANNEL_FILE" 2>/dev/null || true)
+        [[ "$ch" == "beta" ]] && { echo "beta"; return; }
+        [[ "$ch" == "stable" ]] && { echo "stable"; return; }
+    fi
+    if [[ "$(db_get beta_builds)" == "1" ]]; then
+        echo "beta"; return
+    fi
+    echo "stable"
+}
+
+mc_get_beta_build() {
+    local bnum=""
+    bnum=$(db_get installed_beta_build)
+    if [[ -n "$bnum" && "$bnum" != "0" ]]; then
+        echo "$bnum"; return
+    fi
+    if [[ -f "${DATA_DIR}/.beta_build" ]]; then
+        bnum=$(tr -d '[:space:]' < "${DATA_DIR}/.beta_build" 2>/dev/null || true)
+        [[ -n "$bnum" && "$bnum" != "0" ]] && { echo "$bnum"; return; }
+    fi
+    if [[ -f "${DATA_DIR}/beta-meta.json" ]]; then
+        bnum=$(grep -oE '"build"[[:space:]]*:[[:space:]]*[0-9]+' "${DATA_DIR}/beta-meta.json" 2>/dev/null | grep -oE '[0-9]+' | head -n1 || true)
+        [[ -n "$bnum" ]] && { echo "$bnum"; return; }
+    fi
+    echo ""
+}
+
 mc_get_mirror() {
     local m
     m=$(db_get panel_mirror_url)
@@ -271,8 +301,21 @@ draw_header() {
     clear 2>/dev/null || true
     mc_detect_ips
 
-    local port
+    local port ch bnum ch_lbl ch_col
     port=$(mc_get_port)
+    ch=$(mc_get_channel)
+    bnum=$(mc_get_beta_build)
+    if [[ "$ch" == "beta" ]]; then
+        if [[ -n "$bnum" ]]; then
+            ch_lbl="BETA #${bnum}"
+        else
+            ch_lbl="BETA"
+        fi
+        ch_col="$Y"
+    else
+        ch_lbl="STABLE"
+        ch_col="$G"
+    fi
 
     local term_cols boxw content_w inner_w border
     term_cols=$(tput cols 2>/dev/null || echo 80)
@@ -291,8 +334,8 @@ draw_header() {
     echo ""
     printf "  ${FR}╔%s╗${NC}\n" "$border"
     mc_hdr_line \
-        "MControl  v${MODULE_VERSION}  |  CLI" \
-        "${W}MControl${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${C}CLI${NC}" \
+        "MControl  v${MODULE_VERSION}  |  ${ch_lbl}" \
+        "${W}MControl${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${ch_col}${ch_lbl}${NC}" \
         "$inner_w"
     mc_hdr_line \
         "IPv4: ${MC_IP4}  |  Port: ${port}" \
@@ -364,7 +407,13 @@ show_settings() {
     echo ""
     printf "  ${FR}┌─[ PANEL SETTINGS — CREDENTIALS HIDDEN ]${NC}\n"
     printf "  ${FR}│${NC}\n"
-    printf "  ${FR}├─${NC} ${DIM}Channel        :${NC} ${Y}%s${NC}\n" "$ch"
+    local bnum_ss
+    bnum_ss=$(mc_get_beta_build)
+    if [[ "$ch" == "beta" && -n "$bnum_ss" ]]; then
+        printf "  ${FR}├─${NC} ${DIM}Channel        :${NC} ${Y}beta (Beta #%s)${NC}\n" "$bnum_ss"
+    else
+        printf "  ${FR}├─${NC} ${DIM}Channel        :${NC} ${Y}%s${NC}\n" "$ch"
+    fi
     printf "  ${FR}├─${NC} ${DIM}Panel URL      :${NC} ${C}%s${NC}\n" "$active_url"
     printf "  ${FR}├─${NC} ${DIM}Active Port    :${NC} ${W}%s${NC}\n" "$port"
     printf "  ${FR}├─${NC} ${DIM}Secret WebPath :${NC} ${W}/%s/${NC}\n" "${wpath:-<auto>}"
@@ -382,6 +431,33 @@ show_settings() {
     printf "  ${FR}└─${NC} ${DIM}Credentials    :${NC} ${Y}[HIDDEN — User & Password Excluded]${NC}\n"
 }
 
+mc_cli_uninstall() {
+    echo ""
+    printf "  ${R}⚠ Uninstall MControl and permanently delete ALL services, files & databases? [y/N]: ${NC}"
+    read -r yn
+    if [[ ! "$yn" =~ ^[Yy]$ ]]; then
+        echo -e "  ${DIM}Uninstall cancelled.${NC}"
+        return 0
+    fi
+    echo -e "  ${Y}● Stopping and disabling MControl services...${NC}"
+    systemctl stop "$SVC" mcontrol-outbound.service 2>/dev/null || true
+    systemctl disable "$SVC" mcontrol-outbound.service 2>/dev/null || true
+    pkill -f "${INSTALL_DIR}/mcontrol" 2>/dev/null || true
+
+    echo -e "  ${Y}● Removing systemd units, binaries, configs & databases...${NC}"
+    rm -f /etc/systemd/system/mcontrol.service           /etc/systemd/system/mcontrol-outbound.service           /etc/systemd/system/multi-user.target.wants/mcontrol.service           /etc/systemd/system/multi-user.target.wants/mcontrol-outbound.service           "$CLI_BIN"           /usr/local/bin/mcontrol-menu
+    rm -rf "$INSTALL_DIR" "$DATA_DIR" /etc/mcontrol /root/mcontrol
+    systemctl daemon-reload 2>/dev/null || true
+    systemctl reset-failed "$SVC" mcontrol-outbound.service 2>/dev/null || true
+
+    if [[ ! -e "$INSTALL_DIR" && ! -e "$DATA_DIR" && ! -e /etc/systemd/system/mcontrol.service ]]; then
+        echo -e "\n  ${G}✓ MControl, services, configs, and databases completely removed.${NC}\n"
+    else
+        echo -e "\n  ${Y}⚠ MControl removed (some paths may require manual check).${NC}\n"
+    fi
+    exit 0
+}
+
 while true; do
     draw_header
 
@@ -390,31 +466,31 @@ while true; do
     mc_row "2"  "Start MControl Service" "$C"
     mc_row "3"  "Stop MControl Service" "$Y"
     mc_row "4"  "View Service Logs (last 40 lines)" "$C"
-    mc_row "44" "Show Settings (Excl. User/Pass)" "$C" " ${DIM}(No Secrets)${NC}"
+    mc_row "5"  "Show Settings (Excl. User/Pass)" "$C" " ${DIM}(No Secrets)${NC}"
 
     mc_group "ACCESS & SECURITY"
-    mc_row "5"  "Change Panel Port" "$M" " ${DIM}(SQLite + systemd)${NC}"
-    mc_row "6"  "Change Secret Web Path" "$M"
-    mc_row "7"  "Disable 2FA" "$Y" " ${DIM}(Emergency Reset)${NC}"
-    mc_row "8"  "Disable HTTPS" "$Y" " ${DIM}(Switch back to HTTP)${NC}"
+    mc_row "6"  "Change Panel Port" "$M" " ${DIM}(SQLite + systemd)${NC}"
+    mc_row "7"  "Change Secret Web Path" "$M"
+    mc_row "8"  "Disable 2FA" "$Y" " ${DIM}(Emergency Reset)${NC}"
+    mc_row "9"  "Disable HTTPS" "$Y" " ${DIM}(Switch back to HTTP)${NC}"
 
     mc_group "MAINTENANCE"
-    mc_row "12" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
-    mc_row "14" "Reset Panel Username / Password" "$Y" " ${DIM}(SQLite Auth)${NC}"
-    mc_row "15" "Reset Panel Settings (Domain / Path / 2FA)" "$Y" " ${DIM}(SQLite + TLS)${NC}"
+    mc_row "10" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
+    mc_row "11" "Reset Panel Username / Password" "$Y" " ${DIM}(SQLite Auth)${NC}"
+    mc_row "12" "Reset Panel Settings (Domain / Path / 2FA)" "$Y" " ${DIM}(SQLite + TLS)${NC}"
     mc_row "13" "Uninstall MControl" "$R"
 
     mc_footer "Exit"
 
-    printf "  ${C}Select ❯❯ ${NC}"
+    printf "  ${C}Select [1-13, 0] ❯❯ ${NC}"
     read -r opt || exit 0
     case "$opt" in
         1) systemctl restart "$SVC" && echo -e "\n  ${G}✓ Service restarted.${NC}" || echo -e "\n  ${R}✖ Restart failed.${NC}"; mc_pause ;;
         2) systemctl start "$SVC" && echo -e "\n  ${G}✓ Service started.${NC}" || echo -e "\n  ${R}✖ Start failed.${NC}"; mc_pause ;;
         3) systemctl stop "$SVC" && echo -e "\n  ${Y}● Service stopped.${NC}" || echo -e "\n  ${R}✖ Stop failed.${NC}"; mc_pause ;;
         4) echo ""; journalctl -u "$SVC" -n 40 --no-pager || true; mc_pause ;;
-        44) show_settings; mc_pause ;;
-        5)
+        5) show_settings; mc_pause ;;
+        6)
             echo ""
             printf "  ${C}Enter new port (1-65535): ${NC}"
             read -r newp
@@ -428,7 +504,7 @@ while true; do
                 echo -e "  ${R}✖ Invalid port.${NC}"
             fi
             mc_pause ;;
-        6)
+        7)
             echo ""
             printf "  ${C}Enter new web path (3-48 chars, e.g. mc_panel1): ${NC}"
             read -r newwp
@@ -440,14 +516,14 @@ while true; do
                 echo -e "  ${R}✖ Invalid web path format.${NC}"
             fi
             mc_pause ;;
-        7)
+        8)
             db_set twofa_enabled "0" && echo -e "\n  ${G}✓ 2FA disabled.${NC}" || echo -e "\n  ${R}✖ Database not found.${NC}"
             mc_pause ;;
-        8)
+        9)
             rm -f "$DATA_DIR/tls.crt" "$DATA_DIR/tls.key" && systemctl restart "$SVC"
             echo -e "\n  ${Y}● HTTPS certificates removed. Switched to HTTP.${NC}"
             mc_pause ;;
-        12)
+        10)
             out="/root/mcontrol-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
             if [[ -d "$DATA_DIR" ]]; then
                 tar -czf "$out" -C "$(dirname "$DATA_DIR")" "$(basename "$DATA_DIR")"
@@ -456,24 +532,14 @@ while true; do
                 echo -e "\n  ${R}✖ ${DATA_DIR} not found.${NC}"
             fi
             mc_pause ;;
-        13)
-            echo ""
-            printf "  ${R}⚠ Uninstall MControl and remove ALL files & database (${DATA_DIR})? [y/N]: ${NC}"
-            read -r yn
-            if [[ "$yn" =~ ^[Yy]$ ]]; then
-                systemctl disable --now "$SVC" 2>/dev/null || true
-                rm -f /etc/systemd/system/mcontrol.service "$CLI_BIN"
-                rm -rf "$INSTALL_DIR" "$DATA_DIR"
-                systemctl daemon-reload 2>/dev/null || true
-                echo -e "\n  ${R}✓ MControl and all data/databases completely removed.${NC}\n"
-                exit 0
-            fi
-            mc_pause ;;
-        14)
+        11)
             reset_panel_credentials
             mc_pause ;;
-        15)
+        12)
             reset_panel_settings
+            mc_pause ;;
+        13)
+            mc_cli_uninstall
             mc_pause ;;
         0|q|Q) echo ""; exit 0 ;;
         *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
