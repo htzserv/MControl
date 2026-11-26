@@ -82,6 +82,8 @@ type outboundConfig struct {
 	UseGitHub     bool           `json:"use_github"`
 	UseTelegram   bool           `json:"use_telegram"`
 	UseForeign    bool           `json:"use_foreign"`
+	UseDatacenter bool           `json:"use_datacenter"`
+	UseCloudflare bool           `json:"use_cloudflare"`
 	Subs          []outboundSub  `json:"subs"`
 	Nodes         []outboundNode `json:"nodes"`
 }
@@ -177,6 +179,22 @@ func (h *Handler) telegramSocksProxy() string {
 func (h *Handler) githubSocksProxy() string {
 	cfg := h.loadOutboundCfg()
 	if cfg.Enabled && cfg.UseGitHub && isOutboundActive() {
+		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	return ""
+}
+
+func (h *Handler) datacenterSocksProxy() string {
+	cfg := h.loadOutboundCfg()
+	if cfg.Enabled && cfg.UseDatacenter && isOutboundActive() {
+		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	return ""
+}
+
+func (h *Handler) cloudflareSocksProxy() string {
+	cfg := h.loadOutboundCfg()
+	if cfg.Enabled && cfg.UseCloudflare && isOutboundActive() {
 		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 	}
 	return ""

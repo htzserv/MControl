@@ -4619,33 +4619,116 @@ body.tp-thm-preview #studio-preview-wrap { display: none !important; }
 .tab-settings-fab:hover svg { transform: rotate(45deg); }
 body.tp-hide-fab .tab-settings-fab { display: none !important; }
 
-/* ── Non-Blocking Floating Side-Drawer for Tab Settings (Empty Space Overlay) ── */
+/* ── Full-Height Edge-to-Edge Right Sidebar for Tab Settings & Per-Tab Appearance ── */
 .tp-drawer-wrap {
   position: fixed;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
   pointer-events: none;
   display: none;
   align-items: stretch;
   justify-content: flex-end;
-  padding: 72px 16px 68px;
+  padding: 0;
 }
 .tp-drawer-wrap.active { display: flex; }
 .tp-drawer-wrap.dock-left { justify-content: flex-start; }
 .tp-drawer-box {
   pointer-events: auto;
-  width: min(440px, calc(100vw - 24px));
+  width: min(410px, 94vw);
   max-width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 !important;
   display: flex;
   flex-direction: column;
-  padding: 16px 18px !important;
-  border-radius: 22px !important;
-  background: color-mix(in srgb, var(--surface) 92%, transparent) !important;
-  backdrop-filter: blur(24px) saturate(175%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(175%) !important;
-  border: 1.5px solid color-mix(in srgb, var(--accent) 36%, var(--border)) !important;
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, .48) !important;
-  animation: tpSlideIn .22s cubic-bezier(.22, 1, .36, 1);
+  padding: 18px 18px 14px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-left: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--border)) !important;
+  background: color-mix(in srgb, var(--surface) 94%, transparent) !important;
+  backdrop-filter: blur(26px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
+  box-shadow: -14px 0 48px -12px rgba(0, 0, 0, .42) !important;
+  animation: tpSlideIn .2s cubic-bezier(.22, 1, .36, 1);
+}
+.tp-drawer-wrap.dock-left .tp-drawer-box {
+  border-left: none !important;
+  border-right: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--border)) !important;
+  box-shadow: 14px 0 48px -12px rgba(0, 0, 0, .42) !important;
+}
+.tp-app-card {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--row));
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tp-app-title {
+  font-size: .72rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tp-app-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.tp-app-field label {
+  display: block;
+  font-size: .66rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.tp-app-field select {
+  width: 100%;
+  padding: 5px 8px !important;
+  font-size: .72rem !important;
+  border-radius: 9px !important;
+}
+.tp-mode-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.tp-mode-btn {
+  padding: 5px 4px;
+  border-radius: 8px;
+  font-size: .7rem;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.tp-mode-btn.active {
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+  border-color: var(--accent);
+}
+.setup-sync-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--row));
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  margin-bottom: 10px;
+  font-size: .72rem;
 }
 @keyframes tpSlideIn {
   from { opacity: 0; transform: translateX(18px) scale(.98); }
@@ -4990,6 +5073,7 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
       <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco</button>
       <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('default')">↺ Default</button>
     </div>
+    <div id="tab-cfg-appearance"></div>
     <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:7px; flex:1 1 auto; overflow-y:auto; padding-inline-end:3px; margin-bottom:10px;"></div>
     <div class="toolbar" style="margin:0; gap:5px; padding-top:8px; border-top:1px solid var(--border);">
       <div class="flexw" style="gap:5px;">
@@ -6331,6 +6415,8 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-dc"><span>Datacenter</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-cf"><span>Cloudflare</span></label>
           </div>
 
           <pre class="term" id="ob-out" style="height:110px; margin:0; display:none;"></pre>
@@ -6857,7 +6943,7 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
             </div>
             <div class="row2">
               <div class="tun-rb rb-sel" style="margin:0;">
-                <select id="t-iran" onchange="onTunnelServersChange()"></select>
+                <select id="t-iran" onchange="syncTunnelExitSelect(); onTunnelServersChange()"></select>
               </div>
               <div class="tun-rb rb-ip" style="margin:0;">
                 <select id="t-iran-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock(); renderStep2AutoPing();">
@@ -6984,12 +7070,13 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
       <div class="tun-step-pane" id="tun-step-3">
         <div class="tun-sec-title" style="margin-bottom:6px;"><span>Tunnel Engine</span></div>
         <input type="hidden" id="t-engine" value="backhaul">
-        <div class="eng-pills" id="t-eng-pills">
+        <div class="eng-pills" id="t-eng-pills" style="grid-template-columns:repeat(4, minmax(0, 1fr));">
           <button type="button" class="eng-pill active" data-eng="backhaul" onclick="pickTunnelEngine('backhaul')">Backhaul</button>
-          <button type="button" class="eng-pill" data-eng="rathole" onclick="pickTunnelEngine('rathole')">Rathole</button>
-          <button type="button" class="eng-pill" data-eng="paqet" onclick="pickTunnelEngine('paqet')">Paqet</button>
+          <button type="button" class="eng-pill" data-eng="backhaul_mux" onclick="pickTunnelEngine('backhaul_mux')">Backhaul MUX</button>
           <button type="button" class="eng-pill" data-eng="gre" onclick="pickTunnelEngine('gre')">GRE</button>
           <button type="button" class="eng-pill" data-eng="ipip" onclick="pickTunnelEngine('ipip')">IPIP</button>
+          <button type="button" class="eng-pill" data-eng="paqet" onclick="pickTunnelEngine('paqet')">Paqet</button>
+          <button type="button" class="eng-pill" data-eng="rathole" onclick="pickTunnelEngine('rathole')">Rathole</button>
           <button type="button" class="eng-pill" data-eng="vxlan" onclick="pickTunnelEngine('vxlan')">VXLAN</button>
           <button type="button" class="eng-pill" data-eng="wireguard" onclick="pickTunnelEngine('wireguard')">WireGuard</button>
         </div>
@@ -7010,37 +7097,21 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
           </div>
 
           <div class="row2">
-            <div class="field" id="t-trans-wrap" style="margin-bottom:0;"><label>Transport (Backhaul v1.0.0)</label>
+            <div class="field" id="t-trans-wrap" style="margin-bottom:0;"><label id="t-trans-lbl">Transport (Backhaul v1.1.0)</label>
               <select id="t-trans" onchange="onBackhaulTransportChange(); updateTunFloatDock()">
-                <optgroup label="Core &amp; Multiplex">
-                  <option value="tcp">TCP</option>
-                  <option value="tcpmux">TCPMUX</option>
-                  <option value="udp">UDP</option>
-                </optgroup>
-                <optgroup label="TLS / uTLS (Anti-DPI)">
+                <optgroup label="TCP / TLS / HTTP (A–Z)">
+                  <option value="failover">Failover (Multi-Carrier)</option>
+                  <option value="parallax">Parallax (Multi-Lane TCP + AEAD)</option>
+                  <option value="tcp" selected>TCP</option>
                   <option value="tls">TLS (Auto-TLS + uTLS)</option>
-                  <option value="tlsmux">TLSMUX (uTLS + smux)</option>
-                </optgroup>
-                <optgroup label="WebSocket / CDN">
-                  <option value="ws">WS</option>
-                  <option value="wss">WSS (uTLS)</option>
-                  <option value="wsmux">WSMUX (CDN-safe)</option>
-                  <option value="wssmux">WSSMUX (CDN + uTLS)</option>
-                </optgroup>
-                <optgroup label="XHTTP / HTTP2 (CDN &amp; Proxy)">
+                  <option value="ws">WS (WebSocket)</option>
+                  <option value="wss">WSS (WebSocket + uTLS)</option>
                   <option value="xhttp">XHTTP</option>
                   <option value="xhttps">XHTTPS (HTTP/2 + uTLS)</option>
-                  <option value="xhttpmux">XHTTPMUX</option>
-                  <option value="xhttpsmux">XHTTPSMUX (HTTP/2 + smux)</option>
                 </optgroup>
-                <optgroup label="KCP (High Packet-Loss)">
+                <optgroup label="UDP &amp; KCP (UDP-Based)">
                   <option value="kcp">KCP (UDP + FEC)</option>
-                  <option value="kcpmux">KCPMUX (UDP + FEC + smux)</option>
-                </optgroup>
-                <optgroup label="Next-Gen v1.0 (Anti-Cut &amp; Failover)">
-                  <option value="parallax">Parallax (Multi-Lane TCP + KCP/FEC)</option>
-                  <option value="parallaxmux">ParallaxMUX (Anti-Cut Multi-Lane + smux)</option>
-                  <option value="failover">Failover (2–4 Auto-Switching Carriers)</option>
+                  <option value="udp">UDP (Raw UDP)</option>
                 </optgroup>
               </select>
             </div>
@@ -7399,6 +7470,10 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
       </div>
     </div>
 
+    <div class="setup-sync-bar" id="setup-manifest-bar">
+      <span id="setup-manifest-txt" class="mono">🔄 Checking auto-synced repo versions (Backhaul, Xray, Rathole, Paqet, Realm)...</span>
+      <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 9px; font-size:.7rem;" id="btn-sync-master-bundle" onclick="syncMasterBundleCache()">↻ Sync Master</button>
+    </div>
     <div class="setup-status-grid" id="setup-status-grid"></div>
 
     <div class="field" style="margin-bottom:10px;">
@@ -9559,22 +9634,64 @@ async function loadTunnels() {
   }).join('');
 }
 
+function sortServersAlpha(arr) {
+  return (arr || []).slice().sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || ''), undefined, { numeric: true, sensitivity: 'base' })
+  );
+}
+
+function filterOppositeServers(srcSrv) {
+  const sorted = sortServersAlpha(SERVERS);
+  if (!srcSrv) return sorted;
+  const others = sorted.filter(s => +s.id !== +srcSrv.id);
+  if (srcSrv.role === 'iran') {
+    const foreignOnly = others.filter(s => s.role !== 'iran');
+    return foreignOnly.length ? foreignOnly : others;
+  }
+  const iranOnly = others.filter(s => s.role === 'iran');
+  return iranOnly.length ? iranOnly : others;
+}
+
+function syncTunnelExitSelect() {
+  const irSel = $('t-iran'), frSel = $('t-foreign');
+  if (!irSel || !frSel) return;
+  const srcId = parseInt(irSel.value || '0', 10);
+  const srcSrv = (SERVERS || []).find(s => +s.id === srcId);
+  const keepFr = frSel.value;
+  const targets = filterOppositeServers(srcSrv);
+  frSel.innerHTML = targets.length
+    ? targets.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')
+    : '<option value="0">Add exit server first</option>';
+  if (keepFr && targets.some(s => String(s.id) === String(keepFr))) {
+    frSel.value = keepFr;
+  } else if (targets.length) {
+    frSel.value = String(targets[0].id);
+  }
+}
+
 function populateServerSelects(iranId, forId) {
   const isTunWiz = (iranId === 't-iran' && forId === 't-foreign');
-  const irOpts = SERVERS.map(s => {
+  const sorted = sortServersAlpha(SERVERS);
+  const fmtOpt = s => {
     const cc = s.country_code || (s.role === 'iran' ? 'IR' : '');
     const fl = flagEmoji(cc);
-    if (isTunWiz) {
-      return `<option value="${s.id}">${esc(s.name)}</option>`;
-    }
-    return `<option value="${s.id}">${esc(s.name)} — ${esc(s.host)} ${fl}</option>`;
-  }).join('');
-  if ($(iranId)) $(iranId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
-  if ($(forId)) $(forId).innerHTML = irOpts || '<option value="0">Add servers first</option>';
-  const firstIran = SERVERS.find(s => s.role === 'iran');
-  const firstFor = SERVERS.find(s => s.role === 'foreign');
-  if (firstIran && $(iranId)) $(iranId).value = firstIran.id;
-  if (firstFor && $(forId)) $(forId).value = firstFor.id;
+    return isTunWiz
+      ? `<option value="${s.id}">${esc(s.name)}</option>`
+      : `<option value="${s.id}">${esc(s.name)} — ${esc(s.host)} ${fl}</option>`;
+  };
+  const iranList = sorted.filter(s => s.role === 'iran');
+  const forList = sorted.filter(s => s.role !== 'iran');
+  const irSource = (isTunWiz && iranList.length) ? [...iranList, ...forList] : sorted;
+  if ($(iranId)) $(iranId).innerHTML = irSource.map(fmtOpt).join('') || '<option value="0">Add servers first</option>';
+  if (iranList.length && $(iranId)) $(iranId).value = String(iranList[0].id);
+
+  if (isTunWiz) {
+    syncTunnelExitSelect();
+  } else {
+    const forSource = forList.length ? forList : sorted;
+    if ($(forId)) $(forId).innerHTML = forSource.map(fmtOpt).join('') || '<option value="0">Add servers first</option>';
+    if (forList.length && $(forId)) $(forId).value = String(forList[0].id);
+  }
 }
 
 function updateTunnelRouteBubbles(selId, flagBubbleId, ipFlagId) {
@@ -9634,11 +9751,55 @@ function onBackhaulTransportChange() {
   if ($('t-bh-parallax-opts')) $('t-bh-parallax-opts').style.display = isPX ? 'block' : 'none';
   if ($('t-bh-failover-opts')) $('t-bh-failover-opts').style.display = isFO ? 'block' : 'none';
 }
+function syncBackhaulTransportOptions(isMux) {
+  const sel = $('t-trans');
+  const lbl = $('t-trans-lbl');
+  if (!sel) return;
+  const cur = sel.value;
+  if (isMux) {
+    if (lbl) lbl.textContent = 'Transport — Backhaul MUX (v1.1.0)';
+    sel.innerHTML = `
+      <optgroup label="Backhaul MUX — TCP / TLS / HTTP (A–Z)">
+        <option value="parallaxmux">ParallaxMUX (Multi-Lane + smux)</option>
+        <option value="tcpmux">TCPMUX</option>
+        <option value="tlsmux">TLSMUX (uTLS + smux)</option>
+        <option value="wsmux">WSMUX (CDN-safe)</option>
+        <option value="wssmux">WSSMUX (CDN + uTLS)</option>
+        <option value="xhttpmux">XHTTPMUX</option>
+        <option value="xhttpsmux">XHTTPSMUX (HTTP/2 + smux)</option>
+      </optgroup>
+      <optgroup label="Backhaul MUX — UDP &amp; KCP">
+        <option value="kcpmux">KCPMUX (UDP + FEC + smux)</option>
+      </optgroup>`;
+    sel.value = Array.from(sel.options).some(o => o.value === cur) ? cur : 'tcpmux';
+  } else {
+    if (lbl) lbl.textContent = 'Transport — Backhaul Non-MUX (v1.1.0)';
+    sel.innerHTML = `
+      <optgroup label="Backhaul — TCP / TLS / HTTP (A–Z)">
+        <option value="failover">Failover (Multi-Carrier)</option>
+        <option value="parallax">Parallax (Multi-Lane TCP + AEAD)</option>
+        <option value="tcp">TCP</option>
+        <option value="tls">TLS (Auto-TLS + uTLS)</option>
+        <option value="ws">WS (WebSocket)</option>
+        <option value="wss">WSS (WebSocket + uTLS)</option>
+        <option value="xhttp">XHTTP</option>
+        <option value="xhttps">XHTTPS (HTTP/2 + uTLS)</option>
+      </optgroup>
+      <optgroup label="UDP &amp; KCP (UDP-Based)">
+        <option value="kcp">KCP (UDP + FEC)</option>
+        <option value="udp">UDP (Raw UDP)</option>
+      </optgroup>`;
+    sel.value = Array.from(sel.options).some(o => o.value === cur) ? cur : 'tcp';
+  }
+}
+
 function onTunnelEngineChange() {
   const eng = $('t-engine').value;
+  const isBH = (eng === 'backhaul' || eng === 'backhaul_mux');
   const isKernel = (eng === 'gre' || eng === 'ip6gre' || eng === 'ipip' || eng === 'vxlan' || eng === 'wireguard');
-  $('t-trans-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
-  if ($('t-bh-v9-wrap')) $('t-bh-v9-wrap').style.display = eng === 'backhaul' ? 'block' : 'none';
+  if (isBH) syncBackhaulTransportOptions(eng === 'backhaul_mux');
+  $('t-trans-wrap').style.display = isBH ? 'block' : 'none';
+  if ($('t-bh-v9-wrap')) $('t-bh-v9-wrap').style.display = isBH ? 'block' : 'none';
   if (typeof onBackhaulTransportChange === 'function') onBackhaulTransportChange();
   const vw = $('t-vip-wrap'); if (vw) vw.style.display = isKernel ? 'block' : 'none';
   const ipw = $('t-ipmode-wrap'); if (ipw) ipw.style.display = isKernel ? 'block' : 'none';
@@ -9842,7 +10003,8 @@ function renderStep1PingList() {
   const listEl = $('t-s1-ping-list');
   if (!listEl) return;
   const srcId = parseInt(($('t-iran') && $('t-iran').value) || '0', 10);
-  const others = (SERVERS || []).filter(s => +s.id !== srcId);
+  const srcSrv = (SERVERS || []).find(s => +s.id === srcId);
+  const others = filterOppositeServers(srcSrv);
   if (!others.length) {
     listEl.innerHTML = '<div style="font-size:.75rem; color:var(--muted); grid-column:1/-1;">Add at least one more server to test ping.</div>';
     closeStep1IpBox();
@@ -10115,7 +10277,7 @@ async function deployTunnel() {
   try {
     const payload = {
       name: $('t-name').value.trim(),
-      engine: $('t-engine').value,
+      engine: ($('t-engine').value === 'backhaul_mux' ? 'backhaul' : $('t-engine').value),
       transport: $('t-trans').value,
       iran_server_id: parseInt($('t-iran').value || '0', 10),
       foreign_server_id: parseInt($('t-foreign').value || '0', 10),
@@ -10609,7 +10771,35 @@ function openSetupModal(id) {
   refreshSetupStatus();
 }
 
+async function loadSetupBundleManifest() {
+  const el = $('setup-manifest-txt');
+  if (!el) return;
+  try {
+    const r = await api('api/setup/bundle-manifest');
+    if (r && r.ok && r.synced && r.versions) {
+      const v = r.versions;
+      const parts = ['backhaul','xray','rathole','paqet','realm'].filter(k => v[k]).map(k => `${k.toUpperCase()} ${v[k]}`);
+      el.textContent = '✅ Auto-Synced: ' + (parts.join(' · ') || 'Ready');
+    } else {
+      el.textContent = '📦 Auto-Sync active (runs every 6h via GitHub Actions → Mirror)';
+    }
+  } catch (e) {}
+}
+
+async function syncMasterBundleCache() {
+  const btn = $('btn-sync-master-bundle');
+  if (btn) { btn.disabled = true; btn.textContent = 'Syncing...'; }
+  try {
+    const r = await api('api/setup/sync-master', 'POST');
+    toast((r && r.message) || (r && r.error) || 'Done', !(r && r.ok));
+    if (r && r.ok) loadSetupBundleManifest();
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '↻ Sync Master'; }
+  }
+}
+
 async function refreshSetupStatus() {
+  loadSetupBundleManifest();
   if (!setupTargetId) return;
   $('setup-meta').textContent = 'Scanning node...';
   const r = await api('api/servers/' + setupTargetId + '/setup/status');
@@ -10655,7 +10845,7 @@ async function runSetupAction(action, engine) {
 }
 
 
-let OB_CFG = { enabled: false, lb_strategy: 'leastPing', probe_interval: '30s', use_github: true, use_telegram: true, use_foreign: false, subs: [], nodes: [] };
+let OB_CFG = { enabled: false, lb_strategy: 'leastPing', probe_interval: '30s', use_github: true, use_telegram: true, use_foreign: false, use_datacenter: false, use_cloudflare: false, subs: [], nodes: [] };
 
 async function loadMasterOutbound() {
   const r = await api('api/outbound/status');
@@ -10668,6 +10858,8 @@ async function loadMasterOutbound() {
   if ($('ob-gh')) $('ob-gh').checked = OB_CFG.use_github !== false;
   if ($('ob-tg')) $('ob-tg').checked = OB_CFG.use_telegram !== false;
   if ($('ob-fr')) $('ob-fr').checked = !!OB_CFG.use_foreign;
+  if ($('ob-dc')) $('ob-dc').checked = !!OB_CFG.use_datacenter;
+  if ($('ob-cf')) $('ob-cf').checked = !!OB_CFG.use_cloudflare;
   if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
   if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
   pickOutboundMode(OB_CFG.mode === 'loadbalance' ? 'loadbalance' : 'single');
@@ -11037,6 +11229,8 @@ async function saveMasterOutbound() {
     OB_CFG.use_github = $('ob-gh').checked;
     OB_CFG.use_telegram = $('ob-tg').checked;
     OB_CFG.use_foreign = $('ob-fr').checked;
+    OB_CFG.use_datacenter = $('ob-dc') ? $('ob-dc').checked : false;
+    OB_CFG.use_cloudflare = $('ob-cf') ? $('ob-cf').checked : false;
     OB_CFG.lb_strategy = $('ob-lb').value;
     OB_CFG.probe_interval = $('ob-int').value;
     const r = await api('api/outbound/save', 'POST', OB_CFG);
@@ -12028,7 +12222,7 @@ async function runInstall(source) {
 function coreOut(s) { const o = $('core-out'); if (!o) return; o.textContent = s; o.scrollTop = o.scrollHeight; }
 function fillCoreSelect() {
   const sel = $('core-srv'); if (!sel) return; const keep = sel.value;
-  sel.innerHTML = SERVERS.map(s => `<option value="${+s.id}">${esc(s.name)} (${esc(s.host)})${s.core_installed ? '' : ' — ' + esc(t('badge_notinst'))}</option>`).join('');
+  sel.innerHTML = sortServersAlpha(SERVERS).map(s => `<option value="${+s.id}">${esc(s.name)} (${esc(s.host)})${s.core_installed ? '' : ' — ' + esc(t('badge_notinst'))}</option>`).join('');
   if (keep && SERVERS.some(s => String(s.id) === keep)) sel.value = keep;
 }
 function renderPresets() {
@@ -13841,11 +14035,68 @@ function _renderTabCfgItem(it, fa, badgeTab) {
   </div>`;
 }
 
+function setTabAppearanceAxis(axis, val) {
+  if (typeof custom !== 'undefined') {
+    if (!val) delete custom[axis];
+    else custom[axis] = val;
+    if (typeof applyTheme === 'function') applyTheme();
+    if (typeof renderStudio === 'function') renderStudio();
+  }
+  renderTabAppearanceSection();
+}
+
+function renderTabAppearanceSection() {
+  const box = $('tab-cfg-appearance');
+  if (!box) return;
+  const key = _activeTabCfgKey || 'overview';
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const curMode = (typeof mode !== 'undefined' ? mode : 'auto');
+  const eff = (typeof effective === 'function') ? effective() : {};
+  const valOf = ax => (typeof custom !== 'undefined' && custom[ax]) ? custom[ax] : (eff[ax] || '');
+
+  const mkSel = (ax, lblEn, lblFa, opts) => {
+    const cur = valOf(ax);
+    return `<div class="tp-app-field"><label>${esc(fa ? lblFa : lblEn)}</label><select onchange="setTabAppearanceAxis('${ax}', this.value)">${opts.map(([v, t]) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
+  };
+
+  let controls = '';
+  if (key === 'overview') {
+    controls += mkSel('chart', 'Cards Layout', 'چیدمان کارت مستر', [['bubbles','4 Separate Bubbles'],['unified','Unified Box']]);
+    controls += mkSel('gauge', 'Gauge Style', 'استایل نمودار', [['line','Clean Line'],['wave','Wave Sparkline'],['ring','Circular Ring']]);
+    controls += mkSel('card', 'Card Surface', 'جنس کارت‌ها', [['glass','Glass'],['flat','Flat'],['outline','Outline'],['neu','Soft Neu']]);
+    controls += mkSel('corners', 'Corner Shape', 'گردی گوشه‌ها', [['inherit','Theme Default'],['soft','Rounded'],['capsule','Extra Rounded'],['square','Square']]);
+  } else if (key === 'monitor') {
+    controls += mkSel('uptime', 'Uptime Theme', 'تم آپتایم', [['kuma','Kuma Clean'],['neon','Neon Cyber'],['dots','Signal Dots'],['minimal','Minimal']]);
+    controls += mkSel('beat', 'Heartbeat Style', 'شکل میله ضربان', [['pill','Capsules'],['block','Blocks'],['dots','Signal Dots'],['diamond','Diamonds'],['ecg','ECG Trace']]);
+    controls += mkSel('card', 'Card Surface', 'جنس کارت‌ها', [['glass','Glass'],['flat','Flat'],['outline','Outline'],['neu','Soft Neu']]);
+    controls += mkSel('corners', 'Corner Shape', 'گردی گوشه‌ها', [['inherit','Theme Default'],['soft','Rounded'],['capsule','Extra Rounded'],['square','Square']]);
+  } else {
+    controls += mkSel('card', 'Card Surface', 'جنس کارت‌ها', [['glass','Glass'],['flat','Flat'],['outline','Outline'],['neu','Soft Neu']]);
+    controls += mkSel('btn', 'Button Shape', 'فرم دکمه‌ها', [['pill','Pill'],['round','Rounded'],['square','Square']]);
+    controls += mkSel('corners', 'Corner Shape', 'گردی گوشه‌ها', [['inherit','Theme Default'],['soft','Rounded'],['capsule','Extra Rounded'],['square','Square']]);
+    controls += mkSel('den', 'Spacing Density', 'تراکم فضا', [['compact','Compact'],['cozy','Cozy'],['roomy','Roomy']]);
+  }
+
+  box.innerHTML = `<div class="tp-app-card">
+    <div class="tp-app-title">
+      <span>🎨 ${fa ? 'تنظیمات ظاهری این تب' : 'Tab Appearance'}</span>
+      <span style="font-size:.64rem; opacity:.75;">${esc((typeof curTheme === 'function' && curTheme().n) || '')}</span>
+    </div>
+    <div class="tp-mode-seg">
+      <button type="button" class="tp-mode-btn ${curMode==='dark'?'active':''}" onclick="setMode('dark'); renderTabAppearanceSection();">🌙 Dark</button>
+      <button type="button" class="tp-mode-btn ${curMode==='light'?'active':''}" onclick="setMode('light'); renderTabAppearanceSection();">☀️ Light</button>
+      <button type="button" class="tp-mode-btn ${curMode==='auto'?'active':''}" onclick="setMode('auto'); renderTabAppearanceSection();">◐ Auto</button>
+    </div>
+    <div class="tp-app-grid">${controls}</div>
+  </div>`;
+}
+
 function renderTabSettingsModal() {
   const key = _activeTabCfgKey;
   const sec = TAB_PREFS_SCHEMA[key];
   if (!sec) return;
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  renderTabAppearanceSection();
 
   if ($('tab-cfg-title')) $('tab-cfg-title').textContent = fa ? ('تنظیمات تب ' + sec.titleFa) : (sec.titleEn + ' Tab Settings');
   if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'پیش‌نمایش زنده — تغییر هر گزینه بلافاصله روی صفحه پشت دیده می‌شود.' : 'Live preview — toggle any option to see its effect immediately on the page behind.';

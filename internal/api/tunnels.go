@@ -86,6 +86,9 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Name = strings.TrimSpace(req.Name)
 	req.Engine = strings.ToLower(strings.TrimSpace(req.Engine))
+	if req.Engine == "backhaul_mux" {
+		req.Engine = "backhaul"
+	}
 	req.Transport = strings.ToLower(strings.TrimSpace(req.Transport))
 	if req.Name == "" {
 		fail(w, http.StatusBadRequest, "tunnel name is required")

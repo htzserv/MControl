@@ -113,7 +113,7 @@ func keepOrUpdateSecret(incoming, existing string) string {
 
 func (h *Handler) dcHTTPClient(useOutbound bool, timeout time.Duration) *http.Client {
 	tr := &http.Transport{}
-	if useOutbound && isOutboundActive() {
+	if (useOutbound || h.datacenterSocksProxy() != "") && isOutboundActive() {
 		px := fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 		tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return sshclient.DialViaSOCKS5(px, addr, timeout)

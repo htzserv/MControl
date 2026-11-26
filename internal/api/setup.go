@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/htzserv/MControl/internal/sshclient"
 	"github.com/htzserv/MControl/internal/sysinfo"
+	"github.com/htzserv/MControl/internal/updater"
 )
 
 const bundleFileName = "mcontrol-bundle-linux-amd64.tar.gz"
@@ -129,7 +131,7 @@ func (h *Handler) ensureCachedFile(relPath string, urls ...string) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0750); err != nil {
 		return err
 	}
-	client := &http.Client{Timeout: 120 * time.Second}
+	client := updater.MakeHTTPClient(120*time.Second, h.githubSocksProxy())
 	var lastErr error
 	for _, u := range urls {
 		u = strings.TrimSpace(u)
@@ -297,7 +299,7 @@ curl %s %s -o "$TMPD/bundle.tar.gz"
 echo "=== Extracting static binaries to /usr/local/bin/ ==="
 tar -xzf "$TMPD/bundle.tar.gz" -C "$TMPD"
 cp -af "$TMPD/bin/"* /usr/local/bin/
-chmod +x /usr/local/bin/bh /usr/local/bin/backhaul /usr/local/bin/rathole /usr/local/bin/paqet /usr/local/bin/realm /usr/local/bin/iperf3 /usr/local/bin/speedtest /usr/local/bin/jq /usr/local/bin/socat 2>/dev/null || true
+chmod +x /usr/local/bin/bh /usr/local/bin/backhaul /usr/local/bin/xray /usr/local/bin/rathole /usr/local/bin/paqet /usr/local/bin/realm /usr/local/bin/iperf3 /usr/local/bin/speedtest /usr/local/bin/jq /usr/local/bin/socat 2>/dev/null || true
 %s
 echo "=== All Prerequisites & Tunnel Engines Installed Successfully ==="
 `, req.Source, curlFlags, sshclient.ShQuote(dlURL), kernelModulesCmd)
@@ -443,4 +445,74 @@ func (h *Handler) handleCacheDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = os.Remove(full)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+
+const defaultManifestGH = "https://github.com/htzserv/MControl/releases/download/bundle-latest/bundle-manifest.json"
+
+// handleBundleManifest returns the auto-synced upstream versions (Backhaul, Xray, Rathole, Paqet, Realm, jq)
+// published in bundle-manifest.json on GitHub / Iran Mirror.
+func (h *Handler) handleBundleManifest(w http.ResponseWriter, r *http.Request) {
+	st := h.store.GetSettings()
+	irBase := strings.TrimRight(st.IranMirrorURL, "/")
+	urls := []string{defaultManifestGH}
+	if irBase != "" {
+		urls = append(urls, irBase+"/bundle-manifest.json")
+	}
+	client := updater.MakeHTTPClient(12*time.Second, h.githubSocksProxy())
+	var manifest map[string]any
+	var src string
+	for _, u := range urls {
+		resp, err := client.Get(u)
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode == http.StatusOK {
+			var m map[string]any
+			if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&m); err == nil && m != nil {
+				manifest = m
+				src = u
+				resp.Body.Close()
+				break
+			}
+		}
+		resp.Body.Close()
+	}
+	if manifest == nil {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "synced": false, "versions": map[string]string{}})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":         true,
+		"synced":     true,
+		"source":     src,
+		"updated_at": manifest["updated_at"],
+		"versions":   manifest["versions"],
+	})
+}
+
+// handleSyncMasterBundle forces a fresh download of the latest auto-synced static bundle onto Master cache.
+func (h *Handler) handleSyncMasterBundle(w http.ResponseWriter, r *http.Request) {
+	st := h.store.GetSettings()
+	irBase := strings.TrimRight(st.IranMirrorURL, "/")
+	bundleIR := ""
+	if irBase != "" {
+		bundleIR = irBase + "/" + bundleFileName
+	}
+	dest := filepath.Join(h.cacheDir(), "bundle", bundleFileName)
+	_ = os.Remove(dest)
+	if err := h.ensureCachedFile("bundle/"+bundleFileName, defaultBundleGH, bundleIR); err != nil {
+		fail(w, http.StatusBadGateway, "failed to sync latest bundle: "+err.Error())
+		return
+	}
+	fi, _ := os.Stat(dest)
+	var sz int64
+	if fi != nil {
+		sz = fi.Size()
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"size":    sz,
+		"message": "Master bundle cache synced with latest upstream releases!",
+	})
 }

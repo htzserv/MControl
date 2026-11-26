@@ -152,7 +152,7 @@ func (h *Handler) cfHTTPDo(method, urlStr string, cfg cfConfig, payload any) ([]
 		}
 		return req, nil
 	}
-	if proxy := h.githubSocksProxy(); proxy != "" {
+	if proxy := h.cloudflareSocksProxy(); proxy != "" {
 		if req, err := buildReq(); err == nil {
 			client := updater.MakeHTTPClient(15*time.Second, proxy)
 			if resp, err := client.Do(req); err == nil {

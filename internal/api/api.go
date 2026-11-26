@@ -779,6 +779,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/pro/panel-sync", h.auth(h.handlePanelPortSync))
 	mux.HandleFunc("GET /api/pro/metrics", h.auth(h.handleMetricsHistory))
 	mux.HandleFunc("GET /api/cache/list", h.auth(h.handleCacheList))
+	mux.HandleFunc("GET /api/setup/bundle-manifest", h.auth(h.handleBundleManifest))
+	mux.HandleFunc("POST /api/setup/sync-master", h.auth(h.handleSyncMasterBundle))
 	mux.HandleFunc("POST /api/cache/upload", h.auth(h.handleCacheUpload))
 	mux.HandleFunc("POST /api/cache/delete", h.auth(h.handleCacheDelete))
 	mux.HandleFunc("GET /api/outbound/status", h.auth(h.handleOutboundStatus))
