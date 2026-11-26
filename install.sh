@@ -504,24 +504,24 @@ systemctl daemon-reload
 systemctl enable mcontrol.service >/dev/null 2>&1
 systemctl restart mcontrol.service
 
-TOKEN=""
-for _ in 1 2 3 4 5 6 7 8; do
-    TOKEN=$(journalctl -u mcontrol.service -n 50 --no-pager 2>/dev/null | grep -o 'FIRST-TIME SETUP TOKEN: [0-9a-f]*' | tail -n1 | awk '{print $4}' || true)
-    [[ -n "$TOKEN" ]] && break
-    sleep 1
-done
+sleep 2
 
 BETA_DISP=""
-[[ "$CHANNEL" == "beta" ]] && BETA_DISP=" · Beta #${BETA_NUM:-latest}"
+BETA_LINE=""
+if [[ "$CHANNEL" == "beta" ]]; then
+    BETA_DISP=" · Beta #${BETA_NUM:-latest}"
+    BETA_LINE="  ${FR}├─${NC} ${W}Beta Version:${NC} ${Y}v${VERSION_TXT}-beta.${BETA_NUM:-latest}${NC}\n"
+fi
 echo -e "  ${FR}├─${NC} ${G}✓ Systemd service active (v${VERSION_TXT}${BETA_DISP} · ${PKG_LBL} · ${SRC_LBL}).${NC}"
 echo -e "  ${FR}│${NC}"
-echo -e "  ${FR}├─${NC} ${W}Setup URL   :${NC} ${C}http://${IP4}:${PORT}/${NC}"
-if [[ -n "$TOKEN" ]]; then
-    echo -e "  ${FR}├─${NC} ${W}Setup Token :${NC} ${Y}${TOKEN}${NC}"
-else
-    echo -e "  ${FR}├─${NC} ${W}Setup Token :${NC} ${DIM}already configured${NC}"
-fi
+echo -e "  ${FR}├─${NC} ${W}Panel URL   :${NC} ${C}http://${IP4}:${PORT}/${NC}"
+[[ -n "$BETA_LINE" ]] && printf '%b' "$BETA_LINE"
 echo -e "  ${FR}└─${NC} ${W}CLI Menu    :${NC} ${Y}mcontrol${NC}\n"
+if command -v xdg-open >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
+    xdg-open "http://${IP4}:${PORT}/" >/dev/null 2>&1 || true
+elif command -v open >/dev/null 2>&1; then
+    open "http://${IP4}:${PORT}/" >/dev/null 2>&1 || true
+fi
 if [[ -t 0 && -t 1 && -x /usr/local/bin/mcontrol ]]; then
     exec /usr/local/bin/mcontrol
 fi

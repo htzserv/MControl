@@ -5312,7 +5312,6 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
       <h2 style="color:var(--accent); margin-bottom:6px;" data-i18n="setup_title">MControl Setup</h2>
       <p class="hint" data-i18n="setup_sub">Configure credentials, a secret web path and the panel port</p>
     </div>
-    <div class="field" id="su-token-wrap"><label data-i18n="lbl_setup_token">Setup token (shown in the install output)</label><input id="su-token" class="mono" autocomplete="off"></div>
     <div class="field"><label data-i18n="lbl_admin_user">Admin username</label><input id="su-user" value="admin" autocomplete="username"></div>
     <div class="field"><label data-i18n="lbl_admin_pass">Admin password (min 8 characters)</label><input id="su-pass" type="password" autocomplete="new-password"></div>
     <div class="field">
@@ -7835,7 +7834,7 @@ const ls = {
 const I = {
 en: {
   setup_title: 'MControl Setup', setup_sub: 'Configure credentials, a secret web path and the panel port',
-  lbl_setup_token: 'Setup token (shown in the install output)', lbl_admin_user: 'Admin username', lbl_admin_pass: 'Admin password (min 8 characters)',
+lbl_admin_user: 'Admin username', lbl_admin_pass: 'Admin password (min 8 characters)',
   lbl_web_path: 'Secret web path (anti-probing)', lbl_port: 'Panel port', btn_setup: 'Save & launch panel',
   setup_done: 'Setup complete! Restarting panel...', setup_url: 'Your permanent MControl URL:', t_random: 'Random',
   login_sub: 'MDesign central control plane', http_warn: 'Plain HTTP: your password is sent unencrypted. Enable HTTPS (tls.crt / tls.key) or use a reverse proxy.',
@@ -7889,7 +7888,7 @@ en: {
 },
 fa: {
   setup_title: 'راه‌اندازی اولیه MControl', setup_sub: 'نام کاربری، رمز عبور، مسیر مخفی وب و پورت پنل را تنظیم کنید',
-  lbl_setup_token: 'توکن راه‌اندازی (در خروجی نصب نمایش داده شده)', lbl_admin_user: 'نام کاربری مدیر', lbl_admin_pass: 'رمز عبور مدیر (حداقل ۸ کاراکتر)',
+lbl_admin_user: 'نام کاربری مدیر', lbl_admin_pass: 'رمز عبور مدیر (حداقل ۸ کاراکتر)',
   lbl_web_path: 'مسیر مخفی وب (ضد پروب)', lbl_port: 'پورت پنل', btn_setup: 'ذخیره و اجرای پنل',
   setup_done: 'راه‌اندازی کامل شد! در حال راه‌اندازی مجدد پنل...', setup_url: 'آدرس دائمی پنل شما:', t_random: 'تصادفی',
   login_sub: 'پنل مرکزی کنترل MDesign', http_warn: 'اتصال HTTP ساده است و رمز شما بدون رمزگذاری ارسال می‌شود. HTTPS (فایل‌های tls.crt و tls.key) یا ریورس‌پروکسی را فعال کنید.',
@@ -13855,7 +13854,7 @@ async function completeSetup() {
   }
   const res = await api('api/setup/complete', 'POST', {
     username: $('su-user').value, password: $('su-pass').value, web_path: $('su-path').value,
-    port: parseInt($('su-port').value || '0', 10), setup_token: $('su-token').value,
+    port: parseInt($('su-port').value || '0', 10),
     domain: dom, issue_ssl: wantSSL, custom_cert: customCert, custom_key: customKey
   });
   if (res.ok) {

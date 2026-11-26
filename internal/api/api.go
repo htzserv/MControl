@@ -1,6 +1,7 @@
 package api
 
 import (
+
 	"archive/zip"
 	"bytes"
 	"context"
@@ -63,7 +64,6 @@ type Handler struct {
 	store         *db.Store
 	currentPort   string
 	limiter       *limiter
-	setupToken    string
 	distMu        sync.Mutex
 	distTokens    map[string]time.Time
 	stopCh        chan struct{}
@@ -86,12 +86,6 @@ func New(store *db.Store, currentPort string) *Handler {
 		benchJob:      BenchJob{Logs: []string{}, Results: []BenchResult{}},
 		monSSLAlerted: map[int64]time.Time{},
 		monLatAlerted: map[int64]time.Time{},
-	}
-	if store != nil && !store.IsSetupDone() {
-		b := make([]byte, 6)
-		_, _ = rand.Read(b)
-		h.setupToken = hex.EncodeToString(b)
-		log.Printf("FIRST-TIME SETUP TOKEN: %s", h.setupToken)
 	}
 	h.loadAgentCertPins()
 	return h
@@ -854,7 +848,6 @@ func (h *Handler) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 	if !done {
 		resp["suggested_path"] = randomPath()
 		resp["current_port"] = h.currentPort
-		resp["token_required"] = h.setupToken != ""
 	}
 	writeJSON(w, http.StatusOK, resp)
 }
@@ -869,7 +862,6 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 		Password   string `json:"password"`
 		WebPath    string `json:"web_path"`
 		Port       int    `json:"port"`
-		SetupToken string `json:"setup_token"`
 		Domain     string `json:"domain"`
 		IssueSSL   bool   `json:"issue_ssl"`
 		CustomCert string `json:"custom_cert"`
@@ -881,11 +873,6 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 	ip := clientIP(r)
 	if d := h.limiter.wait(ip); d > 0 {
 		fail(w, http.StatusTooManyRequests, "too many attempts, retry later")
-		return
-	}
-	if h.setupToken == "" || subtle.ConstantTimeCompare([]byte(strings.TrimSpace(req.SetupToken)), []byte(h.setupToken)) != 1 {
-		h.limiter.fail(ip)
-		fail(w, http.StatusForbidden, "invalid setup token (shown in the install output / service log)")
 		return
 	}
 	req.WebPath = strings.Trim(strings.TrimSpace(req.WebPath), "/")
@@ -1875,8 +1862,7 @@ func (h *Handler) handleLocalLogs(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "logs": "journalctl unavailable or no logs yet."})
 		return
 	}
-	// The one-time setup token is only meaningful before setup; never echo it back through the panel.
-	logs := regexp.MustCompile(`FIRST-TIME SETUP TOKEN: [0-9a-f]+`).ReplaceAllString(string(out), "FIRST-TIME SETUP TOKEN: [hidden]")
+	logs := string(out)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "logs": logs})
 }
 
