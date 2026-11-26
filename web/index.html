@@ -17025,19 +17025,19 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
   if ($('ob-result-card')) { $('ob-result-card').className = 'ob-result-card'; }
   if ($('btn-ob-migrate')) $('btn-ob-migrate').style.display = _obHasLegacy ? 'inline-flex' : 'none';
 
-  setOnboardProgress(1, L.connecting, L.sshSub);
+  setOnboardProgress(40,
+    isIran ? L.irDetect : L.forDetect,
+    isIran ? '🇮🇷 Iran Node → ParsPack Mirror' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source')
+  );
   $('srv-onboard-modal').classList.add('active');
 
-  let cur = 1;
+  let cur = 40;
   const tick = setInterval(() => {
-    if (cur < 92) {
-      cur += cur < 35 ? 5 : (cur < 70 ? 4 : 2);
-      if (cur > 92) cur = 92;
-      const stTxt = cur < 35 ? L.connecting : (cur < 68 ? L.installing : L.tlsSetup);
-      const subTxt = cur < 35 ? L.sshSub : (isIran ? '🇮🇷 Iran Node → ParsPack Mirror' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source'));
-      setOnboardProgress(cur, stTxt, subTxt);
+    if (cur < 88) {
+      cur += 3;
+      setOnboardProgress(cur, cur < 68 ? L.installing : L.tlsSetup);
     }
-  }, 180);
+  }, 650);
 
   let pairRes = null;
   try {

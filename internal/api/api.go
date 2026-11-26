@@ -1173,10 +1173,19 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
 	if !p.Online {
 		lowErr := strings.ToLower(p.Error)
-		if strings.Contains(lowErr, "unable to authenticate") || strings.Contains(lowErr, "permission denied") || strings.Contains(lowErr, "no supported methods remain") {
-			fail(w, http.StatusUnauthorized, "SSH authentication failed (check username, password, or private key): "+p.Error)
+		isAuthErr := strings.Contains(lowErr, "unable to authenticate") ||
+			strings.Contains(lowErr, "permission denied") ||
+			strings.Contains(lowErr, "no supported methods remain") ||
+			strings.Contains(lowErr, "authenticate") ||
+			strings.Contains(lowErr, "auth") ||
+			strings.Contains(lowErr, "incorrect password") ||
+			strings.Contains(lowErr, "invalid password")
+		if isAuthErr {
+			fail(w, http.StatusUnauthorized, "SSH authentication failed — server not added: "+p.Error)
 			return
 		}
+		fail(w, http.StatusBadGateway, "SSH connection failed — server not added: "+p.Error)
+		return
 	}
 
 	status := "offline"
