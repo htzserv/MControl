@@ -4386,17 +4386,18 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
 .fm-ctx-sep { height: 1px; background: var(--border); margin: 3px 6px; }
 
 
-/* ── Balanced Airy Single-Line Lists with Compact Pills/Buttons ── */
+/* ── Clean Single-Line Lists with Natural Compact Spacing ── */
 body.tp-srv-ob-badge .srv-ob-badge { display: none !important; }
 
 .srv-list {
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  width: clamp(660px, 74vw, 1060px);
+  gap: 10px;
+  width: fit-content;
+  min-width: min(560px, 100%);
   max-width: 100%;
   margin-inline: auto;
-  transition: width .22s ease;
+  transition: width .2s ease;
 }
 .srv-list:has(.srv-row-wrap.open) {
   width: 100%;
@@ -4406,40 +4407,40 @@ body.tp-srv-ob-badge .srv-ob-badge { display: none !important; }
 }
 .srv-row-head {
   flex-wrap: nowrap !important;
-  justify-content: space-between !important;
-  gap: 20px !important;
-  padding: 10px 18px !important;
-  min-height: 54px !important;
+  justify-content: flex-start !important;
+  gap: 14px !important;
+  padding: 10px 16px !important;
+  min-height: 52px !important;
 }
 .srv-head-name {
-  flex: 1 1 auto !important;
+  flex: 0 0 auto !important;
   min-width: 0;
   white-space: nowrap;
 }
 .srv-head-pings {
-  flex: 0 1 auto !important;
+  flex: 0 0 auto !important;
   flex-wrap: nowrap !important;
-  gap: 10px !important;
+  gap: 7px !important;
   white-space: nowrap;
 }
 .srv-head-cpu {
   flex: 0 0 auto !important;
   white-space: nowrap;
-  font-size: .76rem !important;
+  font-size: .75rem !important;
 }
 .srv-head-right {
   flex: 0 0 auto !important;
   margin-inline-start: auto;
+  gap: 6px !important;
   white-space: nowrap;
 }
-/* Keep header pills & Ping button compact and crisp (never bloated) */
 .srv-row-head .badge {
   padding: 2px 8px !important;
   font-size: .64rem !important;
 }
 .srv-row-head .peer-ver-badge {
   padding: 2px 9px !important;
-  min-width: 62px !important;
+  min-width: 60px !important;
   font-size: .64rem !important;
 }
 .srv-row-head .hdr-bubble-btn {
@@ -4447,7 +4448,7 @@ body.tp-srv-ob-badge .srv-ob-badge { display: none !important; }
   font-size: .66rem !important;
 }
 .srv-stage > .srv-list {
-  max-width: calc(100% - 76px);
+  max-width: calc(100% - 72px);
 }
 @media (max-width: 820px) {
   .srv-list,
