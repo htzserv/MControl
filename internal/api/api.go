@@ -1112,6 +1112,7 @@ func (req *serverReq) normalize() string {
 	}
 	if req.AuthType != "key" {
 		req.AuthType = "password"
+		req.Secret = strings.TrimSpace(req.Secret)
 	}
 	if len(req.Secret) > 16*1024 {
 		return "secret is too long"

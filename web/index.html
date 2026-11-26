@@ -8378,9 +8378,21 @@ async function api(path, method, body) {
   if (token) opt.headers['Authorization'] = 'Bearer ' + token;
   if (body !== undefined && body !== null) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
   let r;
-  try { r = await fetch(path, opt); } catch (e) { return { ok: false, error: t('err_network') }; }
+  try { r = await fetch(path, opt); } catch (e) {
+    const em = (e && e.message) ? (t('err_network') + ' (' + e.message + ')') : t('err_network');
+    return { ok: false, error: em };
+  }
   if (r.status === 401 && token && path !== 'api/login') { sessionExpired(); return { ok: false, error: t('session_expired') }; }
-  try { return await r.json(); } catch (e) { return { ok: false, error: 'HTTP ' + r.status }; }
+  let txt = '';
+  try { txt = await r.text(); } catch (e) {
+    return { ok: false, error: 'HTTP ' + r.status + ' (response read error / EOF)' };
+  }
+  if (!txt || !txt.trim()) {
+    return { ok: false, error: 'HTTP ' + r.status + ' (empty response / EOF)' };
+  }
+  try { return JSON.parse(txt); } catch (e) {
+    return { ok: false, error: 'HTTP ' + r.status + ': ' + txt.trim().slice(0, 140) };
+  }
 }
 function sessionExpired() {
   token = ''; ls.del('mc_token');
@@ -9691,7 +9703,7 @@ async function saveServer() {
       use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
     };
     const res = editId ? await api('api/servers/' + editId, 'PUT', payload) : await api('api/servers', 'POST', payload);
-    if (res.ok) {
+    if (res && res.ok === true) {
       const wasNew = !editId;
       const enteredPass = (parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10) === 0 && auth === 'password') ? $('s-pass').value : '';
       const enteredUser = $('s-user').value.trim() || 'root';
