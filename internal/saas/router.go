@@ -123,6 +123,13 @@ func (m *Manager) ServeDist(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+func (m *Manager) tenantsEnabled() bool {
+	if m.primary == nil || m.primary.Store() == nil {
+		return true
+	}
+	return m.primary.Store().IsTenantsEnabled()
+}
+
 func (m *Manager) handleUnifiedLogin(w http.ResponseWriter, r *http.Request, primaryMux http.Handler) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil {
@@ -135,6 +142,10 @@ func (m *Manager) handleUnifiedLogin(w http.ResponseWriter, r *http.Request, pri
 	}
 	if json.Unmarshal(body, &req) == nil && strings.TrimSpace(req.Username) != "" {
 		if t, err := m.GetTenantByUsername(req.Username); err == nil {
+			if !m.tenantsEnabled() {
+				fail(w, http.StatusForbidden, "multi-tenant mode is disabled by administrator")
+				return
+			}
 			if bcrypt.CompareHashAndPassword([]byte(t.PassHash), []byte(req.Password)) != nil {
 				time.Sleep(350 * time.Millisecond)
 				fail(w, http.StatusUnauthorized, "invalid credentials")
@@ -171,6 +182,10 @@ func (m *Manager) handleTenantAPI(w http.ResponseWriter, r *http.Request, tok st
 	claims, tenant, ok := m.VerifyTenantToken(tok)
 	if !ok {
 		fail(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	if !m.tenantsEnabled() && claims.ImpersonatedBy == "" {
+		fail(w, http.StatusForbidden, "multi-tenant mode is disabled by administrator")
 		return
 	}
 	if r.URL.Path == "/api/logout" && r.Method == http.MethodPost {
@@ -302,12 +317,13 @@ func (m *Manager) handleSaaS(w http.ResponseWriter, r *http.Request) {
 			role = "viewer"
 		}
 		writeJSON(w, http.StatusOK, map[string]any{
-			"ok":            true,
-			"role":          role,
-			"username":      u,
-			"tenant_id":     0,
-			"impersonating": false,
-			"db_file":       "mcontrol.db",
+			"ok":              true,
+			"role":            role,
+			"username":        u,
+			"tenant_id":       0,
+			"impersonating":   false,
+			"tenants_enabled": m.tenantsEnabled(),
+			"db_file":         "mcontrol.db",
 		})
 		return
 	}

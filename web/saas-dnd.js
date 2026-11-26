@@ -101,9 +101,14 @@
 
     if (!SAAS_ME) return;
     var isSuper = SAAS_ME.role === 'superadmin' && !SAAS_ME.impersonating;
-    if (saasBtn) saasBtn.style.display = isSuper ? 'inline-flex' : 'none';
+    var tenantsOn = SAAS_ME.tenants_enabled !== false;
+    if (saasBtn) saasBtn.style.display = (isSuper && tenantsOn) ? 'inline-flex' : 'none';
     var defThBtn = document.getElementById('btn-set-default-theme');
-    if (defThBtn) defThBtn.style.display = isSuper ? 'inline-flex' : 'none';
+    if (defThBtn) defThBtn.style.display = (isSuper && tenantsOn) ? 'inline-flex' : 'none';
+    if (!tenantsOn) {
+      var sm = document.getElementById('saas-modal');
+      if (sm) sm.style.display = 'none';
+    }
 
     // Hide host-level system controls for tenants (keep everything else 100% intact)
     if (!isSuper) {
@@ -128,6 +133,7 @@
     }
   }
 
+  window.refreshSaasIdentity = refreshSaasIdentity;
   async function refreshSaasIdentity() {
     if (typeof api !== 'function') return;
     var r = await api('api/saas/me');

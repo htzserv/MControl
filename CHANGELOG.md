@@ -1,3 +1,12 @@
+## v1.6.9
+
+- **SSL Certificate Export to `/root/cer/<domain>/`**: Automatically saves `fullchain.key` and `pem.key` inside `/root/cer/<domain>/` whenever SSL certificates are issued (Let's Encrypt / ACME) or uploaded/generated.
+- **Global Multi-Tenant (Tenants) Toggle**: Added `Enable Multi-Tenant (Tenants / SaaS Mode)` in Settings to completely hide the Tenants UI and block tenant logins/API when disabled.
+- **Setup Token Removed**: Removed first-time setup token requirement across backend, frontend, and installer.
+- **CLI & Installer Overhaul**: Sequential `1–13` CLI menu numbering, full clean uninstall (`mcontrol` + `mcontrol-outbound` + data/configs), Beta build number display in both installer and CLI menu, and clean installer menu (`Install`, `Update`, `Uninstall`, `Show Info`, `Reset User/Pass`, `Reset Port`, `Check IP`).
+- **Android App**: Separated `Server Address`, `Port`, and `Web Path` fields on the Login screen and updated version to `1.6.9`.
+- **UI Cleanup**: Added `Stop` button for server connection test, fixed `Via Master Outbound` persistence, enforced SSH auth failure rejection on Add Server, and removed placeholder IP and extra MTunnel tab.
+
 # Changelog
 
 ## 1.6.8

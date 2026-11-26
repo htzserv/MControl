@@ -132,6 +132,7 @@ type Settings struct {
 	PanelName       string `json:"panel_name"`
 	ListenDomain    string `json:"listen_domain"`
 	StrictDomain    bool   `json:"strict_domain"`
+	TenantsEnabled  bool   `json:"tenants_enabled"`
 }
 
 type Store struct {
@@ -776,6 +777,7 @@ func (s *Store) GetSettings() Settings {
 	st.PanelName = s.getSetting("panel_name")
 	st.ListenDomain = s.getSetting("listen_domain")
 	st.StrictDomain = s.getSetting("strict_domain") == "1"
+	st.TenantsEnabled = s.getSetting("tenants_enabled") != "0"
 	return st
 }
 
@@ -813,7 +815,18 @@ func (s *Store) SaveSettings(st Settings) error {
 	if st.BetaBuilds {
 		bb = "1"
 	}
-	return s.setSetting("beta_builds", bb)
+	if err := s.setSetting("beta_builds", bb); err != nil {
+		return err
+	}
+	te := "0"
+	if st.TenantsEnabled {
+		te = "1"
+	}
+	return s.setSetting("tenants_enabled", te)
+}
+
+func (s *Store) IsTenantsEnabled() bool {
+	return s.getSetting("tenants_enabled") != "0"
 }
 
 func (s *Store) SetServerPeerMode(id int64, peerCode string, agentPort int) error {

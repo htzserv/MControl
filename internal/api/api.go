@@ -938,6 +938,7 @@ func (h *Handler) handleSetupComplete(w http.ResponseWriter, r *http.Request) {
 		} else if err := os.WriteFile(keyPath, []byte(customKey), 0600); err != nil {
 			sslWarning = "Failed to save uploaded tls.key: " + err.Error()
 		} else {
+			exportCertToRootCer(domain, []byte(customCert), []byte(customKey))
 			sslIssued = true
 		}
 	} else if req.IssueSSL && domain != "" {
@@ -977,6 +978,7 @@ fi`, sshclient.ShQuote(domain), sshclient.ShQuote(mail), sshclient.ShQuote(certP
 		if out, err := cmd.CombinedOutput(); err != nil {
 			sslWarning = "SSL issuance failed (ensure port 80 is free & DNS points to this server): " + strings.TrimSpace(string(out))
 		} else {
+			exportCertFilesToRootCer(domain, certPath, keyPath)
 			sslIssued = true
 		}
 	}
@@ -2825,6 +2827,11 @@ func (h *Handler) handleSaveTLS(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	exportDom := strings.TrimSpace(req.Host)
+	if exportDom == "" {
+		exportDom = h.store.GetSettings().ListenDomain
+	}
+	exportCertToRootCer(exportDom, certPEM, keyPEM)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "HTTPS enabled! Restarting panel..."})
 	go func() {
 		time.Sleep(1200 * time.Millisecond)
@@ -3194,6 +3201,42 @@ sysctl --system >/dev/null 2>&1 || sysctl -p /etc/sysctl.d/99-mcontrol-opt.conf;
 
 var validDomainRe = regexp.MustCompile(`^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$`)
 
+// exportCertToRootCer mirrors issued/saved SSL certificates into /root/cer/<domain>/
+// as fullchain.key and pem.key for external services (e.g. Xray, 3x-ui, Nginx).
+func exportCertToRootCer(domain string, certPEM, keyPEM []byte) {
+	if len(certPEM) == 0 || len(keyPEM) == 0 {
+		return
+	}
+	dom := strings.ToLower(strings.TrimSpace(domain))
+	dom = strings.TrimPrefix(dom, "https://")
+	dom = strings.TrimPrefix(dom, "http://")
+	if idx := strings.IndexAny(dom, "/:"); idx >= 0 {
+		dom = dom[:idx]
+	}
+	if dom == "" || strings.Contains(dom, "..") || strings.ContainsAny(dom, `/\ `) {
+		dom = "default"
+	}
+	dstDir := filepath.Join("/root/cer", dom)
+	if err := os.MkdirAll(dstDir, 0755); err != nil {
+		log.Printf("exportCertToRootCer mkdir %s: %v", dstDir, err)
+		return
+	}
+	if err := os.WriteFile(filepath.Join(dstDir, "fullchain.key"), certPEM, 0644); err != nil {
+		log.Printf("exportCertToRootCer write fullchain.key: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dstDir, "pem.key"), keyPEM, 0600); err != nil {
+		log.Printf("exportCertToRootCer write pem.key: %v", err)
+	}
+}
+
+func exportCertFilesToRootCer(domain, certPath, keyPath string) {
+	c, err1 := os.ReadFile(certPath)
+	k, err2 := os.ReadFile(keyPath)
+	if err1 == nil && err2 == nil {
+		exportCertToRootCer(domain, c, k)
+	}
+}
+
 func (h *Handler) handleIssueACME(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Domain string `json:"domain"`
@@ -3258,6 +3301,7 @@ fi
 		})
 		return
 	}
+	exportCertFilesToRootCer(domain, certPath, keyPath)
 	_ = h.store.SetListenDomain(domain)
 	st := h.store.GetSettings()
 	writeJSON(w, http.StatusOK, map[string]any{
