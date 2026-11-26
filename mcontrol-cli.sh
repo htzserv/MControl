@@ -59,6 +59,143 @@ con.commit()
 PY
 }
 
+reset_panel_credentials() {
+    if [[ ! -f "$DB_FILE" ]]; then
+        echo -e "\n  ${R}✖ Database not found at ${DB_FILE}.${NC}"
+        return 1
+    fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo -e "\n  ${R}✖ python3 is required to reset credentials.${NC}"
+        return 1
+    fi
+    echo ""
+    printf "  ${C}New panel username (leave empty to keep current): ${NC}"
+    read -r new_user
+    new_user=$(printf '%s' "$new_user" | xargs)
+    printf "  ${C}New panel password (min 8 chars): ${NC}"
+    read -rs new_pass
+    echo ""
+    if [[ ${#new_pass} -lt 8 ]]; then
+        echo -e "  ${R}✖ Password must be at least 8 characters.${NC}"
+        return 1
+    fi
+    printf "  ${C}Confirm new password: ${NC}"
+    read -rs new_pass2
+    echo ""
+    if [[ "$new_pass" != "$new_pass2" ]]; then
+        echo -e "  ${R}✖ Passwords do not match.${NC}"
+        return 1
+    fi
+    python3 - "$DB_FILE" "$new_user" "$new_pass" <<'PY'
+import hashlib, os, sqlite3, sys
+
+db_path, new_user, new_pass = sys.argv[1], sys.argv[2], sys.argv[3]
+con = sqlite3.connect(db_path)
+cur = con.cursor()
+cols = [r[1] for r in cur.execute("PRAGMA table_info(users)").fetchall()]
+if not cols:
+    print("ERR_NO_USERS_TABLE", file=sys.stderr)
+    sys.exit(2)
+
+# Generate salted sha256/bcrypt-compatible fallback or standard bcrypt via htpasswd/openssl/python
+# Check if bcrypt CLI or python bcrypt is available, otherwise store salted sha256 marker handled by backend or bcrypt
+hashed = ""
+try:
+    import bcrypt  # type: ignore
+    hashed = bcrypt.hashpw(new_pass.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+except Exception:
+    pass
+
+if not hashed:
+    # Try go / htpasswd / openssl if present
+    import subprocess
+    for cmd in [
+        ["htpasswd", "-bnBC", "10", "", new_pass],
+    ]:
+        try:
+            out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
+            if ":" in out:
+                hashed = out.split(":", 1)[1]
+                break
+        except Exception:
+            pass
+
+if not hashed:
+    # Fallback: use a lightweight helper or sqlite update if a user already exists
+    print("NO_BCRYPT_LIB", file=sys.stderr)
+    sys.exit(3)
+
+if "token_version" in cols:
+    if new_user:
+        cur.execute("UPDATE users SET username = ?, password_hash = ?, token_version = COALESCE(token_version, 1) + 1", (new_user, hashed))
+    else:
+        cur.execute("UPDATE users SET password_hash = ?, token_version = COALESCE(token_version, 1) + 1", (hashed,))
+else:
+    if new_user:
+        cur.execute("UPDATE users SET username = ?, password_hash = ?", (new_user, hashed))
+    else:
+        cur.execute("UPDATE users SET password_hash = ?", (hashed,))
+
+con.commit()
+con.close()
+PY
+    local rc=$?
+    if [[ $rc -eq 0 ]]; then
+        systemctl restart "$SVC" 2>/dev/null || true
+        echo -e "  ${G}✓ Panel credentials updated and service restarted.${NC}"
+        return 0
+    elif [[ $rc -eq 3 ]]; then
+        # If python3 bcrypt isn't installed, generate bcrypt hash using a small temporary Go snippet if go is installed
+        if command -v go >/dev/null 2>&1; then
+            local tmp_go
+            tmp_go=$(mktemp /tmp/mc_pw_XXXX.go)
+            cat > "$tmp_go" <<'GOEOF'
+package main
+import (
+	"fmt"
+	"os"
+	"golang.org/x/crypto/bcrypt"
+)
+func main() {
+	if len(os.Args) < 2 { os.Exit(1) }
+	h, err := bcrypt.GenerateFromPassword([]byte(os.Args[1]), bcrypt.DefaultCost)
+	if err != nil { os.Exit(1) }
+	fmt.Print(string(h))
+}
+GOEOF
+            local bc_hash
+            bc_hash=$(cd /opt/mcontrol && go run "$tmp_go" "$new_pass" 2>/dev/null || true)
+            rm -f "$tmp_go"
+            if [[ -n "$bc_hash" ]]; then
+                python3 - "$DB_FILE" "$new_user" "$bc_hash" <<'PY'
+import sqlite3, sys
+db_path, new_user, hashed = sys.argv[1], sys.argv[2], sys.argv[3]
+con = sqlite3.connect(db_path)
+cur = con.cursor()
+cols = [r[1] for r in cur.execute("PRAGMA table_info(users)").fetchall()]
+if "token_version" in cols:
+    if new_user:
+        cur.execute("UPDATE users SET username = ?, password_hash = ?, token_version = COALESCE(token_version, 1) + 1", (new_user, hashed))
+    else:
+        cur.execute("UPDATE users SET password_hash = ?, token_version = COALESCE(token_version, 1) + 1", (hashed,))
+else:
+    if new_user:
+        cur.execute("UPDATE users SET username = ?, password_hash = ?", (new_user, hashed))
+    else:
+        cur.execute("UPDATE users SET password_hash = ?", (hashed,))
+con.commit()
+con.close()
+PY
+                systemctl restart "$SVC" 2>/dev/null || true
+                echo -e "  ${G}✓ Panel credentials updated and service restarted.${NC}"
+                return 0
+            fi
+        fi
+    fi
+    echo -e "  ${R}✖ Could not generate bcrypt hash automatically; reset via Setup or Go tool.${NC}"
+    return 1
+}
+
 mc_get_channel() {
     if [[ -f "$CHANNEL_FILE" ]]; then
         local ch
@@ -319,6 +456,7 @@ while true; do
 
     mc_group "MAINTENANCE"
     mc_row "12" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
+    mc_row "14" "Reset Panel Username / Password" "$Y" " ${DIM}(SQLite Auth)${NC}"
     mc_row "13" "Uninstall MControl" "$R"
 
     mc_footer "Exit"
@@ -381,13 +519,23 @@ while true; do
             printf "  ${R}⚠ Uninstall MControl? [y/N]: ${NC}"
             read -r yn
             if [[ "$yn" =~ ^[Yy]$ ]]; then
+                printf "  ${C}Keep database & data (${DATA_DIR})? [Y/n]: ${NC}"
+                read -r keep_db
                 systemctl disable --now "$SVC" 2>/dev/null || true
                 rm -f /etc/systemd/system/mcontrol.service "$CLI_BIN"
                 rm -rf "$INSTALL_DIR"
                 systemctl daemon-reload 2>/dev/null || true
-                echo -e "\n  ${Y}✓ MControl uninstalled (databases kept at ${DATA_DIR}).${NC}\n"
+                if [[ "$keep_db" =~ ^[Nn]$ ]]; then
+                    rm -rf "$DATA_DIR"
+                    echo -e "\n  ${R}✓ MControl and database (${DATA_DIR}) completely removed.${NC}\n"
+                else
+                    echo -e "\n  ${Y}✓ MControl uninstalled (database kept at ${DATA_DIR}).${NC}\n"
+                fi
                 exit 0
             fi
+            mc_pause ;;
+        14)
+            reset_panel_credentials
             mc_pause ;;
         0|q|Q) echo ""; exit 0 ;;
         *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;
