@@ -196,8 +196,7 @@ class MControlApi(private var profile: PanelProfile) {
         val combined = buildString {
             if (out.isNotBlank()) append(out)
             if (!r.optBoolean("ok") && err.isNotBlank()) {
-                if (isNotEmpty()) append("
-")
+                if (isNotEmpty()) append("\n")
                 append("ERROR: ").append(err)
             }
         }.ifBlank { "(no output)" }

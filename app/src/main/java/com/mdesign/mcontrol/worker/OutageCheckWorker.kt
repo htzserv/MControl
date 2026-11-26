@@ -62,8 +62,7 @@ class OutageCheckWorker(
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("⚠️ $panelName: ${items.size} Offline")
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(items.joinToString("
-")))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(items.joinToString("\n")))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()

@@ -35,8 +35,7 @@ fun TerminalDialog(
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var output by remember { mutableStateOf("Connected to $title.
-Type a bash command below.") }
+    var output by remember { mutableStateOf("Connected to $title.\nType a bash command below.") }
     var input by remember { mutableStateOf("") }
     var running by remember { mutableStateOf(false) }
     val scroll = rememberScrollState()
@@ -52,15 +51,11 @@ Type a bash command below.") }
         val c = cmd.trim()
         if (c.isEmpty() || running) return
         running = true
-        output += "
-$ $c
-..."
+        output += "\n$ $c\n..."
         scope.launch {
             val (_, res) = onRunCommand(c)
             val clean = ANSI_RE.replace(res, "")
-            output = output.removeSuffix("
-...") + "
-" + clean
+            output = output.removeSuffix("\n...") + "\n" + clean
             running = false
             scroll.animateScrollTo(scroll.maxValue)
         }
