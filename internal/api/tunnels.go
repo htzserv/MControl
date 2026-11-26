@@ -1687,7 +1687,8 @@ for _ in range(60):
 		return
 	}
 
-	iranScript, forScript := buildTunnelDeployScripts(tun, iranSrv, forSrv, "")
+	rotPorts := parseOpsPorts(tun.Ports)
+	iranScript, forScript := buildTunnelDeployScripts(tun, iranSrv, forSrv, rotPorts)
 	var wg sync.WaitGroup
 	var rI, rF sshclient.Result
 	wg.Add(2)
@@ -1757,8 +1758,17 @@ func (h *Handler) handleCreateMultiHopTunnel(w http.ResponseWriter, r *http.Requ
 	if tr == "" {
 		tr = "tcpmux"
 	}
+	ipm := strings.ToLower(strings.TrimSpace(req.IPMode))
+	if (ipm == "v6" || ipm == "6to4" || ipm == "6to6") && !strings.Contains(tr, "@") {
+		tr = tr + "@" + ipm
+	}
 	if req.TunnelPort < 1 || req.TunnelPort > 65534 {
 		req.TunnelPort = 3080
+	}
+	mhPorts := parseOpsPorts(req.Ports)
+	if len(mhPorts) == 0 {
+		fail(w, http.StatusBadRequest, "at least one valid forward port is required")
+		return
 	}
 	tok := strings.TrimSpace(req.Token)
 	if tok == "" {
@@ -1787,7 +1797,6 @@ func (h *Handler) handleCreateMultiHopTunnel(w http.ResponseWriter, r *http.Requ
 		TunnelPort:      req.TunnelPort,
 		Token:           tok,
 		Ports:           strings.TrimSpace(req.Ports),
-		IPMode:          req.IPMode,
 		ExtraJSON:       string(exBytes),
 		Status:          "deploying",
 	}
@@ -1808,7 +1817,6 @@ func (h *Handler) handleCreateMultiHopTunnel(w http.ResponseWriter, r *http.Requ
 		TunnelPort:      req.TunnelPort + 1,
 		Token:           tok + "-h2",
 		Ports:           strings.TrimSpace(req.Ports),
-		IPMode:          req.IPMode,
 		ExtraJSON:       string(exBytes),
 		Status:          "deploying",
 	}
@@ -1819,8 +1827,8 @@ func (h *Handler) handleCreateMultiHopTunnel(w http.ResponseWriter, r *http.Requ
 	}
 	hop2.ID = id2
 
-	s1I, s1R := buildTunnelDeployScripts(hop1, iranSrv, relaySrv, "")
-	s2R, s2F := buildTunnelDeployScripts(hop2, relaySrv, forSrv, "")
+	s1I, s1R := buildTunnelDeployScripts(hop1, iranSrv, relaySrv, mhPorts)
+	s2R, s2F := buildTunnelDeployScripts(hop2, relaySrv, forSrv, mhPorts)
 
 	var wg sync.WaitGroup
 	var r1I, r1R, r2R, r2F sshclient.Result
