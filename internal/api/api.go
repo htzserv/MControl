@@ -1203,6 +1203,7 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		NetTx:          p.NetTx,
 		InstalledTools: p.InstalledTools,
 		PingMs:         pingMs,
+		UseOutbound:    req.UseOutbound,
 	}
 	id, err := h.store.AddServer(srv)
 	if err != nil {

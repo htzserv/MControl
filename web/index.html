@@ -17025,16 +17025,13 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
   if ($('ob-result-card')) { $('ob-result-card').className = 'ob-result-card'; }
   if ($('btn-ob-migrate')) $('btn-ob-migrate').style.display = _obHasLegacy ? 'inline-flex' : 'none';
 
-  setOnboardProgress(14, L.connecting, L.sshSub);
-  $('srv-onboard-modal').classList.add('active');
-
-  await new Promise(r => setTimeout(r, 380));
-  setOnboardProgress(38,
+  setOnboardProgress(40,
     isIran ? L.irDetect : L.forDetect,
     isIran ? '🇮🇷 Iran Node → ParsPack Mirror' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source')
   );
+  $('srv-onboard-modal').classList.add('active');
 
-  let cur = 42;
+  let cur = 40;
   const tick = setInterval(() => {
     if (cur < 88) {
       cur += 3;
