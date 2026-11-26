@@ -188,6 +188,7 @@
         '</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
           '<button type="button" class="btn btn-sky btn-sm" data-saas-imp="' + t.id + '">Impersonate</button>' +
+          (t.active ? '<button type="button" class="btn btn-ghost btn-sm" data-saas-off="' + t.id + '" data-saas-name="' + saasEsc(t.username) + '">Turn Off</button>' : '') +
           '<button type="button" class="btn btn-warn btn-sm" data-saas-tog="' + t.id + '" data-saas-act="' + (t.active ? '0' : '1') + '">' + (t.active ? 'Suspend' : 'Activate') + '</button>' +
           '<button type="button" class="btn btn-danger btn-sm" data-saas-del="' + t.id + '" data-saas-name="' + saasEsc(t.username) + '">Delete</button>' +
         '</div>' +
@@ -196,6 +197,9 @@
 
     box.querySelectorAll('[data-saas-imp]').forEach(function (b) {
       b.addEventListener('click', function () { impersonateTenant(Number(b.dataset.saasImp)); });
+    });
+    box.querySelectorAll('[data-saas-off]').forEach(function (b) {
+      b.addEventListener('click', function () { toggleTenant(Number(b.dataset.saasOff), false); });
     });
     box.querySelectorAll('[data-saas-tog]').forEach(function (b) {
       b.addEventListener('click', function () { toggleTenant(Number(b.dataset.saasTog), b.dataset.saasAct === '1'); });
