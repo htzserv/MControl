@@ -6481,11 +6481,11 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
 
           <div class="flexw" style="gap:14px; align-items:center;">
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Outbound</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked><span>GitHub &amp; Updates</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked><span>Telegram Bot</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr"><span>Foreign Nodes</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-dc"><span>Datacenter</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-cf"><span>Cloudflare</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked onchange="persistOutboundConfigOnly()"><span>GitHub &amp; Updates</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked onchange="persistOutboundConfigOnly()"><span>Telegram Bot</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr" onchange="persistOutboundConfigOnly()"><span>Foreign Nodes</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-dc" onchange="persistOutboundConfigOnly()"><span>Datacenter</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-cf" onchange="persistOutboundConfigOnly()"><span>Cloudflare</span></label>
           </div>
 
           <pre class="term" id="ob-out" style="height:110px; margin:0; display:none;"></pre>
@@ -10916,9 +10916,39 @@ async function runSetupAction(action, engine) {
 
 let OB_CFG = { enabled: false, lb_strategy: 'leastPing', probe_interval: '30s', use_github: true, use_telegram: true, use_foreign: false, use_datacenter: false, use_cloudflare: false, subs: [], nodes: [] };
 
+let _obLoaded = false;
+
+function syncObCfgFromInputs() {
+  if ($('ob-en')) OB_CFG.enabled = $('ob-en').checked;
+  if ($('ob-mode')) OB_CFG.mode = $('ob-mode').value || OB_CFG.mode || 'single';
+  if ($('ob-gh')) OB_CFG.use_github = $('ob-gh').checked;
+  if ($('ob-tg')) OB_CFG.use_telegram = $('ob-tg').checked;
+  if ($('ob-fr')) OB_CFG.use_foreign = $('ob-fr').checked;
+  if ($('ob-dc')) OB_CFG.use_datacenter = $('ob-dc').checked;
+  if ($('ob-cf')) OB_CFG.use_cloudflare = $('ob-cf').checked;
+  if ($('ob-lb')) OB_CFG.lb_strategy = $('ob-lb').value || 'leastPing';
+  if ($('ob-int')) OB_CFG.probe_interval = $('ob-int').value || '30s';
+}
+
+async function persistOutboundConfigOnly(silent) {
+  if (!_obLoaded) await loadMasterOutbound();
+  syncObCfgFromInputs();
+  const r = await api('api/outbound/save', 'POST', { ...OB_CFG, save_only: true });
+  if (r.ok && r.config) {
+    OB_CFG = r.config;
+    if (!Array.isArray(OB_CFG.subs)) OB_CFG.subs = [];
+    if (!Array.isArray(OB_CFG.nodes)) OB_CFG.nodes = [];
+    renderOutboundLists();
+  } else if (!r.ok && !silent) {
+    toast(r.error || 'Failed to save outbound config', true);
+  }
+  return r;
+}
+
 async function loadMasterOutbound() {
   const r = await api('api/outbound/status');
   if (!r.ok) return;
+  _obLoaded = true;
   OB_CFG = r.config || OB_CFG;
   if (!Array.isArray(OB_CFG.subs)) OB_CFG.subs = [];
   if (!Array.isArray(OB_CFG.nodes)) OB_CFG.nodes = [];
@@ -11135,20 +11165,22 @@ async function refreshOutboundSub(idx) {
   } else toast(r.error || 'Update failed', true);
 }
 
-function deleteOutboundSub(idx) {
+async function deleteOutboundSub(idx) {
   const sub = (OB_CFG.subs || [])[idx];
   if (!sub || !confirm(`Remove subscription "${sub.name}" and its nodes?`)) return;
   OB_CFG.subs.splice(idx, 1);
   OB_CFG.nodes = (OB_CFG.nodes || []).filter(n => n.source !== sub.id);
   _obOpenGroups.delete(sub.id);
   renderOutboundLists();
-  toast('Subscription removed. Click Start / Save to apply.');
+  const r = await persistOutboundConfigOnly();
+  if (r.ok) toast('Subscription removed & saved.');
 }
 
-function addManualFromQuickBar() {
+async function addManualFromQuickBar() {
   const inp = $('ob-quick-single-uri');
   const uri = (inp && inp.value || '').trim();
   if (!uri || !uri.includes('://')) { toast('Paste a valid vless://, vmess://, trojan://, ss://, or socks5:// URI', true); return; }
+  if (!_obLoaded) await loadMasterOutbound();
   const proto = uri.split('://')[0].toUpperCase();
   let name = proto + ' Node', addr = '';
   try {
@@ -11157,25 +11189,44 @@ function addManualFromQuickBar() {
       addr = u.host || '';
       if (u.hash && u.hash.length > 1) name = decodeURIComponent(u.hash.slice(1));
       else if (addr) name = proto + ' • ' + addr;
+    } else {
+      const b64 = uri.slice(8).trim();
+      const dec = JSON.parse(atob(b64.replace(/-/g, '+').replace(/_/g, '/')));
+      if (dec.ps) name = String(dec.ps);
+      if (dec.add && dec.port) addr = dec.add + ':' + dec.port;
     }
   } catch (e) {}
-  OB_CFG.nodes.unshift({ id: 'm-' + Date.now(), name, uri, proto, address: addr, source: 'manual', enabled: true });
+  const newId = 'm-' + Date.now();
+  OB_CFG.nodes.unshift({ id: newId, name, uri, proto, address: addr, source: 'manual', enabled: true });
+  if (!OB_CFG.active_node_id) OB_CFG.active_node_id = newId;
   _obOpenGroups.add('manual');
   inp.value = '';
   renderOutboundLists();
-  toast('Config added to list.');
+  const r = await persistOutboundConfigOnly();
+  if (r.ok) toast('Config added & saved.');
 }
 
-function toggleOutboundNode(idx, checked) {
-  if (OB_CFG.nodes[idx]) { OB_CFG.nodes[idx].enabled = checked; renderOutboundLists(); }
+async function toggleOutboundNode(idx, checked) {
+  if (OB_CFG.nodes[idx]) {
+    OB_CFG.nodes[idx].enabled = checked;
+    renderOutboundLists();
+    await persistOutboundConfigOnly(true);
+  }
 }
-function toggleAllOutboundNodes(state) {
+async function toggleAllOutboundNodes(state) {
   (OB_CFG.nodes || []).forEach(n => { n.enabled = state; });
   renderOutboundLists();
+  const r = await persistOutboundConfigOnly();
+  if (r.ok) toast(state ? 'All nodes enabled & saved.' : 'All nodes disabled & saved.');
 }
-function deleteOutboundNode(idx) {
-  OB_CFG.nodes.splice(idx, 1);
+async function deleteOutboundNode(idx) {
+  const removed = OB_CFG.nodes.splice(idx, 1)[0];
+  if (removed && OB_CFG.active_node_id === removed.id) {
+    OB_CFG.active_node_id = (OB_CFG.nodes[0] && OB_CFG.nodes[0].id) || '';
+  }
   renderOutboundLists();
+  const r = await persistOutboundConfigOnly();
+  if (r.ok) toast('Node removed & saved.');
 }
 
 async function testOutboundRealDelay(nodeId, subId) {
@@ -11207,21 +11258,28 @@ async function testOutboundRealDelay(nodeId, subId) {
   }
 }
 
-function disableDeadOutboundNodes() {
+async function disableDeadOutboundNodes() {
   let cnt = 0;
   (OB_CFG.nodes || []).forEach(n => {
     if ((n.last_delay_ms || 0) < 0 && n.enabled) { n.enabled = false; cnt++; }
   });
   renderOutboundLists();
-  toast(cnt > 0 ? `Disabled ${cnt} timed-out nodes. Click Start / Save to apply.` : 'No timed-out nodes found.');
+  if (cnt > 0) {
+    const r = await persistOutboundConfigOnly();
+    if (r.ok) toast(`Disabled ${cnt} timed-out nodes & saved.`);
+  } else {
+    toast('No timed-out nodes found.');
+  }
 }
 
-function clearOutboundNodes() {
+async function clearOutboundNodes() {
   if (!confirm('Remove all outbound nodes & subscriptions?')) return;
   OB_CFG.nodes = [];
   OB_CFG.subs = [];
   OB_CFG.active_node_id = '';
   renderOutboundLists();
+  const r = await persistOutboundConfigOnly();
+  if (r.ok) toast('All outbound configs cleared & saved.');
 }
 
 function toggleObSubSection(show) {
@@ -11258,6 +11316,7 @@ async function applyQuickSingleOutbound() {
     toast('Paste a valid vless://, vmess://, trojan://, ss://, or socks5:// URI', true);
     return;
   }
+  if (!_obLoaded) await loadMasterOutbound();
   const proto = uri.split('://')[0].toUpperCase();
   let name = proto + ' Single', addr = '';
   try {
@@ -12633,6 +12692,11 @@ function switchSubTab(name, el) {
   if (shell) shell.classList.toggle('wide', name === 'themes');
   if (name === 'themes') { renderThemes(); renderStudio(); renderEditTabsStudio(); }
   if (name === 'sections') { renderSettingsSectionsHub(); }
+  if (name === 'outbound') { loadMasterOutbound(); }
+  if (name === 'telegram') { loadTelegramStatus(); }
+  if (name === 'profiles') { loadProfiles(); }
+  if (name === 'cf') { loadCloudflareStatus(false); }
+  if (name === 'general') { loadSettings(); loadTLSStatus(); loadMasterCache(); }
 }
 function openThemesQuick() {
   if (curTab !== 'settings') switchTab('settings');

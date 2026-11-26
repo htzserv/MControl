@@ -162,10 +162,12 @@ func (h *Handler) loadOutboundCfg() outboundConfig {
 	return cfg
 }
 
-func (h *Handler) saveOutboundCfg(cfg outboundConfig) {
-	if b, err := json.Marshal(cfg); err == nil {
-		_ = h.store.SetSetting("master_outbound_json", string(b))
+func (h *Handler) saveOutboundCfg(cfg outboundConfig) error {
+	b, err := json.Marshal(cfg)
+	if err != nil {
+		return err
 	}
+	return h.store.SetSetting("master_outbound_json", string(b))
 }
 
 func (h *Handler) telegramSocksProxy() string {
@@ -962,10 +964,14 @@ func ensureXrayInstalled(mirrorURL string) (string, error) {
 }
 
 func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
-	var req outboundConfig
-	if !readJSON(w, r, &req) {
+	var payload struct {
+		outboundConfig
+		SaveOnly bool `json:"save_only"`
+	}
+	if !readJSON(w, r, &payload) {
 		return
 	}
+	req := payload.outboundConfig
 	if req.Mode != "single" && req.Mode != "loadbalance" {
 		req.Mode = "single"
 	}
@@ -991,7 +997,20 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 			req.ActiveNodeID = n.ID
 		}
 	}
-	h.saveOutboundCfg(req)
+	if err := h.saveOutboundCfg(req); err != nil {
+		fail(w, http.StatusInternalServerError, "failed to save outbound config to database: "+err.Error())
+		return
+	}
+
+	if payload.SaveOnly {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"config":  req,
+			"running": isOutboundActive(),
+			"message": "Outbound config saved.",
+		})
+		return
+	}
 
 	if !req.Enabled {
 		_ = exec.Command("systemctl", "disable", "--now", outboundUnit).Run()
