@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.6
+- **Focused Per-Tab Settings Drawer & Toggle Behavior:**
+  - Removed the search input and cross-tab switcher pills from the floating `Tab Settings` drawer so each tab displays strictly its own settings.
+  - Made the bottom-right `Tab Settings` (`تنظیمات تب`) pill act as a true toggle (clicking once opens the drawer; clicking again closes it) and automatically updates if you switch tabs while open.
+
+
 ## 1.6.5
 - **Non-Blocking Live-Preview Tab Settings Drawer, Clean Settings Layout & Country Flag/Name Toggles:**
   - Turned the top-bar bubble next to `Backup` into the main **`Settings`** tab button (removing duplicate `Settings` from the top tab bar) and added a dedicated bottom-right **`Tab Settings` (`تنظیمات تب`)** floating pill.

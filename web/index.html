@@ -4880,8 +4880,6 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
       <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco</button>
       <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('default')">↺ Default</button>
     </div>
-    <input type="text" id="tab-cfg-search" class="tp-search-inp" placeholder="🔍 Search settings..." oninput="renderTabSettingsModal()">
-    <div class="tab-cfg-switcher" id="tab-cfg-switcher"></div>
     <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:7px; flex:1 1 auto; overflow-y:auto; padding-inline-end:3px; margin-bottom:10px;"></div>
     <div class="toolbar" style="margin:0; gap:5px; padding-top:8px; border-top:1px solid var(--border);">
       <div class="flexw" style="gap:5px;">
@@ -5121,7 +5119,7 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.5</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.6</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -8755,6 +8753,9 @@ function switchTab(name) {
   if (name === 'settings') { initMobileSettingsCollapse(); renderSettingsSectionsHub(); renderEditTabsStudio(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
+  if ($('tab-cfg-modal') && $('tab-cfg-modal').classList.contains('active') && TAB_PREFS_SCHEMA[name]) {
+    openTabSettings(name);
+  }
 }
 function closeModal(id) { $(id).classList.remove('active'); }
 
@@ -13598,6 +13599,11 @@ function toggleTabDrawerSide() {
 }
 
 function openActiveTabSettings() {
+  const modal = $('tab-cfg-modal');
+  if (modal && modal.classList.contains('active')) {
+    closeModal('tab-cfg-modal');
+    return;
+  }
   const k = (typeof curTab !== 'undefined' && TAB_PREFS_SCHEMA[curTab]) ? curTab : 'overview';
   openTabSettings(k);
 }
@@ -13690,61 +13696,32 @@ function renderTabSettingsModal() {
   const sec = TAB_PREFS_SCHEMA[key];
   if (!sec) return;
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
-  const q = ($('tab-cfg-search') ? $('tab-cfg-search').value.trim().toLowerCase() : '');
 
-  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = q ? (fa ? 'نتایج جستجو' : 'Search Settings') : (fa ? ('تنظیمات تب ' + sec.titleFa) : (sec.titleEn + ' Tab Settings'));
+  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = fa ? ('تنظیمات تب ' + sec.titleFa) : (sec.titleEn + ' Tab Settings');
   if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'پیش‌نمایش زنده — تغییر هر گزینه بلافاصله روی صفحه پشت دیده می‌شود.' : 'Live preview — toggle any option to see its effect immediately on the page behind.';
-  if ($('tab-cfg-search')) $('tab-cfg-search').placeholder = fa ? '🔍 جستجو در بین تمام تنظیمات تب‌ها...' : '🔍 Search across all tab settings...';
   if ($('btn-tp-reset-one')) $('btn-tp-reset-one').textContent = fa ? '↻ ریست' : '↻ Reset';
   if ($('btn-tp-reset-all')) $('btn-tp-reset-all').textContent = fa ? 'همه' : 'All';
   if ($('btn-tp-done')) $('btn-tp-done').textContent = fa ? '✓ بستن' : '✓ Done';
 
-  const visMap = {};
-  (NAV_TABS_CFG || []).forEach(x => { visMap[x.id] = !!x.visible; });
-
-  const sw = $('tab-cfg-switcher');
-  if (sw) {
-    sw.style.display = q ? 'none' : 'flex';
-    sw.innerHTML = Object.keys(TAB_PREFS_SCHEMA).map(k => {
-      const s = TAB_PREFS_SCHEMA[k];
-      const isOn = !!visMap[k];
-      return `<button type="button" class="tab-cfg-pill ${k === key ? 'active' : ''}" onclick="openTabSettings('${k}')"><i class="tp-dot ${isOn ? 'on' : ''}" title="${isOn ? 'In Top Bar' : 'Hidden'}"></i>${esc(fa ? s.titleFa : s.titleEn)}</button>`;
-    }).join('');
-  }
-
   const box = $('tab-cfg-list');
   if (!box) return;
 
-  if (q) {
-    const hits = [];
-    Object.entries(TAB_PREFS_SCHEMA).forEach(([tk, s]) => {
-      s.items.forEach(it => {
-        const hay = `${it.en} ${it.fa} ${it.descEn} ${it.descFa} ${s.titleEn} ${s.titleFa} ${it.key}`.toLowerCase();
-        if (hay.includes(q)) hits.push(_renderTabCfgItem(it, fa, fa ? s.titleFa : s.titleEn));
-      });
-    });
-    box.innerHTML = hits.length ? hits.join('') : `<div class="hint" style="text-align:center; padding:18px;">${fa ? 'گزینه‌ای با این عبارت پیدا نشد.' : 'No matching settings found.'}</div>`;
-    return;
-  }
-
+  const visMap = {};
+  (NAV_TABS_CFG || []).forEach(x => { visMap[x.id] = !!x.visible; });
   const cat = (ALL_TABS_CATALOG || []).find(x => x.id === key);
   let out = '';
 
-  if (cat) {
+  if (cat && !cat.locked) {
     const pinned = !!visMap[key];
     out += `<div class="tab-cfg-row pin-row">
       <div class="tp-item-left"><div class="tp-prev"><span class="pv-pill">TOP</span></div><div>
         <strong>${fa ? 'نمایش این تب در نوار بالای صفحه' : 'Show Tab in Top Navigation Bar'}</strong>
         <span>${pinned ? (fa ? 'این تب در نوار بالا فعال است' : 'Active & visible in the top navigation bar') : (fa ? 'این تب مخفی است — همین‌جا فعالش کنید' : 'Hidden from top bar — enable it here')}</span>
       </div></div>
-      ${cat.locked
-        ? `<span class="badge b-ok mono" style="font-size:.66rem;">${fa ? 'ثابت' : 'LOCKED'}</span>`
-        : `<label class="etab-switch"><input type="checkbox" ${pinned ? 'checked' : ''} onchange="toggleNavTabVisible('${esc(key)}', this.checked); renderTabSettingsModal();"><span class="etab-slider"></span></label>`
-      }
+      <label class="etab-switch"><input type="checkbox" ${pinned ? 'checked' : ''} onchange="toggleNavTabVisible('${esc(key)}', this.checked); renderTabSettingsModal();"><span class="etab-slider"></span></label>
     </div>`;
   }
 
-  out += `<div class="tab-cfg-sec-lbl">${fa ? 'گزینه‌های پیشرفته این تب' : 'Advanced Tab Options'}</div>`;
   out += sec.items.map(it => _renderTabCfgItem(it, fa, '')).join('');
   box.innerHTML = out;
 }
