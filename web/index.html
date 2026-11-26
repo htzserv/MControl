@@ -4909,6 +4909,76 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
   }
 }
 
+
+/* ── Multi-Column Server Grid (1–4 Cards Side-by-Side) + Smart Full-Row Spotlight Expand ── */
+body.tp-srv-grid #tab-servers .srv-stage {
+  align-items: flex-start;
+}
+body.tp-srv-grid #tab-servers .srv-stage > .srv-list {
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 76px);
+  gap: 12px;
+  align-items: start;
+}
+body.tp-srv-cols-2 #tab-servers .srv-stage > .srv-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.tp-srv-cols-3 #tab-servers .srv-stage > .srv-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.tp-srv-cols-4 #tab-servers .srv-stage > .srv-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 1320px) {
+  body.tp-srv-cols-4 #tab-servers .srv-stage > .srv-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 980px) {
+  body.tp-srv-cols-3 #tab-servers .srv-stage > .srv-list,
+  body.tp-srv-cols-4 #tab-servers .srv-stage > .srv-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  body.tp-srv-grid #tab-servers .srv-stage > .srv-list {
+    grid-template-columns: 1fr !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Compact Tile Header for Collapsed Cards in Multi-Column Grid */
+body.tp-srv-grid #tab-servers .srv-row-wrap:not(.open) .srv-row-head {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  padding: 13px 15px !important;
+  min-height: 0 !important;
+}
+body.tp-srv-grid #tab-servers .srv-row-wrap:not(.open) .srv-head-name {
+  min-width: 0 !important;
+  width: 100%;
+  white-space: normal;
+}
+body.tp-srv-grid #tab-servers .srv-row-wrap:not(.open) .srv-head-pings {
+  flex-wrap: wrap !important;
+  white-space: normal !important;
+  gap: 6px !important;
+  font-size: .74rem !important;
+}
+body.tp-srv-grid #tab-servers .srv-row-wrap:not(.open) .srv-head-cpu {
+  font-size: .72rem !important;
+  padding-inline: 0 !important;
+}
+body.tp-srv-grid #tab-servers .srv-row-wrap:not(.open) .srv-head-right {
+  width: 100%;
+  margin-inline-start: 0 !important;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* Smart Spotlight Expansion: Opened Card Spans Full Row Width Cleanly */
+body.tp-srv-grid #tab-servers .srv-row-wrap.open {
+  grid-column: 1 / -1;
+  border-color: var(--accent);
+  box-shadow: 0 18px 42px -12px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
@@ -9137,6 +9207,9 @@ function toggleServerRow(id, el) {
   if (open) {
     openServerIds.add(id);
     loadInlineTweakStatus(id);
+    if (document.body.classList.contains('tp-srv-grid')) {
+      setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+    }
   } else {
     openServerIds.delete(id);
   }
@@ -13861,6 +13934,7 @@ const _TP_PREVIEWS = {
   ov_metrics: '<svg viewBox="0 0 44 20" width="42" height="18"><polyline fill="none" stroke="currentColor" stroke-width="2" points="2,16 11,10 20,13 30,4 42,8"/></svg>',
   ov_incidents: '<div style="display:flex;flex-direction:column;gap:2px;width:36px;"><span class="pv-bar" style="background:var(--red);width:90%;"></span><span class="pv-bar" style="background:var(--green);width:75%;"></span></div>',
   ov_radar: '<div style="display:flex;flex-direction:column;gap:2px;width:38px;"><span class="pv-bar"></span><span class="pv-bar"></span><span class="pv-bar"></span></div>',
+  srv_cols: '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;width:40px;"><span class="pv-box" style="width:100%;height:11px;"></span><span class="pv-box" style="width:100%;height:11px;"></span><span class="pv-box" style="width:100%;height:11px;"></span><span class="pv-box" style="width:100%;height:11px;"></span><span class="pv-box" style="width:100%;height:11px;"></span><span class="pv-box" style="width:100%;height:11px;"></span></div>',
   srv_flag: '<svg viewBox="0 0 30 20" width="24" height="16" style="border-radius:3px;"><rect width="30" height="6.6" fill="#239f40"/><rect y="6.6" width="30" height="6.7" fill="#fff"/><rect y="13.3" width="30" height="6.7" fill="#da0000"/></svg>',
   srv_cname: '<span class="pv-pill" style="color:var(--yellow);">GERMANY</span>',
   srv_cdock: '<div style="display:flex;flex-direction:column;gap:2px;align-items:center;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--green);"></span></div>',
@@ -13936,6 +14010,8 @@ const TAB_PREFS_SCHEMA = {
   servers: {
     titleEn: 'Servers', titleFa: 'سرورها',
     items: [
+      { key: 'srv_cols', type: 'select', def: '1', en: 'Cards Per Row (1–4 Columns)', fa: 'تعداد سرور کنار هم (۱ تا ۴ ستون)', descEn: 'Display 1, 2, 3, or 4 server cards side-by-side (expands full-width on click)', descFa: 'نمایش ۱، ۲، ۳ یا ۴ کارت سرور کنار هم (با کلیک تمام‌عرض باز می‌شود)',
+        options: [['1','1 Column (List)'],['2','2 Side-by-Side (2×)'],['3','3 Side-by-Side (3×)'],['4','4 Side-by-Side (4×)']] },
       { key: 'srv_flag',  cls: 'tp-srv-flag',  en: 'Country Flag Icon', fa: 'نمایش پرچم کشور', descEn: 'Show country flag SVG next to server name', descFa: 'نمایش پرچم کشور کنار نام هر سرور' },
       { key: 'srv_cname', cls: 'tp-srv-cname', en: 'Country Name Badge', fa: 'نمایش اسم کشور (Badge)', descEn: 'Show IRAN / GERMANY / TÜRKIYE pill next to server name', descFa: 'نمایش حباب اسم کشور کنار نام سرور' },
       { key: 'srv_cdock', cls: 'tp-srv-cdock', en: 'Left Country Flag Bubbles', fa: 'بابل‌های عمودی پرچم کشورها (سمت چپ)', descEn: 'Vertical country filter dock beside server list', descFa: 'نوار عمودی پرچم کشورها کنار لیست سرورها' },
@@ -14094,6 +14170,11 @@ function applyTabPrefs() {
       }
     });
   });
+  const sCols = String(TAB_PREFS.srv_cols || '1');
+  document.body.classList.toggle('tp-srv-grid', sCols === '2' || sCols === '3' || sCols === '4');
+  document.body.classList.toggle('tp-srv-cols-2', sCols === '2');
+  document.body.classList.toggle('tp-srv-cols-3', sCols === '3');
+  document.body.classList.toggle('tp-srv-cols-4', sCols === '4');
   const is2x2 = (TAB_PREFS.ov_grid === '2x2');
   document.body.classList.toggle('tp-ov-grid-2x2', is2x2);
   const lg = document.querySelector('#tab-overview .local-grid');
