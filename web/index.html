@@ -4258,6 +4258,69 @@ body.tp-ov-metrics.tp-ov-incidents #tab-overview .ov-pro-grid { display: none !i
 body.tp-ov-metrics #tab-overview .ov-pro-grid,
 body.tp-ov-incidents #tab-overview .ov-pro-grid { grid-template-columns: 1fr !important; }
 body.tp-ov-radar #overview-grid { display: none !important; }
+body.tp-ov-cpu #tab-overview .mc-cpu { display: none !important; }
+body.tp-ov-ram #tab-overview .mc-ram { display: none !important; }
+body.tp-ov-net #tab-overview .mc-net { display: none !important; }
+body.tp-ov-tbx #tab-overview .mc-toolbox { display: none !important; }
+body.tp-ov-cpu.tp-ov-ram.tp-ov-net.tp-ov-tbx #tab-overview .local-grid { display: none !important; }
+
+.top-tabcfg-bubble {
+  padding: 0 !important; width: 34px; height: 34px;
+  justify-content: center; flex-shrink: 0;
+  color: var(--accent);
+}
+.top-tabcfg-bubble:hover svg { transform: rotate(35deg); transition: transform .22s ease; }
+
+/* Inline page gear buttons are hidden by default since ⚙ lives in the top bar (opt-in toggle available) */
+body:not(.tp-show-inline-gears) .page > .toolbar .tab-cfg-btn,
+body:not(.tp-show-inline-gears) .sub-pane > .toolbar .tab-cfg-btn,
+body:not(.tp-show-inline-gears) #tab-domains .tab-cfg-btn,
+body:not(.tp-show-inline-gears) #tab-settings > #settings-shell > .toolbar .tab-cfg-btn {
+  display: none !important;
+}
+
+/* Global Page Width & Density Controls */
+body.tp-w-compact .main-inner { max-width: 1120px !important; }
+body.tp-w-wide    .main-inner { max-width: 1620px !important; }
+body.tp-w-full    .main-inner { max-width: 96vw !important; }
+
+body.tp-dens-compact .card { padding: 12px 15px !important; }
+body.tp-dens-compact .srv-list { gap: 8px !important; }
+body.tp-dens-ultra .card { padding: 9px 12px !important; }
+body.tp-dens-ultra .srv-list { gap: 6px !important; }
+body.tp-dens-ultra .srv-row-head { padding: 8px 12px !important; min-height: 46px !important; }
+
+/* Global Vertical Page Alignment (works on Overview + all main tabs) */
+body.tp-pg-pos-center .page.active:not(#tab-settings) {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(100vh - 135px);
+}
+body.tp-pg-pos-bottom .page.active:not(#tab-settings) {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: calc(100vh - 135px);
+}
+
+/* Advanced Modal Preset Chips & Search */
+.tp-preset-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.tp-preset-chip {
+  padding: 5px 11px; border-radius: 999px; font-size: .72rem; font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--row));
+  color: var(--text); cursor: pointer; transition: all .15s ease;
+}
+.tp-preset-chip:hover {
+  background: var(--accent); color: var(--on-accent, #fff); border-color: var(--accent);
+}
+.tp-search-inp {
+  width: 100%; padding: 7px 12px !important; font-size: .78rem !important;
+  border-radius: 11px !important; margin-bottom: 8px;
+}
 body.tp-ov-fbar #ov-fleet-bar { display: none !important; }
 body.tp-hide-gears .page .tab-cfg-btn,
 body.tp-hide-gears .sub-pane .tab-cfg-btn { display: none !important; }
@@ -4543,20 +4606,29 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
     <div id="ichk-list" style="display:flex; flex-direction:column; gap:7px; max-height:340px; overflow-y:auto;"></div>
   </div>
 </div>
-<!-- Advanced Per-Tab Control Center Modal (Active & Hidden Tabs) -->
+<!-- Advanced Per-Tab Control Center Modal (Top-Bar Accessible, Active & Hidden Tabs) -->
 <div class="modal-bg" id="tab-cfg-modal" style="z-index:1190;">
-  <div class="card modal-box" style="max-width:650px; width:96%;">
+  <div class="card modal-box" style="max-width:700px; width:96%;">
     <div class="toolbar" style="margin-bottom:8px;">
       <div>
-        <h3 style="margin:0; color:var(--accent);" id="tab-cfg-title">Tab Settings</h3>
-        <div class="hint" style="margin:2px 0 0;" id="tab-cfg-sub">Configure display, behavior &amp; top-bar visibility for active or hidden tabs (synced to DB).</div>
+        <h3 style="margin:0; color:var(--accent);" id="tab-cfg-title">Tab &amp; Workspace Settings</h3>
+        <div class="hint" style="margin:2px 0 0;" id="tab-cfg-sub">Configure display, layout, presets &amp; top-bar visibility for all active or hidden tabs (DB synced).</div>
       </div>
       <button class="btn btn-ghost btn-sm" data-close="tab-cfg-modal">✕</button>
     </div>
+    <div class="tp-preset-bar" id="tp-preset-bar">
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('minimal')">✨ Minimal Clean</button>
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('noc')">🖥️ NOC Full Monitor</button>
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco Low-Power</button>
+      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('default')">↺ Default</button>
+    </div>
+    <input type="text" id="tab-cfg-search" class="tp-search-inp" placeholder="🔍 Search settings..." oninput="renderTabSettingsModal()">
     <div class="tab-cfg-switcher" id="tab-cfg-switcher"></div>
-    <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:8px; max-height:56vh; overflow-y:auto; padding-inline-end:3px; margin-bottom:14px;"></div>
-    <div class="toolbar" style="margin:0;">
+    <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto; padding-inline-end:3px; margin-bottom:14px;"></div>
+    <div class="toolbar" style="margin:0; gap:6px;">
       <div class="flexw" style="gap:6px;">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="exportTabPrefsJSON()" title="Copy settings JSON">📤 Export</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="importTabPrefsJSON()" title="Import settings JSON">📥 Import</button>
         <button type="button" class="btn btn-ghost btn-sm" onclick="resetCurrentTabPrefs()" id="btn-tp-reset-one">↻ Reset Tab</button>
         <button type="button" class="btn btn-danger btn-sm" onclick="resetTabPrefs()" id="btn-tp-reset-all">Reset All</button>
       </div>
@@ -4791,7 +4863,7 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.1</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.2</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -4802,6 +4874,9 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
     <button type="button" class="ver-bubble bak-bubble" id="nav-bak-bubble" onclick="openBackupModal()" title="Backup &amp; Restore">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;color:var(--purple);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span class="bak-bubble-lbl" data-i18n="btn_bak_short">Backup</span>
+    </button>
+    <button type="button" class="ver-bubble top-tabcfg-bubble" id="nav-tabcfg-bubble" onclick="openActiveTabSettings()" title="Tab &amp; Layout Settings">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
     </button>
     <div class="util" id="util-bar">
       <div class="util-items" id="util-items">
@@ -12955,7 +13030,7 @@ async function importDCServer(idx) {
 }
 
 
-/* ═══════════════ Advanced Per-Tab Control Center (Active + Hidden Tabs + DB Sync) ═══════════════ */
+/* ═══════════════ Advanced Per-Tab Control Center v2 (Top-Bar + Presets + Granular Cards + DB Sync) ═══════════════ */
 const _GEAR_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>';
 const TAB_PREFS_SCHEMA = {
   overview: {
@@ -12963,14 +13038,18 @@ const TAB_PREFS_SCHEMA = {
     items: [
       { key: 'ov_interval', type: 'select', def: '2500', en: 'Telemetry Refresh Rate', fa: 'سرعت بروزرسانی آمار زنده', descEn: 'How often Master CPU/RAM/Network updates', descFa: 'بازه زمانی آپدیت لحظه‌ای CPU و شبکه مستر',
         options: [['1500','1.5s (Fast)'],['2500','2.5s (Balanced)'],['5000','5s (Light)'],['10000','10s (Eco)']] },
-      { key: 'ov_stats',   cls: 'tp-ov-stats',   en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / Iran / Foreign / Online counters', descFa: 'شمارنده‌های کل / ایران / خارج / آنلاین' },
-      { key: 'ov_master',  cls: 'tp-ov-master',  en: 'Master Control Strip', fa: 'کارت کنترل سرور مستر', descEn: 'Master IP, CPU/RAM/Network gauges & Toolbox', descFa: 'گیج‌های سرور مستر و دکمه‌های Speedtest / Tweak' },
+      { key: 'ov_valign', type: 'select', def: 'top', en: 'Overview Vertical Position', fa: 'جایگاه عمودی کارت‌های داشبورد', descEn: 'Place remaining Overview cards at Top, Center, or Bottom of screen', descFa: 'محل قرارگیری کارت‌های باقی‌مانده در بالا، وسط یا پایین صفحه',
+        options: [['top','Top / بالا (پیش‌فرض)'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
+      { key: 'ov_stats',     cls: 'tp-ov-stats',     en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / Iran / Foreign / Online counters', descFa: 'شمارنده‌های کل / ایران / خارج / آنلاین' },
+      { key: 'ov_master',    cls: 'tp-ov-master',    en: 'Master Server Header Bar', fa: 'نوار مشخصات سرور مستر', descEn: 'Master hostname, IPv4/IPv6 & Disk badge strip', descFa: 'نام سرور مستر، آی‌پی‌ها و درصد دیسک' },
+      { key: 'ov_cpu',       cls: 'tp-ov-cpu',       en: 'Master CPU Card', fa: 'کارت CPU مستر', descEn: 'Show CPU usage gauge & load average card', descFa: 'نمایش کارت درصد پردازنده و Load Avg' },
+      { key: 'ov_ram',       cls: 'tp-ov-ram',       en: 'Master RAM Card', fa: 'کارت RAM مستر', descEn: 'Show RAM usage gauge & memory details card', descFa: 'نمایش کارت مصرف حافظه رم' },
+      { key: 'ov_net',       cls: 'tp-ov-net',       en: 'Master Network Card', fa: 'کارت شبکه (Network)', descEn: 'Show live RX/TX bandwidth & total traffic card', descFa: 'نمایش کارت سرعت دانلود/آپلود و حجم کل' },
+      { key: 'ov_tbx',       cls: 'tp-ov-tbx',       en: 'Master Toolbox Card', fa: 'کارت ابزارها (Toolbox)', descEn: 'Speedtest, Tweak, Clean RAM, MSmart & Restart Panel', descFa: 'دکمه‌های Speedtest، Tweak، Clean RAM و Restart' },
+      { key: 'ov_fbar',      cls: 'tp-ov-fbar',      en: 'Fleet Radar Toolbar', fa: 'نوار ابزار Fleet Hardware Radar', descEn: 'Show LIVE, SSL Sync, Ping All & Add Server bar', descFa: 'نمایش نوار دکمه‌های LIVE، SSL Sync، Ping All و Add Server' },
       { key: 'ov_metrics',   cls: 'tp-ov-metrics',   en: 'Metrics History (24h / 7d)', fa: 'نمودار تاریخچه (Metrics History)', descEn: '5-minute SQLite snapshots of CPU, RAM & Ping', descFa: 'نمودار ۲۴ ساعته و ۷ روزه مصرف منابع و پینگ' },
       { key: 'ov_incidents', cls: 'tp-ov-incidents', en: 'Live Incident Timeline', fa: 'تایم‌لاین رخدادها (Live Incidents)', descEn: 'Uptime alerts, auto-heals, failovers & recoveries', descFa: 'هشدارهای آپتایم، قطعی‌ها و بازیابی سرورها' },
-      { key: 'ov_valign', type: 'select', def: 'top', en: 'Cards Vertical Position', fa: 'جایگاه عمودی کارت‌ها در صفحه', descEn: 'Place remaining Overview cards at Top, Center, or Bottom of screen', descFa: 'تنظیم محل قرارگیری کارت‌های باقی‌مانده در بالا، وسط یا پایین صفحه',
-        options: [['top','Top / بالا (پیش‌فرض)'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
-      { key: 'ov_fbar',    cls: 'tp-ov-fbar',    en: 'Fleet Radar Toolbar', fa: 'نوار ابزار Fleet Hardware Radar', descEn: 'Show LIVE, SSL Sync, Ping All & Add Server buttons bar', descFa: 'نمایش نوار دکمه‌های LIVE، SSL Sync، Ping All و Add Server' },
-      { key: 'ov_radar',   cls: 'tp-ov-radar',   en: 'Fleet Hardware Radar', fa: 'لیست سرورها در داشبورد', descEn: 'Show server cards inside Overview', descFa: 'نمایش کارت سرورها در پایین داشبورد' }
+      { key: 'ov_radar',     cls: 'tp-ov-radar',     en: 'Fleet Server Cards List', fa: 'لیست کارت سرورها در داشبورد', descEn: 'Show server cards inside Overview', descFa: 'نمایش لیست سرورها در پایین داشبورد' }
     ]
   },
   servers: {
@@ -13055,16 +13134,23 @@ const TAB_PREFS_SCHEMA = {
     ]
   },
   settings: {
-    titleEn: 'Settings', titleFa: 'تنظیمات',
+    titleEn: 'Global Layout', titleFa: 'ظاهر و چیدمان کل پنل',
     items: [
-      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Settings Cards', fa: 'کارت‌های فشرده تنظیمات', descEn: 'Tighter vertical padding inside Settings cards', descFa: 'فضای عمودی کمتر داخل کارت‌های تنظیمات' },
-      { key: 'hide_gears', cls: 'tp-hide-gears', def: false, invert: true, en: 'Hide Tab ⚙ Gear Buttons', fa: 'مخفی کردن دکمه‌های ⚙ تنظیمات تب‌ها', descEn: 'Hide gear icons on toolbars (still accessible in Settings → All Sections)', descFa: 'حذف آیکون چرخ‌دنده از بالای صفحات (همچنان از Settings → All Sections در دسترس است)' }
+      { key: 'ui_width', type: 'select', def: 'standard', en: 'Page Container Width', fa: 'عرض محتوای صفحات پنل', descEn: 'Control horizontal spread across wide screens', descFa: 'تنظیم عرض کانتینر اصلی روی مانیتورهای عریض',
+        options: [['compact','Compact (1120px)'],['standard','Standard (1320px)'],['wide','Wide (1620px)'],['full','Full Screen (96%)']] },
+      { key: 'ui_density', type: 'select', def: 'normal', en: 'Global UI Density', fa: 'تراکم و فاصله کارت‌ها', descEn: 'Adjust card padding & spacing across all pages', descFa: 'تنظیم فاصله و ارتفاع کارت‌ها در کل پنل',
+        options: [['normal','Normal / استاندارد'],['compact','Compact / فشرده'],['ultra','Ultra-Compact / خیلی فشرده']] },
+      { key: 'page_valign', type: 'select', def: 'top', en: 'All-Tabs Vertical Alignment', fa: 'جایگاه عمودی همه صفحات', descEn: 'Align content vertically across all main pages', descFa: 'تنظیم بالا / وسط / پایین برای تمام تب‌های اصلی',
+        options: [['top','Top / بالا'],['center','Center / وسط صفحه'],['bottom','Bottom / پایین صفحه']] },
+      { key: 'ui_eco', def: false, en: 'Eco / Low-Power Mode (No Blur)', fa: 'حالت سبک (بدون بلور و انیمیشن سنگین)', descEn: 'Disables heavy backdrop blur & animations for max FPS', descFa: 'حذف افکت‌های شیشه‌ای سنگین برای سرعت بالا روی همه دستگاه‌ها' },
+      { key: 'show_inline_gears', cls: 'tp-show-inline-gears', def: false, invert: true, en: 'Show Extra ⚙ Buttons Inside Pages', fa: 'نمایش دکمه‌های ⚙ اضافه داخل صفحات', descEn: 'Keep toolbar gear icons visible in addition to the top-bar ⚙ button', descFa: 'علاوه بر دکمه ⚙ نوار بالا، دکمه‌های داخل صفحات هم نمایش داده شوند' },
+      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Settings Cards', fa: 'کارت‌های فشرده تنظیمات', descEn: 'Tighter vertical padding inside Settings cards', descFa: 'فضای عمودی کمتر داخل کارت‌های تنظیمات' }
     ]
   }
 };
 
 let TAB_PREFS = {};
-let _activeTabCfgKey = 'servers';
+let _activeTabCfgKey = 'overview';
 try { TAB_PREFS = JSON.parse(ls.get('mc_tab_prefs_v1', '{}') || '{}') || {}; } catch (e) { TAB_PREFS = {}; }
 
 function saveTabPrefs() {
@@ -13106,9 +13192,31 @@ function applyTabPrefs() {
       }
     });
   });
+  // Dynamic local-grid columns when some Master cards are hidden
+  const lg = document.querySelector('#tab-overview .local-grid');
+  if (lg) {
+    const visCnt = ['ov_cpu','ov_ram','ov_net','ov_tbx'].filter(k => TAB_PREFS[k] !== false).length;
+    lg.style.gridTemplateColumns = (visCnt > 0 && visCnt < 4) ? `repeat(${visCnt}, minmax(0, 1fr))` : '';
+  }
+  // Vertical alignment (Overview-specific or global all-tabs)
   const ovPos = TAB_PREFS.ov_valign || 'top';
   document.body.classList.toggle('tp-ov-pos-center', ovPos === 'center');
   document.body.classList.toggle('tp-ov-pos-bottom', ovPos === 'bottom');
+  const pgPos = TAB_PREFS.page_valign || 'top';
+  document.body.classList.toggle('tp-pg-pos-center', pgPos === 'center');
+  document.body.classList.toggle('tp-pg-pos-bottom', pgPos === 'bottom');
+
+  // Global width, density & eco mode
+  const w = TAB_PREFS.ui_width || 'standard';
+  document.body.classList.toggle('tp-w-compact', w === 'compact');
+  document.body.classList.toggle('tp-w-wide', w === 'wide');
+  document.body.classList.toggle('tp-w-full', w === 'full');
+  const d = TAB_PREFS.ui_density || 'normal';
+  document.body.classList.toggle('tp-dens-compact', d === 'compact');
+  document.body.classList.toggle('tp-dens-ultra', d === 'ultra');
+  if (TAB_PREFS.ui_eco) document.body.setAttribute('data-eco', '1');
+  else document.body.removeAttribute('data-eco');
+
   const tf = parseInt(TAB_PREFS.term_font || '12', 10) || 12;
   if ($('term-out')) $('term-out').style.fontSize = tf + 'px';
   if ($('term-inp')) $('term-inp').style.fontSize = tf + 'px';
@@ -13116,10 +13224,91 @@ function applyTabPrefs() {
   if ($('dc-cr-pair') && Object.prototype.hasOwnProperty.call(TAB_PREFS, 'dc_auto_pair')) $('dc-cr-pair').checked = !!TAB_PREFS.dc_auto_pair;
 }
 
+function openActiveTabSettings() {
+  const k = (typeof curTab !== 'undefined' && TAB_PREFS_SCHEMA[curTab]) ? curTab : 'overview';
+  openTabSettings(k);
+}
+
 function openTabSettings(tabKey) {
-  _activeTabCfgKey = TAB_PREFS_SCHEMA[tabKey] ? tabKey : 'servers';
+  _activeTabCfgKey = TAB_PREFS_SCHEMA[tabKey] ? tabKey : 'overview';
+  if ($('tab-cfg-search')) $('tab-cfg-search').value = '';
   renderTabSettingsModal();
   if ($('tab-cfg-modal')) $('tab-cfg-modal').classList.add('active');
+}
+
+function applyWorkspacePreset(name) {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if (name === 'minimal') {
+    TAB_PREFS = {
+      ...TAB_PREFS,
+      ov_stats: false, ov_master: false, ov_fbar: false, ov_metrics: false, ov_incidents: false, ov_radar: false,
+      ov_cpu: true, ov_ram: true, ov_net: true, ov_tbx: true,
+      ov_valign: 'center', ui_density: 'compact', srv_compact: true, tun_compact: true, ui_eco: false
+    };
+    toast(fa ? '✨ چیدمان مینیمال اعمال شد' : '✨ Minimal Clean workspace applied');
+  } else if (name === 'noc') {
+    TAB_PREFS = {
+      ...TAB_PREFS,
+      ov_stats: true, ov_master: true, ov_fbar: true, ov_metrics: true, ov_incidents: true, ov_radar: true,
+      ov_cpu: true, ov_ram: true, ov_net: true, ov_tbx: true,
+      ov_interval: '1500', srv_interval: '5000', ov_valign: 'top', page_valign: 'top',
+      ui_width: 'wide', ui_density: 'normal', ui_eco: false
+    };
+    toast(fa ? '🖥️ چیدمان کامل NOC اعمال شد' : '🖥️ NOC Full Monitor workspace applied');
+  } else if (name === 'eco') {
+    TAB_PREFS = {
+      ...TAB_PREFS,
+      ov_interval: '10000', srv_interval: '30000', ui_eco: true, ui_density: 'compact'
+    };
+    toast(fa ? '⚡ حالت سبک Eco اعمال شد' : '⚡ Eco Low-Power mode applied');
+  } else {
+    TAB_PREFS = {};
+    toast(fa ? '↺ تنظیمات به حالت پیش‌فرض برگشت' : '↺ Workspace reset to default');
+  }
+  saveTabPrefs();
+  applyTabPrefs();
+  renderTabSettingsModal();
+  if (typeof renderServers === 'function') renderServers();
+  if (typeof token !== 'undefined' && token && typeof startTimers === 'function') startTimers();
+}
+
+function exportTabPrefsJSON() {
+  copyText(JSON.stringify(TAB_PREFS, null, 2), 'Tab Settings JSON');
+}
+
+function importTabPrefsJSON() {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const raw = prompt(fa ? 'کد JSON تنظیمات تب‌ها را اینجا پیست کنید:' : 'Paste exported Tab Settings JSON:');
+  if (!raw || !raw.trim()) return;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid object');
+    TAB_PREFS = parsed;
+    saveTabPrefs();
+    applyTabPrefs();
+    renderTabSettingsModal();
+    if (typeof renderServers === 'function') renderServers();
+    toast(fa ? 'تنظیمات با موفقیت ایمپورت و در دیتابیس ذخیره شد' : 'Settings imported & synced to DB!');
+  } catch (e) {
+    toast((fa ? 'فرمت JSON نامعتبر است: ' : 'Invalid JSON: ') + e.message, true);
+  }
+}
+
+function _renderTabCfgItem(it, fa, badgeTab) {
+  const val = getTabPrefVal(it);
+  const lbl = (fa ? it.fa : it.en) + (badgeTab ? ` · [${badgeTab}]` : '');
+  const desc = fa ? it.descFa : it.descEn;
+  if (it.type === 'select') {
+    const opts = (it.options || []).map(([ov, ol]) => `<option value="${esc(ov)}" ${String(val) === String(ov) ? 'selected' : ''}>${esc(ol)}</option>`).join('');
+    return `<div class="tab-cfg-row">
+      <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
+      <select class="tab-cfg-sel" onchange="setTabPref('${esc(it.key)}', this.value)">${opts}</select>
+    </div>`;
+  }
+  return `<div class="tab-cfg-row">
+    <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
+    <label class="etab-switch"><input type="checkbox" ${val ? 'checked' : ''} onchange="setTabPref('${esc(it.key)}', this.checked)"><span class="etab-slider"></span></label>
+  </div>`;
 }
 
 function renderTabSettingsModal() {
@@ -13127,10 +13316,13 @@ function renderTabSettingsModal() {
   const sec = TAB_PREFS_SCHEMA[key];
   if (!sec) return;
   const fa = (typeof lang !== 'undefined' && lang === 'fa');
-  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = fa ? ('تنظیمات تب ' + sec.titleFa) : (sec.titleEn + ' Settings');
-  if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'شخصی‌سازی کامل ظاهر، رفتار و نمایش در نوار بالا برای همه تب‌ها (فعال یا مخفی) با سینک دیتابیس.' : 'Configure display, behavior & top-bar visibility for all tabs (active or hidden) — synced to DB.';
+  const q = ($('tab-cfg-search') ? $('tab-cfg-search').value.trim().toLowerCase() : '');
+
+  if ($('tab-cfg-title')) $('tab-cfg-title').textContent = q ? (fa ? 'نتایج جستجو در همه تب‌ها' : 'Search All Tab Settings') : (fa ? ('تنظیمات ' + sec.titleFa) : (sec.titleEn + ' Settings'));
+  if ($('tab-cfg-sub')) $('tab-cfg-sub').textContent = fa ? 'کنترل کامل ظاهر، چیدمان، پریست‌ها و نمایش در نوار بالا برای همه تب‌ها (با سینک دیتابیس).' : 'Full control over display, layout, presets & top-bar visibility for all tabs (DB synced).';
+  if ($('tab-cfg-search')) $('tab-cfg-search').placeholder = fa ? '🔍 جستجو در بین تمام تنظیمات تب‌ها...' : '🔍 Search across all tab settings...';
   if ($('btn-tp-reset-one')) $('btn-tp-reset-one').textContent = fa ? '↻ ریست همین تب' : '↻ Reset Tab';
-  if ($('btn-tp-reset-all')) $('btn-tp-reset-all').textContent = fa ? 'ریست همه تب‌ها' : 'Reset All';
+  if ($('btn-tp-reset-all')) $('btn-tp-reset-all').textContent = fa ? 'ریست همه' : 'Reset All';
   if ($('btn-tp-done')) $('btn-tp-done').textContent = fa ? '✓ بستن' : '✓ Done';
 
   const visMap = {};
@@ -13138,6 +13330,7 @@ function renderTabSettingsModal() {
 
   const sw = $('tab-cfg-switcher');
   if (sw) {
+    sw.style.display = q ? 'none' : 'flex';
     sw.innerHTML = Object.keys(TAB_PREFS_SCHEMA).map(k => {
       const s = TAB_PREFS_SCHEMA[k];
       const isOn = !!visMap[k];
@@ -13147,6 +13340,19 @@ function renderTabSettingsModal() {
 
   const box = $('tab-cfg-list');
   if (!box) return;
+
+  if (q) {
+    const hits = [];
+    Object.entries(TAB_PREFS_SCHEMA).forEach(([tk, s]) => {
+      s.items.forEach(it => {
+        const hay = `${it.en} ${it.fa} ${it.descEn} ${it.descFa} ${s.titleEn} ${s.titleFa} ${it.key}`.toLowerCase();
+        if (hay.includes(q)) hits.push(_renderTabCfgItem(it, fa, fa ? s.titleFa : s.titleEn));
+      });
+    });
+    box.innerHTML = hits.length ? hits.join('') : `<div class="hint" style="text-align:center; padding:18px;">${fa ? 'گزینه‌ای با این عبارت پیدا نشد.' : 'No matching settings found.'}</div>`;
+    return;
+  }
+
   const cat = (ALL_TABS_CATALOG || []).find(x => x.id === key);
   let out = '';
 
@@ -13165,23 +13371,7 @@ function renderTabSettingsModal() {
   }
 
   out += `<div class="tab-cfg-sec-lbl">${fa ? 'گزینه‌های پیشرفته این تب' : 'Advanced Tab Options'}</div>`;
-  out += sec.items.map(it => {
-    const val = getTabPrefVal(it);
-    const lbl = fa ? it.fa : it.en;
-    const desc = fa ? it.descFa : it.descEn;
-    if (it.type === 'select') {
-      const opts = (it.options || []).map(([ov, ol]) => `<option value="${esc(ov)}" ${String(val) === String(ov) ? 'selected' : ''}>${esc(ol)}</option>`).join('');
-      return `<div class="tab-cfg-row">
-        <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
-        <select class="tab-cfg-sel" onchange="setTabPref('${esc(it.key)}', this.value)">${opts}</select>
-      </div>`;
-    }
-    return `<div class="tab-cfg-row">
-      <div><strong>${esc(lbl)}</strong><span>${esc(desc)}</span></div>
-      <label class="etab-switch"><input type="checkbox" ${val ? 'checked' : ''} onchange="setTabPref('${esc(it.key)}', this.checked)"><span class="etab-slider"></span></label>
-    </div>`;
-  }).join('');
-
+  out += sec.items.map(it => _renderTabCfgItem(it, fa, '')).join('');
   box.innerHTML = out;
 }
 
@@ -13217,7 +13407,6 @@ function resetTabPrefs() {
   toast((typeof lang !== 'undefined' && lang === 'fa') ? 'تنظیمات همه تب‌ها به حالت پیش‌فرض برگشت' : 'All tab settings reset to default');
 }
 applyTabPrefs();
-
 
 /* ═══════════════ Phase 2: Free Port Finder, Auto-PMTU & Smart Guard Firewall ═══════════════ */
 async function findFreeTunnelPort() {

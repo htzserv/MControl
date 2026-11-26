@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.2
+- **Top-Bar Permanent `⚙` Button & Advanced Workspace Control Center:**
+  - Moved the Tab & Layout Settings (`⚙`) button permanently into the top floating navigation bar next to `Backup` so it remains accessible on every tab even when page toolbars (such as `Fleet Hardware Radar`) are hidden.
+  - Added 4 instant Workspace Presets (`Minimal Clean`, `NOC Full Monitor`, `Eco Low-Power`, `Default`), live cross-tab settings search, and JSON Export/Import.
+  - Added granular Overview toggles for each individual Master card (`CPU`, `RAM`, `Network`, `Toolbox`) with automatic responsive grid refit, plus Global Layout controls (`Page Container Width`, `UI Density`, `All-Tabs Vertical Alignment`, `Eco No-Blur Mode`, and opt-in inline page gear icons).
+
+
 ## 1.6.1
 - **Phase 3 — Backhaul v1.0.0 Next-Gen Sync (Parallax, Multi-Transport Failover & Game Mode):**
   - **Parallax Multi-Lane Mode (`parallax` / `parallaxmux`):** added wizard UI & TOML config generation for KCP+FEC over 2–12 parallel TCP lanes with randomized encrypted warm-up and automatic silent-stall redialing.
