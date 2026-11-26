@@ -4386,13 +4386,14 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
 .fm-ctx-sep { height: 1px; background: var(--border); margin: 3px 6px; }
 
 
-/* ── Width-First Single-Line Lists (Servers, Tunnels, Datacenter, Overview) ── */
+/* ── Balanced Airy Single-Line Lists with Compact Pills/Buttons ── */
+body.tp-srv-ob-badge .srv-ob-badge { display: none !important; }
+
 .srv-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  width: max-content;
-  min-width: min(420px, 100%);
+  gap: 11px;
+  width: clamp(660px, 74vw, 1060px);
   max-width: 100%;
   margin-inline: auto;
   transition: width .22s ease;
@@ -4405,25 +4406,45 @@ body.tp-set-compact #tab-settings .card { padding: 12px 15px !important; }
 }
 .srv-row-head {
   flex-wrap: nowrap !important;
-  gap: 14px !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  padding: 10px 18px !important;
+  min-height: 54px !important;
 }
 .srv-head-name {
-  flex: 0 0 auto !important;
+  flex: 1 1 auto !important;
+  min-width: 0;
   white-space: nowrap;
 }
 .srv-head-pings {
-  flex: 0 0 auto !important;
+  flex: 0 1 auto !important;
   flex-wrap: nowrap !important;
+  gap: 10px !important;
   white-space: nowrap;
 }
 .srv-head-cpu {
   flex: 0 0 auto !important;
   white-space: nowrap;
+  font-size: .76rem !important;
 }
 .srv-head-right {
   flex: 0 0 auto !important;
   margin-inline-start: auto;
   white-space: nowrap;
+}
+/* Keep header pills & Ping button compact and crisp (never bloated) */
+.srv-row-head .badge {
+  padding: 2px 8px !important;
+  font-size: .64rem !important;
+}
+.srv-row-head .peer-ver-badge {
+  padding: 2px 9px !important;
+  min-width: 62px !important;
+  font-size: .64rem !important;
+}
+.srv-row-head .hdr-bubble-btn {
+  padding: 2px 9px !important;
+  font-size: .66rem !important;
 }
 .srv-stage > .srv-list {
   max-width: calc(100% - 76px);
@@ -4535,9 +4556,32 @@ body.tp-srv-cdock #srv-country-dock { display: none !important; }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
+/* Prevent overlap between bottom-right `+` button (.fab-tun) and Tab Settings pill */
+.fab-tun {
+  bottom: 66px !important;
+  inset-inline-end: 20px !important;
+  width: 46px !important;
+  height: 46px !important;
+}
+@media (max-width: 768px) {
+  .fab-tun { bottom: 132px !important; inset-inline-end: 18px !important; }
+  .tab-settings-fab { bottom: 78px !important; }
+}
+
+body.tp-mon-inc .mon-inc-card { display: none !important; }
+body.tp-mon-hero #tab-monitor > .toolbar .hint { display: none !important; }
+body.tp-mon-grid1 #mon-list { grid-template-columns: 1fr !important; }
+
+body.tp-dom-zones .dom-zones-bar { display: none !important; }
+body.tp-dom-failover .dom-failover-card { display: none !important; }
+body.tp-dom-hero #tab-domains .dom-hero-head .hint { display: none !important; }
+
+body.tp-thm-preview .studio-prev-card,
+body.tp-thm-preview #studio-preview-wrap { display: none !important; }
+
 .tab-settings-fab {
   position: fixed;
-  bottom: 18px;
+  bottom: 16px;
   inset-inline-end: 18px;
   z-index: 960;
   display: inline-flex;
@@ -5585,7 +5629,7 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
 
       <!-- Connected Domains Workspace -->
       <div id="cf-workspace" style="display:none;">
-        <div class="cf-bubbles-bar" id="cf-zone-bubbles"></div>
+        <div class="cf-bubbles-bar dom-zones-bar" id="cf-zone-bubbles"></div>
 
         <div class="card sp">
           <div class="toolbar" style="margin-bottom:12px; gap:10px; flex-wrap:wrap;">
@@ -5626,7 +5670,7 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
         </div>
 
         <!-- DNS Auto-Failover Rules -->
-        <div class="card" style="margin-top:14px;">
+        <div class="card dom-failover-card" style="margin-top:14px;">
           <div class="toolbar" style="margin-bottom:10px;">
             <div>
               <h4 style="color:var(--accent);">🔄 Smart DNS Auto-Failover Rules</h4>
@@ -5869,7 +5913,7 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
         No monitors yet. Click <b>+ Add Monitor</b> or <b>+ Import Servers / Tunnels</b> to start tracking uptime.
       </div>
 
-      <div class="card" style="margin-top:16px;">
+      <div class="card mon-inc-card" style="margin-top:16px;">
         <div class="toolbar" style="margin-bottom:10px;">
           <h4 style="color:var(--accent);">⚡ Recent Incidents &amp; Auto-Heals</h4>
           <button class="btn btn-ghost btn-sm" onclick="loadMonitorIncidents()">Refresh</button>
@@ -8945,7 +8989,7 @@ function renderServerCard(s) {
       </div>
       <div class="srv-col-hide srv-head-cpu mono">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
       <div class="srv-head-right">
-        <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی (مستقیم + اوتباند + ریورس)' : 'Ping now (Direct + Outbound + Reverse)'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
+        <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono srv-ob-badge">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی (مستقیم + اوتباند + ریورس)' : 'Ping now (Direct + Outbound + Reverse)'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
         <span class="chev">▾</span>
       </div>
     </div>
@@ -12258,6 +12302,17 @@ function initMobileSettingsCollapse() {
 window.addEventListener('resize', initMobileSettingsCollapse);
 
 function switchSubTab(name, el) {
+  if (['themes','outbound','telegram','profiles'].includes(name)) {
+    curTab = name;
+    if ($('tab-cfg-modal') && $('tab-cfg-modal').classList.contains('active') && TAB_PREFS_SCHEMA[name]) {
+      openTabSettings(name);
+    }
+  } else if (curTab && ['themes','outbound','telegram','profiles'].includes(curTab)) {
+    curTab = 'settings';
+    if ($('tab-cfg-modal') && $('tab-cfg-modal').classList.contains('active')) {
+      openTabSettings('settings');
+    }
+  }
   document.querySelectorAll('.sub-pane').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
   const pane = $('sub-' + name);
@@ -13381,6 +13436,7 @@ const _TP_PREVIEWS = {
   srv_cdock: '<div style="display:flex;flex-direction:column;gap:2px;align-items:center;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></span><span style="width:8px;height:8px;border-radius:50%;background:var(--green);"></span></div>',
   srv_dir: '<span class="pv-pill" style="color:var(--green);">🇮🇷 41ms</span>',
   srv_ob: '<span class="pv-pill" style="color:var(--yellow);">🚀 95ms</span>',
+  srv_ob_badge: '<span class="pv-pill" style="color:var(--green);">OUTBOUND</span>',
   srv_rev: '<span class="pv-pill" style="color:var(--sky);">↩️ 42ms</span>',
   srv_cpu: '<span style="font-size:.54rem;">CPU • RAM</span>',
   srv_peer: '<span class="pv-pill">PEER V4</span>',
@@ -13399,9 +13455,15 @@ const _TP_PREVIEWS = {
   tun_legacy: '<span class="pv-pill">MTunnel</span>',
   tun_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
   dom_bubbles: '<span class="pv-pill">CF</span><span class="pv-pill">AR</span>',
+  dom_zones: '<span class="pv-pill">example.com</span>',
+  dom_failover: '<span class="pv-pill" style="color:var(--green);">1→2 DNS</span>',
+  dom_hero: '<span class="pv-bar" style="width:38px;"></span>',
   dom_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
   mon_stats: '<span class="pv-pill" style="color:var(--green);">UP</span><span class="pv-pill" style="color:var(--red);">DN</span>',
   mon_beats: '<span style="width:4px;height:14px;background:var(--green);border-radius:2px;"></span><span style="width:4px;height:14px;background:var(--green);border-radius:2px;"></span><span style="width:4px;height:14px;background:var(--red);border-radius:2px;"></span><span style="width:4px;height:14px;background:var(--green);border-radius:2px;"></span>',
+  mon_inc: '<span class="pv-bar" style="background:var(--red);width:36px;"></span>',
+  mon_grid1: '<span class="pv-bar" style="width:42px;height:8px;"></span>',
+  mon_hero: '<span class="pv-bar" style="width:34px;"></span>',
   mon_compact: '<span class="pv-bar" style="width:36px;height:3px;"></span>',
   ob_auto_sub: '<span class="pv-pill">SUB ▾</span>',
   ob_auto_lb: '<span class="pv-pill">LB ▾</span>',
@@ -13450,6 +13512,7 @@ const TAB_PREFS_SCHEMA = {
       { key: 'srv_rev',   cls: 'tp-srv-rev',   en: 'Reverse Ping (↩️)', fa: 'نمایش پینگ ریورس (↩️)', descEn: 'Latency from remote server back to Iran Master', descFa: 'پینگ برگشت از سرور مقصد به مستر ایران' },
       { key: 'srv_cpu',   cls: 'tp-srv-cpu',   en: 'Header CPU & RAM', fa: 'نمایش CPU و RAM در هدر', descEn: 'Show inline CPU/RAM on collapsed server rows', descFa: 'نمایش مصرف منابع روی ردیف بسته سرور' },
       { key: 'srv_peer',  cls: 'tp-srv-peer',  en: 'Peer Version Badge', fa: 'نمایش بج نسخه Peer', descEn: 'Show PEER V4 / SSH mode badge', descFa: 'نمایش بج PEER V4 روی هدر سرور' },
+      { key: 'srv_ob_badge', cls: 'tp-srv-ob-badge', en: 'Outbound Badge', fa: 'نمایش بج OUTBOUND', descEn: 'Show OUTBOUND routing pill next to Peer badge', descFa: 'نمایش حباب OUTBOUND کنار بج نسخه Peer' },
       { key: 'srv_pbtn',  cls: 'tp-srv-pbtn',  en: 'Quick Ping Button', fa: 'نمایش دکمه پینگ سریع', descEn: 'One-click Ping button in server header', descFa: 'دکمه بابل پینگ سریع کنار بج Peer' },
       { key: 'srv_tags',  cls: 'tp-srv-tags',  en: 'Tag Filter Bar', fa: 'نوار فیلتر تگ‌ها', descEn: 'Show custom tag filter pills above servers', descFa: 'نمایش فیلتر تگ‌ها بالای لیست سرورها' },
       { key: 'srv_compact', cls: 'tp-srv-compact', def: false, invert: true, en: 'Compact Row Mode', fa: 'حالت فشرده ردیف‌ها', descEn: 'Slimmer rows to fit more servers on screen', descFa: 'ارتفاع کمتر کارت‌ها برای نمایش سرورهای بیشتر' },
@@ -13482,8 +13545,11 @@ const TAB_PREFS_SCHEMA = {
   domains: {
     titleEn: 'Domains', titleFa: 'دامنه‌ها',
     items: [
-      { key: 'dom_bubbles', cls: 'tp-dom-bubbles', en: 'Provider Sync Bubbles', fa: 'حباب‌های سینک کلودفلر و آروان', descEn: 'Show Cloudflare & ArvanCloud sync chips at top', descFa: 'نمایش حباب‌های وضعیت سینک بالای صفحه' },
-      { key: 'dom_compact', cls: 'tp-dom-compact', def: false, invert: true, en: 'Compact DNS Records Table', fa: 'جدول فشرده رکوردهای DNS', descEn: 'Fit more DNS records per screen', descFa: 'نمایش فشرده‌تر رکوردهای دامنه' }
+      { key: 'dom_bubbles',  cls: 'tp-dom-bubbles',  en: 'Provider Sync Bubbles', fa: 'حباب‌های سینک کلودفلر و آروان', descEn: 'Show Cloudflare & ArvanCloud sync chips at top', descFa: 'نمایش حباب‌های وضعیت سینک بالای صفحه' },
+      { key: 'dom_zones',    cls: 'tp-dom-zones',    en: 'Domain Zone Filter Pills', fa: 'حباب‌های فیلتر دامنه‌ها', descEn: 'Show clickable domain zone pills above records', descFa: 'نمایش حباب‌های انتخاب دامنه بالای لیست رکوردها' },
+      { key: 'dom_failover', cls: 'tp-dom-failover', en: 'Smart DNS Auto-Failover Card', fa: 'کارت فیل‌اور خودکار DNS', descEn: 'Show Primary → Backup DNS auto-failover rules card', descFa: 'نمایش بخش قوانین جابه‌جایی خودکار IP هنگام قطعی' },
+      { key: 'dom_hero',     cls: 'tp-dom-hero',     en: 'Header Description Text', fa: 'توضیحات زیر عنوان صفحه', descEn: 'Show subtitle hint under Domains & DNS title', descFa: 'نمایش متن راهنمای زیر تیتر صفحه دامنه‌ها' },
+      { key: 'dom_compact',  cls: 'tp-dom-compact',  def: false, invert: true, en: 'Compact DNS Records Table', fa: 'جدول فشرده رکوردهای DNS', descEn: 'Fit more DNS records per screen', descFa: 'نمایش فشرده‌تر رکوردهای دامنه' }
     ]
   },
   monitor: {
@@ -13491,7 +13557,21 @@ const TAB_PREFS_SCHEMA = {
     items: [
       { key: 'mon_stats',   cls: 'tp-mon-stats',   en: 'Top Stats Strip', fa: 'نوار آمار بالا', descEn: 'Total / UP / DOWN / Avg Uptime counters', descFa: 'شمارنده‌های وضعیت مانیتورها' },
       { key: 'mon_beats',   cls: 'tp-mon-beats',   en: 'Heartbeat History Bars', fa: 'میله‌های ضربان قلب', descEn: 'Show visual heartbeat uptime bars', descFa: 'نمایش نوار تاریخچه آپتایم' },
+      { key: 'mon_inc',     cls: 'tp-mon-inc',     en: 'Recent Incidents & Auto-Heals', fa: 'کارت رخدادها و بازیابی‌های اخیر', descEn: 'Show bottom incident timeline card in Uptime', descFa: 'نمایش لیست قطعی‌ها و بازیابی‌های اخیر پایین صفحه' },
+      { key: 'mon_grid1',   cls: 'tp-mon-grid1',   def: false, invert: true, en: 'Single-Column Wide Cards', fa: 'چیدمان تک‌ستونه عریض', descEn: 'Display each monitor as a full-width horizontal row', descFa: 'نمایش مانیتورها به‌صورت ردیف‌های عریض تک‌ستونه' },
+      { key: 'mon_hero',    cls: 'tp-mon-hero',    en: 'Header Subtitle Hint', fa: 'متن راهنمای زیر عنوان', descEn: 'Show description line under Uptime Monitor title', descFa: 'نمایش توضیح زیر تیتر Uptime Monitor' },
       { key: 'mon_compact', cls: 'tp-mon-compact', def: false, invert: true, en: 'Compact Monitor Cards', fa: 'کارت‌های فشرده مانیتور', descEn: 'Tighter vertical padding on monitors', descFa: 'فشرده‌سازی کارت‌های آپتایم' }
+    ]
+  },
+  themes: {
+    titleEn: 'Themes', titleFa: 'تم‌ها',
+    items: [
+      { key: 'ui_eco', def: false, en: 'Eco / Low-Power Mode (No Blur)', fa: 'حالت سبک (بدون بلور سنگین)', descEn: 'Disables heavy backdrop blur & animations for max FPS', descFa: 'حذف افکت‌های شیشه‌ای سنگین برای سرعت بالا' },
+      { key: 'ui_density', type: 'select', def: 'normal', en: 'Global UI Density', fa: 'تراکم و فاصله کارت‌ها', descEn: 'Adjust card padding & spacing across all pages', descFa: 'تنظیم فاصله و ارتفاع کارت‌ها در کل پنل',
+        options: [['normal','Normal / استاندارد'],['compact','Compact / فشرده'],['ultra','Ultra-Compact / خیلی فشرده']] },
+      { key: 'ui_width', type: 'select', def: 'standard', en: 'Page Container Width', fa: 'عرض محتوای صفحات پنل', descEn: 'Control horizontal spread across wide screens', descFa: 'تنظیم عرض کانتینر اصلی روی مانیتورهای عریض',
+        options: [['compact','Compact (1120px)'],['standard','Standard (1320px)'],['wide','Wide (1620px)'],['full','Full Screen (96%)']] },
+      { key: 'set_compact', cls: 'tp-set-compact', def: false, invert: true, en: 'Compact Theme Studio Cards', fa: 'کارت‌های فشرده استودیو تم', descEn: 'Tighter vertical padding inside Theme Studio', descFa: 'فاصله کمتر داخل بخش‌های استودیو تم' }
     ]
   },
   outbound: {
