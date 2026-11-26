@@ -4678,20 +4678,90 @@ body.tp-hide-fab .tab-settings-fab { display: none !important; }
   align-items: center;
   justify-content: space-between;
 }
-.tp-app-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.tp-drawer-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-right: 40px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tp-drawer-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.2px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: var(--row);
+  color: var(--text);
+  font-size: .92rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .16s ease;
+}
+.tp-drawer-close:hover {
+  background: color-mix(in srgb, var(--red) 18%, var(--surface));
+  border-color: var(--red);
+  color: var(--red);
+  transform: scale(1.06);
+}
+.tp-drawer-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding-inline-end: 3px;
+  margin-bottom: 10px;
+}
+.tp-drawer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tp-app-list {
+  display: flex;
+  flex-direction: column;
   gap: 7px;
 }
-.tp-app-field label {
-  display: block;
-  font-size: .66rem;
-  font-weight: 700;
-  color: var(--muted);
-  margin-bottom: 3px;
+.tp-app-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
 }
-.tp-app-field select {
-  width: 100%;
+.tp-app-row-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.tp-app-row-lbl {
+  font-size: .74rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tp-app-row select {
+  width: 146px;
+  flex-shrink: 0;
   padding: 5px 8px !important;
   font-size: .72rem !important;
   border-radius: 9px !important;
@@ -5054,28 +5124,27 @@ body.tp-srv-cname .srv-cc-badge { display: none !important; }
   <span id="tab-settings-fab-lbl">Tab Settings</span>
 </button>
 
-<!-- Non-Blocking Live-Preview Floating Drawer for Tab Settings -->
+<!-- Full-Height Right Sidebar for Tab Settings & Live Appearance -->
 <div class="tp-drawer-wrap" id="tab-cfg-modal" style="z-index:1190;">
   <div class="card tp-drawer-box">
-    <div class="toolbar" style="margin-bottom:8px; gap:8px;">
-      <div style="min-width:0;">
-        <h3 style="margin:0; font-size:1rem; color:var(--accent);" id="tab-cfg-title">Tab Settings</h3>
-        <div class="hint" style="margin:2px 0 0; font-size:.72rem;" id="tab-cfg-sub">Live preview &amp; instant toggles — see changes directly on the page behind.</div>
+    <div class="tp-drawer-head">
+      <div style="min-width:0; flex:1 1 auto;">
+        <h3 style="margin:0; font-size:1.02rem; color:var(--accent); line-height:1.25;" id="tab-cfg-title">Tab Settings</h3>
+        <div class="hint" style="margin:3px 0 0; font-size:.72rem; line-height:1.35;" id="tab-cfg-sub">Live preview — toggle any option to see its effect immediately on the page behind.</div>
       </div>
-      <div class="flexw" style="gap:5px; flex-shrink:0;">
-        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.72rem;" onclick="toggleTabDrawerSide()" title="Switch Left / Right Dock">⇄</button>
-        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 9px;" onclick="closeModal('tab-cfg-modal')">✕</button>
+      <button type="button" class="tp-drawer-close" onclick="closeModal('tab-cfg-modal')" title="Close">✕</button>
+    </div>
+    <div class="tp-drawer-body">
+      <div class="tp-preset-bar" id="tp-preset-bar">
+        <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('minimal')">✨ Minimal</button>
+        <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('noc')">🖥️ NOC Full</button>
+        <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco</button>
+        <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('default')">↺ Default</button>
       </div>
+      <div id="tab-cfg-appearance"></div>
+      <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:7px;"></div>
     </div>
-    <div class="tp-preset-bar" id="tp-preset-bar">
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('minimal')">✨ Minimal</button>
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('noc')">🖥️ NOC Full</button>
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('eco')">⚡ Eco</button>
-      <button type="button" class="tp-preset-chip" onclick="applyWorkspacePreset('default')">↺ Default</button>
-    </div>
-    <div id="tab-cfg-appearance"></div>
-    <div id="tab-cfg-list" style="display:flex; flex-direction:column; gap:7px; flex:1 1 auto; overflow-y:auto; padding-inline-end:3px; margin-bottom:10px;"></div>
-    <div class="toolbar" style="margin:0; gap:5px; padding-top:8px; border-top:1px solid var(--border);">
+    <div class="tp-drawer-foot">
       <div class="flexw" style="gap:5px;">
         <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="exportTabPrefsJSON()" title="Copy settings JSON">📤 Export</button>
         <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 8px; font-size:.7rem;" onclick="importTabPrefsJSON()" title="Import settings JSON">📥 Import</button>
@@ -13936,12 +14005,6 @@ function applyTabPrefs() {
   if ($('dc-cr-pair') && Object.prototype.hasOwnProperty.call(TAB_PREFS, 'dc_auto_pair')) $('dc-cr-pair').checked = !!TAB_PREFS.dc_auto_pair;
 }
 
-function toggleTabDrawerSide() {
-  _tabDrawerLeft = !_tabDrawerLeft;
-  const wrap = $('tab-cfg-modal');
-  if (wrap) wrap.classList.toggle('dock-left', _tabDrawerLeft);
-}
-
 function openActiveTabSettings() {
   const modal = $('tab-cfg-modal');
   if (modal && modal.classList.contains('active')) {
@@ -14045,6 +14108,56 @@ function setTabAppearanceAxis(axis, val) {
   renderTabAppearanceSection();
 }
 
+function renderTabAppearancePreview(ax, val) {
+  if (ax === 'chart') {
+    if (val === 'unified') {
+      return '<div style="width:42px;height:24px;border-radius:6px;border:1.4px solid var(--accent);border-top-width:3px;background:color-mix(in srgb,var(--accent) 12%,transparent);display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:3px;"><i style="background:var(--accent);opacity:.65;border-radius:2px;"></i><i style="background:var(--pink);opacity:.65;border-radius:2px;"></i><i style="background:var(--green);opacity:.65;border-radius:2px;"></i><i style="background:var(--yellow);opacity:.65;border-radius:2px;"></i></div>';
+    }
+    return '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:3px;width:40px;"><i style="height:10px;border-radius:4px;border:1.2px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);"></i><i style="height:10px;border-radius:4px;border:1.2px solid var(--pink);background:color-mix(in srgb,var(--pink) 16%,transparent);"></i><i style="height:10px;border-radius:4px;border:1.2px solid var(--green);background:color-mix(in srgb,var(--green) 16%,transparent);"></i><i style="height:10px;border-radius:4px;border:1.2px solid var(--yellow);background:color-mix(in srgb,var(--yellow) 16%,transparent);"></i></div>';
+  }
+  if (ax === 'gauge') {
+    if (val === 'ring') {
+      return '<svg viewBox="0 0 28 28" width="26" height="26"><circle cx="14" cy="14" r="10" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="14" cy="14" r="10" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="44 63" stroke-linecap="round" transform="rotate(-90 14 14)"/></svg>';
+    }
+    if (val === 'wave') {
+      return '<svg viewBox="0 0 44 20" width="42" height="18"><path d="M2 15 Q9 4 16 12 T30 8 T42 11" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>';
+    }
+    return '<div style="width:42px;height:7px;border-radius:99px;background:var(--border);overflow:hidden;"><i style="display:block;width:68%;height:100%;border-radius:99px;background:var(--accent);"></i></div>';
+  }
+  if (ax === 'card') {
+    if (val === 'flat') return '<div style="width:38px;height:22px;border-radius:6px;background:color-mix(in srgb,var(--accent) 26%,var(--surface));"></div>';
+    if (val === 'outline') return '<div style="width:38px;height:22px;border-radius:6px;border:1.8px solid var(--accent);background:transparent;"></div>';
+    if (val === 'neu') return '<div style="width:38px;height:22px;border-radius:7px;background:var(--row);box-shadow:3px 3px 6px rgba(0,0,0,.35),-2px -2px 5px rgba(255,255,255,.14);"></div>';
+    return '<div style="width:38px;height:22px;border-radius:7px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 28%,transparent),color-mix(in srgb,var(--surface) 40%,transparent));border:1.2px solid color-mix(in srgb,#fff 35%,var(--accent));"></div>';
+  }
+  if (ax === 'corners') {
+    const r = val === 'square' ? '0px' : (val === 'capsule' ? '999px' : (val === 'soft' ? '8px' : '5px'));
+    return `<div style="width:38px;height:20px;border-radius:${r};border:1.8px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);"></div>`;
+  }
+  if (ax === 'btn') {
+    const r = val === 'square' ? '2px' : (val === 'round' ? '7px' : '999px');
+    return `<span style="padding:3px 9px;border-radius:${r};background:var(--accent);color:var(--on-accent,#fff);font-size:.54rem;font-weight:800;">Btn</span>`;
+  }
+  if (ax === 'den') {
+    const g = val === 'compact' ? '2px' : (val === 'roomy' ? '6px' : '4px');
+    return `<div style="display:flex;flex-direction:column;gap:${g};width:36px;"><span class="pv-bar" style="width:100%;"></span><span class="pv-bar" style="width:82%;"></span><span class="pv-bar" style="width:65%;"></span></div>`;
+  }
+  if (ax === 'uptime') {
+    if (val === 'neon') return '<div style="display:flex;gap:3px;align-items:center;"><i style="width:5px;height:14px;border-radius:2px;background:#22d3ee;box-shadow:0 0 6px #22d3ee;"></i><i style="width:5px;height:14px;border-radius:2px;background:#22d3ee;box-shadow:0 0 6px #22d3ee;"></i><i style="width:5px;height:14px;border-radius:2px;background:#f43f5e;box-shadow:0 0 6px #f43f5e;"></i><i style="width:5px;height:14px;border-radius:2px;background:#22d3ee;box-shadow:0 0 6px #22d3ee;"></i></div>';
+    if (val === 'dots') return '<div style="display:flex;gap:4px;align-items:center;"><i style="width:7px;height:7px;border-radius:50%;background:var(--green);"></i><i style="width:7px;height:7px;border-radius:50%;background:var(--green);"></i><i style="width:7px;height:7px;border-radius:50%;background:var(--red);"></i><i style="width:7px;height:7px;border-radius:50%;background:var(--green);"></i></div>';
+    if (val === 'minimal') return '<div style="width:40px;height:4px;border-radius:99px;background:var(--green);"></div>';
+    return '<div style="display:flex;gap:3px;align-items:center;"><i style="width:5px;height:15px;border-radius:99px;background:var(--green);"></i><i style="width:5px;height:15px;border-radius:99px;background:var(--green);"></i><i style="width:5px;height:15px;border-radius:99px;background:var(--yellow);"></i><i style="width:5px;height:15px;border-radius:99px;background:var(--green);"></i></div>';
+  }
+  if (ax === 'beat') {
+    if (val === 'ecg') return '<svg viewBox="0 0 44 20" width="42" height="18"><polyline fill="none" stroke="var(--green)" stroke-width="2" points="1,11 11,11 15,4 20,17 25,8 29,11 43,11"/></svg>';
+    if (val === 'diamond') return '<div style="display:flex;gap:5px;align-items:center;"><i style="width:7px;height:7px;background:var(--green);transform:rotate(45deg);"></i><i style="width:7px;height:7px;background:var(--green);transform:rotate(45deg);"></i><i style="width:7px;height:7px;background:var(--green);transform:rotate(45deg);"></i></div>';
+    if (val === 'dots') return '<div style="display:flex;gap:4px;align-items:center;"><i style="width:7px;height:7px;border-radius:50%;background:var(--green);"></i><i style="width:7px;height:7px;border-radius:50%;background:var(--green);"></i><i style="width:7px;height:7px;border-radius:50%;background:var(--green);"></i></div>';
+    if (val === 'block') return '<div style="display:flex;gap:3px;align-items:center;"><i style="width:7px;height:13px;border-radius:1px;background:var(--green);"></i><i style="width:7px;height:13px;border-radius:1px;background:var(--green);"></i><i style="width:7px;height:13px;border-radius:1px;background:var(--green);"></i></div>';
+    return '<div style="display:flex;gap:3px;align-items:center;"><i style="width:6px;height:14px;border-radius:99px;background:var(--green);"></i><i style="width:6px;height:14px;border-radius:99px;background:var(--green);"></i><i style="width:6px;height:14px;border-radius:99px;background:var(--green);"></i></div>';
+  }
+  return '<span class="pv-pill">UI</span>';
+}
+
 function renderTabAppearanceSection() {
   const box = $('tab-cfg-appearance');
   if (!box) return;
@@ -14056,7 +14169,14 @@ function renderTabAppearanceSection() {
 
   const mkSel = (ax, lblEn, lblFa, opts) => {
     const cur = valOf(ax);
-    return `<div class="tp-app-field"><label>${esc(fa ? lblFa : lblEn)}</label><select onchange="setTabAppearanceAxis('${ax}', this.value)">${opts.map(([v, t]) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
+    const pv = renderTabAppearancePreview(ax, cur);
+    return `<div class="tp-app-row">
+      <div class="tp-app-row-left">
+        <div class="tp-prev" aria-hidden="true">${pv}</div>
+        <span class="tp-app-row-lbl">${esc(fa ? lblFa : lblEn)}</span>
+      </div>
+      <select onchange="setTabAppearanceAxis('${ax}', this.value)">${opts.map(([v, t]) => `<option value="${esc(v)}" ${cur === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+    </div>`;
   };
 
   let controls = '';
@@ -14087,7 +14207,7 @@ function renderTabAppearanceSection() {
       <button type="button" class="tp-mode-btn ${curMode==='light'?'active':''}" onclick="setMode('light'); renderTabAppearanceSection();">☀️ Light</button>
       <button type="button" class="tp-mode-btn ${curMode==='auto'?'active':''}" onclick="setMode('auto'); renderTabAppearanceSection();">◐ Auto</button>
     </div>
-    <div class="tp-app-grid">${controls}</div>
+    <div class="tp-app-list">${controls}</div>
   </div>`;
 }
 
