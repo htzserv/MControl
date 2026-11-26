@@ -5838,41 +5838,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
     </section>
 
     <!-- CLOUDFLARE DOMAINS MANAGER -->
-        <!-- MTUNNEL DEDICATED HUB TAB -->
-    <section id="tab-mtunnel" class="page">
-      <div class="toolbar">
-        <div>
-          <h3>MTunnel Auto-Scan &amp; Control</h3>
-          <div class="hint" style="margin:2px 0 0;">Select an Iran server to automatically inspect MTunnel services, detect remote/foreign peers, save missing servers, and import or pair.</div>
-        </div>
-        <div class="flexw" style="gap:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="loadMTunnelTab(true)">↻ Rescan Iran</button>
-          <button class="btn btn-sky btn-sm" onclick="openNewTunnelModal()">+ New Tunnel</button>
-        </div>
-      </div>
-      <div class="card sp" style="margin-bottom:14px;">
-        <div class="row2" style="align-items:end;">
-          <div class="field" style="margin:0;">
-            <label>Iran Server (Auto-Scan on Select)</label>
-            <select id="mtab-iran-srv" class="cf-ctrl-sel" onchange="onMTunnelTabIranChange()"></select>
-          </div>
-          <div class="field" style="margin:0;">
-            <label>Detected Remote / Foreign Target</label>
-            <div id="mtab-peer-info" class="mono" style="padding:9px 12px; border-radius:10px; background:var(--surface2); font-size:.82rem; color:var(--muted);">Select an Iran server to scan...</div>
-          </div>
-        </div>
-        <div id="mtab-auto-suggest" style="margin-top:12px;"></div>
-      </div>
-      <div class="card" id="mtab-result-card">
-        <div class="toolbar" style="margin-bottom:8px;">
-          <h4 style="color:var(--accent);">MTunnel Units, Configs &amp; Actions</h4>
-          <span id="mtab-status-badge" class="badge mono b-miss">IDLE</span>
-        </div>
-        <div id="mtab-details-list" style="display:flex; flex-direction:column; gap:8px;"></div>
-      </div>
-    </section>
-
-<section id="tab-domains" class="page">
+    <section id="tab-domains" class="page">
       <div class="dom-hero-head">
         <div>
           <h3>Domains &amp; DNS</h3>
@@ -7101,7 +7067,6 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
 
         <div class="flexw" style="gap:6px;">
           <button type="button" class="btn btn-warn" id="btn-test-srv" style="display:none;" data-i18n="btn_test">Test</button>
-          <button type="button" class="btn btn-danger" id="btn-stop-srv-test" style="display:none;" onclick="stopServerTestModal()">⏹ Stop</button>
           <button type="button" class="btn btn-sky" id="btn-srv-next" onclick="srvWizNext()">Next ➔</button>
           <button type="button" class="btn btn-sky" id="btn-save-srv" style="display:none;" data-i18n="btn_connect_save">Connect &amp; save</button>
           <button type="button" class="btn btn-sky" id="btn-sw-mig-run" style="display:none;" onclick="runSrvWizardMigrate()">Import &amp; Migrate</button>
@@ -8085,7 +8050,6 @@ const ALL_TABS_CATALOG = [
   { id: 'themes',     i18n: 'nav_themes',     fa: 'تم‌ها',         en: 'Themes',           icon: 'palette', def: false, descEn: 'MDesign Theme Studio, presets, colors, branding & Edit Tabs.', descFa: 'استودیو تم MDesign، رنگ‌ها، برندینگ و ویرایش تب‌ها.' },
   { id: 'profiles',   i18n: 'nav_profiles',   fa: 'پروفایل و بکاپ', en: 'Profiles & Backup', icon: 'key',    def: false, descEn: 'Saved SSH profiles, port profiles & encrypted panel backups.', descFa: 'پروفایل‌های SSH ذخیره‌شده، پورت‌ها و بکاپ رمزنگاری‌شده.' },
   { id: 'terminal',   i18n: 'nav_terminal',   fa: 'ترمینال مستر',  en: 'Master Terminal',  icon: 'term',    def: false, descEn: 'Direct shell terminal on this local Master control server.', descFa: 'ترمینال مستقیم روی همین سرور مستر کنترل.' },
-  { id: 'mtunnel',    i18n: 'nav_mtunnel',    fa: 'ام‌تانل',        en: 'MTunnel Hub',      icon: 'route',   def: true,  descEn: 'Auto-scan Iran nodes for MTunnel, detect peers, save missing servers & pair/migrate.', descFa: 'بررسی خودکار MTunnel روی سرور ایران، شناسایی سرور مقابل، ذخیره سرور و انتقال/پیر.' },
   { id: 'update',     i18n: 'nav_update',     fa: 'آپدیت',         en: 'Update Center',    icon: 'refresh', def: false, descEn: 'Official GitHub & Iran Mirror updates, beta builds & offline ZIP.', descFa: 'آپدیت از گیت‌هاب و میرور ایران، بتا و آپدیت آفلاین ZIP.' },
 ];
 
@@ -9165,7 +9129,6 @@ function switchTab(name) {
   if (name === 'domains') { loadCloudflareStatus(); loadFailoverUI(); }
   if (name === 'monitor') { loadMonitorsTab(); }
   if (name === 'datacenter') { loadDatacenterTab(); }
-  if (name === 'mtunnel') { loadMTunnelTab(); }
   if (name === 'settings') { initMobileSettingsCollapse(); renderSettingsSectionsHub(); renderEditTabsStudio(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
   window.scrollTo(0, 0);
@@ -9502,71 +9465,34 @@ function pickRole(r) {
   $('s-role').value = r;
   document.querySelectorAll('#role-picker .role-opt').forEach(el => el.classList.toggle('active', el.dataset.pickRole === r));
 }
-let _srvTestAbort = null;
-function stopServerTestModal() {
-  if (_srvTestAbort) {
-    try { _srvTestAbort.abort(); } catch (e) {}
-    _srvTestAbort = null;
-  }
-  const stopBtn = $('btn-stop-srv-test');
-  const btn = $('btn-test-srv');
-  const box = $('srv-test-res');
-  if (stopBtn) stopBtn.style.display = 'none';
-  if (btn) { btn.disabled = false; btn.textContent = 'Test'; }
-  if (box) { box.style.display = 'block'; box.style.color = 'var(--yellow)'; box.textContent = '⏹ Test stopped by user.'; }
-}
 async function testServerModal() {
-  if (_srvTestAbort) stopServerTestModal();
-  const btn = $('btn-test-srv'), stopBtn = $('btn-stop-srv-test'), box = $('srv-test-res');
+  const btn = $('btn-test-srv'), box = $('srv-test-res');
   const auth = $('s-auth').value;
   const payload = {
     name: $('s-name').value || 'test', role: $('s-role').value, host: $('s-host').value,
     port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
     auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
     ssh_profile_id: parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10),
-    ipv6: ($('s-ipv6') && $('s-ipv6').value || '').trim(),
-    use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
+      ipv6: ($('s-ipv6') && $('s-ipv6').value || '').trim(),
+      use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
   };
-  const ac = new AbortController();
-  _srvTestAbort = ac;
   btn.disabled = true; btn.textContent = 'Testing...';
-  if (stopBtn) stopBtn.style.display = 'inline-flex';
   box.style.display = 'block'; box.style.color = 'var(--muted)'; box.textContent = 'Connecting via SSH & measuring ping...';
   try {
-    const opt = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: ac.signal };
-    if (token) opt.headers['Authorization'] = 'Bearer ' + token;
-    const resp = await fetch('api/servers/test', opt);
-    const txt = await resp.text();
-    let res = {};
-    try { res = txt ? JSON.parse(txt) : {}; } catch (e) { res = { ok: false, error: 'HTTP ' + resp.status + ': ' + txt.slice(0, 120) }; }
-    if (res && res.ok) {
+    const res = await api('api/servers/test', 'POST', payload);
+    if (res.ok) {
       box.style.color = 'var(--green)';
-      if (typeof credMode !== 'undefined' && credMode === 'custom' && auth === 'password' && $('s-pass').value) {
+      if (credMode === 'custom' && auth === 'password' && $('s-pass').value) {
         promptSaveSSHProfile('srv', $('s-user').value.trim() || 'root', $('s-pass').value, parseInt($('s-port').value || '22', 10), $('s-name').value.trim() || $('s-host').value.trim());
       }
       box.textContent = `✔ Connected! Ping from Master: ${res.ping_ms} • CPU: ${res.cpu} • RAM: ${res.ram}`;
       toast('Connection OK! Ping: ' + res.ping_ms);
     } else {
       box.style.color = 'var(--red)';
-      box.textContent = `✖ Failed (Ping: ${(res && res.ping_ms) || 'N/A'}): ${(res && res.error) || 'Cannot connect'}`;
-      toast((res && res.error) || 'Connection test failed', true);
+      box.textContent = `✖ Failed (Ping: ${res.ping_ms || 'N/A'}): ${res.error || 'Cannot connect'}`;
+      toast(res.error || 'Connection test failed', true);
     }
-  } catch (err) {
-    if (err && err.name === 'AbortError') {
-      box.style.color = 'var(--yellow)';
-      box.textContent = '⏹ Connection test aborted.';
-      toast('Server test stopped');
-    } else {
-      box.style.color = 'var(--red)';
-      box.textContent = '✖ Network error during test';
-      toast(t('err_network'), true);
-    }
-  } finally {
-    if (_srvTestAbort === ac) _srvTestAbort = null;
-    if (stopBtn) stopBtn.style.display = 'none';
-    btn.disabled = false;
-    btn.textContent = 'Test';
-  }
+  } finally { btn.disabled = false; btn.textContent = 'Test'; }
 }
 
 let srvWizStep = 1, srvMigServerId = 0, srvMigSource = 'github', srvMigNeedsAck = false;
@@ -9788,11 +9714,6 @@ async function saveServer() {
       if (res.probe_error) toast(res.probe_error, true);
       const finishAfterSave = () => {
         closeModal('srv-modal');
-        if (_returnToTunnelAfterSave) {
-          _returnToTunnelAfterSave = false;
-          openNewTunnelModal();
-          return;
-        }
         if (wasNew && res.id) {
           startServerOnboarding(res.id, res.server || { id: res.id, name: payload.name, host: payload.host, role: payload.role }, res.legacy);
         }
@@ -10134,129 +10055,6 @@ function onTunnelServersChange() {
   renderStep1PingList();
   renderStep2AutoPing();
   updateTunFloatDock();
-  if (ir > 0) {
-    checkIranMTunnelForTunnelModal(ir);
-  } else if ($('t-mt-suggest')) {
-    $('t-mt-suggest').style.display = 'none';
-    $('t-mt-suggest').innerHTML = '';
-  }
-}
-
-let _returnToTunnelAfterSave = false;
-function openSaveMissingServerForTunnel(hostIp, roleHint) {
-  _returnToTunnelAfterSave = true;
-  closeModal('srv-modal');
-  openSrvModal(0);
-  if ($('s-host') && hostIp) $('s-host').value = hostIp;
-  if ($('s-role') && roleHint) {
-    $('s-role').value = roleHint;
-    if (typeof pickRole === 'function') pickRole(roleHint);
-  }
-  toast('Fill credentials and save server — you will return to Tunnel wizard automatically.');
-}
-
-async function checkIranMTunnelForTunnelModal(iranId) {
-  let box = $('t-mt-suggest');
-  if (!box && $('t-iran') && $('t-iran').parentElement) {
-    box = document.createElement('div');
-    box.id = 't-mt-suggest';
-    box.style.cssText = 'display:none; margin-top:8px; padding:10px 12px; border-radius:10px; background:var(--surface2); border:1px solid var(--accent); font-size:.8rem;';
-    $('t-iran').parentElement.appendChild(box);
-  }
-  if (!box) return;
-  box.style.display = 'block';
-  box.innerHTML = '<span style="color:var(--muted);">🔍 Checking Iran server for existing MTunnel...</span>';
-  const r = await api('api/servers/' + iranId + '/legacy/scan');
-  if (!r || !r.ok) {
-    box.innerHTML = '<span style="color:var(--muted);">MTunnel scan skipped or unavailable on this node.</span>';
-    return;
-  }
-  const found = !!(r.found || (r.units && r.units.length) || (r.files && Object.keys(r.files).length));
-  const peerIp = r.peer_ip || r.remote_ip || r.foreign_ip || '';
-  const matchedSrv = peerIp ? (SERVERS || []).find(s => s.host === peerIp || s.ipv4 === peerIp) : null;
-  if (!found) {
-    box.innerHTML = '<span style="color:var(--muted);">No existing MTunnel detected on selected Iran server.</span>';
-    return;
-  }
-  let htmlMsg = '<div style="color:var(--green); font-weight:700; margin-bottom:6px;">⚡ MTunnel detected on this Iran server!</div>';
-  if (peerIp) {
-    if (matchedSrv) {
-      htmlMsg += `<div style="margin-bottom:6px;">Matched remote server in panel: <b>${esc(matchedSrv.name)}</b> (${esc(peerIp)})</div>`;
-    } else {
-      htmlMsg += `<div style="color:var(--yellow); margin-bottom:6px;">Remote server <b>${esc(peerIp)}</b> is not in your Servers list yet.</div>` +
-        `<button type="button" class="btn btn-warn btn-sm" onclick="openSaveMissingServerForTunnel('${esc(peerIp)}', 'foreign')">+ Save Server ${esc(peerIp)} &amp; Return</button> `;
-    }
-  }
-  htmlMsg += `<button type="button" class="btn btn-sky btn-sm" onclick="closeModal('tun-modal'); switchTab('mtunnel'); setTimeout(()=>loadMTunnelTab(true), 120);">Open MTunnel Hub to Import / Pair</button>`;
-  box.innerHTML = htmlMsg;
-}
-
-function populateMTunnelTabSelect() {
-  const sel = $('mtab-iran-srv');
-  if (!sel) return;
-  const prev = sel.value;
-  const irSrvs = (SERVERS || []).filter(s => s.role === 'iran' || String(s.country_code || '').toUpperCase() === 'IR');
-  const pool = irSrvs.length ? irSrvs : (SERVERS || []);
-  sel.innerHTML = pool.map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)})</option>`).join('');
-  if (prev && pool.some(s => String(s.id) === String(prev))) sel.value = prev;
-}
-
-function onMTunnelTabIranChange() {
-  loadMTunnelTab(true);
-}
-
-async function loadMTunnelTab(forceScan) {
-  populateMTunnelTabSelect();
-  const sel = $('mtab-iran-srv');
-  const id = sel ? parseInt(sel.value || '0', 10) : 0;
-  const peerBox = $('mtab-peer-info');
-  const sugBox = $('mtab-auto-suggest');
-  const listBox = $('mtab-details-list');
-  const badge = $('mtab-status-badge');
-  if (!id) {
-    if (peerBox) peerBox.textContent = 'No server available';
-    if (listBox) listBox.innerHTML = '<div class="hint">Add an Iran server first in Servers tab.</div>';
-    return;
-  }
-  if (badge) { badge.textContent = 'SCANNING...'; badge.className = 'badge mono b-mid'; }
-  if (sugBox) sugBox.innerHTML = '<span style="color:var(--muted);">Auto-scanning MTunnel on selected Iran server...</span>';
-  const r = await api('api/servers/' + id + '/legacy/scan');
-  if (!r || !r.ok) {
-    if (badge) { badge.textContent = 'ERROR'; badge.className = 'badge mono b-miss'; }
-    if (sugBox) sugBox.innerHTML = `<span style="color:var(--red);">${esc((r && r.error) || 'Failed to scan MTunnel')}</span>`;
-    return;
-  }
-  const units = r.units || [];
-  const hasFiles = r.files && Object.keys(r.files).length > 0;
-  const detected = !!(r.found || units.length || hasFiles);
-  if (badge) {
-    badge.textContent = detected ? 'MTUNNEL FOUND' : 'NOT FOUND';
-    badge.className = 'badge mono ' + (detected ? 'b-ok' : 'b-miss');
-  }
-  const peerIp = r.peer_ip || r.remote_ip || r.foreign_ip || '';
-  const peerSrv = peerIp ? (SERVERS || []).find(s => s.host === peerIp || s.ipv4 === peerIp) : null;
-  if (peerBox) {
-    peerBox.textContent = peerIp ? (peerIp + (peerSrv ? (' → ' + peerSrv.name) : ' (Not in Servers list)')) : 'Auto-detecting from units/configs...';
-  }
-  if (sugBox) {
-    let btns = '';
-    if (peerIp && !peerSrv) {
-      btns += `<button type="button" class="btn btn-warn btn-sm" onclick="openSaveMissingServerForTunnel('${esc(peerIp)}', 'foreign')">+ Save Peer ${esc(peerIp)} &amp; Return</button> `;
-    }
-    if (detected) {
-      btns += `<button type="button" class="btn btn-sky btn-sm" onclick="legacyAutoPairNow()">⚡ Auto-Pair &amp; Import Tunnel</button> `;
-    }
-    btns += `<button type="button" class="btn btn-ghost btn-sm" onclick="openNewTunnelModal()">+ Create New Tunnel</button>`;
-    sugBox.innerHTML = `<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">` +
-      `<div>${detected ? '<b>Existing MTunnel detected!</b> Ready to import or pair automatically.' : 'No MTunnel units/configs found on this Iran server.'}</div>` +
-      `<div class="flexw" style="gap:6px;">${btns}</div></div>`;
-  }
-  if (listBox) {
-    const uHtml = units.map(u => `<div class="srv-row-wrap"><div class="srv-row-head"><span class="mono">${esc(typeof u === 'string' ? u : (u.name || JSON.stringify(u)))}</span><span class="badge b-ok">UNIT</span></div></div>`).join('');
-    const fKeys = r.files ? Object.keys(r.files) : [];
-    const fHtml = fKeys.map(k => `<div class="srv-row-wrap"><div class="srv-row-head"><span class="mono">${esc(k)}</span><span class="badge b-iran">CONFIG</span></div></div>`).join('');
-    listBox.innerHTML = (uHtml + fHtml) || '<div class="hint">No active MTunnel units or config files reported.</div>';
-  }
 }
 
 function syncPingVerDefaults() {
