@@ -263,7 +263,7 @@ func (h *Handler) handleServerSetupRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if srv.AuthMode != "peer" && srv.Password == "" {
-		fail(w, http.StatusBadRequest, "SSH credential or Peer Agent v2 is required for Setup")
+		fail(w, http.StatusBadRequest, "SSH credential or Peer Agent v4.1 is required for Setup")
 		return
 	}
 

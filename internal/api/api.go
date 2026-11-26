@@ -1605,7 +1605,7 @@ func (h *Handler) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("remote exec on server %d by %s: %q", id, r.Header.Get("X-MC-User"), req.Command)
-	res := h.runOnServer(srv, req.Command, 60*time.Second)
+	res := h.runOnServer(srv, "export TERM=xterm-256color COLORTERM=truecolor; "+req.Command, 60*time.Second)
 	exit := ""
 	if res.Err != nil {
 		if !sshclient.IsExitError(res.Err) {
@@ -1637,6 +1637,7 @@ func (h *Handler) handleLocalExec(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, "bash", "-c", cmdStr)
+	cmd.Env = append(os.Environ(), "TERM=xterm-256color", "COLORTERM=truecolor", "CLICOLOR_FORCE=1")
 	out, err := cmd.CombinedOutput()
 	if len(out) > 200000 {
 		out = out[:200000]
@@ -3007,7 +3008,7 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 	script := sshclient.PeerAgentInstallScriptV4(h.masterPublicIP(), h.masterBaseURL(), srv.PeerCode, "", srv.AgentPort, stCfg.PanelMirrorURL, isIran, false)
 	var res sshclient.Result
 	if srv.AuthMode == "peer" {
-		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v2 upgrade triggered.'", sshclient.ShQuote(script))
+		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v4.1 (Veil) upgrade triggered.'", sshclient.ShQuote(script))
 		res = sshclient.PeerExec(srv.Host, srv.AgentPort, srv.PeerCode, bgCmd, 15*time.Second)
 		if res.Err != nil && srv.Password != "" {
 			res = sshclient.Run(h.targetOfSrv(srv), script, 10*time.Second, 45*time.Second)
@@ -3022,7 +3023,7 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 		fail(w, http.StatusBadGateway, "agent update failed: "+res.Err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Peer Agent v2 (TLS + Exec) updated!"})
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Peer Agent v4.1 (Veil + TLS + Exec) updated!"})
 }
 
 func (h *Handler) handleRotatePeerKey(w http.ResponseWriter, r *http.Request) {

@@ -710,7 +710,7 @@ func (h *Handler) loadServerForLegacy(w http.ResponseWriter, r *http.Request) (*
 		return nil, false
 	}
 	if srv.AuthMode != "peer" && srv.Password == "" {
-		fail(w, http.StatusBadRequest, "SSH credential or Peer Agent v2 is required")
+		fail(w, http.StatusBadRequest, "SSH credential or Peer Agent v4.1 is required")
 		return nil, false
 	}
 	return srv, true

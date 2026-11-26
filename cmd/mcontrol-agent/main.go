@@ -580,6 +580,7 @@ func main() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(tout)*time.Second)
 			defer cancel()
 			proc := exec.CommandContext(ctx, "bash", "-c", cmdStr)
+			proc.Env = append(os.Environ(), "TERM=xterm-256color", "COLORTERM=truecolor", "CLICOLOR_FORCE=1")
 			out, err := proc.CombinedOutput()
 			if len(out) > 200000 {
 				out = out[:200000]
