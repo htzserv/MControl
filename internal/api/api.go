@@ -675,6 +675,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/servers/{id}", h.auth(h.handleUpdateServer))
 	mux.HandleFunc("DELETE /api/servers/{id}", h.auth(h.handleDeleteServer))
 	mux.HandleFunc("POST /api/servers/{id}/probe", h.auth(h.handleProbeServer))
+	mux.HandleFunc("POST /api/servers/{id}/geo", h.auth(h.handleRefreshServerGeo))
 	mux.HandleFunc("POST /api/servers/{id}/ping", h.auth(h.handlePingServer))
 	mux.HandleFunc("POST /api/servers/probe-all", h.auth(h.handleProbeAll))
 	mux.HandleFunc("POST /api/servers/ping-all", h.auth(h.handlePingAllServers))
@@ -1147,7 +1148,7 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	g := geo.Lookup(req.Host)
+	g := geo.LookupWithProxy(req.Host, h.geoSocksProxy())
 	if req.Role == "" || req.Role == "auto" {
 		if strings.EqualFold(g.CountryCode, "IR") {
 			req.Role = "iran"
@@ -1271,7 +1272,7 @@ func (h *Handler) handleUpdateServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Host != old.Host {
-		g := geo.Lookup(req.Host)
+		g := geo.LookupWithProxy(req.Host, h.geoSocksProxy())
 		_ = h.store.SetGeo(id, g.Country, g.CountryCode, g.Datacenter)
 	}
 	p, _ := h.probeServer(id)
@@ -1411,6 +1412,29 @@ done`
 		})
 		return
 	}
+}
+
+func (h *Handler) handleRefreshServerGeo(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	g := geo.ForceLookupWithProxy(srv.Host, h.geoSocksProxy())
+	if err := h.store.UpdateServerGeo(id, g.Country, g.CountryCode, g.Datacenter); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":           true,
+		"country":      g.Country,
+		"country_code": g.CountryCode,
+		"datacenter":   g.Datacenter,
+	})
 }
 
 func (h *Handler) handleProbeServer(w http.ResponseWriter, r *http.Request) {

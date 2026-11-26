@@ -839,6 +839,11 @@ func (s *Store) UpdateServerPing(id int64, pingMs string) error {
 	return err
 }
 
+func (s *Store) UpdateServerGeo(id int64, country, countryCode, datacenter string) error {
+	_, err := s.db.Exec("UPDATE servers SET country=?, country_code=?, datacenter=? WHERE id=?", country, countryCode, datacenter, id)
+	return err
+}
+
 func (s *Store) UpdateServerPings(id int64, pingMs, outboundPingMs, reversePingMs string) error {
 	_, err := s.db.Exec("UPDATE servers SET ping_ms=?, outbound_ping_ms=?, reverse_ping_ms=? WHERE id=?", pingMs, outboundPingMs, reversePingMs, id)
 	return err

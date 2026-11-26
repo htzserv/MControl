@@ -83,6 +83,7 @@ type outboundConfig struct {
 	UseForeign    bool           `json:"use_foreign"`
 	UseDatacenter bool           `json:"use_datacenter"`
 	UseCloudflare bool           `json:"use_cloudflare"`
+	UseGeoIP      bool           `json:"use_geoip"`
 	Subs          []outboundSub  `json:"subs"`
 	Nodes         []outboundNode `json:"nodes"`
 }
@@ -196,6 +197,14 @@ func (h *Handler) datacenterSocksProxy() string {
 func (h *Handler) cloudflareSocksProxy() string {
 	cfg := h.loadOutboundCfg()
 	if cfg.Enabled && cfg.UseCloudflare && isOutboundActive() {
+		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	return ""
+}
+
+func (h *Handler) geoSocksProxy() string {
+	cfg := h.loadOutboundCfg()
+	if cfg.Enabled && cfg.UseGeoIP && isOutboundActive() {
 		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 	}
 	return ""

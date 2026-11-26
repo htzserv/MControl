@@ -6594,6 +6594,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr" onchange="persistOutboundConfigOnly()"><span>Foreign Nodes</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-dc" onchange="persistOutboundConfigOnly()"><span>Datacenter</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-cf" onchange="persistOutboundConfigOnly()"><span>Cloudflare</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-geo" onchange="persistOutboundConfigOnly()"><span>GeoIP (Location &amp; DC)</span></label>
           </div>
 
           <pre class="term" id="ob-out" style="height:110px; margin:0; display:none;"></pre>
@@ -11104,6 +11105,8 @@ function syncObCfgFromInputs() {
   if ($('ob-fr')) OB_CFG.use_foreign = $('ob-fr').checked;
   if ($('ob-dc')) OB_CFG.use_datacenter = $('ob-dc').checked;
   if ($('ob-cf')) OB_CFG.use_cloudflare = $('ob-cf').checked;
+  if ($('ob-geo')) OB_CFG.use_geoip = $('ob-geo').checked;
+  if ($('ob-geo')) OB_CFG.use_geoip = $('ob-geo').checked;
   if ($('ob-lb')) OB_CFG.lb_strategy = $('ob-lb').value || 'leastPing';
   if ($('ob-int')) OB_CFG.probe_interval = $('ob-int').value || '30s';
 }
@@ -11143,6 +11146,7 @@ async function loadMasterOutbound() {
   if ($('ob-fr')) $('ob-fr').checked = !!OB_CFG.use_foreign;
   if ($('ob-dc')) $('ob-dc').checked = !!OB_CFG.use_datacenter;
   if ($('ob-cf')) $('ob-cf').checked = !!OB_CFG.use_cloudflare;
+  if ($('ob-geo')) $('ob-geo').checked = !!OB_CFG.use_geoip;
   if ($('ob-lb')) $('ob-lb').value = OB_CFG.lb_strategy || 'leastPing';
   if ($('ob-int')) $('ob-int').value = OB_CFG.probe_interval || '30s';
   pickOutboundMode(OB_CFG.mode === 'loadbalance' ? 'loadbalance' : 'single');
@@ -12294,6 +12298,7 @@ function openSrvDropdown(ev, id, group, btn) {
       { lbl: fa ? '🚀 نصب و راه‌اندازی (Setup)' : '🚀 Setup', fn: () => openSetupModal(id) },
       { lbl: fa ? '🔄 انتقال از MTunnel (Migrator)' : '🔄 Migrate from MTunnel', fn: () => openLegacyModal(id) },
       { lbl: s.auth_mode === 'peer' ? (fa ? '📡 تست اتصال Peer' : '📡 Check Peer') : ('📡 ' + t('btn_check_ssh')), fn: () => probeOne(id) },
+      { lbl: fa ? '🌍 بررسی لوکیشن و دیتاسنتر' : '🌍 Check Location & DC', fn: () => refreshServerGeo(id) },
       { sep: true }
     ];
     if (s.auth_mode === 'peer') {
@@ -12431,6 +12436,7 @@ async function manualPingServer(id) {
   }
 }
 async function probeOne(id) { toast(t('toast_probing')); await api('api/servers/' + id + '/probe', 'POST'); loadServers(); }
+async function refreshServerGeo(id) { toast('Checking server location & datacenter...'); const r = await api('api/servers/' + id + '/geo', 'POST'); if (r && r.ok) { toast((r.country || 'Unknown') + ' · ' + (r.datacenter || 'Unknown')); loadServers(); } else { toast((r && r.error) || 'GeoIP lookup failed', true); } }
 async function probeAll() { toast(t('toast_probing_all')); await api('api/servers/probe-all', 'POST'); loadServers(); }
 let _delSrvId = 0;
 let _delMode = 'unpair_keep_tunnels';
