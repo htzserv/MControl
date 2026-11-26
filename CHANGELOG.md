@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.7
+- **Width-First Single-Line Server & Tunnel Cards:**
+  - Prioritized horizontal expansion (`width: max-content` with `flex-wrap: nowrap`) on `.srv-list` and `.srv-row-head` so server rows always stay on a single crisp line until reaching full container width, avoiding unnecessary vertical wrapping when adjacent to the left country flag dock.
+
+
 ## 1.6.6
 - **Focused Per-Tab Settings Drawer & Toggle Behavior:**
   - Removed the search input and cross-tab switcher pills from the floating `Tab Settings` drawer so each tab displays strictly its own settings.
