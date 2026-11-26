@@ -80,6 +80,8 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		GameMode           bool   `json:"game_mode"`
 		GameCopies         int    `json:"game_copies"`
 		GamePorts          string `json:"game_ports"`
+		PortHopRange       string `json:"port_hop_range"`
+		PortHopInterval    int    `json:"port_hop_interval"`
 	}
 	if !readJSON(w, r, &req) {
 		return
@@ -261,6 +263,8 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		GameMode:           req.GameMode,
 		GameCopies:         req.GameCopies,
 		GamePorts:          strings.TrimSpace(req.GamePorts),
+		PortHopRange:       strings.TrimSpace(req.PortHopRange),
+		PortHopInterval:    req.PortHopInterval,
 	}
 	extraBytes, _ := json.Marshal(extraObj)
 
@@ -534,6 +538,20 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 			}
 		}
 
+		if ex.RateLimitMbps > 0 {
+			fmt.Fprintf(&srvExtra, "rate_limit_mbps = %d\n", ex.RateLimitMbps)
+			fmt.Fprintf(&cliExtra, "rate_limit_mbps = %d\n", ex.RateLimitMbps)
+		}
+		if (baseTrans == "kcp" || baseTrans == "kcpmux") && strings.TrimSpace(ex.PortHopRange) != "" {
+			hi := ex.PortHopInterval
+			if hi <= 0 {
+				hi = 30
+			}
+			fmt.Fprintf(&srvExtra, "port_hop_range = %q\nport_hop_interval = %d\n", strings.TrimSpace(ex.PortHopRange), hi)
+			fmt.Fprintf(&cliExtra, "port_hop_range = %q\nport_hop_interval = %d\n", strings.TrimSpace(ex.PortHopRange), hi)
+		}
+		healthWebPort := 18000 + int(t.ID%1000)
+
 		iranToml := fmt.Sprintf(`[server]
 bind_addr = "%s:%d"
 transport = "%s"
@@ -543,8 +561,9 @@ keepalive_period = %d
 heartbeat = %d
 channel_size = %d
 sniffer = false
+web_port = %d
 %sports = [%s]
-`, bindWild, t.TunnelPort, baseTrans, t.Token, kaSec, hbSec, chSize, srvExtra.String(), strings.Join(portLines, ", "))
+`, bindWild, t.TunnelPort, baseTrans, t.Token, kaSec, hbSec, chSize, healthWebPort, srvExtra.String(), strings.Join(portLines, ", "))
 
 		forToml := fmt.Sprintf(`[client]
 remote_addr = "%s"
@@ -1418,6 +1437,8 @@ type backhaulExtraOpts struct {
 	GameMode           bool   `json:"game_mode,omitempty"`
 	GameCopies         int    `json:"game_copies,omitempty"`
 	GamePorts          string `json:"game_ports,omitempty"`
+	PortHopRange       string `json:"port_hop_range,omitempty"`
+	PortHopInterval    int    `json:"port_hop_interval,omitempty"`
 }
 
 func (h *Handler) StartTunnelWatchdog() {
@@ -1615,5 +1636,216 @@ func (h *Handler) handleFindFreePort(w http.ResponseWriter, r *http.Request) {
 		"busy_port": pref,
 		"port":      suggested,
 		"message":   fmt.Sprintf("Port %d is BUSY — switched to free port %d", pref, suggested),
+	})
+}
+
+
+// handleTunnelRotatePort allocates a fresh free tunnel port, updates SQLite, and redeploys both sides.
+func (h *Handler) handleTunnelRotatePort(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	tun, err := h.store.GetTunnel(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "tunnel not found")
+		return
+	}
+	iranSrv, err1 := h.store.GetServerWithSecret(tun.IranServerID)
+	forSrv, err2 := h.store.GetServerWithSecret(tun.ForeignServerID)
+	if err1 != nil || err2 != nil {
+		fail(w, http.StatusBadRequest, "tunnel server not found")
+		return
+	}
+
+	// Pick a random free port in 20000..55000 not currently bound on Iran server
+	oldPort := tun.TunnelPort
+	newPort := 0
+	findCmd := `python3 -c 'import random,socket
+for _ in range(60):
+ p=random.randint(20000,55000)
+ s=socket.socket()
+ try:
+  s.bind(("0.0.0.0",p)); s.close(); print(p); break
+ except: s.close()' 2>/dev/null || shuf -i 20000-55000 -n 1`
+	resP := h.runOnServer(iranSrv, findCmd, 10*time.Second)
+	if p, perr := strconv.Atoi(strings.TrimSpace(resP.Output)); perr == nil && p >= 1024 && p <= 65535 && p != oldPort {
+		newPort = p
+	}
+	if newPort == 0 {
+		b := make([]byte, 2)
+		_, _ = rand.Read(b)
+		newPort = 20000 + (int(b[0])<<8|int(b[1]))%35000
+		if newPort == oldPort {
+			newPort++
+		}
+	}
+
+	tun.TunnelPort = newPort
+	if err := h.store.UpdateTunnelFull(tun); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	iranScript, forScript := buildTunnelDeployScripts(tun, iranSrv, forSrv, "")
+	var wg sync.WaitGroup
+	var rI, rF sshclient.Result
+	wg.Add(2)
+	go func() { defer wg.Done(); rI = h.runOnServer(iranSrv, iranScript, 45*time.Second) }()
+	go func() { defer wg.Done(); rF = h.runOnServer(forSrv, forScript, 45*time.Second) }()
+	wg.Wait()
+
+	if rI.Err != nil || rF.Err != nil {
+		errMsg := strings.TrimSpace(fmt.Sprintf("%v %v", rI.Err, rF.Err))
+		_ = h.store.UpdateTunnelStatus(tun.ID, "error", errMsg)
+		fail(w, http.StatusBadGateway, "port rotated in DB but redeploy failed: "+errMsg)
+		return
+	}
+	_ = h.store.UpdateTunnelStatus(tun.ID, "active", "")
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":       true,
+		"old_port": oldPort,
+		"new_port": newPort,
+		"message":  fmt.Sprintf("Tunnel port rotated: %d → %d (both sides restarted)", oldPort, newPort),
+	})
+}
+
+// handleCreateMultiHopTunnel deploys a 3-server chained relay tunnel: Iran -> Relay -> Foreign.
+func (h *Handler) handleCreateMultiHopTunnel(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name            string `json:"name"`
+		Engine          string `json:"engine"`
+		Transport       string `json:"transport"`
+		IranServerID    int64  `json:"iran_server_id"`
+		RelayServerID   int64  `json:"relay_server_id"`
+		ForeignServerID int64  `json:"foreign_server_id"`
+		TunnelPort      int    `json:"tunnel_port"`
+		Token           string `json:"token"`
+		Ports           string `json:"ports"`
+		IPMode          string `json:"ip_mode"`
+		Preset          string `json:"preset"`
+		EdgeIP          string `json:"edge_ip"`
+		SNI             string `json:"sni"`
+		UTLSFingerprint string `json:"utls_fingerprint"`
+		TLSFragment     bool   `json:"tls_fragment"`
+		RateLimitMbps   int    `json:"rate_limit_mbps"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if req.IranServerID <= 0 || req.RelayServerID <= 0 || req.ForeignServerID <= 0 {
+		fail(w, http.StatusBadRequest, "iran, relay, and foreign servers are all required")
+		return
+	}
+	if req.IranServerID == req.RelayServerID || req.RelayServerID == req.ForeignServerID || req.IranServerID == req.ForeignServerID {
+		fail(w, http.StatusBadRequest, "iran, relay, and foreign must be 3 distinct servers")
+		return
+	}
+	iranSrv, e1 := h.store.GetServerWithSecret(req.IranServerID)
+	relaySrv, e2 := h.store.GetServerWithSecret(req.RelayServerID)
+	forSrv, e3 := h.store.GetServerWithSecret(req.ForeignServerID)
+	if e1 != nil || e2 != nil || e3 != nil {
+		fail(w, http.StatusNotFound, "one or more selected servers not found")
+		return
+	}
+
+	eng := strings.ToLower(strings.TrimSpace(req.Engine))
+	if eng == "" || eng == "backhaul_mux" {
+		eng = "backhaul"
+	}
+	tr := strings.ToLower(strings.TrimSpace(req.Transport))
+	if tr == "" {
+		tr = "tcpmux"
+	}
+	if req.TunnelPort < 1 || req.TunnelPort > 65534 {
+		req.TunnelPort = 3080
+	}
+	tok := strings.TrimSpace(req.Token)
+	if tok == "" {
+		tok = randTunnelToken()
+	}
+	baseName := strings.TrimSpace(req.Name)
+	if baseName == "" {
+		baseName = fmt.Sprintf("%s-%s-%s", iranSrv.Name, relaySrv.Name, forSrv.Name)
+	}
+	exBytes, _ := json.Marshal(backhaulExtraOpts{
+		Preset:          req.Preset,
+		EdgeIP:          strings.TrimSpace(req.EdgeIP),
+		SNI:             strings.TrimSpace(req.SNI),
+		UTLSFingerprint: strings.TrimSpace(req.UTLSFingerprint),
+		TLSFragment:     req.TLSFragment,
+		RateLimitMbps:   req.RateLimitMbps,
+	})
+
+	// Hop 1: Iran -> Relay (uses TunnelPort)
+	hop1 := &db.Tunnel{
+		Name:            baseName + " [Hop1]",
+		Engine:          eng,
+		Transport:       tr,
+		IranServerID:    iranSrv.ID,
+		ForeignServerID: relaySrv.ID,
+		TunnelPort:      req.TunnelPort,
+		Token:           tok,
+		Ports:           strings.TrimSpace(req.Ports),
+		IPMode:          req.IPMode,
+		ExtraJSON:       string(exBytes),
+		Status:          "deploying",
+	}
+	id1, err := h.store.AddTunnel(hop1)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	hop1.ID = id1
+
+	// Hop 2: Relay -> Foreign (uses TunnelPort+1)
+	hop2 := &db.Tunnel{
+		Name:            baseName + " [Hop2]",
+		Engine:          eng,
+		Transport:       tr,
+		IranServerID:    relaySrv.ID,
+		ForeignServerID: forSrv.ID,
+		TunnelPort:      req.TunnelPort + 1,
+		Token:           tok + "-h2",
+		Ports:           strings.TrimSpace(req.Ports),
+		IPMode:          req.IPMode,
+		ExtraJSON:       string(exBytes),
+		Status:          "deploying",
+	}
+	id2, err := h.store.AddTunnel(hop2)
+	if err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	hop2.ID = id2
+
+	s1I, s1R := buildTunnelDeployScripts(hop1, iranSrv, relaySrv, "")
+	s2R, s2F := buildTunnelDeployScripts(hop2, relaySrv, forSrv, "")
+
+	var wg sync.WaitGroup
+	var r1I, r1R, r2R, r2F sshclient.Result
+	wg.Add(4)
+	go func() { defer wg.Done(); r1I = h.runOnServer(iranSrv, s1I, 55*time.Second) }()
+	go func() { defer wg.Done(); r1R = h.runOnServer(relaySrv, s1R, 55*time.Second) }()
+	go func() { defer wg.Done(); r2R = h.runOnServer(relaySrv, s2R, 55*time.Second) }()
+	go func() { defer wg.Done(); r2F = h.runOnServer(forSrv, s2F, 55*time.Second) }()
+	wg.Wait()
+
+	if r1I.Err == nil && r1R.Err == nil {
+		_ = h.store.UpdateTunnelStatus(id1, "active", "")
+	} else {
+		_ = h.store.UpdateTunnelStatus(id1, "error", fmt.Sprintf("%v %v", r1I.Err, r1R.Err))
+	}
+	if r2R.Err == nil && r2F.Err == nil {
+		_ = h.store.UpdateTunnelStatus(id2, "active", "")
+	} else {
+		_ = h.store.UpdateTunnelStatus(id2, "error", fmt.Sprintf("%v %v", r2R.Err, r2F.Err))
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      r1I.Err == nil && r1R.Err == nil && r2R.Err == nil && r2F.Err == nil,
+		"hop1_id": id1,
+		"hop2_id": id2,
+		"message": fmt.Sprintf("Multi-Hop Relay deployed: %s ➔ %s ➔ %s", iranSrv.Name, relaySrv.Name, forSrv.Name),
 	})
 }

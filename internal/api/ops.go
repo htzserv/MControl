@@ -67,6 +67,7 @@ func (h *Handler) handleAuditList(w http.ResponseWriter, r *http.Request) {
 
 type viewerConfig struct {
 	Enabled  bool   `json:"enabled"`
+	Role     string `json:"role,omitempty"` // "viewer" (read-only) | "operator" (can restart/ping/rotate, no delete/exec/settings)
 	Username string `json:"username"`
 	Password string `json:"password,omitempty"`
 }
@@ -110,6 +111,11 @@ func (h *Handler) handleViewerSave(w http.ResponseWriter, r *http.Request) {
 	}
 	cur := h.loadViewerCfg()
 	cur.Enabled = req.Enabled
+	if req.Role == "operator" || req.Role == "viewer" {
+		cur.Role = req.Role
+	} else if cur.Role == "" {
+		cur.Role = "viewer"
+	}
 	if strings.TrimSpace(req.Username) != "" {
 		cur.Username = strings.TrimSpace(req.Username)
 	}
@@ -328,12 +334,15 @@ func (h *Handler) handleTunnelMetrics(w http.ResponseWriter, r *http.Request) {
 			targetHost = tun.Subnet + ".2"
 		}
 	}
+	healthPort := 18000 + int(tun.ID%1000)
 	iranCmd := fmt.Sprintf(`ST=$(systemctl is-active %s 2>/dev/null || echo inactive)
 PING=$(ping -c 2 -W 1 %s 2>/dev/null | awk -F'/' 'END{print ($5==""?"N/A":$5" ms")}')
 CONNS=$(ss -Htan 2>/dev/null | grep -c ":%d " || echo 0)
+BH_HEALTH=$(curl -fsS --max-time 2 http://127.0.0.1:%d/health 2>/dev/null | tr -d '\n' || true)
 echo "STATUS=$ST"
 echo "PING=$PING"
-echo "CONNS=$CONNS"`, unit, sshclient.ShQuote(targetHost), tun.TunnelPort)
+echo "CONNS=$CONNS"
+echo "BH_HEALTH=$BH_HEALTH"`, unit, sshclient.ShQuote(targetHost), tun.TunnelPort, healthPort)
 
 	forCmd := fmt.Sprintf(`ST=$(systemctl is-active %s 2>/dev/null || echo inactive)
 echo "STATUS=$ST"`, unit)
@@ -352,12 +361,17 @@ echo "STATUS=$ST"`, unit)
 
 	kvI := parseKV(rI.Output)
 	kvF := parseKV(rF.Output)
+	var bhHealth map[string]any
+	if rawH := strings.TrimSpace(kvI["BH_HEALTH"]); rawH != "" && strings.HasPrefix(rawH, "{") {
+		_ = json.Unmarshal([]byte(rawH), &bhHealth)
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":             true,
 		"iran_status":    kvI["STATUS"],
 		"foreign_status": kvF["STATUS"],
 		"ping":           kvI["PING"],
 		"conns":          kvI["CONNS"],
+		"bh_health":      bhHealth,
 	})
 }
 
@@ -1105,4 +1119,61 @@ func (h *Handler) handleServerTermAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "message": "Terminal credentials saved & unlocked!"})
+}
+
+
+// handleServerFirewallLockMaster restricts SSH & Peer Agent ports on a server so ONLY the Master server IP can connect.
+func (h *Handler) handleServerFirewallLockMaster(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	stats := sysinfo.Collect()
+	masterIP := strings.TrimSpace(stats.IPv4)
+	if masterIP == "" || masterIP == "N/A" {
+		fail(w, http.StatusBadRequest, "could not detect Master server public IPv4")
+		return
+	}
+	sshPort := srv.Port
+	if sshPort <= 0 {
+		sshPort = 22
+	}
+	agPort := srv.AgentPort
+	if agPort <= 0 {
+		agPort = 22443
+	}
+	cmd := fmt.Sprintf(`set -e
+MASTER_IP=%s
+SSH_P=%d
+AG_P=%d
+if command -v ufw >/dev/null 2>&1 && ufw status | grep -qi active; then
+  ufw allow from "$MASTER_IP" to any port "$SSH_P" proto tcp
+  ufw allow from "$MASTER_IP" to any port "$AG_P" proto tcp
+  ufw --force delete allow "$SSH_P"/tcp 2>/dev/null || true
+  ufw --force delete allow "$AG_P"/tcp 2>/dev/null || true
+  echo "UFW locked: SSH ($SSH_P) & Agent ($AG_P) now accept connections ONLY from Master $MASTER_IP"
+else
+  for P in "$SSH_P" "$AG_P"; do
+    iptables -C INPUT -p tcp -s "$MASTER_IP" --dport "$P" -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp -s "$MASTER_IP" --dport "$P" -j ACCEPT
+    iptables -C INPUT -p tcp -s 127.0.0.1 --dport "$P" -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp -s 127.0.0.1 --dport "$P" -j ACCEPT
+    iptables -C INPUT -p tcp --dport "$P" -j DROP 2>/dev/null || iptables -A INPUT -p tcp --dport "$P" -j DROP
+  done
+  echo "iptables locked: SSH ($SSH_P) & Agent ($AG_P) now accept connections ONLY from Master $MASTER_IP"
+fi`, sshclient.ShQuote(masterIP), sshPort, agPort)
+
+	res := h.runOnServer(srv, cmd, 20*time.Second)
+	if res.Err != nil {
+		fail(w, http.StatusBadGateway, res.Err.Error()+": "+res.Output)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":        true,
+		"master_ip": masterIP,
+		"output":    strings.TrimSpace(res.Output),
+	})
 }

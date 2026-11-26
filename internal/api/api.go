@@ -272,6 +272,17 @@ func (h *Handler) auth(next http.HandlerFunc) http.HandlerFunc {
 			fail(w, http.StatusForbidden, "read-only viewer account cannot modify resources")
 			return
 		}
+		if strings.HasPrefix(user, "operator:") && r.Method != http.MethodGet && r.URL.Path != "/api/logout" {
+			p := r.URL.Path
+			opAllowed := strings.HasSuffix(p, "/probe") || strings.HasSuffix(p, "/ping") ||
+				strings.HasSuffix(p, "/action") || strings.HasSuffix(p, "/rotate-port") ||
+				strings.HasSuffix(p, "/speedtest") || strings.HasSuffix(p, "/check") ||
+				strings.HasSuffix(p, "/edge-scan")
+			if !opAllowed {
+				fail(w, http.StatusForbidden, "operator account can only probe, ping, restart or rotate tunnels")
+				return
+			}
+		}
 		if r.Method != http.MethodGet && r.URL.Path != "/api/login" && r.URL.Path != "/api/logout" {
 			h.logAudit(user, r.Method, r.URL.Path, "")
 		}
@@ -729,6 +740,10 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("PUT /api/tunnels/{id}", h.auth(h.handleUpdateTunnel))
 	mux.HandleFunc("POST /api/tunnels/{id}/confirm", h.auth(h.handleConfirmTunnelUpdate))
 	mux.HandleFunc("GET /api/tunnels/{id}/metrics", h.auth(h.handleTunnelMetrics))
+	mux.HandleFunc("POST /api/tunnels/{id}/rotate-port", h.auth(h.handleTunnelRotatePort))
+	mux.HandleFunc("POST /api/tunnels/multihop", h.auth(h.handleCreateMultiHopTunnel))
+	mux.HandleFunc("POST /api/pro/edge-scan", h.auth(h.handleEdgeIPScan))
+	mux.HandleFunc("POST /api/servers/{id}/fw/lock-master", h.auth(h.handleServerFirewallLockMaster))
 	mux.HandleFunc("POST /api/fleet/exec", h.auth(h.handleFleetExec))
 	mux.HandleFunc("GET /api/servers/{id}/ports", h.auth(h.handleServerPorts))
 	mux.HandleFunc("POST /api/servers/{id}/ports/kill", h.auth(h.handleServerPortKill))

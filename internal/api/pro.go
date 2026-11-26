@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -1249,4 +1250,129 @@ func (h *Handler) handleTunnelMikrotik(w http.ResponseWriter, r *http.Request) {
 # Test peer: /ping %s.2`, tun.Name, ifName, localIP, remoteIP, sub, ifName, ifName, ifName, sub)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "script": script})
+}
+
+
+// handleEdgeIPScan tests candidate Cloudflare/ArvanCloud edge IPs from a chosen Iran server (or Master)
+// and returns the fastest clean IPs sorted by TCP/TLS connect latency.
+func (h *Handler) handleEdgeIPScan(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ServerID int64  `json:"server_id"` // 0 = run on Master
+		Provider string `json:"provider"`  // "cloudflare" | "arvan" | "custom"
+		Custom   string `json:"custom"`    // optional comma/newline-separated IPs
+		Port     int    `json:"port"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if req.Port <= 0 || req.Port > 65535 {
+		req.Port = 443
+	}
+	var ips []string
+	if strings.TrimSpace(req.Custom) != "" {
+		for _, tok := range strings.FieldsFunc(req.Custom, func(c rune) bool { return c == ',' || c == '\n' || c == ' ' || c == '\t' }) {
+			tok = strings.TrimSpace(tok)
+			if net.ParseIP(tok) != nil {
+				ips = append(ips, tok)
+			}
+		}
+	}
+	if len(ips) == 0 {
+		if req.Provider == "arvan" {
+			ips = []string{
+				"185.143.232.1", "185.143.233.1", "185.143.234.1", "185.143.235.1",
+				"185.143.232.10", "185.143.233.10", "185.143.234.10", "185.143.235.10",
+				"94.101.182.1", "94.101.182.10", "2.144.3.128", "89.45.48.64",
+			}
+		} else {
+			ips = []string{
+				"104.16.132.229", "104.16.133.229", "104.17.147.22", "104.17.148.22",
+				"104.18.2.161", "104.18.3.161", "104.19.193.29", "104.21.12.1",
+				"162.159.135.42", "162.159.136.42", "162.159.137.85", "162.159.138.85",
+				"172.64.150.1", "172.64.155.1", "172.67.1.1", "172.67.70.1",
+				"188.114.96.3", "188.114.97.3", "188.114.98.3", "188.114.99.3",
+			}
+		}
+	}
+	if len(ips) > 32 {
+		ips = ips[:32]
+	}
+
+	type scanItem struct {
+		IP        string  `json:"ip"`
+		LatencyMs float64 `json:"latency_ms"`
+		OK        bool    `json:"ok"`
+	}
+
+	var results []scanItem
+	if req.ServerID > 0 {
+		srv, err := h.store.GetServerWithSecret(req.ServerID)
+		if err != nil {
+			fail(w, http.StatusNotFound, "server not found")
+			return
+		}
+		pyList := strings.Join(ips, ",")
+		cmd := fmt.Sprintf(`python3 -c '
+import concurrent.futures, socket, time
+ips=%q.split(",")
+port=%d
+def test(ip):
+ t0=time.time()
+ s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ s.settimeout(1.8)
+ try:
+  s.connect((ip, port))
+  ms=round((time.time()-t0)*1000, 1)
+  s.close()
+  return (ip, ms, 1)
+ except Exception:
+  s.close()
+  return (ip, 9999.0, 0)
+with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+ res=sorted(ex.map(test, ips), key=lambda x: (0 if x[2] else 1, x[1]))
+for ip, ms, ok in res:
+ print(f"{ip}|{ms}|{ok}")
+'`, pyList, req.Port)
+		out := h.runOnServer(srv, cmd, 25*time.Second)
+		if out.Err != nil && strings.TrimSpace(out.Output) == "" {
+			fail(w, http.StatusBadGateway, "edge scan failed on server: "+out.Err.Error())
+			return
+		}
+		for _, ln := range strings.Split(strings.TrimSpace(out.Output), "\n") {
+			p := strings.Split(strings.TrimSpace(ln), "|")
+			if len(p) == 3 {
+				ms, _ := strconv.ParseFloat(p[1], 64)
+				results = append(results, scanItem{IP: p[0], LatencyMs: ms, OK: p[2] == "1"})
+			}
+		}
+	} else {
+		var mu sync.Mutex
+		var wg sync.WaitGroup
+		for _, ip := range ips {
+			ip := ip
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				t0 := time.Now()
+				c, err := net.DialTimeout("tcp", net.JoinHostPort(ip, strconv.Itoa(req.Port)), 1800*time.Millisecond)
+				item := scanItem{IP: ip, LatencyMs: 9999, OK: false}
+				if err == nil {
+					item.OK = true
+					item.LatencyMs = float64(int(time.Since(t0).Microseconds()/100)) / 10.0
+					_ = c.Close()
+				}
+				mu.Lock()
+				results = append(results, item)
+				mu.Unlock()
+			}()
+		}
+		wg.Wait()
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].OK != results[j].OK {
+				return results[i].OK
+			}
+			return results[i].LatencyMs < results[j].LatencyMs
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "results": results})
 }

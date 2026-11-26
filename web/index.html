@@ -5130,6 +5130,30 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
     <div id="ichk-list" style="display:flex; flex-direction:column; gap:7px; max-height:340px; overflow-y:auto;"></div>
   </div>
 </div>
+
+<!-- Clean Edge IP Scanner Modal (Cloudflare / ArvanCloud / Custom) -->
+<div class="modal-bg" id="edge-scan-modal" style="z-index:1150;">
+  <div class="card modal-box" style="max-width:680px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <div>
+        <h3 style="color:var(--accent); margin:0;">🌐 Clean Edge IP Scanner</h3>
+        <div class="hint" style="margin:2px 0 0;">Find the fastest Cloudflare / ArvanCloud edge IPs from an Iran node and inject directly into Backhaul WSS/XHTTP.</div>
+      </div>
+      <button class="btn btn-danger btn-sm" data-close="edge-scan-modal">Close</button>
+    </div>
+    <div class="row2" style="margin-bottom:10px;">
+      <div class="field" style="margin:0;"><label>Run Scan From</label><select id="es-srv"><option value="0">Master Server</option></select></div>
+      <div class="field" style="margin:0;"><label>CDN Provider</label><select id="es-prov"><option value="cloudflare">Cloudflare</option><option value="arvan">ArvanCloud</option><option value="custom">Custom IP List</option></select></div>
+    </div>
+    <div class="field" style="margin-bottom:10px;"><label>Custom IPs (Optional, comma or newline separated)</label><input id="es-custom" class="mono" placeholder="e.g. 104.16.132.229, 162.159.135.42"></div>
+    <div class="flexw" style="gap:8px; margin-bottom:12px;">
+      <button type="button" class="btn btn-sky btn-sm" id="btn-es-run" onclick="runEdgeIPScan()">⚡ Scan Now</button>
+      <button type="button" class="btn btn-warn btn-sm" id="btn-es-inject" style="display:none;" onclick="injectTopCleanIPs()">✨ Use Top 3 in Tunnel Wizard</button>
+    </div>
+    <div id="es-results" style="display:flex; flex-direction:column; gap:6px; max-height:42vh; overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- Floating Bottom-Right Tab Settings Pill -->
 <button type="button" class="tab-settings-fab" id="tab-settings-fab" onclick="openActiveTabSettings()" title="Tab Settings / تنظیمات تب">
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
@@ -5396,7 +5420,7 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.7</span>
+      <span class="mono" id="nav-ver-lbl">v1.6.8</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -5688,6 +5712,7 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
         <h3>Tunnels (Iran ⇄ Foreign)</h3>
         <div class="flexw">
           <button class="btn btn-ghost" onclick="openTopologyModal()">🗺 Topology Map</button>
+          <button class="btn btn-ghost" onclick="openEdgeScanModal()">🌐 Clean IP Scanner</button>
           <button class="btn btn-ghost" onclick="openMatrixModal()">📡 v4/v6 Matrix</button>
           <button class="btn btn-warn" id="btn-open-msmart" onclick="openMSmartModal()">⚡ MSmart Benchmark</button>
           <button class="btn btn-ghost" onclick="openLinkTestModal()">Link Test (iperf3)</button>
@@ -6110,6 +6135,7 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
           <select id="mon-import-probe" style="width:auto; padding:5px 9px; font-size:.74rem; max-width:210px;" title="Select which Agent/Server IP should perform pings for imported server monitors"><option value="master">Probe: Master Server</option></select>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('servers')">+ Import Servers</button>
           <button class="btn btn-ghost btn-sm" onclick="importMonitors('tunnels')">+ Import Tunnels</button>
+          <button class="btn btn-ghost btn-sm" id="btn-desk-alerts" onclick="toggleDesktopAlerts()">🔔 Desktop Alerts</button>
           <button class="btn btn-ghost btn-sm" onclick="loadMonitorsTab()">Refresh</button>
           <button class="btn btn-sky btn-sm" onclick="openMonEditModal(0)">+ Add Monitor</button>
         </div>
@@ -6721,7 +6747,7 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
             <div class="hint" style="margin-bottom:10px;">Create a read-only account that can view dashboards, servers, and tunnels without modifying anything.</div>
             <label class="check"><input type="checkbox" id="vw-en"><span>Enable Read-Only Viewer Account</span></label>
             <div class="row2">
-              <div class="field"><label>Viewer Username</label><input id="vw-user" placeholder="viewer"></div>
+              <div class="field"><label>Viewer Username</label><select id="vw-role" style="margin-bottom:8px;"><option value="viewer">Viewer (Read-Only)</option><option value="operator">Operator (Restart / Ping / Rotate)</option></select><input id="vw-user" placeholder="viewer"></div>
               <div class="field"><label>Viewer Password (leave blank to keep)</label><input id="vw-pass" type="password" placeholder="••••••••"></div>
             </div>
             <button class="btn btn-sky btn-sm" onclick="saveViewerAccount()">Save Viewer Account</button>
@@ -7094,6 +7120,9 @@ body.tp-ov-grid-2x2 #tab-overview .local-grid {
             <div class="row2">
               <div class="tun-rb rb-sel" style="margin:0;">
                 <select id="t-foreign" onchange="onTunnelServersChange()"></select>
+              </div>
+              <div class="tun-rb rb-sel" style="margin:6px 0 0; grid-column:1 / -1;" title="Optional 3rd Middle Relay Server for Multi-Hop (Iran → Relay → Foreign)">
+                <select id="t-relay" onchange="updateTunFloatDock()"><option value="0">Direct 2-Sided (No Middle Relay)</option></select>
               </div>
               <div class="tun-rb rb-ip" style="margin:0;">
                 <select id="t-for-ipver" onchange="syncPingVerDefaults(); updateTunFloatDock()">
@@ -9696,9 +9725,12 @@ async function loadTunnels() {
           <div style="font-size:.75rem; color:var(--accent); margin-top:4px;" class="mono">
             Ports: ${esc(tu.ports)}${tu.subnet ? ' • VIP: ' + esc(tu.subnet) + '.1⇄.2' : ''}${tu.lb_mode && tu.lb_mode !== 'none' ? ' • LB: ' + esc(tu.lb_mode.toUpperCase()) + (tu.vip_targets ? ' (' + esc(tu.vip_targets) + ')' : '') : ''}
           </div>
+          <div id="tun-health-${tu.id}" class="mono" style="font-size:.72rem; color:var(--green); margin-top:4px; display:none;"></div>
           ${tu.last_error ? `<div style="font-size:.74rem; color:var(--red); margin-top:4px;">${esc(tu.last_error)}</div>` : ''}
         </div>
         <div style="grid-column: -2 / -1; display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+          <button class="btn btn-ghost btn-sm" onclick="checkTunnelMetrics(${tu.id},'${esc(tu.name)}')" title="Live Backhaul /health &amp; Ping">📊 Health</button>
+          <button class="btn btn-ghost btn-sm" onclick="rotateTunnelPort(${tu.id},'${esc(tu.name)}')" title="Auto-rotate tunnel port on both sides">↻ Rotate Port</button>
           <button class="btn btn-warn btn-sm" onclick="tunnelSpeedtest(${tu.id})">Speedtest</button>
           <button class="btn btn-ghost btn-sm" onclick="tunnelAction(${tu.id},'status')">Status</button>
           <button class="btn btn-sky btn-sm" onclick="tunnelAction(${tu.id},'restart')">Restart</button>
@@ -9747,6 +9779,14 @@ function syncTunnelExitSelect() {
     frSel.value = keepFr;
   } else if (targets.length) {
     frSel.value = String(targets[0].id);
+  }
+  const relSel = $('t-relay');
+  if (relSel) {
+    const keepR = relSel.value;
+    const allSorted = sortServersAlpha(SERVERS).filter(s => +s.id !== srcId);
+    relSel.innerHTML = '<option value="0">Direct 2-Sided (No Middle Relay)</option>' +
+      allSorted.map(s => `<option value="${s.id}">🔀 Relay via: ${esc(s.name)}</option>`).join('');
+    if (keepR && allSorted.some(s => String(s.id) === String(keepR))) relSel.value = keepR;
   }
 }
 
@@ -10398,7 +10438,9 @@ async function deployTunnel() {
       game_copies: $('t-bh-gcopies') ? (parseInt($('t-bh-gcopies').value || '3', 10) || 3) : 3,
       game_ports: $('t-bh-gports') ? $('t-bh-gports').value.trim() : ''
     };
-    const r = await api('api/tunnels', 'POST', payload);
+    const relayId = $('t-relay') ? parseInt($('t-relay').value || '0', 10) : 0;
+    if (relayId > 0) payload.relay_server_id = relayId;
+    const r = await api(relayId > 0 ? 'api/tunnels/multihop' : 'api/tunnels', 'POST', payload);
     $('tun-term-card').style.display = 'block';
     $('tun-term-title').textContent = 'Deploy Result — ' + payload.name;
     $('tun-term').textContent = r.output || (r.ok ? 'Deployed!' : r.error);
@@ -14926,13 +14968,48 @@ async function saveEditedTunnel() {
   } finally { btn.disabled = false; btn.textContent = 'Save & Redeploy Both Sides'; }
 }
 async function checkTunnelMetrics(id, name) {
-  toast('Probing live metrics for ' + name + '...');
+  toast('Probing live metrics & /health for ' + name + '...');
   const r = await api('api/tunnels/' + id + '/metrics');
   if (r.ok) {
+    let lines = [
+      `Iran Service: ${r.iran_status || '?'}`,
+      `Foreign Service: ${r.foreign_status || '?'}`,
+      `Live Ping: ${r.ping || 'N/A'}`,
+      `Active Tunnel Conns: ${r.conns || '0'}`
+    ];
+    const h = r.bh_health;
+    const inlineEl = $('tun-health-' + id);
+    if (h && typeof h === 'object') {
+      const mb = ((h.traffic_bytes || 0) / (1024 * 1024)).toFixed(2);
+      const up = h.uptime_sec ? Math.floor(h.uptime_sec / 60) + 'm' : '0m';
+      lines.push(`Backhaul /health: ${h.status || (h.connected ? 'Connected' : 'Disconnected')}`);
+      lines.push(`Uptime: ${up} • Traffic: ${mb} MB • Goroutines: ${h.goroutines || 0}`);
+      if (inlineEl) {
+        inlineEl.style.display = 'block';
+        inlineEl.style.color = h.connected ? 'var(--green)' : 'var(--yellow)';
+        inlineEl.textContent = `⚡ ${h.status || 'OK'} • Ping ${r.ping || 'N/A'} • Conns ${r.conns || 0} • ${mb} MB • Up ${up}`;
+      }
+    } else if (inlineEl) {
+      inlineEl.style.display = 'block';
+      inlineEl.style.color = 'var(--accent)';
+      inlineEl.textContent = `📡 Iran: ${r.iran_status || '?'} • Foreign: ${r.foreign_status || '?'} • Ping ${r.ping || 'N/A'} • Conns ${r.conns || 0}`;
+    }
     $('tun-term-card').style.display = 'block';
-    $('tun-term-title').textContent = 'Live Metrics — ' + name;
-    $('tun-term').textContent = `Iran Service: ${r.iran_status || '?'}\nForeign Service: ${r.foreign_status || '?'}\nLive Ping: ${r.ping || 'N/A'}\nActive Tunnel Conns: ${r.conns || '0'}`;
+    $('tun-term-title').textContent = 'Live Metrics & /health — ' + name;
+    $('tun-term').textContent = lines.join('\n');
   } else toast(r.error || 'Metrics failed', true);
+}
+
+async function rotateTunnelPort(id, name) {
+  if (!confirm(`Rotate tunnel port for "${name}"? Both Iran & Foreign sides will restart automatically on a new free port.`)) return;
+  toast('Rotating port for ' + name + '...');
+  const r = await api('api/tunnels/' + id + '/rotate-port', 'POST');
+  if (r.ok) {
+    toast(r.message || 'Port rotated!');
+    loadTunnels();
+  } else {
+    toast(r.error || 'Port rotation failed', true);
+  }
 }
 
 let termSrvId = 0, fwSrvId = 0, svcSrvId = 0;
@@ -15303,7 +15380,7 @@ async function saveOpsAutoCfg() {
 async function saveViewerAccount() {
   const r = await api('api/users/viewer', 'POST', {
     enabled: $('vw-en').checked,
-    username: $('vw-user').value.trim(),
+    role: $('vw-role') ? $('vw-role').value : 'viewer', username: $('vw-user').value.trim(),
     password: $('vw-pass').value
   });
   toast(r.ok ? 'Viewer account saved!' : (r.error || 'Failed'), !r.ok);
@@ -16991,6 +17068,102 @@ async function runCanaryRollout() {
 }
 
 boot();
+
+
+/* ═══════════════ v1.6.8: Clean Edge IP Scanner, Allow-Only-Master FW & Desktop Alerts ═══════════════ */
+let _lastCleanIPs = [];
+function openEdgeScanModal() {
+  const sel = $('es-srv');
+  if (sel) {
+    sel.innerHTML = '<option value="0">Master Server (Local)</option>' +
+      sortServersAlpha(SERVERS).map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.host)})</option>`).join('');
+  }
+  if ($('es-results')) $('es-results').innerHTML = '<div class="hint">Click <b>Scan Now</b> to test edge IP latency on port 443.</div>';
+  if ($('btn-es-inject')) $('btn-es-inject').style.display = 'none';
+  $('edge-scan-modal').classList.add('active');
+}
+
+async function runEdgeIPScan() {
+  const btn = $('btn-es-run'), box = $('es-results');
+  if (btn) { btn.disabled = true; btn.textContent = 'Scanning...'; }
+  if (box) box.innerHTML = '<div class="hint">Testing TCP/TLS latency on port 443...</div>';
+  try {
+    const r = await api('api/pro/edge-scan', 'POST', {
+      server_id: parseInt(($('es-srv') && $('es-srv').value) || '0', 10),
+      provider: ($('es-prov') && $('es-prov').value) || 'cloudflare',
+      custom: ($('es-custom') && $('es-custom').value) || '',
+      port: 443
+    });
+    if (!r.ok) {
+      if (box) box.innerHTML = `<div style="color:var(--red);">${esc(r.error || 'Scan failed')}</div>`;
+      return;
+    }
+    const items = r.results || [];
+    _lastCleanIPs = items.filter(x => x.ok).slice(0, 3).map(x => x.ip);
+    if ($('btn-es-inject')) $('btn-es-inject').style.display = _lastCleanIPs.length ? 'inline-flex' : 'none';
+    if (box) {
+      box.innerHTML = items.map(it => {
+        const cls = it.ok ? (it.latency_ms < 120 ? 'b-iran' : 'b-ok') : 'b-miss';
+        return `<div class="kv" style="margin:0;">
+          <span class="mono" style="font-size:.82rem;">${esc(it.ip)}</span>
+          <div class="flexw" style="gap:6px;">
+            <span class="badge ${cls} mono">${it.ok ? it.latency_ms + ' ms' : 'TIMEOUT'}</span>
+            ${it.ok ? `<button type="button" class="btn btn-ghost btn-sm" onclick="copyText('${esc(it.ip)}','Edge IP')">Copy</button>` : ''}
+          </div>
+        </div>`;
+      }).join('') || '<div class="hint">No results.</div>';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⚡ Scan Now'; }
+  }
+}
+
+function injectTopCleanIPs() {
+  if (!_lastCleanIPs.length) return;
+  const joined = _lastCleanIPs.join(',');
+  closeModal('edge-scan-modal');
+  openNewTunnelModal();
+  if ($('t-bh-edge')) $('t-bh-edge').value = joined;
+  toast('Top 3 clean Edge IPs loaded into Tunnel Wizard: ' + joined);
+}
+
+async function lockFwToMaster() {
+  if (!fwSrvId) return;
+  if (!confirm('Lock SSH & Peer Agent ports on this server so ONLY the Master server IP can connect?')) return;
+  toast('Applying Allow-Only-Master firewall lock...');
+  const r = await api('api/servers/' + fwSrvId + '/fw/lock-master', 'POST');
+  if (r.ok) {
+    toast(r.output || ('Locked to Master IP: ' + r.master_ip));
+    refreshFwPorts();
+  } else {
+    toast(r.error || 'Lock failed', true);
+  }
+}
+
+let _deskAlertsOn = ls.get('mc_desk_alerts', '0') === '1';
+function toggleDesktopAlerts() {
+  if (!('Notification' in window)) { toast('Browser does not support Desktop Notifications', true); return; }
+  if (!_deskAlertsOn) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        _deskAlertsOn = true;
+        ls.set('mc_desk_alerts', '1');
+        if ($('btn-desk-alerts')) $('btn-desk-alerts').classList.add('btn-sky');
+        new Notification('MControl Alerts Enabled', { body: 'You will receive desktop notifications if any server or monitor goes offline.' });
+        toast('Desktop outage alerts enabled!');
+      } else {
+        toast('Notification permission denied by browser', true);
+      }
+    });
+  } else {
+    _deskAlertsOn = false;
+    ls.set('mc_desk_alerts', '0');
+    if ($('btn-desk-alerts')) $('btn-desk-alerts').classList.remove('btn-sky');
+    toast('Desktop outage alerts disabled.');
+  }
+}
+if (_deskAlertsOn && $('btn-desk-alerts')) $('btn-desk-alerts').classList.add('btn-sky');
+
 </script>
 
 <div class="modal-bg" id="cmdk-modal" style="z-index:1200;">
@@ -17173,6 +17346,7 @@ boot();
         <button class="btn btn-sky btn-sm" onclick="applyFwRule('allow')">✔ Allow Port</button>
         <button class="btn btn-danger btn-sm" onclick="applyFwRule('deny')">✖ Block Port</button>
         <button class="btn btn-ghost btn-sm" onclick="refreshFwPorts()">↻ Refresh</button>
+        <button class="btn btn-warn btn-sm" onclick="lockFwToMaster()" title="Allow ONLY Master server IP on SSH &amp; Peer Agent ports">🔒 Lock to Master IP</button>
       </div>
       <label class="check" style="margin:0; font-size:.75rem;" title="Automatically rolls back this firewall rule after 60 seconds unless you click Confirm">
         <input type="checkbox" id="fw-commit-conf" checked>

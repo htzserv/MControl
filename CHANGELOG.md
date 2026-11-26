@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.6.8
+- **Backhaul v1.1.0 Live `/health` Telemetry & Controls:**
+  - Automatically configures `web_port` on Backhaul tunnels and reads live `/health` telemetry (connection state, uptime, traffic MB, goroutines) directly on each tunnel card via `📊 Health`.
+  - Added support for `rate_limit_mbps` and KCP `port_hop_range` / `port_hop_interval` in Backhaul TOML generation.
+- **Multi-Hop 3-Server Relay (`Iran ➔ Relay ➔ Foreign`) & Auto Port-Rotation:**
+  - Added an optional Middle Relay Server selector in the Tunnel Wizard (`POST /api/tunnels/multihop`) to chain two linked tunnels automatically.
+  - Added 1-click **`↻ Rotate Port`** (`POST /api/tunnels/{id}/rotate-port`) to move active tunnels to a fresh verified free port on both ends.
+- **Built-in Clean Edge IP Scanner (`🌐 Clean IP Scanner`):**
+  - Scans Cloudflare/ArvanCloud/Custom edge IPs on port 443 from any Iran node or Master and injects top 3 fastest IPs into Backhaul `WSS`/`XHTTP` `edge_ip`.
+- **Security, RBAC & Desktop Alerts:**
+  - Added 1-click **`🔒 Lock to Master IP`** smart firewall rule (`POST /api/servers/{id}/fw/lock-master`) restricting SSH & Peer Agent ports to Master IP only.
+  - Expanded RBAC with **`Operator`** role (can probe, ping, restart, rotate ports; blocked from delete/exec/settings) alongside `Admin` and `Viewer`.
+  - Added **`🔔 Desktop Alerts`** toggle for native browser outage notifications.
+- **UI, Outbound & Auto-Sync Rollup (from v1.6.7 betas):**
+  - Full-height right-side `Tab Settings` panel with live per-tab appearance previews, Overview `2×2` grid layout option, persistent Outbound DB saves (`save_only`) with Datacenter & Cloudflare routing toggles, ANSI-color Web Terminal with collapsible bottom File Manager, browser login autofill, and 6-hour auto-syncing `bundle.yml` for Backhaul/Xray/Engines to GitHub & ParsPack Mirror.
+
+
 ## 1.6.7
 - **Width-First Single-Line Server & Tunnel Cards:**
   - Prioritized horizontal expansion (`width: max-content` with `flex-wrap: nowrap`) on `.srv-list` and `.srv-row-head` so server rows always stay on a single crisp line until reaching full container width, avoiding unnecessary vertical wrapping when adjacent to the left country flag dock.

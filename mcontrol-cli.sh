@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # MControl v1.4.0 — MTunnel-Style MDesign Terminal Menu (Static IP-Only Header)
-MODULE_VERSION="1.6.7"
+MODULE_VERSION="1.6.8"
 set -u
 umask 077
 
