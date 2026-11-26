@@ -59,6 +59,37 @@ con.commit()
 PY
 }
 
+reset_panel_settings() {
+    if [[ ! -f "$DB_FILE" ]]; then
+        echo -e "\n  ${R}✖ Database not found at ${DB_FILE}.${NC}"
+        return 1
+    fi
+    echo ""
+    echo -e "  ${Y}⚠ This resets panel domain, strict domain, secret web path, 2FA, and removes TLS certs.${NC}"
+    printf "  ${C}Reset panel domain & web settings now? [y/N]: ${NC}"
+    read -r yn
+    [[ "$yn" =~ ^[Yy]$ ]] || { echo -e "  ${DIM}Cancelled.${NC}"; return 0; }
+
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$DB_FILE" <<'PY'
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+for k, v in [
+    ("listen_domain", ""),
+    ("strict_domain", "0"),
+    ("web_path", ""),
+    ("twofa_enabled", "0"),
+]:
+    con.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (k, v))
+con.commit()
+con.close()
+PY
+    fi
+    rm -f "$DATA_DIR/tls.crt" "$DATA_DIR/tls.key"
+    systemctl restart "$SVC" 2>/dev/null || true
+    echo -e "  ${G}✓ Panel settings (domain, web path, 2FA, HTTPS) reset and service restarted.${NC}"
+}
+
 reset_panel_credentials() {
     if [[ ! -f "$DB_FILE" ]]; then
         echo -e "\n  ${R}✖ Database not found at ${DB_FILE}.${NC}"
@@ -196,6 +227,19 @@ PY
     return 1
 }
 
+mc_get_beta_build() {
+    if [[ -f "${DATA_DIR}/.beta_build" ]]; then
+        local bnum
+        bnum=$(tr -d '[:space:]' < "${DATA_DIR}/.beta_build" 2>/dev/null || true)
+        [[ -n "$bnum" ]] && { echo "$bnum"; return; }
+    fi
+    if [[ -f "${DATA_DIR}/beta-meta.json" ]]; then
+        python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("build") or d.get("tag") or "latest")' "${DATA_DIR}/beta-meta.json" 2>/dev/null || echo "latest"
+        return
+    fi
+    echo "latest"
+}
+
 mc_get_channel() {
     if [[ -f "$CHANNEL_FILE" ]]; then
         local ch
@@ -274,8 +318,10 @@ draw_header() {
     local ch ch_lbl ch_col port
     ch=$(mc_get_channel)
     port=$(mc_get_port)
+    local bnum
+    bnum=$(mc_get_beta_build)
     if [[ "$ch" == "beta" ]]; then
-        ch_lbl="BETA (beta-latest)"
+        ch_lbl="BETA #${bnum} (beta-latest)"
         ch_col="$Y"
     else
         ch_lbl="STABLE (latest)"
@@ -371,7 +417,16 @@ install_channel() {
     chmod 755 "$tmp_bin"
     mv -f "$tmp_bin" "$BIN"
     printf '%s\n' "$target_ch" > "$CHANNEL_FILE"
-    if [[ "$target_ch" == "beta" ]]; then db_set beta_builds "1" || true; else db_set beta_builds "0" || true; fi
+    if [[ "$target_ch" == "beta" ]]; then
+        db_set beta_builds "1" || true
+        if curl -fsSL --connect-timeout 8 --max-time 20 "${base}/beta-meta.json" -o "${DATA_DIR}/beta-meta.json" 2>/dev/null && [[ -s "${DATA_DIR}/beta-meta.json" ]]; then
+            local fetched_b
+            fetched_b=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("build") or d.get("tag") or "")' "${DATA_DIR}/beta-meta.json" 2>/dev/null || true)
+            [[ -n "$fetched_b" ]] && printf '%s\n' "$fetched_b" > "${DATA_DIR}/.beta_build"
+        fi
+    else
+        db_set beta_builds "0" || true
+    fi
 
     if mc_download "${base_url}/mcontrol-cli.sh" "${CLI_BIN}.new"; then
         chmod 755 "${CLI_BIN}.new"
@@ -457,6 +512,7 @@ while true; do
     mc_group "MAINTENANCE"
     mc_row "12" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
     mc_row "14" "Reset Panel Username / Password" "$Y" " ${DIM}(SQLite Auth)${NC}"
+    mc_row "15" "Reset Panel Settings (Domain / Path / 2FA)" "$Y" " ${DIM}(SQLite + TLS)${NC}"
     mc_row "13" "Uninstall MControl" "$R"
 
     mc_footer "Exit"
@@ -536,6 +592,9 @@ while true; do
             mc_pause ;;
         14)
             reset_panel_credentials
+            mc_pause ;;
+        15)
+            reset_panel_settings
             mc_pause ;;
         0|q|Q) echo ""; exit 0 ;;
         *) echo -e "  ${R}✖ Invalid selection.${NC}"; sleep 1 ;;

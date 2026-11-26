@@ -89,7 +89,11 @@ draw_banner() {
     clear 2>/dev/null || true
     echo ""
     printf "  ${FR}╔%s╗${NC}\n" "$border"
-    hdr_line "MControl Installer  v${MODULE_VERSION}  |  ${sub_lbl}" "${W}MControl Installer${NC}  ${C}v${MODULE_VERSION}${NC}  ${DIM}|${NC}  ${sub_col}${sub_lbl}${NC}"
+    local beta_tag=""
+    if [[ "$CHANNEL" == "beta" ]]; then
+        beta_tag=" [Beta #${BETA_NUM:-latest}]"
+    fi
+    hdr_line "MControl Installer  v${MODULE_VERSION}${beta_tag}  |  ${sub_lbl}" "${W}MControl Installer${NC}  ${C}v${MODULE_VERSION}${NC}${Y}${beta_tag}${NC}  ${DIM}|${NC}  ${sub_col}${sub_lbl}${NC}"
     hdr_line "IPv4: ${IP4}  |  Port: ${PORT}" "${DIM}IPv4:${NC} ${M}${IP4}${NC}  ${DIM}|  Port:${NC} ${C}${PORT}${NC}"
     hdr_line "IPv6: ${IP6}" "${DIM}IPv6:${NC} ${v6_col}${IP6}${NC}"
     printf "  ${FR}╚%s╝${NC}\n" "$border"
@@ -285,6 +289,13 @@ TMPD="$(mktemp -d)"
 cleanup() { [[ -n "${TMPD:-}" ]] && rm -rf "$TMPD"; }
 trap cleanup EXIT
 
+BETA_NUM=""
+if [[ "$CHANNEL" == "beta" ]]; then
+    if mc_dl "${RELEASE_BASE}/beta-meta.json" "${TMPD}/beta-meta.json" && [[ -s "${TMPD}/beta-meta.json" ]]; then
+        BETA_NUM=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d.get("build") or d.get("tag") or "")' "${TMPD}/beta-meta.json" 2>/dev/null || true)
+    fi
+    [[ -n "$BETA_NUM" ]] || BETA_NUM="latest"
+fi
 BIN_NAME="mcontrol-linux-${ARCH}"
 echo -e "  ${FR}├─${NC} ${C}Downloading MControl (${CHANNEL^^} · ${ARCH}) from ${SRC_LBL}...${NC}"
 if ! mc_dl "${RELEASE_BASE}/${BIN_NAME}" "${TMPD}/${BIN_NAME}"; then
@@ -309,6 +320,9 @@ VERSION_TXT="$(mc_dl "${RELEASE_BASE}/VERSION" "${TMPD}/VERSION" && tr -d '[:spa
 mkdir -p "$INSTALL_DIR" "$DATA_DIR"
 chmod 700 "$DATA_DIR"
 printf '%s\n' "$CHANNEL" > "${DATA_DIR}/.channel"
+if [[ "$CHANNEL" == "beta" && -n "$BETA_NUM" ]]; then
+    printf '%s\n' "$BETA_NUM" > "${DATA_DIR}/.beta_build"
+fi
 printf '%s\n' "$SOURCE"  > "${DATA_DIR}/.source"
 install -m 0755 "$BIN" "$INSTALL_DIR/mcontrol"
 if [[ -n "$CLI_SRC" && -f "$CLI_SRC" ]]; then
@@ -352,7 +366,9 @@ for _ in 1 2 3 4 5 6 7 8; do
     sleep 1
 done
 
-echo -e "  ${FR}├─${NC} ${G}✓ Systemd service active (v${VERSION_TXT} · ${PKG_LBL} · ${SRC_LBL}).${NC}"
+BETA_DISP=""
+[[ "$CHANNEL" == "beta" ]] && BETA_DISP=" · Beta #${BETA_NUM:-latest}"
+echo -e "  ${FR}├─${NC} ${G}✓ Systemd service active (v${VERSION_TXT}${BETA_DISP} · ${PKG_LBL} · ${SRC_LBL}).${NC}"
 echo -e "  ${FR}│${NC}"
 echo -e "  ${FR}├─${NC} ${W}Setup URL   :${NC} ${C}http://${IP4}:${PORT}/${NC}"
 if [[ -n "$TOKEN" ]]; then
