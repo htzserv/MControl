@@ -1171,6 +1171,13 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 	}
 	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
+	if !p.Online {
+		lowErr := strings.ToLower(p.Error)
+		if strings.Contains(lowErr, "unable to authenticate") || strings.Contains(lowErr, "permission denied") || strings.Contains(lowErr, "no supported methods remain") {
+			fail(w, http.StatusUnauthorized, "SSH authentication failed (check username, password, or private key): "+p.Error)
+			return
+		}
+	}
 
 	status := "offline"
 	hostKey := ""

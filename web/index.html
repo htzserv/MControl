@@ -6943,7 +6943,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
         </div>
         <div class="field" style="margin-bottom:10px;">
           <label data-i18n="lbl_host">IP address / host</label>
-          <input id="s-host" class="mono" placeholder="5.75.203.70" oninput="updateSrvFloatDock(); scheduleSrvIPv6Check();" onblur="scheduleSrvIPv6Check(true)">
+          <input id="s-host" class="mono" placeholder="e.g. 203.0.113.10" oninput="updateSrvFloatDock(); scheduleSrvIPv6Check();" onblur="scheduleSrvIPv6Check(true)">
         </div>
         <div class="ipv6-drawer" id="s-ipv6-drawer">
           <div class="field" style="margin-bottom:0;">
@@ -17025,19 +17025,19 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
   if ($('ob-result-card')) { $('ob-result-card').className = 'ob-result-card'; }
   if ($('btn-ob-migrate')) $('btn-ob-migrate').style.display = _obHasLegacy ? 'inline-flex' : 'none';
 
-  setOnboardProgress(40,
-    isIran ? L.irDetect : L.forDetect,
-    isIran ? '🇮🇷 Iran Node → ParsPack Mirror' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source')
-  );
+  setOnboardProgress(1, L.connecting, L.sshSub);
   $('srv-onboard-modal').classList.add('active');
 
-  let cur = 40;
+  let cur = 1;
   const tick = setInterval(() => {
-    if (cur < 88) {
-      cur += 3;
-      setOnboardProgress(cur, cur < 68 ? L.installing : L.tlsSetup);
+    if (cur < 92) {
+      cur += cur < 35 ? 5 : (cur < 70 ? 4 : 2);
+      if (cur > 92) cur = 92;
+      const stTxt = cur < 35 ? L.connecting : (cur < 68 ? L.installing : L.tlsSetup);
+      const subTxt = cur < 35 ? L.sshSub : (isIran ? '🇮🇷 Iran Node → ParsPack Mirror' : ('🌍 ' + (s.country || 'Foreign') + ' → Direct Source'));
+      setOnboardProgress(cur, stTxt, subTxt);
     }
-  }, 650);
+  }, 180);
 
   let pairRes = null;
   try {
