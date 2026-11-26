@@ -1,0 +1,54 @@
+name: Build & Publish MControl Android APK
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build MControl Android APK
+        run: |
+          gradle assembleRelease --no-daemon --stacktrace
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk dist/MControl-Android-v1.0.0.apk
+          cd dist && sha256sum MControl-Android-v1.0.0.apk > MControl-Android-v1.0.0.apk.sha256
+          ls -lh
+
+      - name: Upload APK Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MControl-Android-APK
+          path: dist/MControl-Android-v1.0.0.apk
+
+      - name: Publish GitHub Release (v1.0.0)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="v1.0.0"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "MControl Android ${TAG}" --latest
+          else
+            gh release create "$TAG" --title "MControl Android ${TAG}" --notes "Native MControl Android app (MDesign Material 3, Multi-Panel, ANSI Terminal, Backhaul /health & Background Outage Alerts)." --latest
+          fi
+          gh release upload "$TAG" dist/MControl-Android-v1.0.0.apk dist/MControl-Android-v1.0.0.apk.sha256 --clobber

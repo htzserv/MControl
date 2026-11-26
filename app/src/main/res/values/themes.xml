@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.MControl" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#090F1D</item>
+        <item name="android:navigationBarColor">#090F1D</item>
+    </style>
+</resources>

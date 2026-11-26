@@ -1,4 +1,6 @@
-mcontrol
-mcontrol-linux-amd64
-*.zip
-*.bak
+.gradle/
+build/
+app/build/
+.idea/
+local.properties
+*.iml
