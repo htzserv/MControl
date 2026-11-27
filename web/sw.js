@@ -31,10 +31,13 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <div class="card">
-    <svg class="logo" viewBox="0 0 64 64" fill="none">
-      <rect width="64" height="64" rx="16" fill="#1B2E4B"/>
-      <path d="M32 10 L51 16.5 V31 C51 43 42.5 51 32 55.5 C21.5 51 13 43 13 31 V16.5 L32 10 Z" stroke="#5A7B9B" stroke-width="3.6" stroke-linejoin="round"/>
-      <path d="M11 33 H18 L22.5 20 L28 40 L32 27 L36 40 L41.5 20 L46 33 H53" stroke="#6BB6B5" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg class="logo" viewBox="0 0 120 120" fill="none">
+      <rect width="120" height="120" rx="28" fill="#1B2E4B"/>
+      <path d="M17.5 55.5 V29 C17.5 23.5 36 17.5 60 17.5 C84 17.5 102.5 23.5 102.5 29 V55.5" stroke="#6BB6B5" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M21.5 69 C26.5 84 42 95.5 60 102.5 C78 95.5 93.5 84 98.5 69" stroke="#5A7B9B" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50" stroke="#5A7B9B" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107" stroke="#5A7B9B" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79" stroke="#6BB6B5" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <h2>Connection Lost / ارتباط قطع شد</h2>
     <p>Cannot reach your MControl panel right now. Check your internet or VPN connection and retry.</p>

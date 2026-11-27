@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="MControl">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" id="mc-favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%231B2E4B%22%2F%3E%3Cpath%20d%3D%22M32%2010%20L51%2016.5%20V31%20C51%2043%2042.5%2051%2032%2055.5%20C21.5%2051%2013%2043%2013%2031%20V16.5%20L32%2010%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%223.6%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M11%2033%20H18%20L22.5%2020%20L28%2040%20L32%2027%20L36%2040%20L41.5%2020%20L46%2033%20H53%22%20fill%3D%22none%22%20stroke%3D%22%236BB6B5%22%20stroke-width%3D%223.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" id="mc-favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2228%22%20fill%3D%22%231B2E4B%22%2F%3E%3Cpath%20d%3D%22M17.5%2055.5%20V29%20C17.5%2023.5%2036%2017.5%2060%2017.5%20C84%2017.5%20102.5%2023.5%20102.5%2029%20V55.5%22%20fill%3D%22none%22%20stroke%3D%22%236BB6B5%22%20stroke-width%3D%225.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M21.5%2069%20C26.5%2084%2042%2095.5%2060%20102.5%20C78%2095.5%2093.5%2084%2098.5%2069%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%225.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M13%2062.5%20H19.5%20L24.5%2051%20L31%2072%20L43%2030.5%20L49.5%2050%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%225.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M70.5%2050%20L77%2030.5%20L89%2072%20L95.5%2051%20L100.5%2062.5%20H107%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%225.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M41%2063%20H46.5%20L49%2066%20L54.5%2046.5%20L60.5%2079.5%20L66.5%2056.5%20L71%2065.5%20L73.5%2063%20H79%22%20fill%3D%22none%22%20stroke%3D%22%236BB6B5%22%20stroke-width%3D%225.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -4982,52 +4982,67 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
 
 /* ── MControl v1.7.0 Theme-Adaptive Shield + M Pulse & Ping Logo ── */
 @keyframes mcPulseWave {
-  0%   { stroke-dashoffset: 160; opacity: .65; }
+  0%   { stroke-dashoffset: 140; opacity: .25; }
   45%  { stroke-dashoffset: 0;   opacity: 1; }
-  100% { stroke-dashoffset: -160; opacity: .65; }
+  100% { stroke-dashoffset: -140; opacity: .25; }
 }
 @keyframes mcPingRing {
-  0%   { transform: scale(.82); opacity: .72; }
-  100% { transform: scale(1.42); opacity: 0; }
+  0%   { transform: scale(.86); opacity: .68; }
+  100% { transform: scale(1.36); opacity: 0; }
 }
 .mc-shield-logo { overflow: visible; }
 .mc-shield-logo .mc-ping-ring {
   stroke: var(--accent, #6BB6B5);
-  stroke-width: 1.6;
+  stroke-width: 1.5;
   fill: none;
   transform-origin: 60px 60px;
   opacity: 0;
-  animation: mcPingRing 2.6s cubic-bezier(.16, 1, .3, 1) infinite;
+  animation: mcPingRing 2.8s cubic-bezier(.16, 1, .3, 1) infinite;
 }
-.mc-shield-logo .mc-ping-ring.r2 { animation-delay: 1.3s; }
+.mc-shield-logo .mc-ping-ring.r2 { animation-delay: 1.4s; }
 .mc-shield-logo .mc-shield-path {
-  stroke: var(--accent2, #5A7B9B);
-  stroke-width: 4.2;
-  stroke-linejoin: round;
-  fill: color-mix(in srgb, var(--accent, #6BB6B5) 7%, transparent);
-  transition: stroke .3s ease, fill .3s ease;
-}
-.mc-shield-logo .mc-wave-base {
-  stroke: var(--accent, #6BB6B5);
-  stroke-width: 4.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: .26;
-  transition: stroke .3s ease;
-}
-.mc-shield-logo .mc-wave-pulse {
   stroke: var(--accent, #6BB6B5);
   stroke-width: 4.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 160;
-  stroke-dashoffset: 0;
-  animation: mcPulseWave 2.6s cubic-bezier(.4, 0, .2, 1) infinite;
+  fill: none;
   transition: stroke .3s ease;
 }
+.mc-shield-logo .mc-wave-outer {
+  stroke: var(--accent2, #5A7B9B);
+  stroke-width: 5.0;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke .3s ease;
+}
+.mc-shield-logo .mc-wave-mid {
+  stroke: var(--accent, #6BB6B5);
+  stroke-width: 4.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  transition: stroke .3s ease;
+}
+.mc-shield-logo .mc-wave-pulse {
+  stroke: var(--accent, #6BB6B5);
+  stroke-width: 5.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  stroke-dasharray: 42 140;
+  stroke-dashoffset: 140;
+  animation: mcPulseWave 2.6s cubic-bezier(.4, 0, .2, 1) infinite;
+  filter: drop-shadow(0 0 4px var(--accent, #6BB6B5));
+}
+.mc-shield-logo .mc-wave-mid-pulse {
+  stroke: #ffffff;
+  stroke-width: 4.2;
+  animation-delay: .35s;
+}
 .login-brand-hero .mc-logo-anim {
-  width: 164px; height: 164px;
-  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent, #6BB6B5) 50%, transparent));
+  width: 168px; height: 168px;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent, #6BB6B5) 45%, transparent));
 }
 .login-brand-title {
   background: linear-gradient(120deg, var(--accent, #6BB6B5), var(--accent2, #5A7B9B), var(--accent, #6BB6B5)) !important;
@@ -5038,7 +5053,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
 }
 .brand .mc-brand-svg {
   width: 34px; height: 34px;
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent, #6BB6B5) 45%, transparent));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent, #6BB6B5) 40%, transparent));
 }
 
 </style>
@@ -5048,11 +5063,16 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
     <svg class="mc-shield-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle class="mc-ping-ring" cx="60" cy="60" r="36"/>
-      <circle class="mc-ping-ring r2" cx="60" cy="60" r="36"/>
-      <path class="mc-shield-path" d="M60 18 L94 29 V57 C94 79 78 94 60 102 C42 94 26 79 26 57 V29 L60 18 Z"/>
-      <path class="mc-wave-base" d="M22 61 H33 L40 37 L50 73 L60 49 L70 73 L80 37 L87 61 H98"/>
-      <path class="mc-wave-pulse" pathLength="160" d="M22 61 H33 L40 37 L50 73 L60 49 L70 73 L80 37 L87 61 H98"/>
+      <circle class="mc-ping-ring" cx="60" cy="60" r="42"/>
+        <circle class="mc-ping-ring r2" cx="60" cy="60" r="42"/>
+        <path class="mc-shield-path" d="M17.5 55.5 V29 C17.5 23.5 36 17.5 60 17.5 C84 17.5 102.5 23.5 102.5 29 V55.5"/>
+        <path class="mc-shield-path" d="M21.5 69 C26.5 84 42 95.5 60 102.5 C78 95.5 93.5 84 98.5 69"/>
+        <path class="mc-wave-outer" d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50"/>
+        <path class="mc-wave-outer" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
+        <path class="mc-wave-mid" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
+        <path class="mc-wave-pulse" pathLength="140" d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50"/>
+        <path class="mc-wave-pulse" pathLength="140" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
+        <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
     </svg>
   </div>
   <div class="pwa-sp-title">MControl</div>
@@ -5440,11 +5460,16 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
   <div class="login-shell">
     <div class="login-brand-hero">
       <svg class="mc-logo-anim mc-shield-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle class="mc-ping-ring" cx="60" cy="60" r="38"/>
-        <circle class="mc-ping-ring r2" cx="60" cy="60" r="38"/>
-        <path class="mc-shield-path" d="M60 16 L96 28 V58 C96 81 79 97 60 105 C41 97 24 81 24 58 V28 L60 16 Z"/>
-        <path class="mc-wave-base" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
-        <path class="mc-wave-pulse" pathLength="160" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
+        <circle class="mc-ping-ring" cx="60" cy="60" r="42"/>
+        <circle class="mc-ping-ring r2" cx="60" cy="60" r="42"/>
+        <path class="mc-shield-path" d="M17.5 55.5 V29 C17.5 23.5 36 17.5 60 17.5 C84 17.5 102.5 23.5 102.5 29 V55.5"/>
+        <path class="mc-shield-path" d="M21.5 69 C26.5 84 42 95.5 60 102.5 C78 95.5 93.5 84 98.5 69"/>
+        <path class="mc-wave-outer" d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50"/>
+        <path class="mc-wave-outer" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
+        <path class="mc-wave-mid" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
+        <path class="mc-wave-pulse" pathLength="140" d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50"/>
+        <path class="mc-wave-pulse" pathLength="140" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
+        <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
       </svg>
       <h2 class="login-brand-title">MControl</h2>
       <p class="login-brand-sub" data-i18n="login_sub">MDesign central control plane</p>
@@ -5502,10 +5527,15 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
   <div id="chrome">
     <div class="brand">
       <svg class="mc-brand-svg mc-shield-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle class="mc-ping-ring" cx="60" cy="60" r="38"/>
-        <path class="mc-shield-path" d="M60 16 L96 28 V58 C96 81 79 97 60 105 C41 97 24 81 24 58 V28 L60 16 Z"/>
-        <path class="mc-wave-base" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
-        <path class="mc-wave-pulse" pathLength="160" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
+        <circle class="mc-ping-ring" cx="60" cy="60" r="42"/>
+        <path class="mc-shield-path" d="M17.5 55.5 V29 C17.5 23.5 36 17.5 60 17.5 C84 17.5 102.5 23.5 102.5 29 V55.5"/>
+        <path class="mc-shield-path" d="M21.5 69 C26.5 84 42 95.5 60 102.5 C78 95.5 93.5 84 98.5 69"/>
+        <path class="mc-wave-outer" d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50"/>
+        <path class="mc-wave-outer" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
+        <path class="mc-wave-mid" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
+        <path class="mc-wave-pulse" pathLength="140" d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50"/>
+        <path class="mc-wave-pulse" pathLength="140" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
+        <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
       </svg>
       <span class="bt">MControl</span>
     </div>
@@ -8569,7 +8599,7 @@ function applyTheme() {
   const fav = $('mc-favicon');
   if (fav && p[0] && p[4]) {
     const fBg = p[0], fPri = p[4], fSec = p[5] || p[4];
-    const fSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${fBg}"/><path d="M32 10 L51 16.5 V31 C51 43 42.5 51 32 55.5 C21.5 51 13 43 13 31 V16.5 L32 10 Z" fill="none" stroke="${fSec}" stroke-width="3.6" stroke-linejoin="round"/><path d="M11 33 H18 L22.5 20 L28 40 L32 27 L36 40 L41.5 20 L46 33 H53" fill="none" stroke="${fPri}" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const fSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="${fBg}"/><path d="M17.5 55.5 V29 C17.5 23.5 36 17.5 60 17.5 C84 17.5 102.5 23.5 102.5 29 V55.5" fill="none" stroke="${fPri}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M21.5 69 C26.5 84 42 95.5 60 102.5 C78 95.5 93.5 84 98.5 69" fill="none" stroke="${fSec}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50" fill="none" stroke="${fSec}" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107" fill="none" stroke="${fSec}" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79" fill="none" stroke="${fPri}" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     fav.setAttribute('href', 'data:image/svg+xml,' + encodeURIComponent(fSvg));
   }
   const inkOn = c => lum(c) > 0.179 ? '#0a0d14' : '#ffffff';
