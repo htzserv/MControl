@@ -461,7 +461,7 @@ mc_cli_uninstall() {
 
 update_mcontrol() {
     echo ""
-    echo -e "  ${C}${BOLD}Update MControl Panel${NC}"
+    echo -e "  ${W}Update MControl Panel${NC}"
     echo -e "  ${DIM}Choose download source and channel:${NC}"
     echo -e "    ${G}[1]${NC} Stable — Iran Mirror (ParsPack)"
     echo -e "    ${C}[2]${NC} Stable — Foreign (GitHub)"
@@ -471,12 +471,7 @@ update_mcontrol() {
     printf "  ${C}Select [1-4, 0] ❯❯ ${NC}"
     read -r uopt || return
     local arch base_url label
-    arch=$(uname -m)
-    case "$arch" in
-        x86_64|amd64) arch="amd64" ;;
-        aarch64|arm64) arch="arm64" ;;
-        *) echo -e "  ${R}✖ Unsupported architecture: ${arch}${NC}"; return ;;
-    esac
+    arch=$(mc_arch)
     case "$uopt" in
         1) base_url="https://c107328.parspack.net/c107328/MControl"; label="Stable (Iran Mirror)" ;;
         2) base_url="https://github.com/htzserv/MControl/releases/latest/download"; label="Stable (GitHub)" ;;
@@ -486,26 +481,28 @@ update_mcontrol() {
         *) echo -e "  ${R}✖ Invalid choice.${NC}"; return ;;
     esac
     echo -e "\n  ${C}Downloading MControl (${label}, linux-${arch})...${NC}"
-    local tmp_bin="/usr/local/bin/mcontrol.new"
+    mkdir -p "$INSTALL_DIR"
+    local tmp_bin="${BIN}.new"
     if ! curl -fSL --connect-timeout 10 --max-time 180 "${base_url}/mcontrol-linux-${arch}" -o "$tmp_bin"; then
         rm -f "$tmp_bin"
         echo -e "  ${R}✖ Download failed from ${label}.${NC}"
         return
     fi
-    if [ ! -s "$tmp_bin" ]; then
+    if [[ ! -s "$tmp_bin" ]]; then
         rm -f "$tmp_bin"
         echo -e "  ${R}✖ Downloaded binary is empty.${NC}"
         return
     fi
     chmod 755 "$tmp_bin"
-    [ -f /usr/local/bin/mcontrol ] && cp -f /usr/local/bin/mcontrol /usr/local/bin/mcontrol.bak 2>/dev/null || true
-    mv -f "$tmp_bin" /usr/local/bin/mcontrol
-    # Also refresh CLI script if available
-    if curl -fsSL --connect-timeout 6 --max-time 30 "${base_url}/mcontrol-cli.sh" -o /usr/local/bin/mcontrol-cli.new 2>/dev/null && [ -s /usr/local/bin/mcontrol-cli.new ]; then
-        chmod 755 /usr/local/bin/mcontrol-cli.new
-        mv -f /usr/local/bin/mcontrol-cli.new /usr/local/bin/mcontrol-cli
+    [[ -f "$BIN" ]] && cp -f "$BIN" "${BIN}.bak" 2>/dev/null || true
+    mv -f "$tmp_bin" "$BIN"
+    # Also refresh CLI wrapper script at /usr/local/bin/mcontrol
+    local tmp_cli="${CLI_BIN}.new"
+    if curl -fsSL --connect-timeout 6 --max-time 30 "${base_url}/mcontrol-cli.sh" -o "$tmp_cli" 2>/dev/null && [[ -s "$tmp_cli" ]]; then
+        chmod 755 "$tmp_cli"
+        mv -f "$tmp_cli" "$CLI_BIN"
     else
-        rm -f /usr/local/bin/mcontrol-cli.new 2>/dev/null || true
+        rm -f "$tmp_cli" 2>/dev/null || true
     fi
     systemctl restart "$SVC"
     sleep 1
@@ -513,8 +510,8 @@ update_mcontrol() {
         echo -e "\n  ${G}✓ MControl updated (${label}) and service restarted successfully!${NC}"
     else
         echo -e "\n  ${R}✖ Service failed to start after update — restoring backup...${NC}"
-        if [ -f /usr/local/bin/mcontrol.bak ]; then
-            mv -f /usr/local/bin/mcontrol.bak /usr/local/bin/mcontrol
+        if [[ -f "${BIN}.bak" ]]; then
+            mv -f "${BIN}.bak" "$BIN"
             systemctl restart "$SVC" || true
         fi
     fi
