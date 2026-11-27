@@ -1,3 +1,12 @@
+## v1.8.1.1
+
+- **Setup & Modal Width Fix:**
+  - Excluded `.card.modal-box` and `.login-card` from global `max-width: 100%` responsive override in `web/index.html` so First-Time Setup and modals keep their clean `460px` width.
+- **CLI Terminal Updater (`mcontrol-cli.sh` & `main.sh`):**
+  - Added option `13) Update MControl (Stable / Beta)` supporting Iran Mirror (ParsPack) and GitHub with automatic binary backup, CLI refresh, and rollback on restart failure.
+- **Android Version Bump:**
+  - Bumped Android app to `v1.8.1.1` (`versionCode = 8`).
+
 ## v1.8.1
 
 - **PWA & Chrome Installability Hardening:**
