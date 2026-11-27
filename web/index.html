@@ -1005,6 +1005,58 @@ body.light-mode .mc-logo-anim .rb-stream-rl {
   filter: drop-shadow(0 0 6px rgba(34, 211, 238, .40));
 }
 
+.mc-wordmark {
+  display: block;
+  height: auto;
+  overflow: visible;
+}
+.mc-wordmark .mc-wm-m {
+  fill: none;
+  stroke: var(--text, #e2e8f0);
+  stroke-width: 9.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke .3s ease;
+}
+body.light-mode .mc-wordmark .mc-wm-m {
+  stroke: var(--accent2, #1B2E4B);
+}
+.mc-wordmark .mc-wm-c {
+  fill: none;
+  stroke: var(--accent, #6BB6B5);
+  stroke-width: 8.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke .3s ease;
+}
+.login-brand-hero .mc-wordmark-hero {
+  width: 264px; max-width: 72vw;
+  margin: 6px auto 8px;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent, #6BB6B5) 30%, transparent));
+}
+body[data-navx="side"] .brand,
+body[data-navx="side-r"] .brand,
+body[data-navx="side-float"] .brand {
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+body[data-navx="side"] .brand .mc-brand-svg,
+body[data-navx="side-r"] .brand .mc-brand-svg,
+body[data-navx="side-float"] .brand .mc-brand-svg {
+  width: 48px;
+  height: 48px;
+}
+.brand .mc-wordmark-nav {
+  width: 102px;
+  display: block;
+}
+.pwa-sp-title .mc-wordmark-splash {
+  width: 164px;
+  margin: 0 auto;
+}
+
+
 /* Cloudflare Domains — MDesign Bubble Tabs, Polished Inputs & Grouped Cards */
 .cf-ctrl-inp, .cf-ctrl-sel {
   background: var(--surface) !important; color: var(--text) !important;
@@ -5041,8 +5093,8 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
   animation-delay: .35s;
 }
 .login-brand-hero .mc-logo-anim {
-  width: 168px; height: 168px;
-  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent, #6BB6B5) 45%, transparent));
+  width: 224px; height: 224px; max-width: 58vw;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent, #6BB6B5) 48%, transparent));
 }
 .login-brand-title {
   background: linear-gradient(120deg, var(--accent, #6BB6B5), var(--accent2, #5A7B9B), var(--accent, #6BB6B5)) !important;
@@ -5075,7 +5127,24 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
         <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
     </svg>
   </div>
-  <div class="pwa-sp-title">MControl</div>
+  <div class="pwa-sp-title" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-splash" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- M (bold rounded geometric) -->
+        <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
+        <!-- C -->
+        <path class="mc-wm-c" d="M114 25 A23 23 0 1 0 114 55"/>
+        <!-- o (stenciled split o: left arc & right arc with vertical top/bottom gaps) -->
+        <path class="mc-wm-c" d="M137 31 A16 16 0 0 0 137 61"/>
+        <path class="mc-wm-c" d="M145 31 A16 16 0 0 1 145 61"/>
+        <!-- n -->
+        <path class="mc-wm-c" d="M172 62 V32 M172 44 C172 34 179 30 187 30 C195 30 201 35 201 44 V62"/>
+        <!-- t -->
+        <path class="mc-wm-c" d="M222 18 V54 C222 60 226 63 232 63 H235 M213 33 H234"/>
+        <!-- r -->
+        <path class="mc-wm-c" d="M250 62 V32 M250 43 C250 35 256 30 264 30 H267"/>
+        <!-- o (full rounded) -->
+        <circle class="mc-wm-c" cx="292" cy="46" r="16"/>
+        <!-- l -->
+        <path class="mc-wm-c" d="M324 14 V62"/></svg></div>
   <div class="pwa-sp-bar"><i></i></div>
 </div>
 <!-- PWA Pull-to-Refresh Spinner -->
@@ -5471,7 +5540,27 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
         <path class="mc-wave-pulse" pathLength="140" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
         <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
       </svg>
-      <h2 class="login-brand-title">MControl</h2>
+      <h2 class="login-brand-title" aria-label="MControl" style="background:none !important; -webkit-background-clip:initial !important; color:inherit !important; margin:0;">
+        <svg class="mc-wordmark mc-wordmark-hero" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- M (bold rounded geometric) -->
+        <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
+        <!-- C -->
+        <path class="mc-wm-c" d="M114 25 A23 23 0 1 0 114 55"/>
+        <!-- o (stenciled split o: left arc & right arc with vertical top/bottom gaps) -->
+        <path class="mc-wm-c" d="M137 31 A16 16 0 0 0 137 61"/>
+        <path class="mc-wm-c" d="M145 31 A16 16 0 0 1 145 61"/>
+        <!-- n -->
+        <path class="mc-wm-c" d="M172 62 V32 M172 44 C172 34 179 30 187 30 C195 30 201 35 201 44 V62"/>
+        <!-- t -->
+        <path class="mc-wm-c" d="M222 18 V54 C222 60 226 63 232 63 H235 M213 33 H234"/>
+        <!-- r -->
+        <path class="mc-wm-c" d="M250 62 V32 M250 43 C250 35 256 30 264 30 H267"/>
+        <!-- o (full rounded) -->
+        <circle class="mc-wm-c" cx="292" cy="46" r="16"/>
+        <!-- l -->
+        <path class="mc-wm-c" d="M324 14 V62"/>
+        </svg>
+      </h2>
       <p class="login-brand-sub" data-i18n="login_sub">MDesign central control plane</p>
     </div>
     <div class="card login-card" style="text-align:center;">
@@ -5537,7 +5626,24 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
         <path class="mc-wave-pulse" pathLength="140" d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107"/>
         <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79"/>
       </svg>
-      <span class="bt">MControl</span>
+      <span class="bt" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-nav" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- M (bold rounded geometric) -->
+        <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
+        <!-- C -->
+        <path class="mc-wm-c" d="M114 25 A23 23 0 1 0 114 55"/>
+        <!-- o (stenciled split o: left arc & right arc with vertical top/bottom gaps) -->
+        <path class="mc-wm-c" d="M137 31 A16 16 0 0 0 137 61"/>
+        <path class="mc-wm-c" d="M145 31 A16 16 0 0 1 145 61"/>
+        <!-- n -->
+        <path class="mc-wm-c" d="M172 62 V32 M172 44 C172 34 179 30 187 30 C195 30 201 35 201 44 V62"/>
+        <!-- t -->
+        <path class="mc-wm-c" d="M222 18 V54 C222 60 226 63 232 63 H235 M213 33 H234"/>
+        <!-- r -->
+        <path class="mc-wm-c" d="M250 62 V32 M250 43 C250 35 256 30 264 30 H267"/>
+        <!-- o (full rounded) -->
+        <circle class="mc-wm-c" cx="292" cy="46" r="16"/>
+        <!-- l -->
+        <path class="mc-wm-c" d="M324 14 V62"/></svg></span>
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
