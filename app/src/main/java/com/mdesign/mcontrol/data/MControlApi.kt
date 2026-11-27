@@ -429,4 +429,30 @@ class MControlApi(private var profile: PanelProfile) {
         val r = requestJson("POST", "api/monitors/import", JSONObject().put("kind", kind).put("probe_from", "master"))
         return r.optBoolean("ok") to (r.optString("message").ifBlank { if (r.optBoolean("ok")) "Imported" else r.optString("error", "Failed") })
     }
+
+    suspend fun checkPanelUpdate(): Result<PanelUpdateCheck> {
+        val r = requestJson("GET", "api/update/check")
+        if (!r.optBoolean("ok", false)) return Result.failure(Exception(r.optString("error", "Check failed")))
+        val c = r.optJSONObject("check") ?: JSONObject()
+        val gh = c.optJSONObject("github") ?: JSONObject()
+        val mir = c.optJSONObject("mirror") ?: JSONObject()
+        val beta = c.optJSONObject("beta") ?: JSONObject()
+        val stAvail = gh.optBoolean("available", false) || mir.optBoolean("available", false)
+        val stVer = gh.optString("latest").ifBlank { mir.optString("latest") }
+        return Result.success(
+            PanelUpdateCheck(
+                currentVersion = c.optString("current", ""),
+                stableAvailable = stAvail,
+                stableVersion = stVer,
+                betaAvailable = beta.optBoolean("available", false),
+                betaTag = beta.optString("latest", ""),
+                betaBuild = beta.optInt("build_number", 0)
+            )
+        )
+    }
+
+    suspend fun applyPanelUpdate(source: String): Pair<Boolean, String> {
+        val r = requestJson("POST", "api/update/remote", JSONObject().put("source", source))
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "Panel update ($source) started! Reconnecting shortly..." else r.optString("error", "Update failed"))
+    }
 }

@@ -1,6 +1,8 @@
 package com.mdesign.mcontrol
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -132,6 +134,8 @@ fun MControlApp(
 
     var bgAlerts by remember { mutableStateOf(store.isBgAlertsEnabled()) }
     var bioLock by remember { mutableStateOf(store.isBiometricLockEnabled()) }
+    var apkBeta by remember { mutableStateOf(store.isApkBetaChannel()) }
+    var panelUpdate by remember { mutableStateOf<PanelUpdateCheck?>(null) }
 
     var termTarget by remember { mutableStateOf<Pair<String, Long?>?>(null) }
     var webPanelOpen by remember { mutableStateOf(false) }
@@ -387,6 +391,8 @@ fun MControlApp(
                     themeMode = themeMode,
                     bgAlerts = bgAlerts,
                     bioLock = bioLock,
+                    apkBeta = apkBeta,
+                    panelUpdate = panelUpdate,
                     onChangeTheme = onThemeChange,
                     onToggleBgAlerts = { on ->
                         bgAlerts = on
@@ -397,6 +403,45 @@ fun MControlApp(
                     onToggleBioLock = { on ->
                         bioLock = on
                         store.setBiometricLockEnabled(on)
+                    },
+                    onToggleApkBeta = { on ->
+                        apkBeta = on
+                        store.setApkBetaChannel(on)
+                        showToast(if (on) "Switched to Rolling Beta APK channel" else "Switched to Stable APK channel")
+                    },
+                    onCheckPanelUpdate = {
+                        scope.launch {
+                            showToast("Checking Stable & Beta updates...")
+                            api?.checkPanelUpdate()?.onSuccess {
+                                panelUpdate = it
+                                showToast(
+                                    when {
+                                        it.betaAvailable -> "Beta update available: ${it.betaTag}"
+                                        it.stableAvailable -> "Stable update available: v${it.stableVersion}"
+                                        else -> "Panel v${it.currentVersion} is up to date"
+                                    }
+                                )
+                            }?.onFailure { showToast(it.message ?: "Check failed") }
+                        }
+                    },
+                    onApplyPanelUpdate = { src ->
+                        scope.launch {
+                            val (_, msg) = api?.applyPanelUpdate(src) ?: (false to "Offline")
+                            showToast(msg)
+                        }
+                    },
+                    onDownloadApk = { src, beta ->
+                        val url = when {
+                            src == "mirror" && beta -> "https://c107328.parspack.net/c107328/MControl/beta-latest/MControl-Android-beta.apk"
+                            src == "mirror" -> "https://c107328.parspack.net/c107328/MControl/MControl-Android-latest.apk"
+                            beta -> "https://github.com/htzserv/MControl/releases/download/beta-latest/MControl-Android-beta.apk"
+                            else -> "https://github.com/htzserv/MControl/releases/latest/download/MControl-Android-latest.apk"
+                        }
+                        try {
+                            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        } catch (e: Exception) {
+                            showToast("Cannot open browser: ${e.message}")
+                        }
                     },
                     onOpenWebSection = { openWeb(it) },
                     onSwitchPanel = { showLogin = true },

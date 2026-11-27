@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mdesign.mcontrol.data.MonitorItem
 import com.mdesign.mcontrol.data.PanelProfile
+import com.mdesign.mcontrol.data.PanelUpdateCheck
 import com.mdesign.mcontrol.ui.theme.*
 
 @Composable
@@ -187,9 +188,15 @@ fun SettingsScreen(
     themeMode: String,
     bgAlerts: Boolean,
     bioLock: Boolean,
+    apkBeta: Boolean,
+    panelUpdate: PanelUpdateCheck?,
     onChangeTheme: (String) -> Unit,
     onToggleBgAlerts: (Boolean) -> Unit,
     onToggleBioLock: (Boolean) -> Unit,
+    onToggleApkBeta: (Boolean) -> Unit,
+    onCheckPanelUpdate: () -> Unit,
+    onApplyPanelUpdate: (String) -> Unit,
+    onDownloadApk: (source: String, beta: Boolean) -> Unit,
     onOpenWebSection: (String?) -> Unit,
     onSwitchPanel: () -> Unit,
     onLogout: () -> Unit
@@ -276,8 +283,99 @@ fun SettingsScreen(
             }
         }
 
+        // Panel Update & Beta Channel Card
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Panel Updates & Beta Channel", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
+                    TextButton(onClick = onCheckPanelUpdate, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)) {
+                        Text("Check Now", fontSize = 12.sp)
+                    }
+                }
+                if (panelUpdate != null) {
+                    Text(
+                        "Current: v${panelUpdate.currentVersion.ifBlank { "1.7.2" }}" +
+                            (if (panelUpdate.stableAvailable) " • Stable: v${panelUpdate.stableVersion}" else "") +
+                            (if (panelUpdate.betaAvailable) " • Beta: ${panelUpdate.betaTag}" else ""),
+                        fontSize = 12.sp,
+                        color = if (panelUpdate.betaAvailable || panelUpdate.stableAvailable) MDesignGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text("Tap Check Now to inspect Stable & Rolling Beta builds on your panel.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    FilledTonalButton(
+                        onClick = { onApplyPanelUpdate("beta_mirror") },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Beta (Iran)", fontSize = 11.sp) }
+                    FilledTonalButton(
+                        onClick = { onApplyPanelUpdate("beta") },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Beta (GitHub)", fontSize = 11.sp) }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedButton(
+                        onClick = { onApplyPanelUpdate("mirror") },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Stable (Iran)", fontSize = 11.sp) }
+                    OutlinedButton(
+                        onClick = { onApplyPanelUpdate("github") },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Stable (GitHub)", fontSize = 11.sp) }
+                }
+            }
+        }
+
+        // Android App Beta Channel Card
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Android App Channel (APK)", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Receive Beta APK Builds", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            if (apkBeta) "Channel: Rolling Beta (beta-latest)" else "Channel: Official Stable",
+                            fontSize = 11.sp,
+                            color = if (apkBeta) MDesignAmber else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(checked = apkBeta, onCheckedChange = onToggleApkBeta)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { onDownloadApk("mirror", apkBeta) },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) { Text(if (apkBeta) "Download Beta (Iran)" else "Download APK (Iran)", fontSize = 11.sp) }
+                    OutlinedButton(
+                        onClick = { onDownloadApk("github", apkBeta) },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                        modifier = Modifier.weight(1f)
+                    ) { Text(if (apkBeta) "Beta (GitHub)" else "APK (GitHub)", fontSize = 11.sp) }
+                }
+            }
+        }
+
         Text(
-            "MControl Android v1.7.1 • MDesign",
+            "MControl Android v1.7.2 • MDesign",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)

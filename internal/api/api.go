@@ -2305,6 +2305,22 @@ func (h *Handler) masterPublicIP() string {
 	return ""
 }
 
+func (h *Handler) prepareMasterAgentDist() string {
+	st := h.store.GetSettings()
+	irBase := strings.TrimRight(strings.TrimSpace(st.PanelMirrorURL), "/")
+	ghBase := "https://github.com/htzserv/MControl/releases/download/beta-latest"
+	// Warm amd64 agent binary into Master cache in background so offline/Iran-access nodes always pull from Master
+	go func() {
+		var urls []string
+		if irBase != "" {
+			urls = append(urls, irBase+"/beta-latest/mcontrol-agent-linux-amd64", irBase+"/mcontrol-agent-linux-amd64")
+		}
+		urls = append(urls, ghBase+"/mcontrol-agent-linux-amd64")
+		_ = h.ensureCachedFile("agents/mcontrol-agent-linux-amd64", urls...)
+	}()
+	return h.masterDistBaseURL(h.createDistToken()) + "/agents"
+}
+
 func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -2374,6 +2390,7 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 
 	masterIP := h.masterPublicIP()
 	masterURL := h.masterBaseURL()
+	masterDistBase := h.prepareMasterAgentDist()
 	chosenPort := 0
 	keySynced := false
 	var p sshclient.ProbeResult
@@ -2385,7 +2402,7 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		tryCode := peerCode
 		// Temporarily clear pin for fresh pairing on tryPort
 		sshclient.SetAgentCertPin(srv.Host, tryPort, "")
-		res := sshclient.InstallPeerAgentV4(target, masterIP, masterURL, tryCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
+		res := sshclient.InstallPeerAgentWithMaster(target, masterIP, masterURL, masterDistBase, tryCode, tryPort, stCfg.PanelMirrorURL, isIran, skipBusy)
 		joined := false
 		syncedHere := false
 		if idx := strings.Index(res.Output, "SYNCED_KEY:"); idx >= 0 {
@@ -3046,7 +3063,7 @@ func (h *Handler) handleUpdatePeerAgent(w http.ResponseWriter, r *http.Request) 
 	}
 	stCfg := h.store.GetSettings()
 	isIran := srv.Role == "iran" || strings.EqualFold(srv.CountryCode, "IR")
-	script := sshclient.PeerAgentInstallScriptV4(h.masterPublicIP(), h.masterBaseURL(), srv.PeerCode, "", srv.AgentPort, stCfg.PanelMirrorURL, isIran, false)
+	script := sshclient.PeerAgentInstallScriptWithMaster(h.masterPublicIP(), h.masterBaseURL(), h.prepareMasterAgentDist(), srv.PeerCode, "", srv.AgentPort, stCfg.PanelMirrorURL, isIran, false)
 	var res sshclient.Result
 	if srv.AuthMode == "peer" {
 		bgCmd := fmt.Sprintf("nohup bash -c %s >/tmp/mc-agent-upd.log 2>&1 & echo 'Agent v4.1 (Veil) upgrade triggered.'", sshclient.ShQuote(script))

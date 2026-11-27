@@ -43,7 +43,7 @@ private data class UrlParts(
 private fun parseBaseUrlParts(rawUrl: String?): UrlParts {
     val cleaned = (rawUrl ?: "").trim().trimEnd('/')
     if (cleaned.isEmpty() || cleaned == "http://" || cleaned == "https://") {
-        return UrlParts(address = cleaned.ifEmpty { "https://" }, port = "", webPath = "")
+        return UrlParts(address = "", port = "", webPath = "")
     }
     return try {
         val withScheme = if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) cleaned else "https://$cleaned"
@@ -184,7 +184,7 @@ fun LoginScreen(
                     value = address,
                     onValueChange = { address = it },
                     label = { Text("Server Address (IP / Domain)") },
-                    placeholder = { Text("https://panel.example.com") },
+                    placeholder = { Text("1.2.3.4 or panel.example.com") },
                     leadingIcon = { Icon(Icons.Default.Public, null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),

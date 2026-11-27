@@ -146,3 +146,13 @@ data class BenchJobState(
     val current: String = "Ready",
     val results: List<BenchResultItem> = emptyList()
 )
+
+data class PanelUpdateCheck(
+    val currentVersion: String = "",
+    val stableAvailable: Boolean = false,
+    val stableVersion: String = "",
+    val betaAvailable: Boolean = false,
+    val betaTag: String = "",
+    val betaBuild: Int = 0,
+    val mirrorBase: String = ""
+)

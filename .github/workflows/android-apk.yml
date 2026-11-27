@@ -2,8 +2,21 @@ name: Build & Publish MControl Android APK
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "v2-core"]
+    paths-ignore:
+      - "README.md"
+      - "CHANGELOG.md"
   workflow_dispatch:
+    inputs:
+      channel:
+        description: "APK channel (auto = official if VERSION is new, else rolling beta-latest)"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - release
+          - beta
 
 permissions:
   contents: write
@@ -15,12 +28,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Read Version
+      - name: Determine Release vs Rolling Beta
         id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_CHANNEL: ${{ github.event.inputs.channel || 'auto' }}
         run: |
           V=$(tr -d '[:space:]' < VERSION)
+          TAG="v${V}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_NUM="${{ github.run_number }}"
+          MODE="$DISPATCH_CHANNEL"
+          if [ "$MODE" = "auto" ]; then
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              MODE="beta"
+            else
+              MODE="release"
+            fi
+          fi
           echo "version=${V}" >> "$GITHUB_OUTPUT"
-          echo "tag=v${V}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "mode=${MODE}" >> "$GITHUB_OUTPUT"
+          echo "build_num=${BUILD_NUM}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Building MControl Android APK v${V} (mode=${MODE}, build=#${BUILD_NUM}, commit=${SHORT_SHA})"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -34,36 +65,68 @@ jobs:
           gradle-version: "8.7"
 
       - name: Build MControl Android APK
+        env:
+          MC_VER: ${{ steps.ver.outputs.version }}
+          MC_BNUM: ${{ steps.ver.outputs.build_num }}
+          MC_SHA: ${{ steps.ver.outputs.short_sha }}
+          MC_MODE: ${{ steps.ver.outputs.mode }}
         run: |
           gradle assembleRelease --no-daemon --stacktrace
           mkdir -p dist
-          V="${{ steps.ver.outputs.version }}"
+          V="${MC_VER}"
           cp app/build/outputs/apk/release/app-release.apk "dist/MControl-Android-v${V}.apk"
           cp app/build/outputs/apk/release/app-release.apk "dist/MControl-Android-latest.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/MControl-Android-beta.apk"
           cd dist
           sha256sum "MControl-Android-v${V}.apk" > "MControl-Android-v${V}.apk.sha256"
           sha256sum "MControl-Android-latest.apk" > "MControl-Android-latest.apk.sha256"
+          sha256sum "MControl-Android-beta.apk" > "MControl-Android-beta.apk.sha256"
+          python3 - <<'PYEOF'
+          import json, os, time
+          meta = {
+              "version": os.environ["MC_VER"],
+              "build_number": int(os.environ["MC_BNUM"]),
+              "tag": f"v{os.environ['MC_VER']}-beta.{os.environ['MC_BNUM']}",
+              "commit": os.environ["MC_SHA"],
+              "channel": os.environ["MC_MODE"],
+              "apk_file": "MControl-Android-beta.apk",
+              "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+          }
+          with open("apk-beta-meta.json", "w") as f:
+              json.dump(meta, f, indent=2)
+          PYEOF
           ls -lh
 
       - name: Upload APK Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MControl-Android-v${{ steps.ver.outputs.version }}-APK
+          name: MControl-Android-v${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.mode }}-APK
           path: dist/MControl-Android-v${{ steps.ver.outputs.version }}.apk
 
-      - name: Attach APK to GitHub Release
+      - name: Publish APK to GitHub Releases (Stable & Beta)
         env:
           GH_TOKEN: ${{ github.token }}
+          MC_VER: ${{ steps.ver.outputs.version }}
+          MC_TAG: ${{ steps.ver.outputs.tag }}
+          MC_MODE: ${{ steps.ver.outputs.mode }}
+          MC_BNUM: ${{ steps.ver.outputs.build_num }}
         run: |
           set -euo pipefail
-          V="${{ steps.ver.outputs.version }}"
-          TAG="${{ steps.ver.outputs.tag }}"
-          if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "MControl ${TAG}" --notes "MControl ${TAG} release including native Android APK (MDesign Material 3)." --latest
+          # Always update rolling beta-latest release with latest Beta APK
+          if ! gh release view "beta-latest" >/dev/null 2>&1; then
+            gh release create "beta-latest" --title "MControl Rolling Beta (v${MC_VER} #${MC_BNUM})" --notes "Rolling beta builds including MControl Android Beta APK." --prerelease
           fi
-          gh release upload "$TAG"             "dist/MControl-Android-v${V}.apk"             "dist/MControl-Android-v${V}.apk.sha256"             "dist/MControl-Android-latest.apk"             "dist/MControl-Android-latest.apk.sha256"             --clobber
+          gh release upload "beta-latest"             "dist/MControl-Android-beta.apk"             "dist/MControl-Android-beta.apk.sha256"             "dist/MControl-Android-latest.apk"             "dist/MControl-Android-latest.apk.sha256"             "dist/apk-beta-meta.json"             --clobber
 
-      - name: Sync Android APK to ParsPack Iran Mirror (S3)
+          # In official release mode, also attach to vX.Y.Z release
+          if [ "$MC_MODE" = "release" ]; then
+            if ! gh release view "$MC_TAG" >/dev/null 2>&1; then
+              gh release create "$MC_TAG" --title "MControl ${MC_TAG}" --notes "MControl ${MC_TAG} release including native Android APK (MDesign Material 3)." --latest
+            fi
+            gh release upload "$MC_TAG"               "dist/MControl-Android-v${MC_VER}.apk"               "dist/MControl-Android-v${MC_VER}.apk.sha256"               "dist/MControl-Android-latest.apk"               "dist/MControl-Android-latest.apk.sha256"               --clobber
+          fi
+
+      - name: Sync Android APK (Stable & Beta) to ParsPack Iran Mirror (S3)
         continue-on-error: true
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PP_ACCESS_KEY }}
@@ -73,6 +136,7 @@ jobs:
           AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
           PP_ENDPOINT: ${{ secrets.PP_ENDPOINT }}
           PP_BUCKET: ${{ secrets.PP_BUCKET }}
+          MC_MODE: ${{ steps.ver.outputs.mode }}
         run: |
           if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${PP_ENDPOINT:-}" ] || [ -z "${PP_BUCKET:-}" ]; then
             echo "ParsPack S3 secrets not configured — skipping APK mirror sync."
@@ -81,7 +145,8 @@ jobs:
           EP="${PP_ENDPOINT%/}"
           aws configure set default.s3.max_concurrent_requests 1
           aws configure set default.s3.multipart_threshold 64MB
-          for pfx in "MControl" "MControl/beta-latest"; do
+          upload_to() {
+            pfx="$1"
             for f in dist/*; do
               [ -f "$f" ] || continue
               b=$(basename "$f")
@@ -94,5 +159,9 @@ jobs:
               done
               [ "$ok" -eq 1 ] || echo "::warning::Could not upload ${b} to ParsPack ${pfx}"
             done
-          done
-          echo "ParsPack Android APK mirror sync complete!"
+          }
+          upload_to "MControl/beta-latest"
+          if [ "$MC_MODE" = "release" ]; then
+            upload_to "MControl"
+          fi
+          echo "ParsPack Android APK mirror sync complete (mode=${MC_MODE})!"

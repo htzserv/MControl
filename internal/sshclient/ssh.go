@@ -711,6 +711,10 @@ func PeerAgentInstallScriptV3(masterIP, peerCode, dropCode string, agentPort int
 }
 
 func PeerAgentInstallScriptV4(masterIP, masterURL, peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
+	return PeerAgentInstallScriptWithMaster(masterIP, masterURL, "", peerCode, dropCode, agentPort, mirrorURL, isIran, skipIfPortBusy)
+}
+
+func PeerAgentInstallScriptWithMaster(masterIP, masterURL, masterDistBase, peerCode, dropCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) string {
 	if agentPort <= 0 {
 		agentPort = 2054
 	}
@@ -1097,10 +1101,36 @@ WantedBy=multi-user.target
 SVCEOF
 ARCH=$(uname -m 2>/dev/null || echo x86_64)
 case "$ARCH" in aarch64|arm64) ARCH="arm64" ;; *) ARCH="amd64" ;; esac
-AGENT_EXEC="$(command -v python3 || echo /usr/bin/python3) /usr/local/bin/mcontrol-agent.py"
+MASTER_DIST=%s
+FALLBACK_DIST=%s
+fetch_agent_bin() {
+  command -v curl >/dev/null 2>&1 || return 1
+  if [ -n "$MASTER_DIST" ]; then
+    if curl -kfsSL --connect-timeout 3 --max-time 10 "${MASTER_DIST}/mcontrol-agent-linux-${ARCH}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then
+      chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent
+      return 0
+    fi
+    rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true
+  fi
+  if [ -n "$FALLBACK_DIST" ]; then
+    if curl -fsSL --connect-timeout 4 --max-time 12 "${FALLBACK_DIST}/mcontrol-agent-linux-${ARCH}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then
+      chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent
+      return 0
+    fi
+    rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true
+  fi
+  return 1
+}
+AGENT_EXEC=""
 if [ -x /usr/local/bin/mcontrol-agent ]; then
   AGENT_EXEC="/usr/local/bin/mcontrol-agent"
+elif ! command -v python3 >/dev/null 2>&1; then
+  # Offline / no-python3 node: fetch static Go binary from Master synchronously right now
+  if fetch_agent_bin; then
+    AGENT_EXEC="/usr/local/bin/mcontrol-agent"
+  fi
 fi
+[ -n "$AGENT_EXEC" ] || AGENT_EXEC="$(command -v python3 || echo /usr/bin/python3) /usr/local/bin/mcontrol-agent.py"
 sed -i "s|__AGENT_EXEC__|${AGENT_EXEC}|g" "/etc/systemd/system/%s"
 systemctl daemon-reload
 systemctl enable "%s" >/dev/null 2>&1 || true
@@ -1111,12 +1141,24 @@ for _i in 1 2 3 4 5 6 7 8; do
   fi
   sleep 0.25
 done
-# Upgrade to static Go binary silently in background if not yet present
-if [ ! -x /usr/local/bin/mcontrol-agent ] && command -v curl >/dev/null 2>&1 && [ -n "%s" ]; then
-  nohup bash -c 'if curl -fsSL --connect-timeout 4 --max-time 15 "%s/mcontrol-agent-linux-'"$ARCH"'" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent && sed -i "s|^ExecStart=.*|ExecStart=/usr/local/bin/mcontrol-agent|" "/etc/systemd/system/'"$SVC_NAME"'" && systemctl daemon-reload && systemctl restart "'"$SVC_NAME"'"; else rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true; fi' >/dev/null 2>&1 &
+# Upgrade to static Go binary silently in background (Master cache first, then mirror/github)
+if [ ! -x /usr/local/bin/mcontrol-agent ] && command -v curl >/dev/null 2>&1; then
+  nohup bash -c '
+    MD='"$MASTER_DIST"'; FD='"$FALLBACK_DIST"'; A='"$ARCH"'; S='"$SVC_NAME"'
+    ok=0
+    if [ -n "$MD" ] && curl -kfsSL --connect-timeout 3 --max-time 12 "${MD}/mcontrol-agent-linux-${A}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then ok=1; fi
+    if [ "$ok" = "0" ] && [ -n "$FD" ] && curl -fsSL --connect-timeout 4 --max-time 15 "${FD}/mcontrol-agent-linux-${A}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then ok=1; fi
+    if [ "$ok" = "1" ]; then
+      chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent
+      sed -i "s|^ExecStart=.*|ExecStart=/usr/local/bin/mcontrol-agent|" "/etc/systemd/system/${S}"
+      systemctl daemon-reload && systemctl restart "${S}"
+    else
+      rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true
+    fi
+  ' >/dev/null 2>&1 &
 fi
 systemctl is-active "%s"
-`, mirrorFetch, svcName, agentPort, masterIP, strings.TrimRight(strings.TrimSpace(masterURL), "/"), agentPort, svcName, svcName, svcName, svcName, agentBinBase, agentBinBase, svcName)
+`, mirrorFetch, svcName, agentPort, masterIP, strings.TrimRight(strings.TrimSpace(masterURL), "/"), agentPort, ShQuote(strings.TrimRight(strings.TrimSpace(masterDistBase), "/")), ShQuote(agentBinBase), svcName, svcName, svcName, svcName, svcName)
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
@@ -1137,4 +1179,8 @@ func InstallPeerAgentV3(t Target, masterIP, peerCode string, agentPort int, mirr
 
 func InstallPeerAgentV4(t Target, masterIP, masterURL, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
 	return Run(t, PeerAgentInstallScriptV4(masterIP, masterURL, peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 50*time.Second)
+}
+
+func InstallPeerAgentWithMaster(t Target, masterIP, masterURL, masterDistBase, peerCode string, agentPort int, mirrorURL string, isIran bool, skipIfPortBusy bool) Result {
+	return Run(t, PeerAgentInstallScriptWithMaster(masterIP, masterURL, masterDistBase, peerCode, "", agentPort, mirrorURL, isIran, skipIfPortBusy), 10*time.Second, 50*time.Second)
 }

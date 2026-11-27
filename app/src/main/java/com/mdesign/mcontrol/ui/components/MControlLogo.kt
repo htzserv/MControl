@@ -81,71 +81,62 @@ fun MControlAnimatedLogo(
         val shieldStroke = Stroke(width = 4.2f * sc, cap = StrokeCap.Round, join = StrokeJoin.Round)
         val waveStroke = Stroke(width = 4.3f * sc, cap = StrokeCap.Round, join = StrokeJoin.Round)
 
-        // 2. Top Shield Arch (rounded)
+        // 2. Top Shield Arch (100% symmetrical around x=60)
         val shieldTop = Path().apply {
-            moveTo(ox + 15.5f * sc, oy + 55.5f * sc)
-            lineTo(ox + 15.5f * sc, oy + 28.5f * sc)
-            cubicTo(
-                ox + 15.5f * sc, oy + 22.5f * sc,
-                ox + 35f * sc, oy + 16.5f * sc,
-                ox + 60f * sc, oy + 16.5f * sc
-            )
-            cubicTo(
-                ox + 85f * sc, oy + 16.5f * sc,
-                ox + 104.5f * sc, oy + 22.5f * sc,
-                ox + 104.5f * sc, oy + 28.5f * sc
-            )
-            lineTo(ox + 104.5f * sc, oy + 55.5f * sc)
+            moveTo(ox + 21f * sc, oy + 54f * sc)
+            lineTo(ox + 21f * sc, oy + 27f * sc)
+            quadraticBezierTo(ox + 21f * sc, oy + 21f * sc, ox + 27f * sc, oy + 19.5f * sc)
+            quadraticBezierTo(ox + 60f * sc, oy + 11f * sc, ox + 93f * sc, oy + 19.5f * sc)
+            quadraticBezierTo(ox + 99f * sc, oy + 21f * sc, ox + 99f * sc, oy + 27f * sc)
+            lineTo(ox + 99f * sc, oy + 54f * sc)
         }
         drawPath(shieldTop, color = primaryColor, style = shieldStroke)
 
-        // 3. Bottom Shield Bowl (rounded)
+        // 3. Bottom Shield Bowl (100% symmetrical around x=60)
         val shieldBot = Path().apply {
-            moveTo(ox + 19.5f * sc, oy + 69f * sc)
+            moveTo(ox + 24f * sc, oy + 68f * sc)
             cubicTo(
-                ox + 25f * sc, oy + 84.5f * sc,
-                ox + 41f * sc, oy + 96f * sc,
-                ox + 60f * sc, oy + 103f * sc
+                ox + 29f * sc, oy + 84f * sc,
+                ox + 43f * sc, oy + 96f * sc,
+                ox + 60f * sc, oy + 104f * sc
             )
             cubicTo(
-                ox + 79f * sc, oy + 96f * sc,
-                ox + 95f * sc, oy + 84.5f * sc,
-                ox + 100.5f * sc, oy + 69f * sc
+                ox + 77f * sc, oy + 96f * sc,
+                ox + 91f * sc, oy + 84f * sc,
+                ox + 96f * sc, oy + 68f * sc
             )
         }
         drawPath(shieldBot, color = primaryColor, style = shieldStroke)
 
-        // 4. Outer Left & Right M Waves
+        // 4. Outer Left & Right M Waves (mirrored direction for symmetrical pulse sweep)
         val waveLeft = Path().apply {
-            moveTo(ox + 13f * sc, oy + 62.5f * sc)
-            lineTo(ox + 19.5f * sc, oy + 62.5f * sc)
-            lineTo(ox + 24.5f * sc, oy + 51f * sc)
-            lineTo(ox + 31f * sc, oy + 72f * sc)
-            lineTo(ox + 43f * sc, oy + 30.5f * sc)
-            lineTo(ox + 49.5f * sc, oy + 50f * sc)
+            moveTo(ox + 13f * sc, oy + 61f * sc)
+            lineTo(ox + 20f * sc, oy + 61f * sc)
+            lineTo(ox + 25f * sc, oy + 49f * sc)
+            lineTo(ox + 32f * sc, oy + 71f * sc)
+            lineTo(ox + 43f * sc, oy + 29f * sc)
+            lineTo(ox + 50f * sc, oy + 51f * sc)
         }
         val waveRight = Path().apply {
-            moveTo(ox + 70.5f * sc, oy + 50f * sc)
-            lineTo(ox + 77f * sc, oy + 30.5f * sc)
-            lineTo(ox + 89f * sc, oy + 72f * sc)
-            lineTo(ox + 95.5f * sc, oy + 51f * sc)
-            lineTo(ox + 100.5f * sc, oy + 62.5f * sc)
-            lineTo(ox + 107f * sc, oy + 62.5f * sc)
+            moveTo(ox + 107f * sc, oy + 61f * sc)
+            lineTo(ox + 100f * sc, oy + 61f * sc)
+            lineTo(ox + 95f * sc, oy + 49f * sc)
+            lineTo(ox + 88f * sc, oy + 71f * sc)
+            lineTo(ox + 77f * sc, oy + 29f * sc)
+            lineTo(ox + 70f * sc, oy + 51f * sc)
         }
         drawPath(waveLeft, color = secondaryColor, style = waveStroke)
         drawPath(waveRight, color = secondaryColor, style = waveStroke)
 
-        // 5. Center Heartbeat Pulse Wave
+        // 5. Center Heartbeat Pulse Wave (100% symmetrical around x=60)
         val waveMid = Path().apply {
-            moveTo(ox + 41f * sc, oy + 63f * sc)
-            lineTo(ox + 46.5f * sc, oy + 63f * sc)
-            lineTo(ox + 49f * sc, oy + 66f * sc)
-            lineTo(ox + 54.5f * sc, oy + 46.5f * sc)
-            lineTo(ox + 60.5f * sc, oy + 79.5f * sc)
-            lineTo(ox + 66.5f * sc, oy + 56.5f * sc)
-            lineTo(ox + 71f * sc, oy + 65.5f * sc)
-            lineTo(ox + 73.5f * sc, oy + 63f * sc)
-            lineTo(ox + 79f * sc, oy + 63f * sc)
+            moveTo(ox + 43f * sc, oy + 61f * sc)
+            lineTo(ox + 49f * sc, oy + 61f * sc)
+            lineTo(ox + 54f * sc, oy + 45f * sc)
+            lineTo(ox + 60f * sc, oy + 77f * sc)
+            lineTo(ox + 66f * sc, oy + 45f * sc)
+            lineTo(ox + 71f * sc, oy + 61f * sc)
+            lineTo(ox + 77f * sc, oy + 61f * sc)
         }
         drawPath(waveMid, color = primaryColor, style = waveStroke)
 

@@ -80,4 +80,7 @@ class PanelStore(context: Context) {
 
     fun isBiometricLockEnabled(): Boolean = prefs.getBoolean("bio_lock", false)
     fun setBiometricLockEnabled(on: Boolean) { prefs.edit().putBoolean("bio_lock", on).apply() }
+
+    fun isApkBetaChannel(): Boolean = prefs.getBoolean("apk_beta_channel", false)
+    fun setApkBetaChannel(on: Boolean) = prefs.edit().putBoolean("apk_beta_channel", on).apply()
 }

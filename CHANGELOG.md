@@ -1,3 +1,17 @@
+## v1.7.2
+
+- **100% Symmetrical Shield + M-Pulse Logo (Web, PWA & Android):**
+  - Rebuilt the Shield, outer M waves, and center pulse wave with exact mathematical mirror symmetry around `x = 60` (`viewBox="0 0 120 120"`), taller/balanced shield proportions, and mirrored pulse sweep animation on left and right sides.
+  - Removed conflicting legacy `.mc-logo-anim` CSS dimensions and locked explicit 1:1 width/height (`min(260px, 68vw)`) so the login emblem never stretches on any viewport.
+  - Synchronized symmetrical vector paths across `web/index.html`, `web/sw.js` (`mcontrol-pwa-v5`), Android `ic_launcher_foreground.xml` (white `#FFFFFF` background), and Compose `MControlLogo.kt`.
+- **Ultra-Fast Server Onboarding & Offline/Iran-Access Master Agent Distribution:**
+  - Removed slow automatic MTunnel scanning and blocking hardware probes from `handleAddServer` (hardware probe runs asynchronously right after adding; manual MTunnel check remains on each server card).
+  - Sped up Peer Agent pairing by removing redundant SSH discovery/download calls and pulling the static `mcontrol-agent` binary directly from Master cache (`/_mc_dist/<token>/agents/`) with automatic fallback.
+- **UX & Android App `v1.7.2` (`versionCode = 5`):**
+  - Clicking a server IP in the Servers list now copies the IP directly without toggling the server details drawer.
+  - Full Android feature parity: native Add/Delete Server (4 modes), Create/Delete/Speedtest Tunnel, MSmart All-Protocol Benchmark, Add/Delete/Import Monitors, animated Shield+M login logo, blank Server Address field (no pre-filled `http://`), and embedded auto-authenticated Full Panel WebView.
+  - Automated Android APK sync (`MControl-Android-v1.7.2.apk` & `MControl-Android-latest.apk`) to both GitHub Releases and ParsPack Iran Mirror.
+
 ## v1.7.1
 
 - **Brand Logo & Wordmark Polish (`web/index.html`, `web/manifest.json`, `web/sw.js`):**
