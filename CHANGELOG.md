@@ -1,3 +1,12 @@
+## v1.8.1
+
+- **PWA & Chrome Installability Hardening:**
+  - Simplified `web/manifest.json` (clean `start_url`, `scope`, `192x192` & `512x512` `any`/`maskable` icons, removed shortcut icon entries that could fail WebAPK validation).
+  - Added explicit `manifest-src 'self'; worker-src 'self'` directives to CSP in `main.go`, enabled `public, max-age=3600` caching for `manifest.json`, and bumped `web/sw.js` to `mcontrol-pwa-v13`.
+- **Android Build Fix & Release (`v1.8.1`, `versionCode = 7`):**
+  - Fixed Kotlin string literal compilation issue in `OutageMonitorService.kt`.
+  - Includes responsive mobile-first layout with top margin clearance, 24h per-server metrics, login page APK drawer, and configurable second-level outage notifications.
+
 ## v1.8.0
 
 - **PWA Installability Fix (Chrome "This app can't be installed"):**

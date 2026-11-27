@@ -21,8 +21,8 @@ import (
 var webFS embed.FS
 
 const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
-	"img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; " +
-	"base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+	"img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; " +
+	"object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func main() {
 		out = strings.ReplaceAll(out, `"./?`, `"`+baseScope+`?`)
 		out = strings.ReplaceAll(out, `"icon-`, `"`+baseScope+`icon-`)
 		w.Header().Set("Content-Type", "application/manifest+json; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
 		_, _ = w.Write([]byte(out))
 	})
 	innerMux.Handle("/", http.FileServer(http.FS(subFS)))
