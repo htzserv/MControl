@@ -1256,7 +1256,7 @@ func (h *Handler) handleTunnelSpeedtest(w http.ResponseWriter, r *http.Request) 
 
 	// For kernel tunnels (GRE/IP6GRE/VXLAN), test directly over the tunnel subnet IP (.2)
 	targetHost := "127.0.0.1"
-	if tun.Engine == "gre" || tun.Engine == "ip6gre" || tun.Engine == "vxlan" {
+	if tun.Engine == "gre" || tun.Engine == "ip6gre" || tun.Engine == "ipip" || tun.Engine == "vxlan" || tun.Engine == "wireguard" {
 		sub := tun.Subnet
 		if sub == "" {
 			sub = fmt.Sprintf("10.10.%d", (tun.ID%240)+10)
@@ -1475,7 +1475,7 @@ fi`, unit, unit, unit)
     systemctl restart %s
   fi
 fi`, unit, unit, t.TunnelPort, unit)
-					} else if t.Engine == "gre" || t.Engine == "ip6gre" || t.Engine == "vxlan" {
+					} else if t.Engine == "gre" || t.Engine == "ip6gre" || t.Engine == "ipip" || t.Engine == "vxlan" || t.Engine == "wireguard" {
 						ifName := fmt.Sprintf("mctun%d", t.ID)
 						iranHeal = fmt.Sprintf(`if [ -f /etc/systemd/system/%s ]; then
   if ! systemctl is-active --quiet %s || ! ip link show %s >/dev/null 2>&1; then

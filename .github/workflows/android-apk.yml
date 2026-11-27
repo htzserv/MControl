@@ -15,6 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read Version
+        id: ver
+        run: |
+          V=$(tr -d '[:space:]' < VERSION)
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${V}" >> "$GITHUB_OUTPUT"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -30,25 +37,25 @@ jobs:
         run: |
           gradle assembleRelease --no-daemon --stacktrace
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk dist/MControl-Android-v1.0.0.apk
-          cd dist && sha256sum MControl-Android-v1.0.0.apk > MControl-Android-v1.0.0.apk.sha256
+          V="${{ steps.ver.outputs.version }}"
+          cp app/build/outputs/apk/release/app-release.apk "dist/MControl-Android-v${V}.apk"
+          cd dist && sha256sum "MControl-Android-v${V}.apk" > "MControl-Android-v${V}.apk.sha256"
           ls -lh
 
       - name: Upload APK Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MControl-Android-APK
-          path: dist/MControl-Android-v1.0.0.apk
+          name: MControl-Android-v${{ steps.ver.outputs.version }}-APK
+          path: dist/MControl-Android-v${{ steps.ver.outputs.version }}.apk
 
-      - name: Publish GitHub Release (v1.0.0)
+      - name: Attach APK to GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="v1.0.0"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "MControl Android ${TAG}" --latest
-          else
-            gh release create "$TAG" --title "MControl Android ${TAG}" --notes "Native MControl Android app (MDesign Material 3, Multi-Panel, ANSI Terminal, Backhaul /health & Background Outage Alerts)." --latest
+          V="${{ steps.ver.outputs.version }}"
+          TAG="${{ steps.ver.outputs.tag }}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "MControl ${TAG}" --notes "MControl ${TAG} release including native Android APK (MDesign Material 3)." --latest
           fi
-          gh release upload "$TAG" dist/MControl-Android-v1.0.0.apk dist/MControl-Android-v1.0.0.apk.sha256 --clobber
+          gh release upload "$TAG" "dist/MControl-Android-v${V}.apk" "dist/MControl-Android-v${V}.apk.sha256" --clobber

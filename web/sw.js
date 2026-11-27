@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v3';
+const CACHE_NAME = 'mcontrol-pwa-v4';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -15,7 +15,7 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090f1d">
+<meta name="theme-color" content="#1B2E4B">
 <title>MControl — Offline</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
@@ -33,8 +33,8 @@ const OFFLINE_HTML = `<!DOCTYPE html>
   <div class="card">
     <svg class="logo" viewBox="0 0 120 120" fill="none">
       <rect width="120" height="120" rx="28" fill="#1B2E4B"/>
-      <path d="M17.5 55.5 V29 C17.5 23.5 36 17.5 60 17.5 C84 17.5 102.5 23.5 102.5 29 V55.5" stroke="#6BB6B5" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M21.5 69 C26.5 84 42 95.5 60 102.5 C78 95.5 93.5 84 98.5 69" stroke="#5A7B9B" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15.5 55.5 V28.5 C15.5 22.5 35 16.5 60 16.5 C85 16.5 104.5 22.5 104.5 28.5 V55.5" stroke="#6BB6B5" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M19.5 69 C25 84.5 41 96 60 103 C79 96 95 84.5 100.5 69" stroke="#5A7B9B" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M13 62.5 H19.5 L24.5 51 L31 72 L43 30.5 L49.5 50" stroke="#5A7B9B" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M70.5 50 L77 30.5 L89 72 L95.5 51 L100.5 62.5 H107" stroke="#5A7B9B" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>
       <path d="M41 63 H46.5 L49 66 L54.5 46.5 L60.5 79.5 L66.5 56.5 L71 65.5 L73.5 63 H79" stroke="#6BB6B5" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/>

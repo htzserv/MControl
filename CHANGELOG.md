@@ -1,3 +1,16 @@
+## v1.7.1
+
+- **Brand Logo & Wordmark Polish (`web/index.html`, `web/manifest.json`, `web/sw.js`):**
+  - Replaced the login, header/sidebar, and splash branding with the exact 1:1 rounded **Shield + M Pulse** SVG emblem and custom geometric **`MControl`** SVG wordmark (with split `o`), enlarged on the login hero (`224px` emblem / `264px` wordmark).
+  - Fixed a bug in `applyBrandToChrome()` where loading default brand settings overwrote the SVG wordmark in the navigation bar with plain text.
+  - Updated PWA `manifest.json`, `theme-color`, and Service Worker cache (`mcontrol-pwa-v4`) to match the `#1B2E4B` / `#5A7B9B` / `#6BB6B5` palette.
+- **Kernel Tunnel Bug Fixes (`IPIP` & `WireGuard`):**
+  - Fixed **In-Tunnel Speedtest** (`internal/api/tunnels.go`), **Tunnel Watchdog** (`StartTunnelWatchdog`), and **Live Tunnel Metrics** (`internal/api/ops.go`) to recognize `ipip` and `wireguard` kernel interfaces and tunnel subnet peer IPs (`.2`) alongside `gre`, `ip6gre`, and `vxlan`.
+- **Android App `v1.7.1` (`versionCode = 4`) & CI Release Fix:**
+  - Applied the `#1B2E4B` / `#5A7B9B` / `#6BB6B5` brand palette across `Theme.kt` and `themes.xml` with the clean icon-only Adaptive Launcher Icon.
+  - Fixed `.github/workflows/android-apk.yml` to dynamically read `VERSION` and attach `MControl-Android-v1.7.1.apk` directly to the `v1.7.1` release instead of publishing a hardcoded `v1.0.0` release.
+  - Updated Xray subscription User-Agent in `internal/api/outbound.go` to `MControl/1.7.1`.
+
 ## v1.7.0
 
 - **New MControl Brand Identity (Shield + M Pulse Waveform):**

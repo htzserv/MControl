@@ -330,7 +330,7 @@ func (h *Handler) handleTunnelMetrics(w http.ResponseWriter, r *http.Request) {
 	targetHost := ""
 	if forSrv != nil {
 		targetHost = forSrv.Host
-		if (tun.Engine == "gre" || tun.Engine == "ip6gre" || tun.Engine == "vxlan") && tun.Subnet != "" {
+		if (tun.Engine == "gre" || tun.Engine == "ip6gre" || tun.Engine == "ipip" || tun.Engine == "vxlan" || tun.Engine == "wireguard") && tun.Subnet != "" {
 			targetHost = tun.Subnet + ".2"
 		}
 	}
