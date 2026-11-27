@@ -91,17 +91,22 @@ func (h *Handler) handleBenchmarkStart(w http.ResponseWriter, r *http.Request) {
 	if len(req.Candidates) == 0 {
 		req.Candidates = []BenchCandidate{
 			{Engine: "backhaul", Transport: "tcp", IPMode: "v4", Underlay: "ip", Label: "Backhaul TCP"},
-			{Engine: "backhaul", Transport: "tcpmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul TCPMUX"},
 			{Engine: "backhaul", Transport: "tls", IPMode: "v4", Underlay: "ip", Label: "Backhaul TLS (uTLS)"},
-			{Engine: "backhaul", Transport: "tlsmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul TLSMUX"},
+			{Engine: "backhaul", Transport: "wss", IPMode: "v4", Underlay: "ip", Label: "Backhaul WSS"},
 			{Engine: "backhaul", Transport: "xhttps", IPMode: "v4", Underlay: "ip", Label: "Backhaul XHTTPS (H2)"},
+			{Engine: "backhaul", Transport: "tcpmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul TCPMUX"},
+			{Engine: "backhaul", Transport: "tlsmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul TLSMUX"},
+			{Engine: "backhaul", Transport: "xhttpsmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul XHTTPSMUX"},
 			{Engine: "backhaul", Transport: "kcp", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCP (FEC)"},
 			{Engine: "backhaul", Transport: "kcpmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul KCPMUX"},
 			{Engine: "backhaul", Transport: "parallaxmux", IPMode: "v4", Underlay: "ip", Label: "Backhaul ParallaxMUX"},
 			{Engine: "rathole", Transport: "tcp", IPMode: "v4", Underlay: "ip", Label: "Rathole TCP"},
 			{Engine: "gre", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "GRE 4-to-4"},
+			{Engine: "ipip", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "IPIP IPv4"},
 			{Engine: "vxlan", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "VXLAN IPv4"},
+			{Engine: "wireguard", Transport: "raw", IPMode: "v4", Underlay: "ip", Label: "WireGuard"},
 			{Engine: "backhaul", Transport: "tcpmux", IPMode: "v4", Underlay: "gre", Label: "Backhaul TCPMUX over GRE"},
+			{Engine: "backhaul", Transport: "tlsmux", IPMode: "v4", Underlay: "gre", Label: "Backhaul TLSMUX over GRE"},
 			{Engine: "rathole", Transport: "tcp", IPMode: "v4", Underlay: "gre", Label: "Rathole TCP over GRE"},
 		}
 	}
@@ -191,10 +196,10 @@ func (h *Handler) runBenchmarkJob(iran, foreign *db.Server, profile string, cand
 
 	cleanCmd := `for tid in 998 999; do
   systemctl disable --now mcontrol-tun-${tid}.service 2>/dev/null || true
-  rm -f /etc/systemd/system/mcontrol-tun-${tid}.service /etc/mcontrol/tunnels/mcontrol-tun-${tid}.toml /etc/mcontrol/tunnels/mcontrol-tun-${tid}.sh
+  rm -f /etc/systemd/system/mcontrol-tun-${tid}.service /etc/mcontrol/tunnels/mcontrol-tun-${tid}.toml /etc/mcontrol/tunnels/mcontrol-tun-${tid}.sh /etc/mcontrol/tunnels/mcontrol-tun-${tid}.yaml /etc/mcontrol/tunnels/mcontrol-tun-${tid}.key
   ip link del mctun${tid} 2>/dev/null || true
   ip tunnel del mctun${tid} 2>/dev/null || true
-  iptables-save -t nat | grep -v "mc_tun_${tid}" | iptables-restore -T nat 2>/dev/null || true
+  for tbl in nat raw mangle; do iptables-save -t "$tbl" | grep -v "mc_tun_${tid}" | iptables-restore -T "$tbl" 2>/dev/null || true; done
 done
 pkill -f "iperf3 -s.*49151" 2>/dev/null || true
 systemctl daemon-reload`
@@ -330,7 +335,7 @@ ip -6 route get 2606:4700:4700::1111 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($
 				time.Sleep(2400 * time.Millisecond)
 
 				targetHost := "127.0.0.1"
-				if c.Engine == "gre" || c.Engine == "ip6gre" || c.Engine == "vxlan" {
+				if c.Engine == "gre" || c.Engine == "ip6gre" || c.Engine == "ipip" || c.Engine == "vxlan" || c.Engine == "wireguard" {
 					targetHost = "10.10.250.2"
 				}
 

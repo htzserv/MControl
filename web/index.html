@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="MControl">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%228%22%20y1%3D%228%22%20x2%3D%2256%22%20y2%3D%2256%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2322d3ee%22%2F%3E%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23818cf8%22%2F%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f472b6%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%23090f1d%22%2F%3E%3Cpath%20d%3D%22M10%2052V20c0-8.5%2010.5-11.5%2015.5-4.5L32%2027.5l6.5-12C43.5%208.5%2054%2011.5%2054%2020v32%22%20fill%3D%22none%22%20stroke%3D%22url%28%23g%29%22%20stroke-width%3D%227.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" id="mc-favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2216%22%20fill%3D%22%231B2E4B%22%2F%3E%3Cpath%20d%3D%22M32%2010%20L51%2016.5%20V31%20C51%2043%2042.5%2051%2032%2055.5%20C21.5%2051%2013%2043%2013%2031%20V16.5%20L32%2010%20Z%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%223.6%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M11%2033%20H18%20L22.5%2020%20L28%2040%20L32%2027%20L36%2040%20L41.5%2020%20L46%2033%20H53%22%20fill%3D%22none%22%20stroke%3D%22%236BB6B5%22%20stroke-width%3D%223.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -4979,21 +4979,80 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
   box-shadow: 0 18px 42px -12px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
+
+/* ── MControl v1.7.0 Theme-Adaptive Shield + M Pulse & Ping Logo ── */
+@keyframes mcPulseWave {
+  0%   { stroke-dashoffset: 160; opacity: .65; }
+  45%  { stroke-dashoffset: 0;   opacity: 1; }
+  100% { stroke-dashoffset: -160; opacity: .65; }
+}
+@keyframes mcPingRing {
+  0%   { transform: scale(.82); opacity: .72; }
+  100% { transform: scale(1.42); opacity: 0; }
+}
+.mc-shield-logo { overflow: visible; }
+.mc-shield-logo .mc-ping-ring {
+  stroke: var(--accent, #6BB6B5);
+  stroke-width: 1.6;
+  fill: none;
+  transform-origin: 60px 60px;
+  opacity: 0;
+  animation: mcPingRing 2.6s cubic-bezier(.16, 1, .3, 1) infinite;
+}
+.mc-shield-logo .mc-ping-ring.r2 { animation-delay: 1.3s; }
+.mc-shield-logo .mc-shield-path {
+  stroke: var(--accent2, #5A7B9B);
+  stroke-width: 4.2;
+  stroke-linejoin: round;
+  fill: color-mix(in srgb, var(--accent, #6BB6B5) 7%, transparent);
+  transition: stroke .3s ease, fill .3s ease;
+}
+.mc-shield-logo .mc-wave-base {
+  stroke: var(--accent, #6BB6B5);
+  stroke-width: 4.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .26;
+  transition: stroke .3s ease;
+}
+.mc-shield-logo .mc-wave-pulse {
+  stroke: var(--accent, #6BB6B5);
+  stroke-width: 4.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 160;
+  stroke-dashoffset: 0;
+  animation: mcPulseWave 2.6s cubic-bezier(.4, 0, .2, 1) infinite;
+  transition: stroke .3s ease;
+}
+.login-brand-hero .mc-logo-anim {
+  width: 164px; height: 164px;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent, #6BB6B5) 50%, transparent));
+}
+.login-brand-title {
+  background: linear-gradient(120deg, var(--accent, #6BB6B5), var(--accent2, #5A7B9B), var(--accent, #6BB6B5)) !important;
+  background-size: 220% 220% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+.brand .mc-brand-svg {
+  width: 34px; height: 34px;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent, #6BB6B5) 45%, transparent));
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
 <!-- PWA Animated Launch Splash Screen -->
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
-    <svg viewBox="0 0 64 64" fill="none">
-      <defs>
-        <linearGradient id="pwaSpGrad" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#22d3ee"/>
-          <stop offset="50%" stop-color="#818cf8"/>
-          <stop offset="100%" stop-color="#f472b6"/>
-        </linearGradient>
-      </defs>
-      <path class="pwa-sp-path" d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#pwaSpGrad)" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <svg class="mc-shield-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle class="mc-ping-ring" cx="60" cy="60" r="36"/>
+      <circle class="mc-ping-ring r2" cx="60" cy="60" r="36"/>
+      <path class="mc-shield-path" d="M60 18 L94 29 V57 C94 79 78 94 60 102 C42 94 26 79 26 57 V29 L60 18 Z"/>
+      <path class="mc-wave-base" d="M22 61 H33 L40 37 L50 73 L60 49 L70 73 L80 37 L87 61 H98"/>
+      <path class="mc-wave-pulse" pathLength="160" d="M22 61 H33 L40 37 L50 73 L60 49 L70 73 L80 37 L87 61 H98"/>
     </svg>
   </div>
   <div class="pwa-sp-title">MControl</div>
@@ -5380,45 +5439,12 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
   </div>
   <div class="login-shell">
     <div class="login-brand-hero">
-      <svg class="mc-logo-anim" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <!-- Soft base track gradient -->
-          <linearGradient id="mcBaseGrad" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#22d3ee"/>
-            <stop offset="50%" stop-color="#818cf8"/>
-            <stop offset="100%" stop-color="#f472b6"/>
-          </linearGradient>
-          <!-- Stream 1 (Left -> Right): Cool Spectrum (Cyan -> Sky -> Indigo -> Violet) -->
-          <linearGradient id="mcGradLR" x1="8" y1="52" x2="56" y2="12" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#22d3ee">
-              <animate attributeName="stop-color" values="#22d3ee;#34d399;#38bdf8;#22d3ee" dur="9s" repeatCount="indefinite"/>
-            </stop>
-            <stop offset="50%" stop-color="#6366f1">
-              <animate attributeName="stop-color" values="#6366f1;#38bdf8;#818cf8;#6366f1" dur="9s" repeatCount="indefinite"/>
-            </stop>
-            <stop offset="100%" stop-color="#a855f7">
-              <animate attributeName="stop-color" values="#a855f7;#818cf8;#c084fc;#a855f7" dur="9s" repeatCount="indefinite"/>
-            </stop>
-          </linearGradient>
-          <!-- Stream 2 (Right -> Left): Warm/Vivid Spectrum (Amber -> Rose -> Magenta -> Violet) -->
-          <linearGradient id="mcGradRL" x1="56" y1="52" x2="8" y2="12" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#f59e0b">
-              <animate attributeName="stop-color" values="#f59e0b;#fb7185;#ec4899;#f59e0b" dur="10s" repeatCount="indefinite"/>
-            </stop>
-            <stop offset="50%" stop-color="#ec4899">
-              <animate attributeName="stop-color" values="#ec4899;#e879f9;#f43f5e;#ec4899" dur="10s" repeatCount="indefinite"/>
-            </stop>
-            <stop offset="100%" stop-color="#38bdf8">
-              <animate attributeName="stop-color" values="#38bdf8;#c084fc;#22d3ee;#38bdf8" dur="10s" repeatCount="indefinite"/>
-            </stop>
-          </linearGradient>
-        </defs>
-        <!-- Clean single-ribbon permanent M silhouette -->
-        <path d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcBaseGrad)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" opacity=".22"/>
-        <!-- Opposing Continuous Stream 1: Left -> Right (full path, zero center stall) -->
-        <path class="rb-stream-lr" pathLength="100" d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcGradLR)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <!-- Opposing Continuous Stream 2: Right -> Left (blends with Stream 1 into living rainbow gradient) -->
-        <path class="rb-stream-rl" pathLength="100" d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcGradRL)" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
+      <svg class="mc-logo-anim mc-shield-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle class="mc-ping-ring" cx="60" cy="60" r="38"/>
+        <circle class="mc-ping-ring r2" cx="60" cy="60" r="38"/>
+        <path class="mc-shield-path" d="M60 16 L96 28 V58 C96 81 79 97 60 105 C41 97 24 81 24 58 V28 L60 16 Z"/>
+        <path class="mc-wave-base" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
+        <path class="mc-wave-pulse" pathLength="160" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
       </svg>
       <h2 class="login-brand-title">MControl</h2>
       <p class="login-brand-sub" data-i18n="login_sub">MDesign central control plane</p>
@@ -5475,21 +5501,17 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
 
   <div id="chrome">
     <div class="brand">
-      <svg class="mc-brand-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="mcBrandGrad" x1="8" y1="12" x2="56" y2="52" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#22d3ee"/>
-            <stop offset="50%" stop-color="#818cf8"/>
-            <stop offset="100%" stop-color="#f472b6"/>
-          </linearGradient>
-        </defs>
-        <path d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#mcBrandGrad)" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg class="mc-brand-svg mc-shield-logo" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle class="mc-ping-ring" cx="60" cy="60" r="38"/>
+        <path class="mc-shield-path" d="M60 16 L96 28 V58 C96 81 79 97 60 105 C41 97 24 81 24 58 V28 L60 16 Z"/>
+        <path class="mc-wave-base" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
+        <path class="mc-wave-pulse" pathLength="160" d="M20 62 H33 L40 36 L50 75 L60 49 L70 75 L80 36 L87 62 H100"/>
       </svg>
       <span class="bt">MControl</span>
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.6.8</span>
+      <span class="mono" id="nav-ver-lbl">v1.7.0</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -5567,7 +5589,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.3.2</span>
+            <span class="badge b-ok" id="loc-ver">v1.7.0</span>
           </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -7555,14 +7577,46 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
     <div class="ms-cat-grid" id="ms-cands">
       <div class="ms-cat">
         <div class="ms-cat-head">
-          <span>Backhaul (Direct IP)</span>
+          <span>Backhaul — TCP / TLS / HTTP</span>
           <label class="check" style="margin:0; font-size:.7rem; color:var(--muted); text-transform:none;"><input type="checkbox" id="ms-bh-v6"><span>+ IPv6</span></label>
         </div>
         <div class="ms-cat-opts">
           <label class="check"><input type="checkbox" value="backhaul:tcp:v4:ip:Backhaul TCP" checked><span>TCP</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:tls:v4:ip:Backhaul TLS (uTLS)" checked><span>TLS</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:ws:v4:ip:Backhaul WS"><span>WS</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:wss:v4:ip:Backhaul WSS"><span>WSS</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:xhttp:v4:ip:Backhaul XHTTP"><span>XHTTP</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:xhttps:v4:ip:Backhaul XHTTPS (H2)" checked><span>XHTTPS</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:parallax:v4:ip:Backhaul Parallax"><span>Parallax</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:failover:v4:ip:Backhaul Failover"><span>Failover</span></label>
+        </div>
+      </div>
+
+      <div class="ms-cat">
+        <div class="ms-cat-head">
+          <span>Backhaul — MUX</span>
+          <label class="check" style="margin:0; font-size:.7rem; color:var(--muted); text-transform:none;"><input type="checkbox" id="ms-bhmux-v6"><span>+ IPv6</span></label>
+        </div>
+        <div class="ms-cat-opts">
           <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:ip:Backhaul TCPMUX" checked><span>TCPMUX</span></label>
-          <label class="check"><input type="checkbox" value="backhaul:ws:v4:ip:Backhaul WS" checked><span>WS</span></label>
-          <label class="check"><input type="checkbox" value="backhaul:kcp:v4:ip:Backhaul KCP"><span>KCP</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:tlsmux:v4:ip:Backhaul TLSMUX" checked><span>TLSMUX</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:wsmux:v4:ip:Backhaul WSMUX"><span>WSMUX</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:wssmux:v4:ip:Backhaul WSSMUX"><span>WSSMUX</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:xhttpmux:v4:ip:Backhaul XHTTPMUX"><span>XHTTPMUX</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:xhttpsmux:v4:ip:Backhaul XHTTPSMUX" checked><span>XHTTPSMUX</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:kcpmux:v4:ip:Backhaul KCPMUX"><span>KCPMUX</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:parallaxmux:v4:ip:Backhaul ParallaxMUX" checked><span>ParallaxMUX</span></label>
+        </div>
+      </div>
+
+      <div class="ms-cat">
+        <div class="ms-cat-head">
+          <span>Backhaul — UDP / KCP</span>
+          <label class="check" style="margin:0; font-size:.7rem; color:var(--muted); text-transform:none;"><input type="checkbox" id="ms-bhudp-v6"><span>+ IPv6</span></label>
+        </div>
+        <div class="ms-cat-opts">
+          <label class="check"><input type="checkbox" value="backhaul:kcp:v4:ip:Backhaul KCP (FEC)" checked><span>KCP (FEC)</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:udp:v4:ip:Backhaul UDP"><span>UDP (Raw)</span></label>
         </div>
       </div>
 
@@ -7578,22 +7632,27 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
       </div>
 
       <div class="ms-cat">
-        <div class="ms-cat-head"><span>Kernel GRE &amp; VXLAN</span></div>
+        <div class="ms-cat-head"><span>Kernel &amp; VPN (GRE / IPIP / VXLAN / WG)</span></div>
         <div class="ms-cat-opts">
           <label class="check"><input type="checkbox" value="gre:raw:v4:ip:GRE 4-to-4" checked><span>GRE 4-to-4</span></label>
           <label class="check"><input type="checkbox" value="ip6gre:raw:6to4:ip:GRE 6-to-4"><span>GRE 6-to-4</span></label>
           <label class="check"><input type="checkbox" value="ip6gre:raw:6to6:ip:GRE 6-to-6"><span>GRE 6-to-6</span></label>
+          <label class="check"><input type="checkbox" value="ipip:raw:v4:ip:IPIP IPv4"><span>IPIP</span></label>
           <label class="check"><input type="checkbox" value="vxlan:raw:v4:ip:VXLAN IPv4" checked><span>VXLAN v4</span></label>
           <label class="check"><input type="checkbox" value="vxlan:raw:v6:ip:VXLAN IPv6"><span>VXLAN v6</span></label>
+          <label class="check"><input type="checkbox" value="wireguard:raw:v4:ip:WireGuard" checked><span>WireGuard</span></label>
         </div>
       </div>
 
       <div class="ms-cat">
         <div class="ms-cat-head"><span>Layered (Over GRE / VXLAN)</span></div>
         <div class="ms-cat-opts">
-          <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:gre:Backhaul TCPMUX over GRE" checked><span>Backhaul ➔ GRE</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:gre:Backhaul TCPMUX over GRE" checked><span>TCPMUX ➔ GRE</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:tlsmux:v4:gre:Backhaul TLSMUX over GRE"><span>TLSMUX ➔ GRE</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:xhttpsmux:v4:gre:Backhaul XHTTPSMUX over GRE"><span>XHTTPSMUX ➔ GRE</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:parallaxmux:v4:gre:Backhaul ParallaxMUX over GRE"><span>ParallaxMUX ➔ GRE</span></label>
           <label class="check"><input type="checkbox" value="rathole:tcp:v4:gre:Rathole TCP over GRE" checked><span>Rathole ➔ GRE</span></label>
-          <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:vxlan:Backhaul TCPMUX over VXLAN"><span>Backhaul ➔ VXLAN</span></label>
+          <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:vxlan:Backhaul TCPMUX over VXLAN"><span>TCPMUX ➔ VXLAN</span></label>
           <label class="check"><input type="checkbox" value="rathole:tcp:v4:vxlan:Rathole TCP over VXLAN"><span>Rathole ➔ VXLAN</span></label>
         </div>
       </div>
@@ -8507,6 +8566,12 @@ function applyTheme() {
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
   colorRoles.forEach(([role], i) => set('--' + role, p[i]));
   const mtc = $('meta-theme-color'); if (mtc && p[0]) mtc.setAttribute('content', p[0]);
+  const fav = $('mc-favicon');
+  if (fav && p[0] && p[4]) {
+    const fBg = p[0], fPri = p[4], fSec = p[5] || p[4];
+    const fSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="${fBg}"/><path d="M32 10 L51 16.5 V31 C51 43 42.5 51 32 55.5 C21.5 51 13 43 13 31 V16.5 L32 10 Z" fill="none" stroke="${fSec}" stroke-width="3.6" stroke-linejoin="round"/><path d="M11 33 H18 L22.5 20 L28 40 L32 27 L36 40 L41.5 20 L46 33 H53" fill="none" stroke="${fPri}" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    fav.setAttribute('href', 'data:image/svg+xml,' + encodeURIComponent(fSvg));
+  }
   const inkOn = c => lum(c) > 0.179 ? '#0a0d14' : '#ffffff';
   set('--on-accent', inkOn(p[4]));
   set('--on-accent2', inkOn(p[5]));
@@ -10734,13 +10799,16 @@ function openMSmartModal() {
 
 async function startMSmartBench() {
   const cands = [];
-  const bhV6 = $('ms-bh-v6') && $('ms-bh-v6').checked;
-  const rhV6 = $('ms-rh-v6') && $('ms-rh-v6').checked;
-  document.querySelectorAll('#ms-cands .ms-cat-opts input:checked').forEach(cb => {
-    const [engine, transport, ip_mode, underlay, label] = cb.value.split(':');
-    cands.push({ engine, transport, ip_mode: ip_mode || 'v4', underlay: underlay || 'ip', label });
-    if (underlay === 'ip' && engine === 'backhaul' && bhV6) cands.push({ engine, transport, ip_mode: 'v6', underlay: 'ip', label: label + ' (IPv6)' });
-    if (underlay === 'ip' && engine === 'rathole' && rhV6) cands.push({ engine, transport, ip_mode: 'v6', underlay: 'ip', label: label + ' (IPv6)' });
+  document.querySelectorAll('#ms-cands .ms-cat').forEach(cat => {
+    const v6Chk = cat.querySelector('.ms-cat-head input[type="checkbox"]');
+    const addV6 = !!(v6Chk && v6Chk.checked);
+    cat.querySelectorAll('.ms-cat-opts input:checked').forEach(cb => {
+      const [engine, transport, ip_mode, underlay, label] = cb.value.split(':');
+      cands.push({ engine, transport, ip_mode: ip_mode || 'v4', underlay: underlay || 'ip', label });
+      if (addV6 && underlay === 'ip' && (ip_mode || 'v4') === 'v4') {
+        cands.push({ engine, transport, ip_mode: 'v6', underlay: 'ip', label: label + ' (IPv6)' });
+      }
+    });
   });
   if (!cands.length) { toast('Select at least one protocol', true); return; }
   const r = await api('api/tunnels/benchmark', 'POST', {
@@ -10792,8 +10860,9 @@ function deployWinner(engine, transport, ipMode, underlay, iranId, forId) {
     openNewTunnelModal();
     $('t-name').value = 'MSmart-' + engine.toUpperCase() + (underlay && underlay !== 'ip' ? ('-' + underlay.toUpperCase()) : '');
   }
-  pickTunnelEngine(engine);
-  if (engine === 'backhaul') $('t-trans').value = transport;
+  const wizEng = (engine === 'backhaul' && transport && transport.endsWith('mux')) ? 'backhaul_mux' : engine;
+  pickTunnelEngine(wizEng);
+  if (engine === 'backhaul' && $('t-trans')) { $('t-trans').value = transport; if (typeof onBackhaulTransportChange === 'function') onBackhaulTransportChange(); }
   if ($('t-ipmode')) $('t-ipmode').value = ipMode || 'v4';
   if (iranId) $('t-iran').value = String(iranId);
   if (forId) $('t-foreign').value = String(forId);

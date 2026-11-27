@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v2';
+const CACHE_NAME = 'mcontrol-pwa-v3';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -32,9 +32,9 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 <body>
   <div class="card">
     <svg class="logo" viewBox="0 0 64 64" fill="none">
-      <defs><linearGradient id="og" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#22d3ee"/><stop offset="50%" stop-color="#818cf8"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs>
-      <rect width="64" height="64" rx="16" fill="#0f172a"/>
-      <path d="M10 52V20c0-8.5 10.5-11.5 15.5-4.5L32 27.5l6.5-12C43.5 8.5 54 11.5 54 20v32" stroke="url(#og)" stroke-width="7.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect width="64" height="64" rx="16" fill="#1B2E4B"/>
+      <path d="M32 10 L51 16.5 V31 C51 43 42.5 51 32 55.5 C21.5 51 13 43 13 31 V16.5 L32 10 Z" stroke="#5A7B9B" stroke-width="3.6" stroke-linejoin="round"/>
+      <path d="M11 33 H18 L22.5 20 L28 40 L32 27 L36 40 L41.5 20 L46 33 H53" stroke="#6BB6B5" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     <h2>Connection Lost / ارتباط قطع شد</h2>
     <p>Cannot reach your MControl panel right now. Check your internet or VPN connection and retry.</p>

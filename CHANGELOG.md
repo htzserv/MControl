@@ -1,3 +1,16 @@
+## v1.7.0
+
+- **New MControl Brand Identity (Shield + M Pulse Waveform):**
+  - Replaced legacy logo across the Web Panel (Login Hero, Header/Sidebar, PWA Splash Screen, Offline Screen) with an animated **Ping & Pulse** SVG logo that adapts dynamically to every MDesign theme palette.
+  - Added live **Theme-Adaptive Dynamic Favicon** updating automatically whenever the active theme or color accent changes.
+  - Updated PWA icons (`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`) and bumped Service Worker cache to `mcontrol-pwa-v3`.
+- **Upgraded All-Protocol Tunnel Tester (`MSmart Benchmark`):**
+  - Organized protocol testing into 6 complete tunnel categories matching MControl's full engine suite: **Backhaul TCP/TLS/HTTP** (`tcp`, `tls`, `ws`, `wss`, `xhttp`, `xhttps`, `parallax`, `failover`), **Backhaul MUX** (`tcpmux`, `tlsmux`, `wsmux`, `wssmux`, `xhttpmux`, `xhttpsmux`, `kcpmux`, `parallaxmux`), **Backhaul UDP/KCP** (`kcp`, `udp`), **Rathole & Paqet**, **Kernel & VPN** (`gre`, `ip6gre`, `ipip`, `vxlan`, `wireguard`), and **Layered (Over GRE / VXLAN)**.
+  - Updated `internal/api/msmart.go` to support in-tunnel testing for `ipip` and `wireguard` alongside full cleanup of `.yaml`/`.key` files and `raw`/`mangle` iptables rules.
+  - Updated `deployWinner()` to pre-select `Backhaul MUX` automatically when a MUX winner is chosen.
+- **Android App `v1.7.0` (`versionCode = 3`):**
+  - Updated Android Adaptive Launcher Icons (`ic_launcher_background.xml` & `ic_launcher_foreground.xml`) to the new deep-navy Shield + M Pulse vector design.
+
 ## v1.6.9
 
 - **SSL Certificate Export to `/root/cer/<domain>/`**: Automatically saves `fullchain.key` and `pem.key` inside `/root/cer/<domain>/` whenever SSL certificates are issued (Let's Encrypt / ACME) or uploaded/generated.
