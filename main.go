@@ -32,11 +32,18 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("Content-Security-Policy", csp)
 		if strings.HasSuffix(r.URL.Path, "/sw.js") || r.URL.Path == "/sw.js" {
+			h.Set("Content-Type", "application/javascript; charset=utf-8")
+			h.Set("Service-Worker-Allowed", "/")
 			h.Set("Cache-Control", "no-cache")
-		} else if strings.HasSuffix(r.URL.Path, ".png") || strings.HasSuffix(r.URL.Path, "manifest.json") {
+		} else if strings.HasSuffix(r.URL.Path, "/manifest.json") || r.URL.Path == "/manifest.json" {
+			h.Set("Content-Type", "application/manifest+json; charset=utf-8")
+			h.Set("Cache-Control", "no-cache")
+		} else if strings.HasSuffix(r.URL.Path, ".png") || strings.HasSuffix(r.URL.Path, ".svg") {
 			h.Set("Cache-Control", "public, max-age=86400")
-		} else {
+		} else if strings.HasPrefix(r.URL.Path, "/api/") || strings.Contains(r.URL.Path, "/api/") {
 			h.Set("Cache-Control", "no-store")
+		} else {
+			h.Set("Cache-Control", "no-cache")
 		}
 		h.Set("X-Robots-Tag", "noindex, nofollow")
 		next.ServeHTTP(w, r)
@@ -72,6 +79,23 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to load embedded UI: %v", err)
 	}
+	baseScope := "/"
+	if setupDone && webPath != "" {
+		baseScope = "/" + strings.Trim(webPath, "/") + "/"
+	}
+	innerMux.HandleFunc("/manifest.json", func(w http.ResponseWriter, r *http.Request) {
+		raw, err := fs.ReadFile(subFS, "manifest.json")
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		out := strings.ReplaceAll(string(raw), `"./"`, `"`+baseScope+`"`)
+		out = strings.ReplaceAll(out, `"./?`, `"`+baseScope+`?`)
+		out = strings.ReplaceAll(out, `"icon-`, `"`+baseScope+`icon-`)
+		w.Header().Set("Content-Type", "application/manifest+json; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		_, _ = w.Write([]byte(out))
+	})
 	innerMux.Handle("/", http.FileServer(http.FS(subFS)))
 
 	saasMgr, err := saas.NewManager(*dataDir, activePort, apiHandler)

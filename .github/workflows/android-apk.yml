@@ -64,12 +64,43 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      - name: Prepare Release Signing Keystore
+        id: sign
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          KS_FILE="${RUNNER_TEMP}/mcontrol-release.jks"
+          if [ -n "${KS_B64:-}" ] && [ -n "${KS_PASS:-}" ]; then
+            echo "$KS_B64" | base64 -d > "$KS_FILE"
+            echo "ks_path=${KS_FILE}" >> "$GITHUB_OUTPUT"
+            echo "ks_pass=${KS_PASS}" >> "$GITHUB_OUTPUT"
+            echo "key_alias=${KEY_ALIAS:-mcontrol}" >> "$GITHUB_OUTPUT"
+            echo "key_pass=${KEY_PASS:-$KS_PASS}" >> "$GITHUB_OUTPUT"
+            echo "Using persistent Release Keystore from GitHub Secrets."
+          else
+            # Generate a clean RSA-2048 Release Keystore (avoids Android Debug cert CN=Android Debug)
+            GEN_PASS="MControlRelease2026!"
+            keytool -genkeypair -v               -keystore "$KS_FILE"               -storetype PKCS12               -keyalg RSA -keysize 2048 -validity 10000               -alias mcontrol               -storepass "$GEN_PASS" -keypass "$GEN_PASS"               -dname "CN=MControl, OU=MDesign, O=MDesign, L=Tehran, C=IR"
+            echo "ks_path=${KS_FILE}" >> "$GITHUB_OUTPUT"
+            echo "ks_pass=${GEN_PASS}" >> "$GITHUB_OUTPUT"
+            echo "key_alias=mcontrol" >> "$GITHUB_OUTPUT"
+            echo "key_pass=${GEN_PASS}" >> "$GITHUB_OUTPUT"
+            echo "::notice::Using generated MDesign Release Keystore. For permanent Play Protect trust across updates, add ANDROID_KEYSTORE_BASE64 & ANDROID_KEYSTORE_PASSWORD to GitHub Secrets."
+          fi
+
       - name: Build MControl Android APK
         env:
           MC_VER: ${{ steps.ver.outputs.version }}
           MC_BNUM: ${{ steps.ver.outputs.build_num }}
           MC_SHA: ${{ steps.ver.outputs.short_sha }}
           MC_MODE: ${{ steps.ver.outputs.mode }}
+          MCONTROL_KEYSTORE_PATH: ${{ steps.sign.outputs.ks_path }}
+          MCONTROL_KEYSTORE_PASSWORD: ${{ steps.sign.outputs.ks_pass }}
+          MCONTROL_KEY_ALIAS: ${{ steps.sign.outputs.key_alias }}
+          MCONTROL_KEY_PASSWORD: ${{ steps.sign.outputs.key_pass }}
         run: |
           gradle assembleRelease --no-daemon --stacktrace
           mkdir -p dist

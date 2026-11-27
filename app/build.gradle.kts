@@ -12,16 +12,33 @@ android {
         applicationId = "com.mdesign.mcontrol"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.7.2"
+        versionCode = 6
+        versionName = "1.8.0"
         vectorDrawables { useSupportLibrary = true }
+    }
+
+    signingConfigs {
+        create("release") {
+            val ksPath = System.getenv("MCONTROL_KEYSTORE_PATH") ?: ""
+            if (ksPath.isNotEmpty() && file(ksPath).exists()) {
+                storeFile = file(ksPath)
+                storePassword = System.getenv("MCONTROL_KEYSTORE_PASSWORD") ?: ""
+                keyAlias = System.getenv("MCONTROL_KEY_ALIAS") ?: "mcontrol"
+                keyPassword = System.getenv("MCONTROL_KEY_PASSWORD") ?: ""
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            val relCfg = signingConfigs.getByName("release")
+            signingConfig = if (relCfg.storeFile != null && relCfg.storeFile!!.exists()) {
+                relCfg
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 

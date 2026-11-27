@@ -5607,6 +5607,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
 
       <div class="login-dock">
         <button class="chip" id="login-theme-btn" type="button" onclick="toggleLoginThemeDrawer()">Themes</button>
+        <button class="chip" id="login-apk-btn" type="button" onclick="toggleLoginApkDrawer()">📱 Android APK</button>
         <button class="chip" id="login-mode" type="button" data-i18n="theme_toggle">Dark / Light</button>
         <button class="chip" id="login-lang" type="button">FA</button>
       </div>
@@ -5624,6 +5625,19 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
         </div>
         <span style="font-size:.74rem; font-weight:700; color:var(--muted);">QUICK THEMES</span>
         <div class="login-swatches" id="login-swatches"></div>
+      </div>
+
+      <div class="login-theme-drawer" id="login-apk-drawer" style="text-align:start;">
+        <div class="flexw" style="justify-content:space-between; margin-bottom:8px;">
+          <span style="font-size:.75rem; font-weight:800; color:var(--accent);" id="login-apk-title">📱 Download MControl Android App</span>
+          <span class="badge b-ok mono" style="font-size:.64rem;">v1.8.0</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <a id="lapk-stable-ir" class="btn btn-sky btn-sm" style="text-align:center; text-decoration:none; font-size:.72rem; padding:7px 8px;" href="https://c107328.parspack.net/c107328/MControl/MControl-Android-latest.apk" target="_blank" rel="noopener">🇮🇷 Stable (Iran)</a>
+          <a id="lapk-stable-gh" class="btn btn-ghost btn-sm" style="text-align:center; text-decoration:none; font-size:.72rem; padding:7px 8px;" href="https://github.com/htzserv/MControl/releases/latest/download/MControl-Android-latest.apk" target="_blank" rel="noopener">🌍 Stable (GitHub)</a>
+          <a id="lapk-beta-ir" class="btn btn-sky btn-sm" style="text-align:center; text-decoration:none; font-size:.72rem; padding:7px 8px;" href="https://c107328.parspack.net/c107328/MControl/beta-latest/MControl-Android-beta.apk" target="_blank" rel="noopener">🇮🇷 Beta (Iran)</a>
+          <a id="lapk-beta-gh" class="btn btn-ghost btn-sm" style="text-align:center; text-decoration:none; font-size:.72rem; padding:7px 8px;" href="https://github.com/htzserv/MControl/releases/download/beta-latest/MControl-Android-beta.apk" target="_blank" rel="noopener">🌍 Beta (GitHub)</a>
+        </div>
       </div>
     </div>
   </div>
@@ -5666,7 +5680,7 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
     </div>
     <button type="button" class="ver-bubble" id="nav-ver-bubble" onclick="openUpdateModal()" title="Version &amp; Updates">
       <span class="ver-dot" id="nav-ver-dot"></span>
-      <span class="mono" id="nav-ver-lbl">v1.7.2</span>
+      <span class="mono" id="nav-ver-lbl">v1.8.0</span>
       <span class="ver-upd-drawer" id="nav-ver-drawer">
         <span class="ver-upd-sep">•</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
@@ -5744,7 +5758,8 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
             <span class="dot online"></span>
             <h3 id="loc-host" style="cursor:pointer;" title="Click to rename panel" onclick="renamePanelPrompt()">Control Server</h3>
             <button class="btn btn-ghost btn-sm" style="padding:3px 7px; font-size:.7rem;" title="Rename Panel" onclick="renamePanelPrompt()">✎</button>
-            <span class="badge b-ok" id="loc-ver">v1.7.2</span>
+            <span class="badge b-ok" id="loc-ver">v1.8.0</span>
+            <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 9px; font-size:.72rem;" title="Download Android App (APK)" onclick="openAndroidDownloadCard()">📱 Android APK</button>
           </div>
           <div class="flexw">
             <span class="badge b-ok mono" id="loc-ipv4" style="cursor:pointer;">IPv4: ---</span>
@@ -6209,6 +6224,28 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
       </div>
     </div>
 
+    <!-- 24H SERVER METRICS MODAL -->
+    <div class="modal-bg" id="srv-metrics-modal">
+      <div class="card modal-box" style="max-width:740px;">
+        <div class="toolbar" style="margin-bottom:10px;">
+          <div>
+            <h3 style="color:var(--accent); margin:0;" id="sm-title">📊 Server 24h Metrics</h3>
+            <div class="hint mono" style="margin:3px 0 0;" id="sm-sub">---</div>
+          </div>
+          <div class="flexw" style="gap:6px;">
+            <button type="button" class="chip sm-rng-btn" data-sm-rng="1h" onclick="loadServerMetricsRange('1h')">1h</button>
+            <button type="button" class="chip sm-rng-btn" data-sm-rng="6h" onclick="loadServerMetricsRange('6h')">6h</button>
+            <button type="button" class="chip sm-rng-btn active" data-sm-rng="24h" onclick="loadServerMetricsRange('24h')">24h</button>
+            <button type="button" class="chip sm-rng-btn" data-sm-rng="7d" onclick="loadServerMetricsRange('7d')">7d</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="loadServerMetricsRange(_smRange)" title="Refresh">↻</button>
+            <button type="button" class="btn btn-danger btn-sm" data-close="srv-metrics-modal">Close</button>
+          </div>
+        </div>
+        <div id="sm-kpis" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:8px; margin-bottom:12px;"></div>
+        <div id="sm-charts" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+    </div>
+
     <!-- QUICK INLINE UPDATE & CHANGELOG MODAL -->
     <div class="modal-bg" id="quick-upd-modal">
       <div class="card modal-box" style="max-width:520px;">
@@ -6570,6 +6607,52 @@ body.tp-srv-grid #tab-servers .srv-row-wrap.open {
             <div id="master-cache-list" style="margin-top:14px; display:flex; flex-direction:column; gap:7px;"></div>
           </div>
         
+          <div class="card" id="android-apk-card">
+            <div class="toolbar" style="margin-bottom:10px;">
+              <div>
+                <h4 style="color:var(--accent); margin:0;" id="apk-card-title">📱 MControl Android App (APK)</h4>
+                <div class="hint" style="margin:3px 0 0;" id="apk-card-sub">Download native MControl Android app — Stable &amp; Rolling Beta from Iran Mirror or GitHub.</div>
+              </div>
+              <span class="badge b-ok mono" id="apk-card-ver">v1.8.0</span>
+            </div>
+            <div class="row2" style="gap:12px;">
+              <!-- Stable Channel -->
+              <div class="tun-sec" style="margin:0;">
+                <div class="tun-sec-title" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                  <span style="color:var(--green); font-weight:700;" id="apk-stable-lbl">✅ Stable Release</span>
+                  <span class="badge b-ok mono" style="font-size:.66rem;">OFFICIAL</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:7px;">
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <a id="apk-dl-stable-ir" class="btn btn-sky btn-sm" style="flex:1; text-align:center; text-decoration:none;" href="https://c107328.parspack.net/c107328/MControl/MControl-Android-latest.apk" target="_blank" rel="noopener">🇮🇷 Iran Mirror (ParsPack)</a>
+                    <button type="button" class="btn btn-ghost btn-sm" title="Copy Link" onclick="copyApkLink('stable_ir')">📋</button>
+                  </div>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <a id="apk-dl-stable-gh" class="btn btn-ghost btn-sm" style="flex:1; text-align:center; text-decoration:none;" href="https://github.com/htzserv/MControl/releases/latest/download/MControl-Android-latest.apk" target="_blank" rel="noopener">🌍 Foreign (GitHub)</a>
+                    <button type="button" class="btn btn-ghost btn-sm" title="Copy Link" onclick="copyApkLink('stable_gh')">📋</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Beta Channel -->
+              <div class="tun-sec" style="margin:0;">
+                <div class="tun-sec-title" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                  <span style="color:var(--yellow); font-weight:700;" id="apk-beta-lbl">🧪 Rolling Beta</span>
+                  <span class="badge b-warn mono" style="font-size:.66rem;">BETA</span>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:7px;">
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <a id="apk-dl-beta-ir" class="btn btn-sky btn-sm" style="flex:1; text-align:center; text-decoration:none;" href="https://c107328.parspack.net/c107328/MControl/beta-latest/MControl-Android-beta.apk" target="_blank" rel="noopener">🇮🇷 Beta — Iran Mirror</a>
+                    <button type="button" class="btn btn-ghost btn-sm" title="Copy Link" onclick="copyApkLink('beta_ir')">📋</button>
+                  </div>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <a id="apk-dl-beta-gh" class="btn btn-ghost btn-sm" style="flex:1; text-align:center; text-decoration:none;" href="https://github.com/htzserv/MControl/releases/download/beta-latest/MControl-Android-beta.apk" target="_blank" rel="noopener">🌍 Beta — Foreign (GitHub)</a>
+                    <button type="button" class="btn btn-ghost btn-sm" title="Copy Link" onclick="copyApkLink('beta_gh')">📋</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="toolbar" style="margin:0;">
               <div>
@@ -9140,6 +9223,7 @@ function applyLang() {
   if ($('lang-select')) $('lang-select').value = lang;
   if ($('login-lang')) $('login-lang').textContent = lang === 'fa' ? 'EN' : 'FA';
   $('srv-modal-title').textContent = editId ? t('modal_edit') : t('modal_add');
+  if (typeof refreshAndroidApkLinks === "function") refreshAndroidApkLinks();
   if (typeof syncPwaLabels === 'function') syncPwaLabels();
   if ($('btn-ping-all')) $('btn-ping-all').textContent = (lang === 'fa') ? '↻ پینگ همه' : '↻ Ping All';
   renderNav(); renderThemes(); renderStudio(); renderPresets(); renderServers(); applyTheme();
@@ -12543,6 +12627,8 @@ function openSrvDropdown(ev, id, group, btn) {
   let items = [];
   if (group === 'sys') {
     items = [
+      { lbl: fa ? '📊 متریک ۲۴ ساعته (CPU/RAM/Ping)' : '📊 24h Metrics (CPU/RAM/Ping)', fn: () => openServerMetricsModal(id) },
+      { sep: true },
       { lbl: fa ? '🔌 پورت‌ها و فایروال' : '🔌 Ports / FW', fn: () => openFwModal(id) },
       { lbl: fa ? '⚙️ سرویس‌ها (Services)' : '⚙️ Services', fn: () => openSvcModal(id) },
       { sep: true },
@@ -13512,7 +13598,171 @@ async function loadSettings() {
   $('set-2fa-sec').textContent = s.twofa_secret || '—';
 
   renderPresets();
+  refreshAndroidApkLinks();
 }
+
+function getAndroidApkUrls() {
+  const mir = String((SETTINGS && SETTINGS.panel_mirror_url) || 'https://c107328.parspack.net/c107328/MControl').trim().replace(/\/+$/, '');
+  const ghLatest = String((SETTINGS && SETTINGS.panel_github_url) || 'https://github.com/htzserv/MControl/releases/latest/download').trim().replace(/\/+$/, '');
+  const ghBeta = ghLatest.includes('/releases/latest/download')
+    ? ghLatest.replace('/releases/latest/download', '/releases/download/beta-latest')
+    : 'https://github.com/htzserv/MControl/releases/download/beta-latest';
+  return {
+    stable_ir: mir + '/MControl-Android-latest.apk',
+    stable_gh: ghLatest + '/MControl-Android-latest.apk',
+    beta_ir: mir + '/beta-latest/MControl-Android-beta.apk',
+    beta_gh: ghBeta + '/MControl-Android-beta.apk'
+  };
+}
+function refreshAndroidApkLinks() {
+  const u = getAndroidApkUrls();
+  if ($('apk-dl-stable-ir')) $('apk-dl-stable-ir').href = u.stable_ir;
+  if ($('apk-dl-stable-gh')) $('apk-dl-stable-gh').href = u.stable_gh;
+  if ($('apk-dl-beta-ir')) $('apk-dl-beta-ir').href = u.beta_ir;
+  if ($('apk-dl-beta-gh')) $('apk-dl-beta-gh').href = u.beta_gh;
+  const isFa = (typeof lang !== 'undefined' && lang === 'fa');
+  if ($('apk-card-title')) $('apk-card-title').textContent = isFa ? '📱 دانلود اپلیکیشن اندروید MControl (APK)' : '📱 MControl Android App (APK)';
+  if ($('apk-card-sub')) $('apk-card-sub').textContent = isFa ? 'دانلود مستقیم نسخه استیبل و بتا از میرور ایران (پارس‌پک) یا گیت‌هاب (خارج).' : 'Download native MControl Android app — Stable & Rolling Beta from Iran Mirror or GitHub.';
+  if ($('apk-stable-lbl')) $('apk-stable-lbl').textContent = isFa ? '✅ نسخه استیبل (Stable)' : '✅ Stable Release';
+  if ($('apk-beta-lbl')) $('apk-beta-lbl').textContent = isFa ? '🧪 نسخه بتا (Beta)' : '🧪 Rolling Beta';
+  if ($('apk-dl-stable-ir')) $('apk-dl-stable-ir').textContent = isFa ? '🇮🇷 دانلود مستقیم (ایران)' : '🇮🇷 Iran Mirror (ParsPack)';
+  if ($('apk-dl-stable-gh')) $('apk-dl-stable-gh').textContent = isFa ? '🌍 دانلود از گیت‌هاب (خارج)' : '🌍 Foreign (GitHub)';
+  if ($('apk-dl-beta-ir')) $('apk-dl-beta-ir').textContent = isFa ? '🇮🇷 دانلود بتا (ایران)' : '🇮🇷 Beta — Iran Mirror';
+  if ($('apk-dl-beta-gh')) $('apk-dl-beta-gh').textContent = isFa ? '🌍 دانلود بتا از گیت‌هاب (خارج)' : '🌍 Beta — Foreign (GitHub)';
+  if ($('lapk-stable-ir')) { $('lapk-stable-ir').href = u.stable_ir; $('lapk-stable-ir').textContent = isFa ? '🇮🇷 استیبل (ایران)' : '🇮🇷 Stable (Iran)'; }
+  if ($('lapk-stable-gh')) { $('lapk-stable-gh').href = u.stable_gh; $('lapk-stable-gh').textContent = isFa ? '🌍 استیبل (خارج)' : '🌍 Stable (GitHub)'; }
+  if ($('lapk-beta-ir')) { $('lapk-beta-ir').href = u.beta_ir; $('lapk-beta-ir').textContent = isFa ? '🇮🇷 بتا (ایران)' : '🇮🇷 Beta (Iran)'; }
+  if ($('lapk-beta-gh')) { $('lapk-beta-gh').href = u.beta_gh; $('lapk-beta-gh').textContent = isFa ? '🌍 بتا (خارج)' : '🌍 Beta (GitHub)'; }
+  if ($('login-apk-title')) $('login-apk-title').textContent = isFa ? '📱 دانلود اپلیکیشن اندروید MControl' : '📱 Download MControl Android App';
+  if ($('login-apk-btn')) $('login-apk-btn').textContent = isFa ? '📱 اپ اندروید' : '📱 Android APK';
+}
+function copyApkLink(key) {
+  const u = getAndroidApkUrls();
+  if (u[key]) copyText(u[key], 'APK URL');
+}
+
+function toggleLoginApkDrawer() {
+  const d = $('login-apk-drawer');
+  const td = $('login-theme-drawer');
+  if (td) td.classList.remove('open');
+  if (d) d.classList.toggle('open');
+}
+
+let _smSrvId = 0, _smRange = '24h';
+function openServerMetricsModal(id) {
+  _smSrvId = +id;
+  _smRange = '24h';
+  const s = (SERVERS || []).find(x => +x.id === +id);
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  if ($('sm-title')) $('sm-title').textContent = (fa ? '📊 متریک ۲۴ ساعته — ' : '📊 24h Metrics — ') + (s ? s.name : ('Server #' + id));
+  if ($('sm-sub')) $('sm-sub').textContent = s ? (s.host + (s.datacenter ? (' · ' + s.datacenter) : '')) : '';
+  $('srv-metrics-modal').classList.add('active');
+  loadServerMetricsRange('24h');
+}
+
+function _renderSvgMetricChart(title, unit, color, points, valueFn, maxFixed) {
+  const W = 660, H = 128, padL = 38, padR = 10, padT = 10, padB = 22;
+  const cw = W - padL - padR, ch = H - padT - padB;
+  const vals = points.map(valueFn);
+  const maxVal = maxFixed || Math.max(10, ...vals) * 1.15;
+  const minVal = 0;
+  const n = points.length;
+  const xOf = i => padL + (n <= 1 ? cw / 2 : (i / (n - 1)) * cw);
+  const yOf = v => padT + ch - ((Math.max(minVal, Math.min(maxVal, v)) - minVal) / (maxVal - minVal || 1)) * ch;
+
+  let linePts = '';
+  for (let i = 0; i < n; i++) {
+    linePts += (i === 0 ? 'M' : 'L') + xOf(i).toFixed(1) + ',' + yOf(vals[i]).toFixed(1) + ' ';
+  }
+  const areaPts = n > 0
+    ? (linePts + `L${xOf(n - 1).toFixed(1)},${(padT + ch).toFixed(1)} L${xOf(0).toFixed(1)},${(padT + ch).toFixed(1)} Z`)
+    : '';
+
+  const cur = n ? vals[n - 1] : 0;
+  const avg = n ? vals.reduce((a, b) => a + b, 0) / n : 0;
+  const peak = n ? Math.max(...vals) : 0;
+  const fmtTime = ts => {
+    if (!ts) return '';
+    const d = new Date(ts * 1000);
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  };
+  const tStart = n ? fmtTime(points[0].ts) : '';
+  const tMid = n > 2 ? fmtTime(points[Math.floor(n / 2)].ts) : '';
+  const tEnd = n ? fmtTime(points[n - 1].ts) : '';
+
+  const gid = 'smg_' + Math.random().toString(36).slice(2, 8);
+  return `
+    <div class="tun-sec" style="margin:0; padding:10px 12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; gap:8px; flex-wrap:wrap;">
+        <span style="font-weight:700; font-size:.82rem; color:${color};">${title}</span>
+        <span class="mono" style="font-size:.72rem; color:var(--muted);">Now <b style="color:var(--text);">${cur.toFixed(1)}${unit}</b> • Avg <b>${avg.toFixed(1)}${unit}</b> • Peak <b style="color:${color};">${peak.toFixed(1)}${unit}</b></span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:auto; display:block;">
+        <defs>
+          <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${color}" stop-opacity="0.34"/>
+            <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <line x1="${padL}" y1="${padT}" x2="${W - padR}" y2="${padT}" stroke="var(--border)" stroke-dasharray="3 3" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT + ch / 2}" x2="${W - padR}" y2="${padT + ch / 2}" stroke="var(--border)" stroke-dasharray="3 3" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT + ch}" x2="${W - padR}" y2="${padT + ch}" stroke="var(--border)" stroke-width="1"/>
+        <text x="${padL - 5}" y="${padT + 4}" text-anchor="end" font-size="9.5" fill="var(--muted)">${Math.round(maxVal)}${unit}</text>
+        <text x="${padL - 5}" y="${padT + ch / 2 + 3}" text-anchor="end" font-size="9.5" fill="var(--muted)">${Math.round(maxVal / 2)}${unit}</text>
+        <text x="${padL - 5}" y="${padT + ch + 3}" text-anchor="end" font-size="9.5" fill="var(--muted)">0</text>
+        ${n > 1 ? `<path d="${areaPts}" fill="url(#${gid})"/><path d="${linePts}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>` : (n === 1 ? `<circle cx="${xOf(0)}" cy="${yOf(vals[0])}" r="4" fill="${color}"/>` : '')}
+        <text x="${padL}" y="${H - 5}" text-anchor="start" font-size="9.5" fill="var(--muted)">${tStart}</text>
+        <text x="${padL + cw / 2}" y="${H - 5}" text-anchor="middle" font-size="9.5" fill="var(--muted)">${tMid}</text>
+        <text x="${W - padR}" y="${H - 5}" text-anchor="end" font-size="9.5" fill="var(--muted)">${tEnd}</text>
+      </svg>
+    </div>`;
+}
+
+async function loadServerMetricsRange(rng) {
+  _smRange = rng || '24h';
+  document.querySelectorAll('.sm-rng-btn').forEach(b => b.classList.toggle('active', b.dataset.smRng === _smRange));
+  const kpiBox = $('sm-kpis'), chartBox = $('sm-charts');
+  if (chartBox) chartBox.innerHTML = '<div class="hint" style="text-align:center; padding:24px;">Loading metrics...</div>';
+  const r = await api('api/pro/metrics?target=' + encodeURIComponent('srv:' + _smSrvId) + '&range=' + encodeURIComponent(_smRange));
+  if (!r || !r.ok) {
+    if (chartBox) chartBox.innerHTML = '<div class="hint" style="text-align:center; color:var(--red);">Failed to load metrics.</div>';
+    return;
+  }
+  const pts = Array.isArray(r.points) ? r.points : [];
+  if (!pts.length) {
+    if (kpiBox) kpiBox.innerHTML = '';
+    if (chartBox) chartBox.innerHTML = '<div class="hint" style="text-align:center; padding:24px;">No samples collected yet for this server. Metrics are sampled every 2 minutes automatically.</div>';
+    return;
+  }
+  const cpus = pts.map(p => +p.cpu || 0);
+  const rams = pts.map(p => +p.ram || 0);
+  const pings = pts.map(p => +p.ping_ms || 0).filter(x => x > 0);
+  const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+  if (kpiBox) {
+    kpiBox.innerHTML = `
+      <div class="srv-mini-box"><div class="srv-mini-lbl">CPU (${_smRange})</div><div class="srv-mini-val mono" style="color:var(--accent);">${avg(cpus).toFixed(1)}% <span style="font-size:.72rem; color:var(--muted);">avg</span></div><div class="srv-mini-sub mono">Peak: ${Math.max(...cpus).toFixed(1)}% • Samples: ${pts.length}</div></div>
+      <div class="srv-mini-box"><div class="srv-mini-lbl">RAM (${_smRange})</div><div class="srv-mini-val mono" style="color:var(--pink);">${avg(rams).toFixed(1)}% <span style="font-size:.72rem; color:var(--muted);">avg</span></div><div class="srv-mini-sub mono">Peak: ${Math.max(...rams).toFixed(1)}%</div></div>
+      <div class="srv-mini-box"><div class="srv-mini-lbl">Ping (${_smRange})</div><div class="srv-mini-val mono" style="color:var(--green);">${pings.length ? avg(pings).toFixed(1) + ' ms' : '---'}</div><div class="srv-mini-sub mono">${pings.length ? ('Min ' + Math.min(...pings).toFixed(1) + ' • Max ' + Math.max(...pings).toFixed(1) + ' ms') : 'No ping samples'}</div></div>
+    `;
+  }
+  if (chartBox) {
+    chartBox.innerHTML =
+      _renderSvgMetricChart('CPU Usage (%)', '%', 'var(--accent)', pts, p => +p.cpu || 0, 100) +
+      _renderSvgMetricChart('RAM Usage (%)', '%', 'var(--pink)', pts, p => +p.ram || 0, 100) +
+      _renderSvgMetricChart('Latency / Ping (ms)', ' ms', 'var(--green)', pts, p => +p.ping_ms || 0, 0);
+  }
+}
+
+function openAndroidDownloadCard() {
+  switchTab('settings');
+  switchSubTab('general', $('stab-general'));
+  refreshAndroidApkLinks();
+  setTimeout(() => {
+    const el = $('android-apk-card');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 120);
+}
+
 async function saveSettings() {
   const body = {
     github_repo_url: $('set-gh').value, iran_mirror_url: $('set-ir').value,

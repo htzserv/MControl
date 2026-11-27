@@ -1,3 +1,14 @@
+## v1.8.0
+
+- **PWA Installability Fix (Chrome "This app can't be installed"):**
+  - Served `/manifest.json` dynamically from `main.go` with `Content-Type: application/manifest+json; charset=utf-8` and exact absolute `id`, `scope`, `start_url`, and icon paths matching the panel's active `web_path`.
+  - Added `Service-Worker-Allowed: /` and `application/javascript; charset=utf-8` headers for `sw.js`, switched HTML `Cache-Control` from `no-store` to `no-cache`, and enabled immediate `self.skipWaiting()` in `web/sw.js` (`mcontrol-pwa-v7`).
+- **Android Release Signing & Play Protect Hardening (`v1.8.0`, `versionCode = 6`):**
+  - Replaced the `debug` signing config (`CN=Android Debug`, which triggered Google Play Protect warnings) with a proper `release` PKCS12/JKS `signingConfig` in `app/build.gradle.kts` and `.github/workflows/android-apk.yml` (supports persistent `ANDROID_KEYSTORE_BASE64` / `ANDROID_KEYSTORE_PASSWORD` GitHub Secrets with clean RSA-2048 MDesign release fallback).
+  - Hardened `AndroidManifest.xml` with `android:allowBackup="false"` and a dedicated `res/xml/network_security_config.xml`.
+- **Full Beta Channel & Embedded Web App:**
+  - Complete rolling Beta & Stable APK publishing to GitHub Releases and ParsPack Iran Mirror, plus in-app Panel Update & Beta Channel controls and full-featured WebView (File Upload, DownloadManager, BackHandler, native JS Dialogs).
+
 ## v1.7.2
 
 - **100% Symmetrical Shield + M-Pulse Logo (Web, PWA & Android):**

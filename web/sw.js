@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v6';
+const CACHE_NAME = 'mcontrol-pwa-v9';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -47,6 +47,7 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 </html>`;
 
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
       Promise.allSettled(PRECACHE_URLS.map(u => cache.add(new Request(u, { cache: 'reload' }))))

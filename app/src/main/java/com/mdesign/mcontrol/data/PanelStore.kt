@@ -83,4 +83,16 @@ class PanelStore(context: Context) {
 
     fun isApkBetaChannel(): Boolean = prefs.getBoolean("apk_beta_channel", false)
     fun setApkBetaChannel(on: Boolean) = prefs.edit().putBoolean("apk_beta_channel", on).apply()
+
+    fun getAlertIntervalSec(): Int = prefs.getInt("alert_interval_sec", 30).coerceIn(5, 3600)
+    fun setAlertIntervalSec(sec: Int) = prefs.edit().putInt("alert_interval_sec", sec.coerceIn(5, 3600)).apply()
+
+    fun getAlertEveryN(): Int = prefs.getInt("alert_every_n", 1).coerceIn(1, 100)
+    fun setAlertEveryN(n: Int) = prefs.edit().putInt("alert_every_n", n.coerceIn(1, 100)).apply()
+
+    fun getAlertMaxPerOutage(): Int = prefs.getInt("alert_max_per_outage", 0).coerceIn(0, 100)
+    fun setAlertMaxPerOutage(n: Int) = prefs.edit().putInt("alert_max_per_outage", n.coerceIn(0, 100)).apply()
+
+    fun isAlertOnRecovery(): Boolean = prefs.getBoolean("alert_on_recovery", true)
+    fun setAlertOnRecovery(on: Boolean) = prefs.edit().putBoolean("alert_on_recovery", on).apply()
 }

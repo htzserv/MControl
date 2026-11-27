@@ -33,6 +33,7 @@ import com.mdesign.mcontrol.ui.screens.*
 import com.mdesign.mcontrol.ui.theme.MDesignAccent
 import com.mdesign.mcontrol.ui.theme.MDesignTheme
 import com.mdesign.mcontrol.worker.OutageCheckWorker
+import com.mdesign.mcontrol.worker.OutageMonitorService
 import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
@@ -133,6 +134,10 @@ fun MControlApp(
     var benchJob by remember { mutableStateOf(BenchJobState()) }
 
     var bgAlerts by remember { mutableStateOf(store.isBgAlertsEnabled()) }
+    var alertIntervalSec by remember { mutableIntStateOf(store.getAlertIntervalSec()) }
+    var alertEveryN by remember { mutableIntStateOf(store.getAlertEveryN()) }
+    var alertMaxPerOutage by remember { mutableIntStateOf(store.getAlertMaxPerOutage()) }
+    var alertOnRecovery by remember { mutableStateOf(store.isAlertOnRecovery()) }
     var bioLock by remember { mutableStateOf(store.isBiometricLockEnabled()) }
     var apkBeta by remember { mutableStateOf(store.isApkBetaChannel()) }
     var panelUpdate by remember { mutableStateOf<PanelUpdateCheck?>(null) }
@@ -167,6 +172,10 @@ fun MControlApp(
     LaunchedEffect(activePanel?.id, activePanel?.token) {
         if (!showLogin && activePanel != null) {
             refreshAll()
+            if (bgAlerts) {
+                OutageMonitorService.sync(ctx, true)
+                OutageCheckWorker.schedule(ctx, true)
+            }
         }
     }
 
@@ -390,6 +399,10 @@ fun MControlApp(
                     activePanel = activePanel,
                     themeMode = themeMode,
                     bgAlerts = bgAlerts,
+                    alertIntervalSec = alertIntervalSec,
+                    alertEveryN = alertEveryN,
+                    alertMaxPerOutage = alertMaxPerOutage,
+                    alertOnRecovery = alertOnRecovery,
                     bioLock = bioLock,
                     apkBeta = apkBeta,
                     panelUpdate = panelUpdate,
@@ -397,8 +410,25 @@ fun MControlApp(
                     onToggleBgAlerts = { on ->
                         bgAlerts = on
                         store.setBgAlertsEnabled(on)
+                        OutageMonitorService.sync(ctx, on)
                         OutageCheckWorker.schedule(ctx, on)
-                        showToast(if (on) "Background alerts enabled (15m)" else "Background alerts disabled")
+                        showToast(if (on) "Live alerts active (every ${alertIntervalSec}s, every $alertEveryN alert)" else "Outage alerts disabled")
+                    },
+                    onSaveAlertConfig = { sec, everyN, maxPer, onRec ->
+                        alertIntervalSec = sec
+                        alertEveryN = everyN
+                        alertMaxPerOutage = maxPer
+                        alertOnRecovery = onRec
+                        store.setAlertIntervalSec(sec)
+                        store.setAlertEveryN(everyN)
+                        store.setAlertMaxPerOutage(maxPer)
+                        store.setAlertOnRecovery(onRec)
+                        if (bgAlerts) OutageMonitorService.sync(ctx, true)
+                        showToast("Saved: every ${sec}s • every $everyN alert(s)")
+                    },
+                    onTestAlert = {
+                        OutageMonitorService.sendTestNotification(ctx, alertIntervalSec, alertEveryN)
+                        showToast("Test notification sent")
                     },
                     onToggleBioLock = { on ->
                         bioLock = on

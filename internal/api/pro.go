@@ -1091,7 +1091,14 @@ func (h *Handler) handleMetricsHistory(w http.ResponseWriter, r *http.Request) {
 	}
 	rng := r.URL.Query().Get("range")
 	dur := int64(86400)
-	if rng == "7d" {
+	switch rng {
+	case "1h":
+		dur = 3600
+	case "6h":
+		dur = 6 * 3600
+	case "12h":
+		dur = 12 * 3600
+	case "7d":
 		dur = 7 * 86400
 	}
 	pts, err := h.store.ListMetricPoints(target, time.Now().Unix()-dur)
@@ -1174,7 +1181,7 @@ func (h *Handler) StartProMetricsDaemon() {
 				lastPrune = time.Now()
 				h.store.PruneMetricPoints(7)
 			}
-			time.Sleep(5 * time.Minute)
+			time.Sleep(2 * time.Minute)
 		}
 	}()
 }

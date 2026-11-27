@@ -592,6 +592,9 @@ func (h *Handler) applyProbe(srv *db.Server, p sshclient.ProbeResult) {
 	if srv.HostKey == "" && p.HostKey != "" && p.Online {
 		_ = h.store.SetHostKey(srv.ID, p.HostKey)
 	}
+	if p.Online {
+		_ = h.store.AddMetricPoint(fmt.Sprintf("srv:%d", srv.ID), parsePct(p.CPU), parsePct(p.RAM), parseMs(srv.PingMs), 0, 0)
+	}
 }
 
 func (h *Handler) probeServer(id int64) (*sshclient.ProbeResult, error) {

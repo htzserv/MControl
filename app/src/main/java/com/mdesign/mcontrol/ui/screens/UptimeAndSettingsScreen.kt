@@ -187,11 +187,17 @@ fun SettingsScreen(
     activePanel: PanelProfile?,
     themeMode: String,
     bgAlerts: Boolean,
+    alertIntervalSec: Int,
+    alertEveryN: Int,
+    alertMaxPerOutage: Int,
+    alertOnRecovery: Boolean,
     bioLock: Boolean,
     apkBeta: Boolean,
     panelUpdate: PanelUpdateCheck?,
     onChangeTheme: (String) -> Unit,
     onToggleBgAlerts: (Boolean) -> Unit,
+    onSaveAlertConfig: (intervalSec: Int, everyN: Int, maxPerOutage: Int, onRecovery: Boolean) -> Unit,
+    onTestAlert: () -> Unit,
     onToggleBioLock: (Boolean) -> Unit,
     onToggleApkBeta: (Boolean) -> Unit,
     onCheckPanelUpdate: () -> Unit,
@@ -257,6 +263,12 @@ fun SettingsScreen(
             }
         }
 
+        // Dedicated Outage Notifications Card
+        var secInput by remember(alertIntervalSec) { mutableStateOf(alertIntervalSec.toString()) }
+        var everyNInput by remember(alertEveryN) { mutableStateOf(alertEveryN.toString()) }
+        var maxInput by remember(alertMaxPerOutage) { mutableStateOf(alertMaxPerOutage.toString()) }
+        var recSwitch by remember(alertOnRecovery) { mutableStateOf(alertOnRecovery) }
+
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -264,15 +276,121 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Security & Background Alerts", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("🔔 Outage Notifications", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
+                    TextButton(onClick = onTestAlert, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)) {
+                        Text("Test Alert", fontSize = 12.sp)
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("Background Outage Push Alerts", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Checks servers & monitors every 15 min even when closed", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Server Outage Push Alerts", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            if (bgAlerts) "Active • Every ${alertIntervalSec}s • Notify every $alertEveryN alert(s)" else "Disabled",
+                            fontSize = 11.sp,
+                            color = if (bgAlerts) MDesignGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     Switch(checked = bgAlerts, onCheckedChange = onToggleBgAlerts)
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+
+                Text("Check & Alert Interval (Seconds)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(15, 30, 60, 120, 300).forEach { s ->
+                        FilterChip(
+                            selected = secInput == s.toString(),
+                            onClick = {
+                                secInput = s.toString()
+                                onSaveAlertConfig(s, everyNInput.toIntOrNull() ?: 1, maxInput.toIntOrNull() ?: 0, recSwitch)
+                            },
+                            label = { Text("${s}s", fontSize = 11.sp) }
+                        )
+                    }
+                }
+
+                Text("Notify Every N Alerts (هر چند الرت خبر بده)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(1, 2, 3, 5, 10).forEach { n ->
+                        FilterChip(
+                            selected = everyNInput == n.toString(),
+                            onClick = {
+                                everyNInput = n.toString()
+                                onSaveAlertConfig(secInput.toIntOrNull() ?: 30, n, maxInput.toIntOrNull() ?: 0, recSwitch)
+                            },
+                            label = { Text(if (n == 1) "1 (All)" else "Every $n", fontSize = 11.sp) }
+                        )
+                    }
+                }
+
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = secInput,
+                        onValueChange = { secInput = it.filter { c -> c.isDigit() }.take(4) },
+                        label = { Text("Seconds", fontSize = 11.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = everyNInput,
+                        onValueChange = { everyNInput = it.filter { c -> c.isDigit() }.take(3) },
+                        label = { Text("Every N Alerts", fontSize = 11.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = maxInput,
+                        onValueChange = { maxInput = it.filter { c -> c.isDigit() }.take(3) },
+                        label = { Text("Max (0=∞)", fontSize = 11.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Notify on Server Recovery", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text("Send notification when an offline server comes back online", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = recSwitch, onCheckedChange = {
+                        recSwitch = it
+                        onSaveAlertConfig(secInput.toIntOrNull() ?: 30, everyNInput.toIntOrNull() ?: 1, maxInput.toIntOrNull() ?: 0, it)
+                    })
+                }
+
+                FilledTonalButton(
+                    onClick = {
+                        onSaveAlertConfig(
+                            (secInput.toIntOrNull() ?: 30).coerceIn(5, 3600),
+                            (everyNInput.toIntOrNull() ?: 1).coerceIn(1, 100),
+                            (maxInput.toIntOrNull() ?: 0).coerceIn(0, 100),
+                            recSwitch
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Save Notification Settings", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        // Security Card
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Security", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
                         Text("Biometric App Lock", fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -303,7 +421,7 @@ fun SettingsScreen(
                 }
                 if (panelUpdate != null) {
                     Text(
-                        "Current: v${panelUpdate.currentVersion.ifBlank { "1.7.2" }}" +
+                        "Current: v${panelUpdate.currentVersion.ifBlank { "1.8.0" }}" +
                             (if (panelUpdate.stableAvailable) " • Stable: v${panelUpdate.stableVersion}" else "") +
                             (if (panelUpdate.betaAvailable) " • Beta: ${panelUpdate.betaTag}" else ""),
                         fontSize = 12.sp,
@@ -375,7 +493,7 @@ fun SettingsScreen(
         }
 
         Text(
-            "MControl Android v1.7.2 • MDesign",
+            "MControl Android v1.8.0 • MDesign",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)
