@@ -1155,7 +1155,7 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 	var (
 		g      geo.Info
 		pingMs string
-		p      sshclient.ProbeResult
+		authR  sshclient.Result
 		addWG  sync.WaitGroup
 	)
 	addWG.Add(3)
@@ -1163,7 +1163,7 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 	go func() { defer addWG.Done(); pingMs = sshclient.MeasurePingFromMaster(req.Host, req.Port) }()
 	go func() {
 		defer addWG.Done()
-		p = sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
+		authR = sshclient.Run(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy}, "true", 6*time.Second, 6*time.Second)
 	}()
 	addWG.Wait()
 	if req.Role == "" || req.Role == "auto" {
@@ -1173,8 +1173,9 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 			req.Role = "foreign"
 		}
 	}
-	if !p.Online {
-		lowErr := strings.ToLower(p.Error)
+	if authR.Err != nil {
+		errStr := authR.Err.Error()
+		lowErr := strings.ToLower(errStr)
 		isAuthErr := strings.Contains(lowErr, "unable to authenticate") ||
 			strings.Contains(lowErr, "permission denied") ||
 			strings.Contains(lowErr, "no supported methods remain") ||
@@ -1183,45 +1184,33 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 			strings.Contains(lowErr, "incorrect password") ||
 			strings.Contains(lowErr, "invalid password")
 		if isAuthErr {
-			fail(w, http.StatusUnauthorized, "SSH authentication failed — server not added: "+p.Error)
+			fail(w, http.StatusUnauthorized, "SSH authentication failed — server not added: "+errStr)
 			return
 		}
-		fail(w, http.StatusBadGateway, "SSH connection failed — server not added: "+p.Error)
+		fail(w, http.StatusBadGateway, "SSH connection failed — server not added: "+errStr)
 		return
 	}
 
-	status := "offline"
-	hostKey := ""
-	if p.Online {
-		status = "online"
-		hostKey = p.HostKey
-	}
 	srv := &db.Server{
-		Name:          req.Name,
-		Role:          req.Role,
-		Host:          req.Host,
-		Port:          req.Port,
-		Username:      req.Username,
-		Password:      req.Secret,
-		AuthType:      req.AuthType,
-		HostKey:       hostKey,
-		LastError:     p.Error,
-		Country:       g.Country,
-		CountryCode:   g.CountryCode,
-		Datacenter:    g.Datacenter,
-		CoreInstalled: p.CoreInstalled,
-		CoreVersion:   p.CoreVersion,
-		Status:        status,
-		CPU:            p.CPU,
-		RAM:            p.RAM,
-		Uptime:         p.Uptime,
-		IPv4:           p.IPv4,
-		IPv6:           func() string { if p.IPv6 != "" && p.IPv6 != "N/A" { return p.IPv6 }; return strings.TrimSpace(req.IPv6) }(),
-		NetRx:          p.NetRx,
-		NetTx:          p.NetTx,
-		InstalledTools: p.InstalledTools,
-		PingMs:         pingMs,
-		UseOutbound:    req.UseOutbound,
+		Name:        req.Name,
+		Role:        req.Role,
+		Host:        req.Host,
+		Port:        req.Port,
+		Username:    req.Username,
+		Password:    req.Secret,
+		AuthType:    req.AuthType,
+		HostKey:     authR.HostKey,
+		Country:     g.Country,
+		CountryCode: g.CountryCode,
+		Datacenter:  g.Datacenter,
+		Status:      "online",
+		CPU:         "---",
+		RAM:         "---",
+		Uptime:      "---",
+		IPv4:        req.Host,
+		IPv6:        strings.TrimSpace(req.IPv6),
+		PingMs:      pingMs,
+		UseOutbound: req.UseOutbound,
 	}
 	id, err := h.store.AddServer(srv)
 	if err != nil {
@@ -1229,17 +1218,12 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	srv.ID = id
-	// Detect an old MTunnel installation so the panel can offer to import + remove it.
-	var legacy map[string]any
-	if p.Online {
-		full := *srv
-		full.Password = req.Secret
-		full.UseOutbound = req.UseOutbound
-		chk := sshclient.Run(h.targetOfSrv(&full), `[ -e /usr/bin/mtunnel ] || [ -d /etc/mbackhaul ] || [ -d /etc/mrathole ] || [ -d /etc/paqet ] || [ -d /etc/mgre ] && echo LEGACY_YES || echo LEGACY_NO`, 5*time.Second, 6*time.Second)
-		legacy = map[string]any{"found": strings.Contains(chk.Output, "LEGACY_YES")}
-	}
 	srv.Password = ""
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "server": srv, "probe_error": p.Error, "legacy": legacy})
+	// Hardware check (CPU/RAM/Uptime/Net) runs asynchronously AFTER adding the server
+	go func(sid int64) {
+		_, _ = h.probeServer(sid)
+	}(id)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "server": srv})
 }
 
 func (h *Handler) handleUpdateServer(w http.ResponseWriter, r *http.Request) {
@@ -2361,13 +2345,6 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 		candPorts = append(candPorts, pt)
 	}
 	addPort(srv.AgentPort)
-	// Auto-discover any already-running MControl Peer Agent port(s) on this server
-	discRes := sshclient.Run(target, `systemctl list-units --type=service --state=running --no-legend 'mcontrol-agent*.service' 2>/dev/null | grep -oE 'mcontrol-agent-[0-9]+' | cut -d- -f3`, 8*time.Second, 10*time.Second)
-	for _, ln := range strings.Split(discRes.Output, "\n") {
-		if pt, err := strconv.Atoi(strings.TrimSpace(ln)); err == nil && pt > 0 && pt <= 65535 {
-			addPort(pt)
-		}
-	}
 	for _, fixedPt := range []int{84, 847, 7483, 24819, 2054} {
 		addPort(fixedPt)
 	}

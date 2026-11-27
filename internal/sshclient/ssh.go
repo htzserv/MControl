@@ -812,20 +812,7 @@ if [ -n "$BUSY_PIDS" ]; then
 fi`
 	prepRendered := fmt.Sprintf(prepDeps, agentPort, agentPort, agentPort, agentPort, agentPort, svcName, skipFlag)
 	prepRendered = "MASTER_IP=" + ShQuote(masterIP) + "\nNEW_CODE=" + ShQuote(peerCode) + "\nDROP_CODE=" + ShQuote(dropCode) + "\n" + prepRendered
-	mirrorFetch := ""
-	if isIran && mirrorClean != "" {
-		mirrorFetch = fmt.Sprintf(`
-if command -v curl >/dev/null 2>&1; then
-  if curl -fsSL --connect-timeout 3 --max-time 8 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "MASTER_IP_SYNC" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
-    mv -f /usr/local/bin/mcontrol-agent.py.dl /usr/local/bin/mcontrol-agent.py
-    chmod 755 /usr/local/bin/mcontrol-agent.py
-    echo "AGENT_SOURCE=iran_mirror"
-  else
-    rm -f /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null || true
-    echo "AGENT_SOURCE=iran_mirror_embedded"
-  fi
-fi`, ShQuote(mirrorClean+"/beta-latest/mcontrol-agent.py"))
-	}
+	mirrorFetch := "" // Embedded v4 agent is already written inline — skip redundant download
 	peersBlock := fmt.Sprintf(`
 MASTER_IP=%s
 NEW_CODE=%s
@@ -1113,26 +1100,23 @@ case "$ARCH" in aarch64|arm64) ARCH="arm64" ;; *) ARCH="amd64" ;; esac
 AGENT_EXEC="$(command -v python3 || echo /usr/bin/python3) /usr/local/bin/mcontrol-agent.py"
 if [ -x /usr/local/bin/mcontrol-agent ]; then
   AGENT_EXEC="/usr/local/bin/mcontrol-agent"
-elif command -v curl >/dev/null 2>&1 && [ -n "%s" ]; then
-  if curl -fsSL --connect-timeout 3 --max-time 8 "%s/mcontrol-agent-linux-${ARCH}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then
-    chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent
-    AGENT_EXEC="/usr/local/bin/mcontrol-agent"
-  else
-    rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true
-  fi
 fi
 sed -i "s|__AGENT_EXEC__|${AGENT_EXEC}|g" "/etc/systemd/system/%s"
 systemctl daemon-reload
-systemctl enable "%s"
+systemctl enable "%s" >/dev/null 2>&1 || true
 systemctl restart "%s"
-for _i in 1 2 3 4 5 6; do
+for _i in 1 2 3 4 5 6 7 8; do
   if systemctl is-active --quiet "%s" && ss -tln 2>/dev/null | grep -q ":${AGENT_PORT} "; then
     break
   fi
-  sleep 0.5
+  sleep 0.25
 done
+# Upgrade to static Go binary silently in background if not yet present
+if [ ! -x /usr/local/bin/mcontrol-agent ] && command -v curl >/dev/null 2>&1 && [ -n "%s" ]; then
+  nohup bash -c 'if curl -fsSL --connect-timeout 4 --max-time 15 "%s/mcontrol-agent-linux-'"$ARCH"'" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent && sed -i "s|^ExecStart=.*|ExecStart=/usr/local/bin/mcontrol-agent|" "/etc/systemd/system/'"$SVC_NAME"'" && systemctl daemon-reload && systemctl restart "'"$SVC_NAME"'"; else rm -f /usr/local/bin/mcontrol-agent.dl 2>/dev/null || true; fi' >/dev/null 2>&1 &
+fi
 systemctl is-active "%s"
-`, mirrorFetch, svcName, agentPort, masterIP, strings.TrimRight(strings.TrimSpace(masterURL), "/"), agentPort, agentBinBase, agentBinBase, svcName, svcName, svcName, svcName, svcName)
+`, mirrorFetch, svcName, agentPort, masterIP, strings.TrimRight(strings.TrimSpace(masterURL), "/"), agentPort, svcName, svcName, svcName, svcName, agentBinBase, agentBinBase, svcName)
 }
 
 func InstallPeerAgent(t Target, peerCode string, agentPort int) Result {
