@@ -458,6 +458,68 @@ mc_cli_uninstall() {
     exit 0
 }
 
+
+update_mcontrol() {
+    echo ""
+    echo -e "  ${C}${BOLD}Update MControl Panel${NC}"
+    echo -e "  ${DIM}Choose download source and channel:${NC}"
+    echo -e "    ${G}[1]${NC} Stable — Iran Mirror (ParsPack)"
+    echo -e "    ${C}[2]${NC} Stable — Foreign (GitHub)"
+    echo -e "    ${Y}[3]${NC} Beta   — Iran Mirror (ParsPack)"
+    echo -e "    ${M}[4]${NC} Beta   — Foreign (GitHub)"
+    echo -e "    ${DIM}[0] Cancel${NC}"
+    printf "  ${C}Select [1-4, 0] ❯❯ ${NC}"
+    read -r uopt || return
+    local arch base_url label
+    arch=$(uname -m)
+    case "$arch" in
+        x86_64|amd64) arch="amd64" ;;
+        aarch64|arm64) arch="arm64" ;;
+        *) echo -e "  ${R}✖ Unsupported architecture: ${arch}${NC}"; return ;;
+    esac
+    case "$uopt" in
+        1) base_url="https://c107328.parspack.net/c107328/MControl"; label="Stable (Iran Mirror)" ;;
+        2) base_url="https://github.com/htzserv/MControl/releases/latest/download"; label="Stable (GitHub)" ;;
+        3) base_url="https://c107328.parspack.net/c107328/MControl/beta-latest"; label="Beta (Iran Mirror)" ;;
+        4) base_url="https://github.com/htzserv/MControl/releases/download/beta-latest"; label="Beta (GitHub)" ;;
+        0|"") return ;;
+        *) echo -e "  ${R}✖ Invalid choice.${NC}"; return ;;
+    esac
+    echo -e "\n  ${C}Downloading MControl (${label}, linux-${arch})...${NC}"
+    local tmp_bin="/usr/local/bin/mcontrol.new"
+    if ! curl -fSL --connect-timeout 10 --max-time 180 "${base_url}/mcontrol-linux-${arch}" -o "$tmp_bin"; then
+        rm -f "$tmp_bin"
+        echo -e "  ${R}✖ Download failed from ${label}.${NC}"
+        return
+    fi
+    if [ ! -s "$tmp_bin" ]; then
+        rm -f "$tmp_bin"
+        echo -e "  ${R}✖ Downloaded binary is empty.${NC}"
+        return
+    fi
+    chmod 755 "$tmp_bin"
+    [ -f /usr/local/bin/mcontrol ] && cp -f /usr/local/bin/mcontrol /usr/local/bin/mcontrol.bak 2>/dev/null || true
+    mv -f "$tmp_bin" /usr/local/bin/mcontrol
+    # Also refresh CLI script if available
+    if curl -fsSL --connect-timeout 6 --max-time 30 "${base_url}/mcontrol-cli.sh" -o /usr/local/bin/mcontrol-cli.new 2>/dev/null && [ -s /usr/local/bin/mcontrol-cli.new ]; then
+        chmod 755 /usr/local/bin/mcontrol-cli.new
+        mv -f /usr/local/bin/mcontrol-cli.new /usr/local/bin/mcontrol-cli
+    else
+        rm -f /usr/local/bin/mcontrol-cli.new 2>/dev/null || true
+    fi
+    systemctl restart "$SVC"
+    sleep 1
+    if systemctl is-active --quiet "$SVC"; then
+        echo -e "\n  ${G}✓ MControl updated (${label}) and service restarted successfully!${NC}"
+    else
+        echo -e "\n  ${R}✖ Service failed to start after update — restoring backup...${NC}"
+        if [ -f /usr/local/bin/mcontrol.bak ]; then
+            mv -f /usr/local/bin/mcontrol.bak /usr/local/bin/mcontrol
+            systemctl restart "$SVC" || true
+        fi
+    fi
+}
+
 while true; do
     draw_header
 
@@ -478,11 +540,12 @@ while true; do
     mc_row "10" "Backup All Databases" "$B" " ${DIM}(/var/lib/mcontrol)${NC}"
     mc_row "11" "Reset Panel Username / Password" "$Y" " ${DIM}(SQLite Auth)${NC}"
     mc_row "12" "Reset Panel Settings (Domain / Path / 2FA)" "$Y" " ${DIM}(SQLite + TLS)${NC}"
-    mc_row "13" "Uninstall MControl" "$R"
+    mc_row "13" "Update MControl (Stable / Beta)" "$G" " ${DIM}(Iran / GitHub)${NC}"
+    mc_row "14" "Uninstall MControl" "$R"
 
     mc_footer "Exit"
 
-    printf "  ${C}Select [1-13, 0] ❯❯ ${NC}"
+    printf "  ${C}Select [1-14, 0] ❯❯ ${NC}"
     read -r opt || exit 0
     case "$opt" in
         1) systemctl restart "$SVC" && echo -e "\n  ${G}✓ Service restarted.${NC}" || echo -e "\n  ${R}✖ Restart failed.${NC}"; mc_pause ;;
@@ -539,6 +602,9 @@ while true; do
             reset_panel_settings
             mc_pause ;;
         13)
+            update_mcontrol
+            mc_pause ;;
+        14)
             mc_cli_uninstall
             mc_pause ;;
         0|q|Q) echo ""; exit 0 ;;
