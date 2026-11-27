@@ -286,4 +286,147 @@ class MControlApi(private var profile: PanelProfile) {
         val r = requestJson("POST", "api/monitors/$id/check")
         return r.optBoolean("ok") to (if (r.optBoolean("ok")) "Checked" else r.optString("error", "Failed"))
     }
+
+    suspend fun addServer(
+        name: String,
+        host: String,
+        port: Int,
+        username: String,
+        password: String,
+        useOutbound: Boolean
+    ): Pair<Boolean, String> {
+        val body = JSONObject().apply {
+            put("name", name.trim())
+            put("role", "auto")
+            put("host", host.trim())
+            put("port", if (port in 1..65535) port else 22)
+            put("username", username.trim().ifBlank { "root" })
+            put("auth_type", "password")
+            put("secret", password)
+            put("use_outbound", useOutbound)
+        }
+        val r = requestJson("POST", "api/servers", body)
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "Server added!" else r.optString("error", "Failed to add server"))
+    }
+
+    suspend fun deleteServer(id: Long, mode: String): Pair<Boolean, String> {
+        val r = requestJson("DELETE", "api/servers/$id?mode=$mode")
+        return r.optBoolean("ok") to (r.optString("message").ifBlank { if (r.optBoolean("ok")) "Server removed" else r.optString("error", "Failed") })
+    }
+
+    suspend fun pingAllServers(): Pair<Boolean, String> {
+        val r = requestJson("POST", "api/servers/ping-all")
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "All servers pinged" else r.optString("error", "Failed"))
+    }
+
+    suspend fun probeAllServers(): Pair<Boolean, String> {
+        val r = requestJson("POST", "api/servers/probe-all")
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "All servers probed" else r.optString("error", "Failed"))
+    }
+
+    suspend fun createTunnel(
+        name: String,
+        engine: String,
+        transport: String,
+        iranServerId: Long,
+        foreignServerId: Long,
+        tunnelPort: Int,
+        ports: String
+    ): Pair<Boolean, String> {
+        val body = JSONObject().apply {
+            put("name", name.trim())
+            put("engine", engine)
+            put("transport", transport)
+            put("iran_server_id", iranServerId)
+            put("foreign_server_id", foreignServerId)
+            put("tunnel_port", if (tunnelPort in 1..65535) tunnelPort else 3080)
+            put("ports", ports.trim())
+            put("ip_mode", "v4")
+        }
+        val r = requestJson("POST", "api/tunnels", body)
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "Tunnel deployed!" else r.optString("error", "Deploy failed"))
+    }
+
+    suspend fun deleteTunnel(id: Long): Pair<Boolean, String> {
+        val r = requestJson("DELETE", "api/tunnels/$id")
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "Tunnel deleted" else r.optString("error", "Failed"))
+    }
+
+    suspend fun tunnelSpeedtest(id: Long): Pair<Boolean, String> {
+        val r = requestJson("POST", "api/tunnels/$id/speedtest")
+        return r.optBoolean("ok") to (r.optString("output").ifBlank { r.optString("error", "No output") })
+    }
+
+    suspend fun startBenchmark(iranServerId: Long, foreignServerId: Long, profile: String): Pair<Boolean, String> {
+        val body = JSONObject().apply {
+            put("iran_server_id", iranServerId)
+            put("foreign_server_id", foreignServerId)
+            put("profile", profile)
+        }
+        val r = requestJson("POST", "api/tunnels/benchmark", body)
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "MSmart Benchmark started!" else r.optString("error", "Failed to start"))
+    }
+
+    suspend fun getBenchmarkStatus(): Result<BenchJobState> {
+        val r = requestJson("GET", "api/tunnels/benchmark/status")
+        if (!r.optBoolean("ok", false)) return Result.failure(Exception(r.optString("error", "Failed")))
+        val j = r.optJSONObject("job") ?: return Result.success(BenchJobState())
+        val arr = j.optJSONArray("results")
+        val list = mutableListOf<BenchResultItem>()
+        if (arr != null) {
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                list.add(
+                    BenchResultItem(
+                        rank = o.optInt("rank", i + 1),
+                        engine = o.optString("engine"),
+                        transport = o.optString("transport"),
+                        ipMode = o.optString("ip_mode", "v4"),
+                        underlay = o.optString("underlay", "ip"),
+                        label = o.optString("label"),
+                        ok = o.optBoolean("ok", false),
+                        mbps = o.optDouble("mbps", 0.0),
+                        pingMs = o.optDouble("ping_ms", 0.0),
+                        lossPct = o.optDouble("loss_pct", 0.0),
+                        score = o.optInt("score", 0),
+                        error = o.optString("error", "")
+                    )
+                )
+            }
+        }
+        return Result.success(
+            BenchJobState(
+                running = j.optBoolean("running", false),
+                done = j.optBoolean("done", false),
+                percent = j.optInt("percent", 0),
+                current = j.optString("current", "Ready"),
+                results = list
+            )
+        )
+    }
+
+    suspend fun createMonitor(name: String, type: String, target: String, intervalSec: Int): Pair<Boolean, String> {
+        val body = JSONObject().apply {
+            put("name", name.trim())
+            put("type", type)
+            put("target", target.trim())
+            put("interval_sec", intervalSec.coerceAtLeast(15))
+            put("timeout_sec", 10)
+            put("retries", 2)
+            put("probe_from", "master")
+            put("enabled", true)
+        }
+        val r = requestJson("POST", "api/monitors", body)
+        return r.optBoolean("ok") to (r.optString("message").ifBlank { if (r.optBoolean("ok")) "Monitor created" else r.optString("error", "Failed") })
+    }
+
+    suspend fun deleteMonitor(id: Long): Pair<Boolean, String> {
+        val r = requestJson("DELETE", "api/monitors/$id")
+        return r.optBoolean("ok") to (if (r.optBoolean("ok")) "Monitor deleted" else r.optString("error", "Failed"))
+    }
+
+    suspend fun importMonitors(kind: String): Pair<Boolean, String> {
+        val r = requestJson("POST", "api/monitors/import", JSONObject().put("kind", kind).put("probe_from", "master"))
+        return r.optBoolean("ok") to (r.optString("message").ifBlank { if (r.optBoolean("ok")) "Imported" else r.optString("error", "Failed") })
+    }
 }

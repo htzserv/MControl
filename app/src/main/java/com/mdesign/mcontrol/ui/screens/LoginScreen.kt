@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mdesign.mcontrol.data.MControlApi
 import com.mdesign.mcontrol.data.PanelProfile
+import com.mdesign.mcontrol.ui.components.MControlAnimatedLogo
+import com.mdesign.mcontrol.ui.components.MControlWordmark
 import com.mdesign.mcontrol.ui.theme.MDesignAccent
 import kotlinx.coroutines.launch
 import java.net.URI
@@ -119,18 +121,14 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "MControl",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.ExtraBold,
-            color = MDesignAccent
+        MControlAnimatedLogo(
+            modifier = Modifier.size(168.dp)
         )
-        Text(
-            text = "MDesign Mobile Control Center",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        Spacer(Modifier.height(4.dp))
+        MControlWordmark(
+            modifier = Modifier.width(210.dp).height(46.dp)
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(18.dp))
 
         if (savedPanels.isNotEmpty()) {
             LazyRow(

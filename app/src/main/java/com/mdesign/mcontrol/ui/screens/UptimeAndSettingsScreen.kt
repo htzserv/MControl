@@ -8,15 +8,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mdesign.mcontrol.data.MonitorItem
@@ -27,73 +32,152 @@ import com.mdesign.mcontrol.ui.theme.*
 fun UptimeScreen(
     monitors: List<MonitorItem>,
     onRefresh: () -> Unit,
-    onCheckNow: (Long) -> Unit
+    onCheckNow: (Long) -> Unit,
+    onAddMonitor: (name: String, type: String, target: String, intervalSec: Int) -> Unit,
+    onDeleteMonitor: (Long) -> Unit,
+    onImportMonitors: (String) -> Unit
 ) {
+    var showAdd by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 10.dp)) {
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().padding(bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Uptime Monitors (${monitors.size})", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-            IconButton(onClick = onRefresh) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = MDesignAccent)
+            Text("Uptime (${monitors.size})", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalButton(
+                    onClick = { showAdd = true },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Icon(Icons.Default.Add, null, Modifier.size(15.dp))
+                    Spacer(Modifier.width(3.dp))
+                    Text("Add", fontSize = 12.sp)
+                }
+                IconButton(onClick = onRefresh, modifier = Modifier.size(34.dp)) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = MDesignAccent)
+                }
             }
+        }
+
+        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = { onImportMonitors("servers") },
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                modifier = Modifier.weight(1f).height(34.dp)
+            ) { Text("+ Import Servers", fontSize = 11.sp) }
+            OutlinedButton(
+                onClick = { onImportMonitors("tunnels") },
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                modifier = Modifier.weight(1f).height(34.dp)
+            ) { Text("+ Import Tunnels", fontSize = 11.sp) }
         }
 
         if (monitors.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("No uptime monitors configured.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            return
-        }
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(monitors, key = { it.id }) { m ->
-                val isUp = m.status.equals("up", ignoreCase = true)
-                val dotCol = when {
-                    isUp -> MDesignGreen
-                    m.status.equals("down", ignoreCase = true) -> MDesignRed
-                    else -> MDesignAmber
-                }
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth().padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(monitors, key = { it.id }) { m ->
+                    val isUp = m.status.equals("up", ignoreCase = true)
+                    val dotCol = when {
+                        isUp -> MDesignGreen
+                        m.status.equals("down", ignoreCase = true) -> MDesignRed
+                        else -> MDesignAmber
+                    }
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
-                            Box(Modifier.size(11.dp).clip(CircleShape).background(dotCol))
-                            Column {
-                                Text(m.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(
-                                    "${m.type.uppercase()} • ${m.target}",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    "24h: ${String.format("%.2f%%", m.uptime24h)} • ${m.lastLatencyMs} ms",
-                                    fontSize = 11.sp,
-                                    color = dotCol,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                        OutlinedButton(
-                            onClick = { onCheckNow(m.id) },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Check", fontSize = 11.sp)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
+                                Box(Modifier.size(11.dp).clip(CircleShape).background(dotCol))
+                                Column {
+                                    Text(m.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Text(
+                                        "${m.type.uppercase()} • ${m.target}",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        "24h: ${String.format("%.2f%%", m.uptime24h)} • ${m.lastLatencyMs} ms",
+                                        fontSize = 11.sp,
+                                        color = dotCol,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                OutlinedButton(
+                                    onClick = { onCheckNow(m.id) },
+                                    contentPadding = PaddingValues(horizontal = 9.dp, vertical = 4.dp)
+                                ) {
+                                    Text("Check", fontSize = 11.sp)
+                                }
+                                IconButton(onClick = { onDeleteMonitor(m.id) }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MDesignRed, modifier = Modifier.size(18.dp))
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showAdd) {
+        var mName by remember { mutableStateOf("") }
+        var mType by remember { mutableStateOf("http") }
+        var mTarget by remember { mutableStateOf("") }
+        var mInt by remember { mutableStateOf("60") }
+
+        AlertDialog(
+            onDismissRequest = { showAdd = false },
+            title = { Text("+ Add Monitor", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = mName, onValueChange = { mName = it }, label = { Text("Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        listOf("http", "tcp", "ping", "dns").forEach { t ->
+                            FilterChip(selected = mType == t, onClick = { mType = t }, label = { Text(t.uppercase(), fontSize = 11.sp) })
+                        }
+                    }
+                    OutlinedTextField(
+                        value = mTarget,
+                        onValueChange = { mTarget = it },
+                        label = { Text("Target (URL / IP / host:port)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = mInt,
+                        onValueChange = { mInt = it.filter { c -> c.isDigit() }.take(4) },
+                        label = { Text("Interval (sec)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    if (mName.isNotBlank() && mTarget.isNotBlank()) {
+                        onAddMonitor(mName, mType, mTarget, mInt.toIntOrNull() ?: 60)
+                        showAdd = false
+                    }
+                }) { Text("Create") }
+            },
+            dismissButton = { TextButton(onClick = { showAdd = false }) { Text("Cancel") } }
+        )
     }
 }
 
@@ -106,6 +190,7 @@ fun SettingsScreen(
     onChangeTheme: (String) -> Unit,
     onToggleBgAlerts: (Boolean) -> Unit,
     onToggleBioLock: (Boolean) -> Unit,
+    onOpenWebSection: (String?) -> Unit,
     onSwitchPanel: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -125,6 +210,14 @@ fun SettingsScreen(
                 Text("Connected Panel", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
                 Text(activePanel?.name ?: "None", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(activePanel?.baseUrl ?: "", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Button(
+                    onClick = { onOpenWebSection(null) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.OpenInBrowser, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Open Full Web Panel (All Features)", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilledTonalButton(onClick = onSwitchPanel, modifier = Modifier.weight(1f)) {
                         Text("Switch / Add Panel", fontSize = 12.sp)
@@ -182,5 +275,12 @@ fun SettingsScreen(
                 }
             }
         }
+
+        Text(
+            "MControl Android v1.7.1 • MDesign",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)
+        )
     }
 }

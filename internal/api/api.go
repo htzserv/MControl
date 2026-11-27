@@ -1148,7 +1148,24 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	g := geo.LookupWithProxy(req.Host, h.geoSocksProxy())
+	reqProxy := ""
+	if req.UseOutbound && isOutboundActive() {
+		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	}
+	var (
+		g      geo.Info
+		pingMs string
+		p      sshclient.ProbeResult
+		addWG  sync.WaitGroup
+	)
+	addWG.Add(3)
+	go func() { defer addWG.Done(); g = geo.LookupWithProxy(req.Host, h.geoSocksProxy()) }()
+	go func() { defer addWG.Done(); pingMs = sshclient.MeasurePingFromMaster(req.Host, req.Port) }()
+	go func() {
+		defer addWG.Done()
+		p = sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
+	}()
+	addWG.Wait()
 	if req.Role == "" || req.Role == "auto" {
 		if strings.EqualFold(g.CountryCode, "IR") {
 			req.Role = "iran"
@@ -1156,12 +1173,6 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 			req.Role = "foreign"
 		}
 	}
-	pingMs := sshclient.MeasurePingFromMaster(req.Host, req.Port)
-	reqProxy := ""
-	if req.UseOutbound && isOutboundActive() {
-		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
-	}
-	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})
 	if !p.Online {
 		lowErr := strings.ToLower(p.Error)
 		isAuthErr := strings.Contains(lowErr, "unable to authenticate") ||
@@ -1224,7 +1235,8 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		full := *srv
 		full.Password = req.Secret
 		full.UseOutbound = req.UseOutbound
-		legacy = h.legacySummary(&full)
+		chk := sshclient.Run(h.targetOfSrv(&full), `[ -e /usr/bin/mtunnel ] || [ -d /etc/mbackhaul ] || [ -d /etc/mrathole ] || [ -d /etc/paqet ] || [ -d /etc/mgre ] && echo LEGACY_YES || echo LEGACY_NO`, 5*time.Second, 6*time.Second)
+		legacy = map[string]any{"found": strings.Contains(chk.Output, "LEGACY_YES")}
 	}
 	srv.Password = ""
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": id, "server": srv, "probe_error": p.Error, "legacy": legacy})
@@ -2362,9 +2374,9 @@ func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 
 	probeWithRetry := func(port int, code string) sshclient.ProbeResult {
 		var pr sshclient.ProbeResult
-		for attempt := 0; attempt < 3; attempt++ {
+		for attempt := 0; attempt < 2; attempt++ {
 			if attempt > 0 {
-				time.Sleep(1100 * time.Millisecond)
+				time.Sleep(450 * time.Millisecond)
 			}
 			pr = sshclient.ProbePeer(srv.Host, port, code, socksPx)
 			if pr.Online {
@@ -2485,7 +2497,7 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 	if p.AgentCertFP != "" {
 		h.saveAgentCertPin(srv.Host, chosenPort, p.AgentCertFP)
 	}
-	h.applyProbe(srv, p)
+	go h.applyProbe(srv, p)
 	srcUsed := "direct"
 	if isIran {
 		srcUsed = "iran_mirror"

@@ -9939,39 +9939,73 @@ async function runSrvWizardMigrate() {
 async function saveServer() {
   const btn = $('btn-save-srv'), label = btn.textContent;
   btn.disabled = true; btn.textContent = t('connecting');
+  const auth = $('s-auth').value;
+  const payload = {
+    name: $('s-name').value, role: $('s-role') ? $('s-role').value : 'auto', host: $('s-host').value,
+    port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
+    auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
+    ssh_profile_id: parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10),
+    ipv6: ($('s-ipv6') && $('s-ipv6').value || '').trim(),
+    use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
+  };
+  const isNew = !editId;
+  let preTick = null;
+  if (isNew) {
+    const isFa = (typeof lang !== 'undefined' && lang === 'fa');
+    closeModal('srv-modal');
+    if ($('ob-srv-title')) $('ob-srv-title').textContent = payload.name.trim() || payload.host.trim() || 'New Server';
+    if ($('ob-srv-host')) $('ob-srv-host').textContent = payload.host.trim();
+    if ($('ob-result-card')) $('ob-result-card').className = 'ob-result-card';
+    if ($('btn-ob-migrate')) $('btn-ob-migrate').style.display = 'none';
+    let prePct = 8;
+    setOnboardProgress(prePct,
+      isFa ? 'در حال اتصال SSH و بررسی سرور...' : 'Connecting via SSH & probing server...',
+      (payload.host || '').trim()
+    );
+    $('srv-onboard-modal').classList.add('active');
+    preTick = setInterval(() => {
+      if (prePct < 36) {
+        prePct += 4;
+        setOnboardProgress(prePct,
+          prePct < 24
+            ? (isFa ? 'در حال احراز هویت SSH...' : 'Authenticating SSH session...')
+            : (isFa ? 'در حال دریافت اطلاعات لوکیشن و پینگ...' : 'Fetching location & ping telemetry...')
+        );
+      }
+    }, 350);
+  }
   try {
-    const auth = $('s-auth').value;
-    const payload = {
-      name: $('s-name').value, role: $('s-role') ? $('s-role').value : 'auto', host: $('s-host').value,
-      port: parseInt($('s-port').value || '22', 10), username: $('s-user').value,
-      auth_type: auth, secret: auth === 'key' ? $('s-key').value : $('s-pass').value,
-      ssh_profile_id: parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10),
-      ipv6: ($('s-ipv6') && $('s-ipv6').value || '').trim(),
-      use_outbound: $('s-outbound') ? ($('s-outbound').value === '1') : false
-    };
     const res = editId ? await api('api/servers/' + editId, 'PUT', payload) : await api('api/servers', 'POST', payload);
+    if (preTick) { clearInterval(preTick); preTick = null; }
     if (res && res.ok === true) {
-      const wasNew = !editId;
       const enteredPass = (parseInt(($('s-prof-id') && $('s-prof-id').value) || '0', 10) === 0 && auth === 'password') ? $('s-pass').value : '';
       const enteredUser = $('s-user').value.trim() || 'root';
       const enteredPort = parseInt($('s-port').value || '22', 10);
       const suggestedName = $('s-name').value.trim() || $('s-host').value.trim();
       toast(editId ? t('toast_saved') : t('toast_added'));
-      await loadServers();
+      loadServers();
       if (res.probe_error) toast(res.probe_error, true);
-      const finishAfterSave = () => {
-        closeModal('srv-modal');
-        if (wasNew && res.id) {
-          startServerOnboarding(res.id, res.server || { id: res.id, name: payload.name, host: payload.host, role: payload.role }, res.legacy);
-        }
-      };
-      if (enteredPass && !_lastSavedSSHKey[enteredUser + ':' + enteredPort + ':' + enteredPass]) {
-        promptSaveSSHProfile('srv', enteredUser, enteredPass, enteredPort, suggestedName, finishAfterSave);
+      if (isNew && res.id) {
+        startServerOnboarding(res.id, res.server || { id: res.id, name: payload.name, host: payload.host, role: payload.role }, res.legacy);
       } else {
-        finishAfterSave();
+        const finishEdit = () => closeModal('srv-modal');
+        if (enteredPass && !_lastSavedSSHKey[enteredUser + ':' + enteredPort + ':' + enteredPass]) {
+          promptSaveSSHProfile('srv', enteredUser, enteredPass, enteredPort, suggestedName, finishEdit);
+        } else {
+          finishEdit();
+        }
       }
-    } else toast(res.error || 'Failed', true);
-  } finally { btn.disabled = false; btn.textContent = label; }
+    } else {
+      if (isNew) {
+        closeModal('srv-onboard-modal');
+        $('srv-modal').classList.add('active');
+      }
+      toast((res && res.error) || 'Failed', true);
+    }
+  } finally {
+    if (preTick) clearInterval(preTick);
+    btn.disabled = false; btn.textContent = label;
+  }
 }
 
 async function updatePeerAgent(id) {

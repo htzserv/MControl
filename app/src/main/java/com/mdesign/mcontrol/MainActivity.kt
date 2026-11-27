@@ -8,23 +8,27 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.mdesign.mcontrol.data.*
+import com.mdesign.mcontrol.ui.components.MControlAnimatedLogo
 import com.mdesign.mcontrol.ui.screens.*
+import com.mdesign.mcontrol.ui.theme.MDesignAccent
 import com.mdesign.mcontrol.ui.theme.MDesignTheme
 import com.mdesign.mcontrol.worker.OutageCheckWorker
 import kotlinx.coroutines.launch
@@ -56,9 +60,12 @@ class MainActivity : FragmentActivity() {
             MDesignTheme(themeMode = themeMode) {
                 if (!unlocked) {
                     Surface(Modifier.fillMaxSize()) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            Button(onClick = { promptBiometric { ok -> unlocked = ok } }) {
-                                Text("Unlock MControl")
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                MControlAnimatedLogo(modifier = Modifier.size(140.dp))
+                                Button(onClick = { promptBiometric { ok -> unlocked = ok } }) {
+                                    Text("Unlock MControl")
+                                }
                             }
                         }
                     }
@@ -121,16 +128,24 @@ fun MControlApp(
     var tunnels by remember { mutableStateOf<List<TunnelItem>>(emptyList()) }
     var metricsMap by remember { mutableStateOf<Map<Long, TunnelMetrics>>(emptyMap()) }
     var monitors by remember { mutableStateOf<List<MonitorItem>>(emptyList()) }
+    var benchJob by remember { mutableStateOf(BenchJobState()) }
 
     var bgAlerts by remember { mutableStateOf(store.isBgAlertsEnabled()) }
     var bioLock by remember { mutableStateOf(store.isBiometricLockEnabled()) }
 
     var termTarget by remember { mutableStateOf<Pair<String, Long?>?>(null) }
+    var webPanelOpen by remember { mutableStateOf(false) }
+    var webPanelTab by remember { mutableStateOf<String?>(null) }
 
     val api = remember(activePanel) { activePanel?.let { MControlApi(it) } }
 
     fun showToast(msg: String) {
         Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    fun openWeb(section: String?) {
+        webPanelTab = section
+        webPanelOpen = true
     }
 
     fun refreshAll() {
@@ -169,7 +184,19 @@ fun MControlApp(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(activePanel?.name ?: "MControl") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MControlAnimatedLogo(modifier = Modifier.size(32.dp))
+                        Text(activePanel?.name ?: "MControl", fontSize = 17.sp)
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { openWeb(null) }) {
+                        Icon(Icons.Default.OpenInBrowser, null, Modifier.size(18.dp), tint = MDesignAccent)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Full Panel", fontSize = 12.sp, color = MDesignAccent)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -205,11 +232,40 @@ fun MControlApp(
                             showToast(msg)
                         }
                     },
-                    onOpenMasterTerminal = { termTarget = "Master Server" to null }
+                    onOpenMasterTerminal = { termTarget = "Master Server" to null },
+                    onOpenWebSection = { openWeb(it) }
                 )
                 1 -> ServersScreen(
                     servers = servers,
-                    onRefreshAll = { refreshAll() },
+                    onRefreshAll = {
+                        scope.launch {
+                            api?.probeAllServers()
+                            api?.getServers()?.onSuccess { servers = it }
+                            showToast("Servers refreshed")
+                        }
+                    },
+                    onPingAll = {
+                        scope.launch {
+                            val (_, msg) = api?.pingAllServers() ?: (false to "Offline")
+                            showToast(msg)
+                            api?.getServers()?.onSuccess { servers = it }
+                        }
+                    },
+                    onAddServer = { name, host, port, user, pass, useOb ->
+                        scope.launch {
+                            showToast("Adding server...")
+                            val (ok, msg) = api?.addServer(name, host, port, user, pass, useOb) ?: (false to "Offline")
+                            showToast(msg)
+                            if (ok) api?.getServers()?.onSuccess { servers = it }
+                        }
+                    },
+                    onDeleteServer = { id, mode ->
+                        scope.launch {
+                            val (_, msg) = api?.deleteServer(id, mode) ?: (false to "Offline")
+                            showToast(msg)
+                            api?.getServers()?.onSuccess { servers = it }
+                        }
+                    },
                     onPingServer = { id ->
                         scope.launch {
                             val (_, msg) = api?.pingServer(id) ?: (false to "Offline")
@@ -234,7 +290,9 @@ fun MControlApp(
                 )
                 2 -> TunnelsScreen(
                     tunnels = tunnels,
+                    servers = servers,
                     metricsMap = metricsMap,
+                    benchJob = benchJob,
                     onRefresh = { scope.launch { api?.getTunnels()?.onSuccess { tunnels = it } } },
                     onCheckHealth = { id ->
                         scope.launch {
@@ -256,6 +314,40 @@ fun MControlApp(
                             showToast(msg)
                             api?.getTunnels()?.onSuccess { tunnels = it }
                         }
+                    },
+                    onSpeedtest = { id ->
+                        scope.launch {
+                            showToast("Running in-tunnel speedtest...")
+                            val (_, out) = api?.tunnelSpeedtest(id) ?: (false to "Offline")
+                            showToast(out.lines().lastOrNull { it.isNotBlank() } ?: out)
+                        }
+                    },
+                    onDeleteTunnel = { id ->
+                        scope.launch {
+                            val (_, msg) = api?.deleteTunnel(id) ?: (false to "Offline")
+                            showToast(msg)
+                            api?.getTunnels()?.onSuccess { tunnels = it }
+                        }
+                    },
+                    onCreateTunnel = { name, eng, tr, irId, frId, tPort, ports ->
+                        scope.launch {
+                            showToast("Deploying tunnel...")
+                            val (ok, msg) = api?.createTunnel(name, eng, tr, irId, frId, tPort, ports) ?: (false to "Offline")
+                            showToast(msg)
+                            if (ok) api?.getTunnels()?.onSuccess { tunnels = it }
+                        }
+                    },
+                    onStartBenchmark = { irId, frId, prof ->
+                        scope.launch {
+                            val (ok, msg) = api?.startBenchmark(irId, frId, prof) ?: (false to "Offline")
+                            showToast(msg)
+                            if (ok) api?.getBenchmarkStatus()?.onSuccess { benchJob = it }
+                        }
+                    },
+                    onPollBenchmark = {
+                        scope.launch {
+                            api?.getBenchmarkStatus()?.onSuccess { benchJob = it }
+                        }
                     }
                 )
                 3 -> UptimeScreen(
@@ -264,6 +356,27 @@ fun MControlApp(
                     onCheckNow = { id ->
                         scope.launch {
                             val (_, msg) = api?.checkMonitorNow(id) ?: (false to "Offline")
+                            showToast(msg)
+                            api?.getMonitors()?.onSuccess { monitors = it }
+                        }
+                    },
+                    onAddMonitor = { name, type, target, interval ->
+                        scope.launch {
+                            val (ok, msg) = api?.createMonitor(name, type, target, interval) ?: (false to "Offline")
+                            showToast(msg)
+                            if (ok) api?.getMonitors()?.onSuccess { monitors = it }
+                        }
+                    },
+                    onDeleteMonitor = { id ->
+                        scope.launch {
+                            val (_, msg) = api?.deleteMonitor(id) ?: (false to "Offline")
+                            showToast(msg)
+                            api?.getMonitors()?.onSuccess { monitors = it }
+                        }
+                    },
+                    onImportMonitors = { kind ->
+                        scope.launch {
+                            val (_, msg) = api?.importMonitors(kind) ?: (false to "Offline")
                             showToast(msg)
                             api?.getMonitors()?.onSuccess { monitors = it }
                         }
@@ -285,6 +398,7 @@ fun MControlApp(
                         bioLock = on
                         store.setBiometricLockEnabled(on)
                     },
+                    onOpenWebSection = { openWeb(it) },
                     onSwitchPanel = { showLogin = true },
                     onLogout = {
                         activePanel?.let { p ->
@@ -303,6 +417,17 @@ fun MControlApp(
             title = "Terminal — $title",
             onRunCommand = { cmd -> api?.execCommand(srvId, cmd) ?: (false to "Not connected") },
             onDismiss = { termTarget = null }
+        )
+    }
+
+    if (webPanelOpen && activePanel != null) {
+        FullWebPanelDialog(
+            profile = activePanel!!,
+            initialTab = webPanelTab,
+            onDismiss = {
+                webPanelOpen = false
+                refreshAll()
+            }
         )
     }
 }

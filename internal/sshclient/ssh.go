@@ -816,7 +816,7 @@ fi`
 	if isIran && mirrorClean != "" {
 		mirrorFetch = fmt.Sprintf(`
 if command -v curl >/dev/null 2>&1; then
-  if curl -fsSL --connect-timeout 6 --max-time 20 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "MASTER_IP_SYNC" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
+  if curl -fsSL --connect-timeout 3 --max-time 8 %s -o /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null && grep -q "MASTER_IP_SYNC" /usr/local/bin/mcontrol-agent.py.dl 2>/dev/null; then
     mv -f /usr/local/bin/mcontrol-agent.py.dl /usr/local/bin/mcontrol-agent.py
     chmod 755 /usr/local/bin/mcontrol-agent.py
     echo "AGENT_SOURCE=iran_mirror"
@@ -1114,7 +1114,7 @@ AGENT_EXEC="$(command -v python3 || echo /usr/bin/python3) /usr/local/bin/mcontr
 if [ -x /usr/local/bin/mcontrol-agent ]; then
   AGENT_EXEC="/usr/local/bin/mcontrol-agent"
 elif command -v curl >/dev/null 2>&1 && [ -n "%s" ]; then
-  if curl -fsSL --connect-timeout 5 --max-time 20 "%s/mcontrol-agent-linux-${ARCH}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then
+  if curl -fsSL --connect-timeout 3 --max-time 8 "%s/mcontrol-agent-linux-${ARCH}" -o /usr/local/bin/mcontrol-agent.dl 2>/dev/null && [ -s /usr/local/bin/mcontrol-agent.dl ]; then
     chmod 755 /usr/local/bin/mcontrol-agent.dl && mv -f /usr/local/bin/mcontrol-agent.dl /usr/local/bin/mcontrol-agent
     AGENT_EXEC="/usr/local/bin/mcontrol-agent"
   else

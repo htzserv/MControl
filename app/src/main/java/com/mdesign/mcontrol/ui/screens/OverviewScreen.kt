@@ -2,11 +2,14 @@ package com.mdesign.mcontrol.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Terminal
@@ -32,11 +35,22 @@ fun OverviewScreen(
     onRefresh: () -> Unit,
     onCleanRam: () -> Unit,
     onRestartPanel: () -> Unit,
-    onOpenMasterTerminal: () -> Unit
+    onOpenMasterTerminal: () -> Unit,
+    onOpenWebSection: (String?) -> Unit
 ) {
     val iranCnt = servers.count { it.role == "iran" }
     val forCnt = servers.count { it.role != "iran" }
     val onlineCnt = servers.count { it.status == "online" }
+
+    val quickModules = listOf(
+        "domains" to "🌐 Domains / DNS",
+        "datacenter" to "☁️ Datacenter",
+        "settings:outbound" to "⚡ Outbound Xray",
+        "settings:telegram" to "🤖 Telegram Bot",
+        "settings:ops" to "⏰ Automation & Vault",
+        "settings:profiles" to "📦 Backup & Profiles",
+        "settings:themes" to "🎨 Theme Studio"
+    )
 
     Column(
         modifier = Modifier
@@ -45,15 +59,13 @@ fun OverviewScreen(
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 4 Stat Pills (2x2 on compact phones)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatMiniCard("TOTAL", servers.size.toString(), MDesignAccent, Modifier.weight(1f))
             StatMiniCard("IRAN", iranCnt.toString(), MDesignGreen, Modifier.weight(1f))
-            StatMiniCard("FOREIGN", forCnt.toString(), MDesignPurple, Modifier.weight(1f))
+            StatMiniCard("FOREIGN", forCnt.toString(), MDesignSteel, Modifier.weight(1f))
             StatMiniCard("ONLINE", onlineCnt.toString(), MDesignAmber, Modifier.weight(1f))
         }
 
-        // Master Header Card
         Card(
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -73,7 +85,7 @@ fun OverviewScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (stats.ipv6.isNotBlank() && stats.ipv6 != "N/A") {
-                        Text("IPv6: ${stats.ipv6}", fontSize = 11.sp, color = MDesignPurple)
+                        Text("IPv6: ${stats.ipv6}", fontSize = 11.sp, color = MDesignAccent)
                     }
                 }
                 IconButton(onClick = onRefresh, enabled = !loading) {
@@ -82,7 +94,6 @@ fun OverviewScreen(
             }
         }
 
-        // 2x2 Master Telemetry Grid (CPU, RAM, Network, Toolbox)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             MetricCard(
                 title = "CPU",
@@ -154,6 +165,40 @@ fun OverviewScreen(
                         ) {
                             Icon(Icons.Default.RestartAlt, null, Modifier.size(14.dp), tint = MDesignRed)
                         }
+                    }
+                }
+            }
+        }
+
+        // All-Features Hub Card (Direct Auto-Auth Launchers)
+        Card(
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("All Panel Modules", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MDesignAccent)
+                    TextButton(
+                        onClick = { onOpenWebSection(null) },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Icon(Icons.Default.OpenInBrowser, null, Modifier.size(15.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Full Panel", fontSize = 12.sp)
+                    }
+                }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(quickModules) { (key, label) ->
+                        AssistChip(
+                            onClick = { onOpenWebSection(key) },
+                            label = { Text(label, fontSize = 11.sp) }
+                        )
                     }
                 }
             }

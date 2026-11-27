@@ -123,3 +123,26 @@ fun formatBytes(bytes: Long): String {
         else -> "$bytes B"
     }
 }
+
+data class BenchResultItem(
+    val rank: Int,
+    val engine: String,
+    val transport: String,
+    val ipMode: String,
+    val underlay: String,
+    val label: String,
+    val ok: Boolean,
+    val mbps: Double,
+    val pingMs: Double,
+    val lossPct: Double,
+    val score: Int,
+    val error: String = ""
+)
+
+data class BenchJobState(
+    val running: Boolean = false,
+    val done: Boolean = false,
+    val percent: Int = 0,
+    val current: String = "Ready",
+    val results: List<BenchResultItem> = emptyList()
+)
