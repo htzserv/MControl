@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log"
 	"io"
 	"net"
 	"net/http"
@@ -479,7 +480,7 @@ func (h *Handler) StartMonitorDaemon() {
 		lastPrune := time.Now()
 		sem := make(chan struct{}, 10)
 		for {
-			time.Sleep(15 * time.Second)
+			time.Sleep(5 * time.Second)
 			if h.isStopped() {
 				return
 			}
@@ -497,7 +498,12 @@ func (h *Handler) StartMonitorDaemon() {
 					monCopy := m
 					go func(mc db.Monitor) {
 						sem <- struct{}{}
-						defer func() { <-sem }()
+						defer func() {
+							if rec := recover(); rec != nil {
+								log.Printf("[monitor] panic on %s: %v", mc.Name, rec)
+							}
+							<-sem
+						}()
 						h.executeMonitorCheck(&mc)
 					}(monCopy)
 				}

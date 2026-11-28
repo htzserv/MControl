@@ -1111,6 +1111,11 @@ func (h *Handler) handleMetricsHistory(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) StartProMetricsDaemon() {
 	go func() {
+		defer func() {
+			if rec := recover(); rec != nil {
+				fmt.Printf("[pro-metrics] recovered panic: %v\n", rec)
+			}
+		}()
 		lastPrune := time.Now()
 		for {
 			if h.isStopped() {

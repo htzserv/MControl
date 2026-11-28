@@ -72,9 +72,7 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		ForwardMode   string `json:"forward_mode"`    // "nat" | "transparent"
 		MTU           int    `json:"mtu"`             // 0 = auto (1420), or explicit 1280..1500
 		RateLimitMbps int    `json:"rate_limit_mbps"` // 0 = unlimited, >0 = tc CAKE/TBF cap
-		// Phase 3 Backhaul v1.0.0 options (Parallax, Multi-Transport Failover, Game Mode)
-		ParallaxLanes      int    `json:"parallax_lanes"`
-		ParallaxStallSec   int    `json:"parallax_stall_sec"`
+		// Phase 3 Backhaul v1.0.0 options (Multi-Transport Failover, Game Mode)
 		FailoverTransports string `json:"failover_transports"`
 		FailoverRestoreSec int    `json:"failover_restore_sec"`
 		GameMode           bool   `json:"game_mode"`
@@ -256,8 +254,6 @@ func (h *Handler) handleCreateTunnel(w http.ResponseWriter, r *http.Request) {
 		ForwardMode:     strings.TrimSpace(req.ForwardMode),
 		MTU:             req.MTU,
 		RateLimitMbps:      req.RateLimitMbps,
-		ParallaxLanes:      req.ParallaxLanes,
-		ParallaxStallSec:   req.ParallaxStallSec,
 		FailoverTransports: strings.TrimSpace(req.FailoverTransports),
 		FailoverRestoreSec: req.FailoverRestoreSec,
 		GameMode:           req.GameMode,
@@ -463,22 +459,10 @@ func buildTunnelDeployScripts(t *db.Tunnel, iran, foreign *db.Server, ports []in
 			fmt.Fprintf(&srvExtra, "kcp_mode = %q\nkcp_crypt = %q\nkcp_nofec = %v\n", km, kc, ex.KCPNoFEC)
 			fmt.Fprintf(&cliExtra, "kcp_mode = %q\nkcp_crypt = %q\nkcp_nofec = %v\n", km, kc, ex.KCPNoFEC)
 		}
-		if baseTrans == "parallax" || baseTrans == "parallaxmux" || baseTrans == "failover" {
-			lanes := ex.ParallaxLanes
-			if lanes < 2 || lanes > 12 {
-				lanes = 4
-			}
-			stall := ex.ParallaxStallSec
-			if stall < 2 || stall > 30 {
-				stall = 4
-			}
-			fmt.Fprintf(&srvExtra, "parallax_lanes = %d\nparallax_stall_sec = %d\n", lanes, stall)
-			fmt.Fprintf(&cliExtra, "parallax_lanes = %d\nparallax_stall_sec = %d\n", lanes, stall)
-		}
 		if baseTrans == "failover" {
 			rawList := ex.FailoverTransports
 			if rawList == "" {
-				rawList = "tlsmux,xhttpsmux,parallaxmux"
+				rawList = "tlsmux,xhttpsmux,tcpmux"
 			}
 			var qItems []string
 			for _, p := range strings.Split(rawList, ",") {
@@ -1430,8 +1414,6 @@ type backhaulExtraOpts struct {
 	ForwardMode     string `json:"forward_mode,omitempty"`
 	MTU             int    `json:"mtu,omitempty"`
 	RateLimitMbps      int    `json:"rate_limit_mbps,omitempty"`
-	ParallaxLanes      int    `json:"parallax_lanes,omitempty"`
-	ParallaxStallSec   int    `json:"parallax_stall_sec,omitempty"`
 	FailoverTransports string `json:"failover_transports,omitempty"`
 	FailoverRestoreSec int    `json:"failover_restore_sec,omitempty"`
 	GameMode           bool   `json:"game_mode,omitempty"`

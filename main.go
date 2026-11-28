@@ -46,6 +46,12 @@ func securityHeaders(next http.Handler) http.Handler {
 			h.Set("Cache-Control", "no-cache")
 		}
 		h.Set("X-Robots-Tag", "noindex, nofollow")
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("[http] recovered panic on %s %s: %v", r.Method, r.URL.Path, rec)
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
+		}()
 		next.ServeHTTP(w, r)
 	})
 }

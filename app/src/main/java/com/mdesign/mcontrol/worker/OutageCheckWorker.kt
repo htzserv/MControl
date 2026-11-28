@@ -66,7 +66,7 @@ class OutageCheckWorker(
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
-        nm.notify(1042, notif)
+        try { nm.notify(1042, notif) } catch (_: SecurityException) {}
     }
 
     companion object {

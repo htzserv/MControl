@@ -7911,7 +7911,6 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
               <select id="t-trans" onchange="onBackhaulTransportChange(); updateTunFloatDock()">
                 <optgroup label="TCP / TLS / HTTP (A–Z)">
                   <option value="failover">Failover (Multi-Carrier)</option>
-                  <option value="parallax">Parallax (Multi-Lane TCP + AEAD)</option>
                   <option value="tcp" selected>TCP</option>
                   <option value="tls">TLS (Auto-TLS + uTLS)</option>
                   <option value="ws">WS (WebSocket)</option>
@@ -8022,15 +8021,9 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
                 <span>Disable KCP FEC (Lower bandwidth overhead on clean UDP links)</span>
               </label>
             </div>
-            <div id="t-bh-parallax-opts" style="display:none; margin-top:6px;">
-              <div class="row2">
-                <div class="field" style="margin-bottom:0;"><label>Parallel TCP Lanes (2–12)</label><input id="t-bh-px-lanes" type="number" value="4" min="2" max="12"></div>
-                <div class="field" style="margin-bottom:0;"><label>Silent-Stall Redial (sec)</label><input id="t-bh-px-stall" type="number" value="4" min="2" max="20"></div>
-              </div>
-            </div>
             <div id="t-bh-failover-opts" style="display:none; margin-top:6px;">
               <div class="row2">
-                <div class="field" style="margin-bottom:0;"><label>Failover Carrier Chain (2–4)</label><input id="t-bh-fo-list" class="mono" value="tlsmux,xhttpsmux,parallaxmux" placeholder="tlsmux,xhttpsmux,parallaxmux"></div>
+                <div class="field" style="margin-bottom:0;"><label>Failover Carrier Chain (2–4)</label><input id="t-bh-fo-list" class="mono" value="tlsmux,xhttpsmux,tcpmux" placeholder="tlsmux,xhttpsmux,tcpmux"></div>
                 <div class="field" style="margin-bottom:0;">
                   <label>Restore Primary After</label>
                   <select id="t-bh-fo-restore">
@@ -8193,7 +8186,6 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
           <label class="check"><input type="checkbox" value="backhaul:wss:v4:ip:Backhaul WSS"><span>WSS</span></label>
           <label class="check"><input type="checkbox" value="backhaul:xhttp:v4:ip:Backhaul XHTTP"><span>XHTTP</span></label>
           <label class="check"><input type="checkbox" value="backhaul:xhttps:v4:ip:Backhaul XHTTPS (H2)" checked><span>XHTTPS</span></label>
-          <label class="check"><input type="checkbox" value="backhaul:parallax:v4:ip:Backhaul Parallax"><span>Parallax</span></label>
           <label class="check"><input type="checkbox" value="backhaul:failover:v4:ip:Backhaul Failover"><span>Failover</span></label>
         </div>
       </div>
@@ -8211,7 +8203,6 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
           <label class="check"><input type="checkbox" value="backhaul:xhttpmux:v4:ip:Backhaul XHTTPMUX"><span>XHTTPMUX</span></label>
           <label class="check"><input type="checkbox" value="backhaul:xhttpsmux:v4:ip:Backhaul XHTTPSMUX" checked><span>XHTTPSMUX</span></label>
           <label class="check"><input type="checkbox" value="backhaul:kcpmux:v4:ip:Backhaul KCPMUX"><span>KCPMUX</span></label>
-          <label class="check"><input type="checkbox" value="backhaul:parallaxmux:v4:ip:Backhaul ParallaxMUX" checked><span>ParallaxMUX</span></label>
         </div>
       </div>
 
@@ -8256,7 +8247,6 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
           <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:gre:Backhaul TCPMUX over GRE" checked><span>TCPMUX ➔ GRE</span></label>
           <label class="check"><input type="checkbox" value="backhaul:tlsmux:v4:gre:Backhaul TLSMUX over GRE"><span>TLSMUX ➔ GRE</span></label>
           <label class="check"><input type="checkbox" value="backhaul:xhttpsmux:v4:gre:Backhaul XHTTPSMUX over GRE"><span>XHTTPSMUX ➔ GRE</span></label>
-          <label class="check"><input type="checkbox" value="backhaul:parallaxmux:v4:gre:Backhaul ParallaxMUX over GRE"><span>ParallaxMUX ➔ GRE</span></label>
           <label class="check"><input type="checkbox" value="rathole:tcp:v4:gre:Rathole TCP over GRE" checked><span>Rathole ➔ GRE</span></label>
           <label class="check"><input type="checkbox" value="backhaul:tcpmux:v4:vxlan:Backhaul TCPMUX over VXLAN"><span>TCPMUX ➔ VXLAN</span></label>
           <label class="check"><input type="checkbox" value="rathole:tcp:v4:vxlan:Rathole TCP over VXLAN"><span>Rathole ➔ VXLAN</span></label>
@@ -9770,6 +9760,7 @@ function renderNav() {
   });
 })();
 function switchTab(name) {
+  if (name !== 'monitor' && typeof stopMonitorLivePoll === 'function') stopMonitorLivePoll();
   curTab = name;
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
   renderNav();
@@ -9802,7 +9793,7 @@ function switchTab(name) {
     openTabSettings(name);
   }
 }
-function closeModal(id) { $(id).classList.remove('active'); }
+function closeModal(id) { const el = $(id); if (el) el.classList.remove('active'); }
 
 /* ═══════════════ servers ═══════════════ */
 const openServerIds = new Set();
@@ -10687,12 +10678,10 @@ function onBackhaulTransportChange() {
   const isTLS = ['tls','tlsmux','wss','wssmux','xhttps','xhttpsmux','failover'].includes(tr);
   const isXHTTP = tr.startsWith('xhttp');
   const isKCP = tr === 'kcp' || tr === 'kcpmux';
-  const isPX = tr === 'parallax' || tr === 'parallaxmux';
   const isFO = tr === 'failover';
   if ($('t-bh-tls-opts')) $('t-bh-tls-opts').style.display = isTLS ? 'block' : 'none';
   if ($('t-bh-xhttp-opts')) $('t-bh-xhttp-opts').style.display = isXHTTP ? 'block' : 'none';
   if ($('t-bh-kcp-opts')) $('t-bh-kcp-opts').style.display = (isKCP || isPX) ? 'block' : 'none';
-  if ($('t-bh-parallax-opts')) $('t-bh-parallax-opts').style.display = isPX ? 'block' : 'none';
   if ($('t-bh-failover-opts')) $('t-bh-failover-opts').style.display = isFO ? 'block' : 'none';
 }
 function syncBackhaulTransportOptions(isMux) {
@@ -10704,7 +10693,6 @@ function syncBackhaulTransportOptions(isMux) {
     if (lbl) lbl.textContent = 'Transport — Backhaul MUX (v1.1.0)';
     sel.innerHTML = `
       <optgroup label="Backhaul MUX — TCP / TLS / HTTP (A–Z)">
-        <option value="parallaxmux">ParallaxMUX (Multi-Lane + smux)</option>
         <option value="tcpmux">TCPMUX</option>
         <option value="tlsmux">TLSMUX (uTLS + smux)</option>
         <option value="wsmux">WSMUX (CDN-safe)</option>
@@ -10721,7 +10709,6 @@ function syncBackhaulTransportOptions(isMux) {
     sel.innerHTML = `
       <optgroup label="Backhaul — TCP / TLS / HTTP (A–Z)">
         <option value="failover">Failover (Multi-Carrier)</option>
-        <option value="parallax">Parallax (Multi-Lane TCP + AEAD)</option>
         <option value="tcp">TCP</option>
         <option value="tls">TLS (Auto-TLS + uTLS)</option>
         <option value="ws">WS (WebSocket)</option>
@@ -11253,9 +11240,7 @@ async function deployTunnel() {
       forward_mode: $('t-k-fwd') ? $('t-k-fwd').value : 'nat',
       mtu: $('t-k-mtu') ? (parseInt($('t-k-mtu').value || '0', 10) || 0) : 0,
       rate_limit_mbps: $('t-k-rate') ? (parseInt($('t-k-rate').value || '0', 10) || 0) : 0,
-      parallax_lanes: $('t-bh-px-lanes') ? (parseInt($('t-bh-px-lanes').value || '4', 10) || 4) : 4,
-      parallax_stall_sec: $('t-bh-px-stall') ? (parseInt($('t-bh-px-stall').value || '4', 10) || 4) : 4,
-      failover_transports: $('t-bh-fo-list') ? $('t-bh-fo-list').value.trim() : 'tlsmux,xhttpsmux,parallaxmux',
+      failover_transports: $('t-bh-fo-list') ? $('t-bh-fo-list').value.trim() : 'tlsmux,xhttpsmux,tcpmux',
       failover_restore_sec: $('t-bh-fo-restore') ? (parseInt($('t-bh-fo-restore').value || '300', 10) || 300) : 300,
       game_mode: $('t-bh-game') ? !!$('t-bh-game').checked : false,
       game_copies: $('t-bh-gcopies') ? (parseInt($('t-bh-gcopies').value || '3', 10) || 3) : 3,
@@ -14008,7 +13993,7 @@ function toggleLoginApkDrawer() {
   if (d) d.classList.toggle('open');
 }
 
-let _smSrvId = 0, _smRange = '24h';
+let _smSrvId = 0, _smRange = '24h', _smReqSeq = 0;
 function openServerMetricsModal(id) {
   _smSrvId = +id;
   _smRange = '24h';
@@ -14079,11 +14064,13 @@ function _renderSvgMetricChart(title, unit, color, points, valueFn, maxFixed) {
 }
 
 async function loadServerMetricsRange(rng) {
+  const seq = ++_smReqSeq;
   _smRange = rng || '24h';
   document.querySelectorAll('.sm-rng-btn').forEach(b => b.classList.toggle('active', b.dataset.smRng === _smRange));
   const kpiBox = $('sm-kpis'), chartBox = $('sm-charts');
   if (chartBox) chartBox.innerHTML = '<div class="hint" style="text-align:center; padding:24px;">Loading metrics...</div>';
   const r = await api('api/pro/metrics?target=' + encodeURIComponent('srv:' + _smSrvId) + '&range=' + encodeURIComponent(_smRange));
+  if (seq !== _smReqSeq) return;
   if (!r || !r.ok) {
     if (chartBox) chartBox.innerHTML = '<div class="hint" style="text-align:center; color:var(--red);">Failed to load metrics.</div>';
     return;
@@ -16551,10 +16538,14 @@ function stopMonitorLivePoll() {
   if (_monLiveTimer) { clearInterval(_monLiveTimer); _monLiveTimer = null; }
 }
 
+let _monLoading = false;
 async function loadMonitorsTab() {
+  if (_monLoading) return;
+  _monLoading = true;
+  try {
   if ($('mon-import-probe')) { const curP = $('mon-import-probe').value || 'master'; $('mon-import-probe').innerHTML = buildProbeSelectOptions(); $('mon-import-probe').value = curP; }
   const r = await api('api/monitors');
-  if (!r.ok) return;
+  if (!r || !r.ok) return;
   MONITORS = r.monitors || [];
   if ($('mon-st-total')) $('mon-st-total').textContent = r.total || 0;
   if ($('mon-st-up')) $('mon-st-up').textContent = r.up || 0;
@@ -16606,6 +16597,7 @@ async function loadMonitorsTab() {
     }).join('');
   }
   loadMonitorIncidents();
+  } finally { _monLoading = false; }
 }
 
 async function loadMonitorIncidents() {

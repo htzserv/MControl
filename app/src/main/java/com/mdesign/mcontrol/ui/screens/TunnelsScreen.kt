@@ -222,7 +222,7 @@ fun TunnelsScreen(
         var fwdPorts by remember { mutableStateOf("443, 8443") }
 
         val engines = listOf("backhaul", "rathole", "paqet", "gre", "ipip", "vxlan", "wireguard")
-        val bhTransports = listOf("tcp", "tcpmux", "tls", "tlsmux", "ws", "wss", "xhttp", "xhttps", "xhttpsmux", "kcp", "kcpmux", "udp", "parallax", "parallaxmux", "failover")
+        val bhTransports = listOf("tcp", "tcpmux", "tls", "tlsmux", "ws", "wss", "xhttp", "xhttps", "xhttpsmux", "kcp", "kcpmux", "udp", "failover")
 
         AlertDialog(
             onDismissRequest = { showCreate = false },

@@ -118,7 +118,18 @@ fun FullWebPanelDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true)
     ) {
-        BackHandler(enabled = canGoBack) {
+            DisposableEffect(Unit) {
+        onDispose {
+            try {
+                webViewRef?.stopLoading()
+                webViewRef?.destroy()
+            } catch (_: Exception) {
+            }
+            webViewRef = null
+        }
+    }
+
+    BackHandler(enabled = canGoBack) {
             webViewRef?.goBack()
         }
 

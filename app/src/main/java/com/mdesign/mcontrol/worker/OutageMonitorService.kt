@@ -46,10 +46,15 @@ class OutageMonitorService : Service() {
         }
 
         val fgNotif = buildForegroundNotification(store.getAlertIntervalSec(), store.getAlertEveryN())
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(FG_NOTIF_ID, fgNotif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            startForeground(FG_NOTIF_ID, fgNotif)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(FG_NOTIF_ID, fgNotif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            } else {
+                startForeground(FG_NOTIF_ID, fgNotif)
+            }
+        } catch (_: Exception) {
+            stopSelf()
+            return START_NOT_STICKY
         }
 
         startWatchLoop()
@@ -203,7 +208,7 @@ class OutageMonitorService : Service() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build()
-            nm.notify(ALERT_NOTIF_ID, notif)
+            try { nm.notify(ALERT_NOTIF_ID, notif) } catch (_: SecurityException) {}
         }
 
         fun sendRecoveryNotification(ctx: Context, panelName: String, count: Int) {
@@ -216,7 +221,7 @@ class OutageMonitorService : Service() {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(true)
                 .build()
-            nm.notify(RECOVERY_NOTIF_ID, notif)
+            try { nm.notify(RECOVERY_NOTIF_ID, notif) } catch (_: SecurityException) {}
         }
 
         fun sendTestNotification(ctx: Context, intervalSec: Int, everyN: Int) {
@@ -229,7 +234,7 @@ class OutageMonitorService : Service() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
                 .build()
-            nm.notify(1049, notif)
+            try { nm.notify(1049, notif) } catch (_: SecurityException) {}
         }
 
         fun sync(ctx: Context, enabled: Boolean) {

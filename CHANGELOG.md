@@ -61,7 +61,6 @@
   - Added live **Theme-Adaptive Dynamic Favicon** updating automatically whenever the active theme or color accent changes.
   - Updated PWA icons (`icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png`) and bumped Service Worker cache to `mcontrol-pwa-v3`.
 - **Upgraded All-Protocol Tunnel Tester (`MSmart Benchmark`):**
-  - Organized protocol testing into 6 complete tunnel categories matching MControl's full engine suite: **Backhaul TCP/TLS/HTTP** (`tcp`, `tls`, `ws`, `wss`, `xhttp`, `xhttps`, `parallax`, `failover`), **Backhaul MUX** (`tcpmux`, `tlsmux`, `wsmux`, `wssmux`, `xhttpmux`, `xhttpsmux`, `kcpmux`, `parallaxmux`), **Backhaul UDP/KCP** (`kcp`, `udp`), **Rathole & Paqet**, **Kernel & VPN** (`gre`, `ip6gre`, `ipip`, `vxlan`, `wireguard`), and **Layered (Over GRE / VXLAN)**.
   - Updated `internal/api/msmart.go` to support in-tunnel testing for `ipip` and `wireguard` alongside full cleanup of `.yaml`/`.key` files and `raw`/`mangle` iptables rules.
   - Updated `deployWinner()` to pre-select `Backhaul MUX` automatically when a MUX winner is chosen.
 - **Android App `v1.7.0` (`versionCode = 3`):**
@@ -129,11 +128,7 @@
 
 
 ## 1.6.1
-- **Phase 3 — Backhaul v1.0.0 Next-Gen Sync (Parallax, Multi-Transport Failover & Game Mode):**
-  - **Parallax Multi-Lane Mode (`parallax` / `parallaxmux`):** added wizard UI & TOML config generation for KCP+FEC over 2–12 parallel TCP lanes with randomized encrypted warm-up and automatic silent-stall redialing.
-  - **Multi-Transport Failover (`failover`):** run 2–4 Backhaul carriers (e.g., `tlsmux,xhttpsmux,parallaxmux`) behind the same user ports with automatic failover & configurable primary hysteresis restoration.
   - **Game Mode Multi-Copy UDP (`game_mode`):** one-click toggle to duplicate game UDP packets across 2–4 encrypted UDP carrier ports with first-arrival-wins deduplication.
-  - **MSmart Benchmark:** added `Backhaul ParallaxMUX` to default benchmark candidates and refreshed EN/FA READMEs for `v1.6.1`.
 
 
 ## 1.6.0
