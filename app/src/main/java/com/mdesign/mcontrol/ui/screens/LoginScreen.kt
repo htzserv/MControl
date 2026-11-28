@@ -103,7 +103,9 @@ private fun buildPanelBaseUrl(addressInput: String, portInput: String, webPathIn
 
 @Composable
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
-    val accentTint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val wordRes = if (isDark) R.drawable.logo_word_white else R.drawable.logo_word_blue
+    val dotsRes = if (isDark) R.drawable.logo_dots_white else R.drawable.logo_dots_blue
     val transition = rememberInfiniteTransition(label = "kontrol_3s")
     val t by transition.animateFloat(
         initialValue = 0f,
@@ -131,62 +133,42 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        // 1. "کنترل" Handwriting Right-to-Left Reveal (No Background, Large, Theme Primary)
-        Box(
+        // 1. "کنترل" Handwriting Right-to-Left Reveal (Original Blue in Light / White in Dark)
+        Image(
+            painter = painterResource(id = wordRes),
+            contentDescription = "کنترل",
             modifier = Modifier
                 .fillMaxSize()
                 .alpha(textAlpha)
                 .drawWithContent {
-                    val left = size.width * (0.90f - 0.80f * writeProg)
+                    val left = size.width * (1f - writeProg)
                     clipRect(left = left, top = 0f, right = size.width, bottom = size.height) {
                         this@drawWithContent.drawContent()
                     }
                 }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.logo_text_sil),
-                contentDescription = "کنترل",
-                colorFilter = accentTint,
-                modifier = Modifier.fillMaxSize()
-            )
-            Image(
-                painter = painterResource(id = R.drawable.logo_text_gloss),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-        // 2. Three Dots popping in Right-to-Left
+        )
+        // 2. Three cleanly separated Dots popping in Right-to-Left
         val d1 = dotAlpha(1.44f)
         val d2 = dotAlpha(1.62f)
         val d3 = dotAlpha(1.80f)
         listOf(
-            Triple(0.617f, 0.711f, d1),
-            Triple(0.539f, 0.621f, d2),
-            Triple(0.447f, 0.541f, d3)
+            Triple(0.652f, 0.756f, d1),
+            Triple(0.547f, 0.652f, d2),
+            Triple(0.443f, 0.547f, d3)
         ).forEach { (lx, rx, a) ->
             if (a > 0.01f) {
-                Box(
+                Image(
+                    painter = painterResource(id = dotsRes),
+                    contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
                         .alpha(a)
                         .drawWithContent {
-                            clipRect(left = size.width * lx, top = size.height * 0.33f, right = size.width * rx, bottom = size.height * 0.46f) {
+                            clipRect(left = size.width * lx, top = 0f, right = size.width * rx, bottom = size.height) {
                                 this@drawWithContent.drawContent()
                             }
                         }
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.logo_dots_sil),
-                        contentDescription = null,
-                        colorFilter = accentTint,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    Image(
-                        painter = painterResource(id = R.drawable.logo_dots_gloss),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                )
             }
         }
     }
@@ -224,7 +206,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         KontrolAnimatedLogo(
-            modifier = Modifier.size(240.dp)
+            modifier = Modifier.width(260.dp).height(152.dp)
         )
 
         Spacer(Modifier.height(18.dp))

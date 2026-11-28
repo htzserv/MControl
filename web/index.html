@@ -3640,12 +3640,16 @@ body[data-corners="square"] .ob-lin-fill { border-radius: 2px; }
   opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none;
 }
 .pwa-sp-logo-wrap {
-  position: relative; width: 88px; height: 88px; border-radius: 26px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(15, 23, 42, .82);
-  border: 1.5px solid color-mix(in srgb, var(--accent, #818cf8) 45%, rgba(255,255,255,.12));
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, .65), 0 0 36px -6px color-mix(in srgb, var(--accent, #818cf8) 45%, transparent);
-  animation: pwaLogoFloat 1.8s ease-in-out infinite;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 .pwa-sp-logo-wrap svg { width: 56px; height: 56px; }
 .pwa-sp-path {
@@ -5373,50 +5377,45 @@ html, body {
 }
 
 
-/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo (3s Loop, Pure CSS) ── */
+/* ── Animated "کنترل" Logo (3s Loop, Crisp 2x Supersampled, Blue/White) ── */
 .mc-kontrol-anim {
   position: relative;
-  width: min(320px, 78vw);
-  height: min(187px, 45.6vw);
+  width: min(330px, 80vw);
+  height: min(193px, 46.8vw);
   margin: 0 auto 6px;
   cursor: pointer;
   user-select: none;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .22));
 }
 .mc-kontrol-anim .k-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
-.mc-kontrol-anim .k-tint {
-  position: absolute;
-  inset: 0;
-  background: var(--accent, #22d3ee);
-  transition: background-color .28s ease;
-}
-.mc-kontrol-anim .k-word-tint {
-  -webkit-mask: url('logo-word-sil.png') center / 100% 100% no-repeat;
-  mask: url('logo-word-sil.png') center / 100% 100% no-repeat;
-}
-.mc-kontrol-anim .k-dots-tint {
-  -webkit-mask: url('logo-dots-sil-c.png') center / 100% 100% no-repeat;
-  mask: url('logo-dots-sil-c.png') center / 100% 100% no-repeat;
-}
-.mc-kontrol-anim .k-gloss {
+.mc-kontrol-anim .k-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: fill;
+  object-fit: contain;
   display: block;
 }
+/* Default (Dark Mode): White logo | Light Mode: Original Royal Blue logo */
+.mc-kontrol-anim .k-img-light,
+.mc-brand-dyn .k-img-light { display: none; }
+.mc-kontrol-anim .k-img-dark,
+.mc-brand-dyn .k-img-dark { display: block; }
+body.light-mode .mc-kontrol-anim .k-img-light,
+body.light-mode .mc-brand-dyn .k-img-light { display: block; }
+body.light-mode .mc-kontrol-anim .k-img-dark,
+body.light-mode .mc-brand-dyn .k-img-dark { display: none; }
+
 .mc-kontrol-anim .k-word-wrap {
   will-change: clip-path, opacity;
   animation: kWriteRTL 3s cubic-bezier(.32, .08, .22, 1) infinite;
 }
-.mc-kontrol-anim .k-d1-clip { clip-path: inset(0 23.1% 0 64.9%); }
-.mc-kontrol-anim .k-d2-clip { clip-path: inset(0 34.6% 0 55.0%); }
-.mc-kontrol-anim .k-d3-clip { clip-path: inset(0 44.8% 0 43.3%); }
+.mc-kontrol-anim .k-d1-clip { clip-path: inset(0 24.4% 0 65.2%); }
+.mc-kontrol-anim .k-d2-clip { clip-path: inset(0 34.8% 0 54.7%); }
+.mc-kontrol-anim .k-d3-clip { clip-path: inset(0 45.3% 0 44.3%); }
 .mc-kontrol-anim .k-dot {
   opacity: 0;
   will-change: transform, opacity;
@@ -5424,15 +5423,6 @@ html, body {
 .mc-kontrol-anim .k-dot-1 { animation: kDot1 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 .mc-kontrol-anim .k-dot-2 { animation: kDot2 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 .mc-kontrol-anim .k-dot-3 { animation: kDot3 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
-
-.mc-brand-dyn .k-base-light { display: none; }
-.mc-brand-dyn .k-base-dark { display: block; }
-body.light-mode .mc-brand-dyn .k-base-light { display: block; }
-body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
-.mc-brand-dyn .k-fill {
-  fill: var(--accent, #22d3ee);
-  transition: fill .28s ease;
-}
 
 @keyframes kWriteRTL {
   0%       { clip-path: inset(0 0 0 100%); opacity: 1; }
@@ -5457,6 +5447,11 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 }
 @keyframes kDot3 {
   0%, 60%  { opacity: 0; transform: translateY(-10px) scale(.85); }
+  68%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  74%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
+}
   68%      { opacity: 1; transform: translateY(0) scale(1.04); }
   74%      { opacity: 1; transform: translateY(0) scale(1); }
   86%      { opacity: 1; transform: translateY(0) scale(1); }
@@ -5487,50 +5482,31 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 <!-- PWA Animated Launch Splash Screen -->
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
-    <div class="mc-kontrol-anim" style="width:185px;height:108px;margin:0;" onclick="replayKontrolLogo(this)" aria-label="کنترل">
+    <div class="mc-kontrol-anim" style="width:min(340px,82vw);height:min(199px,48vw);margin:0;" onclick="replayKontrolLogo(this)" aria-label="کنترل">
         <div class="k-layer k-word-wrap">
-          <div class="k-tint k-word-tint"></div>
-          <img class="k-gloss" src="logo-word-gloss.png" alt="کنترل">
+          <img class="k-img k-img-light" src="logo-word-blue.png" alt="کنترل">
+          <img class="k-img k-img-dark" src="logo-word-white.png" alt="کنترل">
         </div>
         <div class="k-layer k-d1-clip">
           <div class="k-layer k-dot k-dot-1">
-            <div class="k-tint k-dots-tint"></div>
-            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+            <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
         <div class="k-layer k-d2-clip">
           <div class="k-layer k-dot k-dot-2">
-            <div class="k-tint k-dots-tint"></div>
-            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+            <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
         <div class="k-layer k-d3-clip">
           <div class="k-layer k-dot k-dot-3">
-            <div class="k-tint k-dots-tint"></div>
-            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+            <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
       </div>
   </div>
-  <div class="pwa-sp-title" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-splash" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- M (bold rounded geometric) -->
-        <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
-        <!-- C -->
-        <path class="mc-wm-c" d="M114 25 A23 23 0 1 0 114 55"/>
-        <!-- o (stenciled split o: left arc & right arc with vertical top/bottom gaps) -->
-        <path class="mc-wm-c" d="M137 31 A16 16 0 0 0 137 61"/>
-        <path class="mc-wm-c" d="M145 31 A16 16 0 0 1 145 61"/>
-        <!-- n -->
-        <path class="mc-wm-c" d="M172 62 V32 M172 44 C172 34 179 30 187 30 C195 30 201 35 201 44 V62"/>
-        <!-- t -->
-        <path class="mc-wm-c" d="M222 18 V54 C222 60 226 63 232 63 H235 M213 33 H234"/>
-        <!-- r -->
-        <path class="mc-wm-c" d="M250 62 V32 M250 43 C250 35 256 30 264 30 H267"/>
-        <!-- o (full rounded) -->
-        <circle class="mc-wm-c" cx="292" cy="46" r="16"/>
-        <!-- l -->
-        <path class="mc-wm-c" d="M324 14 V62"/></svg></div>
-  <div class="pwa-sp-bar"><i></i></div>
 </div>
 <!-- PWA Pull-to-Refresh Spinner -->
 <div id="pwa-ptr" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></div>
@@ -5915,15 +5891,29 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
     <div class="login-brand-hero">
       <div class="mc-kontrol-anim" onclick="replayKontrolLogo(this)" aria-label="کنترل">
         <div class="k-layer k-word-wrap">
-          <div class="k-tint k-word-tint"></div>
-          <img class="k-gloss" src="logo-word-gloss.png" alt="کنترل">
+          <img class="k-img k-img-light" src="logo-word-blue.png" alt="کنترل">
+          <img class="k-img k-img-dark" src="logo-word-white.png" alt="کنترل">
         </div>
         <div class="k-layer k-d1-clip">
           <div class="k-layer k-dot k-dot-1">
-            <div class="k-tint k-dots-tint"></div>
-            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+            <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
+        <div class="k-layer k-d2-clip">
+          <div class="k-layer k-dot k-dot-2">
+            <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-d3-clip">
+          <div class="k-layer k-dot k-dot-3">
+            <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
+          </div>
+        </div>
+      </div>
+    </div>
         <div class="k-layer k-d2-clip">
           <div class="k-layer k-dot k-dot-2">
             <div class="k-tint k-dots-tint"></div>
@@ -6004,18 +5994,12 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 
   <div id="chrome">
     <div class="brand">
-      <svg class="mc-brand-svg mc-brand-dyn" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <mask id="kn-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
-          <mask id="kn-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
-        </defs>
-        <image class="k-base-dark" href="logo-base-dark.png" x="0" y="0" width="1024" height="1024"/>
-        <image class="k-base-light" href="logo-base.png" x="0" y="0" width="1024" height="1024"/>
-        <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kn-tmask)"/>
-        <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
-        <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kn-dmask)"/>
-        <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-      </svg>
+      <span class="mc-brand-svg mc-brand-dyn" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:44px;height:28px;">
+        <img class="k-img-light" src="logo-word-blue.png" alt="کنترل" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">
+        <img class="k-img-light" src="logo-dots-blue.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">
+        <img class="k-img-dark" src="logo-word-white.png" alt="کنترل" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">
+        <img class="k-img-dark" src="logo-dots-white.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">
+      </span>
       <span class="bt" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-nav" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- M (bold rounded geometric) -->
         <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
