@@ -5377,6 +5377,170 @@ html, body {
 }
 
 
+
+/* ── Adaptive Multi-Style Logo Variants (Neon / Prism / Material / iOS / Studio / Android) ── */
+body[data-logo-style="neon"] .mc-kontrol-anim {
+  filter:
+    drop-shadow(0 0 6px color-mix(in srgb, var(--accent, #22d3ee) 85%, transparent))
+    drop-shadow(0 0 18px color-mix(in srgb, var(--accent, #22d3ee) 52%, transparent))
+    drop-shadow(0 0 34px color-mix(in srgb, var(--accent2, #ff79c6) 34%, transparent));
+  animation: kNeonBreath 2.8s ease-in-out infinite;
+}
+body[data-logo-style="neon"] .mc-kontrol-anim .k-light,
+body[data-logo-style="neon"] .mc-brand-dyn .k-light {
+  fill: url(#mc-neon-light);
+  stroke: color-mix(in srgb, var(--accent, #22d3ee) 75%, #ffffff);
+  stroke-width: 2.2;
+  paint-order: stroke;
+}
+body[data-logo-style="neon"] .mc-kontrol-anim .k-dark,
+body[data-logo-style="neon"] .mc-brand-dyn .k-dark {
+  fill: color-mix(in srgb, var(--logo-dark, #1e293b) 72%, var(--accent2, #c084fc));
+  stroke: color-mix(in srgb, var(--accent2, #ff79c6) 55%, transparent);
+  stroke-width: 1.6;
+  paint-order: stroke;
+}
+body[data-logo-style="neon"] .mc-brand-dyn {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent, #22d3ee) 70%, transparent));
+}
+body.light-mode[data-logo-style="neon"] .mc-kontrol-anim {
+  filter:
+    drop-shadow(0 0 5px color-mix(in srgb, var(--accent, #00735f) 55%, transparent))
+    drop-shadow(0 6px 18px color-mix(in srgb, var(--accent2, #ae365c) 28%, transparent));
+}
+@keyframes kNeonBreath {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 6px color-mix(in srgb, var(--accent, #22d3ee) 82%, transparent))
+      drop-shadow(0 0 18px color-mix(in srgb, var(--accent, #22d3ee) 48%, transparent))
+      drop-shadow(0 0 32px color-mix(in srgb, var(--accent2, #ff79c6) 30%, transparent));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 9px color-mix(in srgb, var(--accent, #22d3ee) 95%, #fff))
+      drop-shadow(0 0 26px color-mix(in srgb, var(--accent, #22d3ee) 66%, transparent))
+      drop-shadow(0 0 46px color-mix(in srgb, var(--accent2, #ff79c6) 44%, transparent));
+  }
+}
+
+body[data-logo-style="prism"] .mc-kontrol-anim {
+  filter:
+    drop-shadow(-4px 2px 10px color-mix(in srgb, var(--accent, #dfa6ff) 42%, transparent))
+    drop-shadow(4px 4px 12px color-mix(in srgb, var(--accent2, #ffaa8e) 38%, transparent));
+}
+body[data-logo-style="prism"] .mc-kontrol-anim .k-dark,
+body[data-logo-style="prism"] .mc-brand-dyn .k-dark {
+  fill: url(#mc-prism-dark);
+}
+body[data-logo-style="prism"] .mc-kontrol-anim .k-light,
+body[data-logo-style="prism"] .mc-brand-dyn .k-light {
+  fill: url(#mc-prism-light);
+}
+
+body[data-logo-style="material"] .mc-kontrol-anim {
+  filter:
+    drop-shadow(0 6px 14px rgba(0, 0, 0, .20))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, .12));
+}
+body.light-mode[data-logo-style="material"] .mc-kontrol-anim {
+  filter:
+    drop-shadow(0 6px 14px color-mix(in srgb, var(--accent, #006d59) 22%, rgba(0, 0, 0, .14)))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, .09));
+}
+
+body[data-logo-style="ios"] .mc-kontrol-anim {
+  filter:
+    drop-shadow(0 10px 24px color-mix(in srgb, var(--accent, #38bdf8) 26%, rgba(0, 0, 0, .20)))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, .35));
+}
+body[data-logo-style="ios"] .mc-kontrol-anim .k-dark,
+body[data-logo-style="ios"] .mc-brand-dyn .k-dark {
+  fill: url(#mc-ios-dark);
+}
+body[data-logo-style="ios"] .mc-kontrol-anim .k-light,
+body[data-logo-style="ios"] .mc-brand-dyn .k-light {
+  fill: url(#mc-ios-light);
+}
+
+body[data-logo-style="android"] .mc-kontrol-anim {
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .16));
+}
+body[data-logo-style="studio"] .mc-kontrol-anim {
+  filter: none;
+}
+
+/* ── Revamped Login Theme Drawer (Categorized, Scrollable, Palette + Mode) ── */
+.login-theme-drawer {
+  margin-top: 12px; padding: 12px; border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  display: none; text-align: start;
+  animation: fadeUp .2s ease;
+}
+.login-theme-drawer.open { display: block; }
+.lt-sec-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  margin-bottom: 6px; font-size: .69rem; font-weight: 800; letter-spacing: .04em;
+  color: var(--muted); text-transform: uppercase;
+}
+.lt-fam-row {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;
+}
+.lt-fam-btn {
+  padding: 4px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700;
+  border: 1px solid var(--border); background: var(--row); color: var(--muted);
+  cursor: pointer; transition: all .15s ease;
+}
+.lt-fam-btn.on {
+  background: var(--accent); color: var(--on-accent, #0a0d14); border-color: transparent;
+}
+.lt-mode-seg {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  padding: 3px; border-radius: 10px; background: var(--row); border: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.lt-mode-seg button {
+  padding: 5px 6px; border-radius: 7px; border: none; background: transparent;
+  color: var(--muted); font-size: .72rem; font-weight: 700; cursor: pointer; transition: all .15s ease;
+}
+.lt-mode-seg button.on {
+  background: var(--accent); color: var(--on-accent, #0a0d14);
+}
+.login-swatches {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+  max-height: 174px; overflow-y: auto; padding-inline-end: 2px; margin-top: 6px;
+}
+.login-swatches::-webkit-scrollbar { width: 4px; }
+.login-swatches::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.l-swatch {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 9px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--row); color: var(--text); font-size: .72rem; font-weight: 700;
+  cursor: pointer; text-align: start; transition: all .15s ease; min-width: 0;
+}
+.l-swatch:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.l-swatch.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--row));
+}
+.l-swatch i {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid rgba(255,255,255,.25);
+}
+.l-swatch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.l-swatch small { font-size: .61rem; color: var(--muted); font-weight: 600; flex-shrink: 0; }
+.lt-pal-row {
+  display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 3px 1px 6px;
+  margin-bottom: 8px; scrollbar-width: none;
+}
+.lt-pal-row::-webkit-scrollbar { display: none; }
+.lt-pal-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; cursor: pointer;
+  border: 2px solid transparent; transition: transform .15s ease, border-color .15s ease;
+}
+.lt-pal-dot:hover { transform: scale(1.12); }
+.lt-pal-dot.on { border-color: var(--text); transform: scale(1.14); }
+
 /* ── Animated "کنترل" Pure-Vector Two-Tone Ribbon (3.4s Silky GPU Loop) ─ */
 .mc-kontrol-anim {
   display: block;
@@ -5531,6 +5695,30 @@ html, body {
       <stop offset="50%"  stop-color="#ffffff" stop-opacity="0.52"/>
       <stop offset="58%"  stop-color="#ffffff" stop-opacity="0.34"/>
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="mc-prism-dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="var(--logo-dark, #31425a)"/>
+      <stop offset="52%"  stop-color="var(--accent, #22d3ee)"/>
+      <stop offset="100%" stop-color="var(--accent2, #c084fc)"/>
+    </linearGradient>
+    <linearGradient id="mc-prism-light" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="var(--accent, #22d3ee)"/>
+      <stop offset="48%"  stop-color="var(--accent2, #f472b6)"/>
+      <stop offset="100%" stop-color="var(--accent3, var(--logo-light, #617990))"/>
+    </linearGradient>
+    <linearGradient id="mc-neon-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="var(--logo-light, #9ef7ff)"/>
+      <stop offset="50%"  stop-color="var(--accent, #22d3ee)"/>
+      <stop offset="100%" stop-color="var(--accent2, #ff79c6)"/>
+    </linearGradient>
+    <linearGradient id="mc-ios-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="var(--accent, #38bdf8)"/>
+      <stop offset="100%" stop-color="var(--logo-dark, #1e293b)"/>
+    </linearGradient>
+    <linearGradient id="mc-ios-light" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="28%"  stop-color="var(--logo-light, #93c5fd)"/>
+      <stop offset="100%" stop-color="var(--accent, #38bdf8)"/>
     </linearGradient>
   </defs>
 </svg>
@@ -5988,17 +6176,26 @@ html, body {
       </div>
 
       <div class="login-theme-drawer" id="login-theme-drawer">
-        <div class="flexw" style="justify-content:space-between; margin-bottom:8px;">
-          <span style="font-size:.74rem; font-weight:700; color:var(--muted);">LOGIN BACKGROUND FX</span>
-          <button type="button" class="btn btn-ghost btn-sm" style="padding:3px 8px; font-size:.7rem;" onclick="randTheme(); renderLoginSwatches();">Random</button>
+        <div class="lt-sec-hd">
+          <span id="lt-lbl-mode">Appearance</span>
+          <button type="button" class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:.68rem;" onclick="randTheme(); renderLoginSwatches();">🎲 Random</button>
         </div>
-        <div class="flexw" style="gap:5px; margin-bottom:10px;">
-          <button type="button" class="chip" data-lfx-pick="aurora" onclick="setLoginFX('aurora')">Aurora</button>
-          <button type="button" class="chip" data-lfx-pick="cyber" onclick="setLoginFX('cyber')">Cyber Grid</button>
-          <button type="button" class="chip" data-lfx-pick="mesh" onclick="setLoginFX('mesh')">Liquid Mesh</button>
-          <button type="button" class="chip" data-lfx-pick="minimal" onclick="setLoginFX('minimal')">Minimal</button>
+        <div class="lt-mode-seg" id="lt-mode-seg">
+          <button type="button" data-lmode="auto" onclick="setMode('auto'); renderLoginSwatches();">🌗 Auto</button>
+          <button type="button" data-lmode="dark" onclick="setMode('dark'); renderLoginSwatches();">🌙 Dark</button>
+          <button type="button" data-lmode="light" onclick="setMode('light'); renderLoginSwatches();">☀️ Light</button>
         </div>
-        <span style="font-size:.74rem; font-weight:700; color:var(--muted);">QUICK THEMES</span>
+        <div class="lt-sec-hd"><span id="lt-lbl-fx">Background FX</span></div>
+        <div class="flexw" style="gap:4px; margin-bottom:10px;">
+          <button type="button" class="chip" style="padding:4px 8px; font-size:.7rem;" data-lfx-pick="aurora" onclick="setLoginFX('aurora')">Aurora</button>
+          <button type="button" class="chip" style="padding:4px 8px; font-size:.7rem;" data-lfx-pick="cyber" onclick="setLoginFX('cyber')">Cyber</button>
+          <button type="button" class="chip" style="padding:4px 8px; font-size:.7rem;" data-lfx-pick="mesh" onclick="setLoginFX('mesh')">Mesh</button>
+          <button type="button" class="chip" style="padding:4px 8px; font-size:.7rem;" data-lfx-pick="minimal" onclick="setLoginFX('minimal')">Minimal</button>
+        </div>
+        <div class="lt-sec-hd"><span id="lt-lbl-pal">Color Palette</span></div>
+        <div class="lt-pal-row" id="lt-pal-row"></div>
+        <div class="lt-sec-hd"><span id="lt-lbl-th">Theme &amp; Logo Style</span></div>
+        <div class="lt-fam-row" id="lt-fam-row"></div>
         <div class="login-swatches" id="login-swatches"></div>
       </div>
 
@@ -8330,6 +8527,7 @@ html, body {
     <div class="tweak-grid" style="margin-bottom:10px;">
       <button class="btn btn-sky" style="grid-column:1 / -1; justify-content:center;" id="btn-setup-all" onclick="runSetupAction('all')">⚡ Install Static Bundle (All Prereqs + Engines — Zero APT)</button>
       <button class="btn btn-ghost" style="grid-column:1 / -1; justify-content:center;" onclick="runSetupAction('kernel')">Enable Kernel Tunnel Modules (GRE / IP6GRE / VXLAN)</button>
+      <button class="btn btn-ok" style="grid-column:1 / -1; justify-content:center;" onclick="closeModal('setup-modal'); openMControlAdoptModal(setupTargetId)">🔗 Scan Existing MControl Tunnels (Adopt Tunnels &amp; Peer)</button>
       <button class="btn btn-warn" style="grid-column:1 / -1; justify-content:center;" onclick="closeModal('setup-modal'); openLegacyModal(setupTargetId)">🔄 MTunnel Migrator (Scan &amp; Import Old Tunnels)</button>
     </div>
 
@@ -9011,7 +9209,7 @@ const retiredThemes = {
   "ink": "terminal"
 };
 if (!TH.some(th => th.id === themeId)) themeId = retiredThemes[themeId] || 'mdesign';
-let mode = ls.get('mc_mode', 'dark');
+let mode = ls.get('mc_mode', 'auto');
 let custom = {};
 function readThemeSettings(id, fallback = '{}') {
   try {
@@ -9203,7 +9401,7 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]').content = p[0];
   set('--neu-d', dark ? 'rgba(0,0,0,.45)' : 'rgba(163,177,198,.75)'); set('--neu-l', dark ? 'rgba(255,255,255,.055)' : 'rgba(255,255,255,.95)');
   set('--rc', e.r + 'px'); set('--bw', e.bw + 'px');
-  b.dataset.family = e.g; b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
+  const _famReal = familyOf(curTheme()); b.dataset.family = e.g; b.dataset.logoStyle = _famReal.toLowerCase(); b.dataset.theme = e.id; b.dataset.card = e.card; b.dataset.btn = e.btn; b.dataset.bg = e.bg;
   b.dataset.navstyle = e.nav; b.dataset.font = e.font; b.dataset.den = e.den; b.dataset.srv = e.srv; b.dataset.stat = e.stat; b.dataset.chart = e.chart || 'unified'; b.dataset.gauge = e.gauge || 'line'; b.dataset.chk = e.chk || 'round'; b.dataset.uptime = e.uptime || 'kuma'; b.dataset.navx = navxFor(e);
   renderMetricDetails();
   refreshMonitorVisuals();
@@ -9218,6 +9416,12 @@ function applyTheme() {
   if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
   const mb = $('btn-mode');
   mb.value=mode;
+  const lm = $('login-mode');
+  if (lm) {
+    const faM = (typeof lang !== 'undefined' && lang === 'fa');
+    const lblM = mode === 'auto' ? (faM ? '🌗 خودکار' : '🌗 Auto') : (mode === 'dark' ? (faM ? '🌙 تیره' : '🌙 Dark') : (faM ? '☀️ روشن' : '☀️ Light'));
+    lm.textContent = lblM;
+  }
   const modeTitle=(lang==='fa'?'حالت نمایش':'Appearance')+' · '+t('mode_'+mode);
   mb.setAttribute('aria-label',modeTitle); mb.title=modeTitle;
   $('mode-icon').innerHTML = mode==='auto' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg>' : svg(dark?'moon':'sun');
@@ -9235,19 +9439,84 @@ function setLoginFX(fx) {
   ls.set('mc_login_fx', fx);
   document.querySelectorAll('[data-lfx-pick]').forEach(b => b.classList.toggle('on', b.dataset.lfxPick === fx));
 }
+let _loginThemeFam = 'All';
 function toggleLoginThemeDrawer() {
   const d = $('login-theme-drawer');
+  const apk = $('login-apk-drawer');
+  if (apk) apk.classList.remove('open');
   if (!d) return;
   const open = d.classList.toggle('open');
   if (open) renderLoginSwatches();
 }
+function setLoginThemeFamily(fam) {
+  _loginThemeFam = fam || 'All';
+  renderLoginSwatches();
+}
+function setLoginPalette(key) {
+  const cur = curTheme();
+  const baseId = cur.base || cur.id;
+  if (!key) {
+    setTheme(baseId);
+  } else {
+    const match = TH.find(x => (x.base || x.id) === baseId && x.paletteKey === key);
+    if (match) setTheme(match.id);
+  }
+  renderLoginSwatches();
+}
 function renderLoginSwatches() {
   const box = $('login-swatches');
   if (!box) return;
-  box.innerHTML = baseThemes.map(base => {
-    const th = TH.find(x=>x.base===base.id && x.paletteKey===curTheme().paletteKey) || base;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const cur = curTheme();
+  const curBaseId = cur.base || cur.id;
+  const curPalKey = cur.paletteKey || '';
+  const isDark = effMode() === 'dark';
+
+  // Sync mode segmented buttons
+  document.querySelectorAll('#lt-mode-seg button[data-lmode]').forEach(btn => {
+    const m = btn.dataset.lmode;
+    btn.classList.toggle('on', m === mode);
+    btn.textContent = m === 'auto' ? (fa ? '🌗 خودکار' : '🌗 Auto') : (m === 'dark' ? (fa ? '🌙 تیره' : '🌙 Dark') : (fa ? '☀️ روشن' : '☀️ Light'));
+  });
+  if ($('lt-lbl-mode')) $('lt-lbl-mode').textContent = fa ? 'حالت نمایش' : 'Appearance';
+  if ($('lt-lbl-fx'))   $('lt-lbl-fx').textContent   = fa ? 'پس‌زمینه لاگین' : 'Background FX';
+  if ($('lt-lbl-pal'))  $('lt-lbl-pal').textContent  = fa ? 'پالت رنگ' : 'Color Palette';
+  if ($('lt-lbl-th'))   $('lt-lbl-th').textContent   = fa ? 'تم و استایل لوگو' : 'Theme & Logo Style';
+
+  // Render family tabs
+  const fams = ['All', 'Neon', 'Prism', 'Material', 'iOS', 'Studio', 'Android'];
+  const famRow = $('lt-fam-row');
+  if (famRow) {
+    famRow.innerHTML = fams.map(f => {
+      const lbl = f === 'All' ? (fa ? 'همه' : 'All') : f;
+      return `<button type="button" class="lt-fam-btn${_loginThemeFam === f ? ' on' : ''}" onclick="setLoginThemeFamily('${f}')">${esc(lbl)}</button>`;
+    }).join('');
+  }
+
+  // Render quick color palette dots
+  const palRow = $('lt-pal-row');
+  if (palRow) {
+    const baseObj = baseThemes.find(b => b.id === curBaseId) || baseThemes[0];
+    const defPal = isDark ? baseObj.d : baseObj.l;
+    let pHtml = `<button type="button" class="lt-pal-dot${!curPalKey ? ' on' : ''}" title="${fa ? 'رنگ اصلی تم' : 'Default'}" style="background:linear-gradient(135deg,${defPal[4]} 50%,${defPal[5]} 50%);" onclick="setLoginPalette('')"></button>`;
+    pHtml += themeColors.map(([key, en, faN, dStr, lStr]) => {
+      const cols = (isDark ? dStr : lStr).split(' ');
+      return `<button type="button" class="lt-pal-dot${curPalKey === key ? ' on' : ''}" title="${esc(fa ? faN : en)}" style="background:linear-gradient(135deg,${cols[4]} 50%,${cols[5]} 50%);" onclick="setLoginPalette('${key}')"></button>`;
+    }).join('');
+    palRow.innerHTML = pHtml;
+  }
+
+  // Filter baseThemes by active family
+  const list = _loginThemeFam === 'All'
+    ? baseThemes
+    : baseThemes.filter(b => familyOf(b) === _loginThemeFam);
+
+  box.innerHTML = list.map(base => {
+    const th = (curPalKey && TH.find(x => x.base === base.id && x.paletteKey === curPalKey)) || base;
     const pal = effective(th, th.id === themeId ? custom : readThemeSettings(th.id)).pal;
-    return `<button type="button" class="l-swatch${th.id === themeId ? ' on' : ''}" onclick="setTheme('${th.id}'); renderLoginSwatches();"><i style="background:${pal[4]};"></i><span>${esc(th.n)}</span></button>`;
+    const active = (th.id === themeId || base.id === curBaseId);
+    const fam = familyOf(base);
+    return `<button type="button" class="l-swatch${active ? ' on' : ''}" onclick="setTheme('${th.id}'); renderLoginSwatches();"><i style="background:linear-gradient(135deg,${pal[4]} 50%,${pal[5]} 50%);"></i><span>${esc(base.n)}</span><small>${esc(fam)}</small></button>`;
   }).join('');
 }
 
@@ -9336,7 +9605,7 @@ function selectColorTheme(id) {
   applyTheme(); renderThemes(); renderStudio();
 }
 function setMode(m) { mode = m; applyTheme(); renderThemes(); renderStudio(); }
-function toggleMode() { mode = effMode() === 'dark' ? 'light' : 'dark'; applyTheme(); renderThemes(); renderStudio(); }
+function toggleMode() { const order = ['auto', 'dark', 'light']; mode = order[(order.indexOf(mode) + 1) % order.length]; applyTheme(); renderThemes(); renderStudio(); }
 function hsl2hex(h, s, l) {
   s /= 100; l /= 100;
   const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
@@ -13005,6 +13274,7 @@ function openSrvDropdown(ev, id, group, btn) {
   } else if (group === 'mc') {
     items = [
       { lbl: fa ? '🚀 نصب و راه‌اندازی (Setup)' : '🚀 Setup', fn: () => openSetupModal(id) },
+      { lbl: fa ? '🔗 اسکن تانل‌های MControl قبلی' : '🔗 Scan Existing MControl Tunnels', fn: () => openMControlAdoptModal(id) },
       { lbl: fa ? '🔄 انتقال از MTunnel (Migrator)' : '🔄 Migrate from MTunnel', fn: () => openLegacyModal(id) },
       { lbl: s.auth_mode === 'peer' ? (fa ? '📡 تست اتصال Peer' : '📡 Check Peer') : ('📡 ' + t('btn_check_ssh')), fn: () => probeOne(id) },
       { lbl: fa ? '🌍 بررسی لوکیشن و دیتاسنتر' : '🌍 Check Location & DC', fn: () => refreshServerGeo(id) },
@@ -18050,6 +18320,146 @@ function confirmOnboardAndMigrate() {
   if (id) openLegacyModal(id);
 }
 
+let _obMCScan = null;
+
+async function openMControlAdoptModal(serverId, preloaded) {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const s = (SERVERS || []).find(x => +x.id === +serverId) || { id: serverId, name: 'Server #' + serverId, host: '' };
+  if ($('mca-title')) $('mca-title').textContent = fa ? '🔗 افزودن تانل‌های MControl قبلی' : '🔗 Adopt Existing MControl Tunnels';
+  if ($('mca-sub')) $('mca-sub').textContent = (s.name || '') + (s.host ? ' · ' + s.host : '');
+  if ($('mca-cancel-btn')) $('mca-cancel-btn').textContent = fa ? 'انصراف' : 'Cancel';
+  if ($('mca-submit-btn')) $('mca-submit-btn').textContent = fa ? '✔ اضافه کردن به پنل' : '✔ Import into Panel';
+  if ($('mca-submit-btn')) $('mca-submit-btn').style.display = 'none';
+  if ($('mca-body')) $('mca-body').innerHTML = `<div class="hint" style="text-align:center; padding:18px;">${fa ? 'در حال اسکن تانل‌های MControl روی سرور...' : 'Scanning server for MControl tunnels...'}</div>`;
+  $('mc-adopt-modal').classList.add('active');
+
+  let data = preloaded;
+  if (!data) {
+    try {
+      const r = await api('api/servers/' + serverId + '/mcontrol/scan');
+      data = { serverId: +serverId, tunnels: (r && r.tunnels) || [], missing_peers: (r && r.missing_peers) || [] };
+    } catch (e) {
+      data = { serverId: +serverId, tunnels: [], missing_peers: [] };
+    }
+  }
+  _obMCScan = data;
+
+  const newTuns = (data.tunnels || []).filter(t => !t.already_in_panel);
+  const missingPeers = data.missing_peers || [];
+  if (!newTuns.length) {
+    if ($('mca-submit-btn')) $('mca-submit-btn').style.display = 'none';
+    $('mca-body').innerHTML = `<div class="hint" style="text-align:center; padding:18px;">${fa ? 'تانل جدیدی که قبلاً ثبت نشده باشد پیدا نشد.' : 'No unregistered MControl tunnels were found on this server.'}</div>`;
+    return;
+  }
+  if ($('mca-submit-btn')) $('mca-submit-btn').style.display = 'inline-flex';
+
+  const otherSrvs = (SERVERS || []).filter(x => +x.id !== +serverId);
+  let out = `<div style="font-size:.76rem; color:var(--muted); margin-bottom:8px;">${fa ? 'تانل‌هایی که می‌خواهید به این پنل اضافه شوند را انتخاب کنید:' : 'Select the existing tunnels you want to adopt into this panel:'}</div>`;
+
+  out += newTuns.map(t => {
+    const peerKnown = t.peer_server_id > 0;
+    const peerLabel = peerKnown
+      ? `<span class="badge b-ok">${esc(t.peer_server_name)}</span>`
+      : (t.peer_host ? `<span class="badge b-warn mono">${esc(t.peer_host)} (${fa ? 'سرور جدید' : 'New Peer'})</span>`
+                     : `<select class="mca-peer-sel" data-unit="${esc(t.unit)}" style="padding:3px 6px; font-size:.72rem; border-radius:7px; background:var(--row); color:var(--text); border:1px solid var(--border);"><option value="0">${fa ? 'انتخاب سرور مقابل...' : 'Select peer server...'}</option>${otherSrvs.map(os => `<option value="${os.id}">${esc(os.name)} (${esc(os.host)})</option>`).join('')}</select>`);
+    return `<label style="display:flex; align-items:flex-start; gap:10px; padding:10px; border-radius:11px; border:1px solid var(--border); background:var(--row); margin-bottom:7px; cursor:pointer;">
+      <input type="checkbox" class="mca-tun-chk" value="${esc(t.unit)}" checked style="margin-top:3px;">
+      <div style="flex:1; min-width:0;">
+        <div class="flexw" style="justify-content:space-between; gap:6px;">
+          <strong style="font-size:.82rem;">${esc(t.name)} <span class="mono" style="font-size:.7rem; color:var(--muted);">(${esc(t.unit)})</span></strong>
+          <span class="badge ${t.active ? 'b-ok' : 'b-err'}">${t.active ? (fa ? 'فعال' : 'Active') : (fa ? 'متوقف' : 'Stopped')}</span>
+        </div>
+        <div class="flexw" style="gap:6px; margin-top:5px; font-size:.72rem; color:var(--muted);">
+          <span class="badge">${esc(t.engine)} · ${esc(t.transport)}</span>
+          <span class="mono">Port: ${t.tunnel_port || '—'}</span>
+          ${t.ports ? `<span class="mono">Fwd: ${esc(t.ports)}</span>` : ''}
+          <span>${fa ? 'سمت' : 'Side'}: <b>${t.side === 'iran' ? '🇮🇷 Iran' : '🌍 Foreign'}</b></span>
+        </div>
+        <div style="margin-top:6px; font-size:.72rem;">${fa ? 'سرور مقابل:' : 'Peer:'} ${peerLabel}</div>
+      </div>
+    </label>`;
+  }).join('');
+
+  if (missingPeers.length) {
+    out += `<div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
+      <div style="font-size:.78rem; font-weight:800; color:var(--accent); margin-bottom:8px;">${fa ? '➕ افزودن خودکار سرور مقابل (اختیاری)' : '➕ Auto-Add Detected Peer Server(s)'}</div>`;
+    out += missingPeers.map((mp, idx) => {
+      const defName = (mp.suggested_role === 'iran' ? 'Iran-' : 'Foreign-') + mp.host.split('.').pop();
+      return `<div class="mca-peer-card" data-host="${esc(mp.host)}" data-role="${esc(mp.suggested_role)}" style="padding:10px; border-radius:11px; border:1px solid color-mix(in srgb, var(--accent) 32%, var(--border)); background:color-mix(in srgb, var(--accent) 6%, var(--row)); margin-bottom:8px;">
+        <label class="flexw" style="gap:8px; margin-bottom:8px; cursor:pointer;">
+          <input type="checkbox" class="mca-add-peer-chk" checked>
+          <strong class="mono" style="font-size:.82rem;">${esc(mp.host)}</strong>
+          <span class="badge">${mp.suggested_role === 'iran' ? '🇮🇷 Iran' : '🌍 Foreign'}</span>
+          <span style="font-size:.7rem; color:var(--muted);">(${mp.tunnel_count} ${fa ? 'تانل' : 'tunnel(s)'})</span>
+        </label>
+        <div style="display:grid; grid-template-columns:1fr 80px 90px; gap:6px; margin-bottom:6px;">
+          <input type="text" class="mca-p-name" value="${esc(defName)}" placeholder="${fa ? 'نام سرور' : 'Server Name'}">
+          <input type="number" class="mca-p-port" value="22" placeholder="Port">
+          <input type="text" class="mca-p-user" value="root" placeholder="User">
+        </div>
+        <input type="password" class="mca-p-pass" placeholder="${fa ? 'رمز SSH سرور مقابل برای اضافه شدن خودکار...' : 'SSH password for peer server...'}">
+      </div>`;
+    }).join('');
+    out += `</div>`;
+  }
+
+  $('mca-body').innerHTML = out;
+}
+
+async function submitMControlAdopt() {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const data = _obMCScan;
+  if (!data || !data.serverId) return;
+  const units = Array.from(document.querySelectorAll('.mca-tun-chk:checked')).map(c => c.value);
+  if (!units.length) {
+    toast(fa ? 'حداقل یک تانل انتخاب کنید' : 'Select at least one tunnel', true);
+    return;
+  }
+  const add_peers = [];
+  document.querySelectorAll('.mca-peer-card').forEach(card => {
+    const chk = card.querySelector('.mca-add-peer-chk');
+    if (!chk || !chk.checked) return;
+    const pass = (card.querySelector('.mca-p-pass')?.value || '').trim();
+    if (!pass) return;
+    add_peers.push({
+      host: card.dataset.host,
+      role: card.dataset.role || 'auto',
+      name: (card.querySelector('.mca-p-name')?.value || '').trim() || card.dataset.host,
+      port: parseInt(card.querySelector('.mca-p-port')?.value || '22', 10) || 22,
+      username: (card.querySelector('.mca-p-user')?.value || '').trim() || 'root',
+      auth_type: 'password',
+      secret: pass
+    });
+  });
+  const peer_map = {};
+  document.querySelectorAll('.mca-peer-sel').forEach(sel => {
+    const v = parseInt(sel.value || '0', 10);
+    if (v > 0) peer_map[sel.dataset.unit] = v;
+  });
+
+  const btn = $('mca-submit-btn');
+  const oldLbl = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = fa ? 'در حال افزودن...' : 'Importing...'; }
+  try {
+    const res = await api('api/servers/' + data.serverId + '/mcontrol/adopt', 'POST', { units, add_peers, peer_map });
+    if (res && res.ok) {
+      const nTun = (res.adopted || []).length;
+      const nSrv = (res.added_servers || []).length;
+      toast(fa ? `✔ ${nTun} تانل و ${nSrv} سرور مقابل اضافه شد` : `✔ Adopted ${nTun} tunnel(s) and added ${nSrv} peer server(s)`);
+      if (Array.isArray(res.warnings) && res.warnings.length) {
+        toast(res.warnings.join(' | '), true);
+      }
+      closeModal('mc-adopt-modal');
+      await loadServers();
+      if (typeof loadTunnels === 'function') loadTunnels();
+    } else {
+      toast((res && res.error) || 'Adopt failed', true);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldLbl; }
+  }
+}
+
 function openQuotaModal(id) {
   const s = (SERVERS || []).find(x => +x.id === +id);
   const q = SRV_QUOTAS[String(id)] || {};
@@ -18700,6 +19110,24 @@ if (_deskAlertsOn && $('btn-desk-alerts')) $('btn-desk-alerts').classList.add('b
         <button type="button" class="btn btn-warn" id="btn-ob-migrate" style="display:none;" onclick="confirmOnboardAndMigrate()">⚡ Migrate MTunnel</button>
         <button type="button" class="btn btn-sky" id="btn-ob-confirm" style="min-width:160px; justify-content:center;" onclick="confirmServerOnboarding()">✔ Confirm &amp; Continue</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXISTING MCONTROL TUNNELS & PEER SERVER ADOPTION MODAL -->
+<div class="modal-bg" id="mc-adopt-modal" style="z-index:1185;">
+  <div class="card modal-box" style="max-width:580px;">
+    <div class="toolbar" style="margin-bottom:10px;">
+      <div>
+        <h3 style="color:var(--accent); margin:0;" id="mca-title">🔗 تانل‌های MControl شناسایی‌شده</h3>
+        <div class="mono" style="font-size:.73rem; color:var(--muted); margin-top:2px;" id="mca-sub">—</div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal('mc-adopt-modal')">✕</button>
+    </div>
+    <div id="mca-body" style="max-height:62vh; overflow-y:auto; padding-inline-end:2px;"></div>
+    <div class="flexw" style="justify-content:flex-end; gap:8px; margin-top:14px;">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('mc-adopt-modal')" id="mca-cancel-btn">انصراف</button>
+      <button type="button" class="btn btn-sky" id="mca-submit-btn" onclick="submitMControlAdopt()">✔ اضافه کردن به پنل</button>
     </div>
   </div>
 </div>

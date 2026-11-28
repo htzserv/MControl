@@ -728,6 +728,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/servers/{id}/setup/status", h.auth(h.handleServerSetupStatus))
 	mux.HandleFunc("POST /api/servers/{id}/setup/run", h.auth(h.handleServerSetupRun))
 	mux.HandleFunc("GET /api/servers/{id}/legacy/scan", h.auth(h.handleLegacyScan))
+	mux.HandleFunc("GET /api/servers/{id}/mcontrol/scan", h.auth(h.handleScanMControl))
+	mux.HandleFunc("POST /api/servers/{id}/mcontrol/adopt", h.auth(h.handleAdoptMControl))
 	mux.HandleFunc("GET /api/servers/{id}/legacy/snapshot", h.auth(h.handleLegacySnapshot))
 	mux.HandleFunc("POST /api/servers/{id}/legacy/migrate", h.auth(h.handleLegacyMigrate))
 	mux.HandleFunc("GET /api/legacy/tunnels", h.auth(h.handleLegacyList))

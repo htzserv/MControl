@@ -72,7 +72,7 @@ class PanelStore(context: Context) {
     }
 
     // Theme: "dark" | "light" | "auto"
-    fun getThemeMode(): String = prefs.getString("theme_mode", "dark") ?: "dark"
+    fun getThemeMode(): String = prefs.getString("theme_mode", "auto") ?: "auto"
     fun setThemeMode(m: String) { prefs.edit().putString("theme_mode", m).apply() }
 
     fun isBgAlertsEnabled(): Boolean = prefs.getBoolean("bg_alerts_enabled", false)

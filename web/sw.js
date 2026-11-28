@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v33';
+const CACHE_NAME = 'mcontrol-pwa-v35';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
