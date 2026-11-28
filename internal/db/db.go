@@ -54,7 +54,9 @@ type Server struct {
 	PingMs         string `json:"ping_ms"`
 	OutboundPingMs string `json:"outbound_ping_ms"`
 	ReversePingMs  string `json:"reverse_ping_ms"`
-	UseOutbound    bool   `json:"use_outbound"`
+	UseOutbound        bool   `json:"use_outbound"`
+	EffectiveOutbound  bool   `json:"effective_outbound"`
+	OutboundConfigured bool   `json:"outbound_configured"`
 	LastSpeed      string `json:"last_speed"`
 	CreatedAt      int64  `json:"created_at"`
 }

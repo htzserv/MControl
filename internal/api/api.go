@@ -316,18 +316,36 @@ func pathID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return id, true
 }
 
+func (h *Handler) serverWantsOutbound(srv *db.Server, cfg *outboundConfig) bool {
+	if srv == nil {
+		return false
+	}
+	if srv.UseOutbound {
+		return true
+	}
+	isForeign := srv.Role == "foreign" || (srv.Role != "iran" && !strings.EqualFold(srv.CountryCode, "IR"))
+	if isForeign && cfg != nil && cfg.UseForeign {
+		return true
+	}
+	return false
+}
+
+func (h *Handler) enrichServersOutbound(list []db.Server) {
+	cfg := h.loadOutboundCfg()
+	obActive := isOutboundActive()
+	for i := range list {
+		wants := h.serverWantsOutbound(&list[i], &cfg)
+		list[i].OutboundConfigured = wants
+		list[i].EffectiveOutbound = wants && obActive
+	}
+}
+
 func (h *Handler) serverSocksProxy(srv *db.Server) string {
 	if srv == nil {
 		return ""
 	}
-	use := srv.UseOutbound
-	if !use && srv.Role == "foreign" {
-		cfg := h.loadOutboundCfg()
-		if cfg.Enabled && cfg.UseForeign {
-			use = true
-		}
-	}
-	if use && isOutboundActive() {
+	cfg := h.loadOutboundCfg()
+	if h.serverWantsOutbound(srv, &cfg) && isOutboundActive() {
 		return fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 	}
 	return ""
@@ -690,6 +708,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/ui/tab-prefs", h.auth(h.handleSaveTabPrefs))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
+	mux.HandleFunc("POST /api/servers/{id}/outbound", h.auth(h.handleToggleServerOutbound))
 	mux.HandleFunc("POST /api/servers/{id}/unpair", h.auth(h.handleUnpairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/agent/update", h.auth(h.handleUpdatePeerAgent))
 	mux.HandleFunc("POST /api/servers/{id}/agent/rotate-key", h.auth(h.handleRotatePeerKey))
@@ -1121,7 +1140,8 @@ func (h *Handler) handleListServers(w http.ResponseWriter, r *http.Request) {
 		fail(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "servers": list})
+	h.enrichServersOutbound(list)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "servers": list, "outbound_active": isOutboundActive()})
 }
 
 func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
@@ -1153,8 +1173,16 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	obCfg := h.loadOutboundCfg()
+	obActive := isOutboundActive()
+	if req.UseOutbound && !obActive {
+		fail(w, http.StatusBadRequest, "Master Outbound (Xray) is not running on 127.0.0.1:10808 — start Outbound first or select Direct Connection")
+		return
+	}
 	reqProxy := ""
-	if req.UseOutbound && isOutboundActive() {
+	if req.UseOutbound && obActive {
+		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+	} else if !req.UseOutbound && req.Role == "foreign" && obCfg.UseForeign && obActive {
 		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 	}
 	var (
@@ -1171,6 +1199,11 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 		authR = sshclient.Run(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy}, "true", 6*time.Second, 6*time.Second)
 	}()
 	addWG.Wait()
+	// If role was auto-detected as foreign and global Foreign Outbound is active, retry via Outbound if Direct failed
+	if authR.Err != nil && reqProxy == "" && obActive && obCfg.UseForeign && !strings.EqualFold(g.CountryCode, "IR") {
+		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
+		authR = sshclient.Run(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy}, "true", 8*time.Second, 8*time.Second)
+	}
 	if req.Role == "" || req.Role == "auto" {
 		if strings.EqualFold(g.CountryCode, "IR") {
 			req.Role = "iran"
@@ -1224,6 +1257,8 @@ func (h *Handler) handleAddServer(w http.ResponseWriter, r *http.Request) {
 	}
 	srv.ID = id
 	srv.Password = ""
+	srv.OutboundConfigured = h.serverWantsOutbound(srv, &obCfg)
+	srv.EffectiveOutbound = srv.OutboundConfigured && obActive
 	// Hardware check (CPU/RAM/Uptime/Net) runs asynchronously AFTER adding the server
 	go func(sid int64) {
 		_, _ = h.probeServer(sid)
@@ -1514,12 +1549,14 @@ func (h *Handler) handlePingAllServers(w http.ResponseWriter, r *http.Request) {
 	}
 	wg.Wait()
 	updated, _ := h.store.ListServers()
+	h.enrichServersOutbound(updated)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "servers": updated})
 }
 
 func (h *Handler) handleProbeAll(w http.ResponseWriter, r *http.Request) {
 	h.probeAll()
 	updated, _ := h.store.ListServers()
+	h.enrichServersOutbound(updated)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "servers": updated})
 }
 
@@ -2326,6 +2363,60 @@ func (h *Handler) prepareMasterAgentDist() string {
 	return h.masterDistBaseURL(h.createDistToken()) + "/agents"
 }
 
+
+func (h *Handler) handleToggleServerOutbound(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	srv, err := h.store.GetServerWithSecret(id)
+	if err != nil {
+		fail(w, http.StatusNotFound, "server not found")
+		return
+	}
+	var req struct {
+		UseOutbound bool `json:"use_outbound"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	obActive := isOutboundActive()
+	if req.UseOutbound && !obActive {
+		fail(w, http.StatusBadRequest, "Master Outbound (Xray) is not running on 127.0.0.1:10808 — start Outbound first")
+		return
+	}
+	if err := h.store.SetServerUseOutbound(id, req.UseOutbound); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	srv.UseOutbound = req.UseOutbound
+	cfg := h.loadOutboundCfg()
+	wants := h.serverWantsOutbound(srv, &cfg)
+	eff := wants && obActive
+
+	// Re-probe & re-measure pings using the updated route
+	go func(sid int64) {
+		_, _ = h.probeServer(sid)
+		if s2, e := h.store.GetServerWithSecret(sid); e == nil {
+			pMs, obMs, revMs := h.measureAllPingsForServer(s2)
+			_ = h.store.UpdateServerPings(sid, pMs, obMs, revMs)
+		}
+	}(id)
+
+	msg := "Switched server to Direct connection"
+	if eff {
+		msg = "Switched server to Master Outbound (Xray 127.0.0.1:10808)"
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":                  true,
+		"use_outbound":        req.UseOutbound,
+		"outbound_configured": wants,
+		"effective_outbound":  eff,
+		"outbound_active":     obActive,
+		"message":             msg,
+	})
+}
+
 func (h *Handler) handlePairPeer(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -2498,7 +2589,9 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 	}
 	go h.applyProbe(srv, p)
 	srcUsed := "direct"
-	if isIran {
+	if socksPx != "" {
+		srcUsed = "outbound"
+	} else if isIran {
 		srcUsed = "iran_mirror"
 	}
 	syncNote := ""
@@ -2516,6 +2609,7 @@ echo "SVC_STATE=${ACT} LISTENING=${LST}"`, tryPort, svcName)
 		"ok":           true,
 		"peer_code":    peerCode,
 		"agent_port":   chosenPort,
+		"used_outbound": socksPx != "",
 		"source":       srcUsed,
 		"ping_ms":      srv.PingMs,
 		"country":      srv.Country,
@@ -2554,8 +2648,14 @@ func (h *Handler) handleTestServer(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	pingMs := sshclient.MeasurePingFromMaster(req.Host, req.Port)
+	obCfg := h.loadOutboundCfg()
+	obActive := isOutboundActive()
+	if req.UseOutbound && !obActive {
+		fail(w, http.StatusBadRequest, "Master Outbound (Xray) is not running on 127.0.0.1:10808 — start Outbound first or switch to Direct")
+		return
+	}
 	reqProxy := ""
-	if req.UseOutbound && isOutboundActive() {
+	if (req.UseOutbound || (req.Role == "foreign" && obCfg.UseForeign)) && obActive {
 		reqProxy = fmt.Sprintf("127.0.0.1:%d", outboundSocksPort)
 	}
 	p := sshclient.Probe(sshclient.Target{Host: req.Host, Port: req.Port, User: req.Username, Secret: req.Secret, AuthType: req.AuthType, SocksProxy: reqProxy})

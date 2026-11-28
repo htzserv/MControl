@@ -349,7 +349,8 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
 /* ═════════ Redesigned Animated Login Screen ═════════ */
 #login-screen {
   position: fixed; inset: 0; z-index: 3000; display: none;
-  align-items: center; justify-content: center; padding: 20px; overflow: hidden;
+  align-items: flex-start; justify-content: center; padding: 24px 16px 40px;
+  overflow-y: auto; overflow-x: hidden;
   background: var(--bg);
 }
 .login-bg-fx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
@@ -394,7 +395,7 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
   50% { transform: translateY(-5px); box-shadow: 0 0 38px var(--accent-glow); }
 }
 .login-shell {
-  position: relative; z-index: 2; width: 100%; max-width: 430px;
+  position: relative; z-index: 2; width: 100%; max-width: 430px; margin: auto 0;
   animation: loginCardIn .55s cubic-bezier(.16,1,.3,1);
 }
 .login-card {
@@ -1780,10 +1781,10 @@ body[data-chk="switch"] input[type="checkbox"]:checked::before {
 .mc-ring-center {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; text-align: center; pointer-events: none;
-  padding: 0 10px;
+  padding: 0 15px;
 }
-.mc-ring-pct { font-family: var(--ff-m); font-size: 1.28rem; font-weight: 900; line-height: 1.08; letter-spacing: -.4px; }
-.mc-ring-sub { font-size: .58rem; font-weight: 800; letter-spacing: .7px; color: var(--muted); margin-top: 3px; }
+.mc-ring-pct { font-family: var(--ff-m); font-size: 1.22rem; font-weight: 900; line-height: 1.08; letter-spacing: -.4px; max-width: 82px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-ring-sub { font-size: .5rem; font-weight: 800; letter-spacing: .2px; line-height: 1.15; color: var(--muted); margin-top: 3px; max-width: 72px; white-space: normal; word-break: break-word; }
 
 /* In Ring mode, show the big percentage INSIDE the ring once (no duplicate in top-left!) */
 body[data-gauge="ring"] .mc-ring-wrap { display: flex; }
@@ -5378,6 +5379,42 @@ html, body {
 
 
 
+
+/* ── Prevent bottom utility icons from overflowing 232px sidebars ── */
+body:is([data-navx="side"],[data-navx="side-r"],[data-navx="side-float"]) #chrome {
+  overflow-x: hidden;
+}
+body:is([data-navx="side"],[data-navx="side-r"],[data-navx="side-float"]) .util {
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: center !important;
+  gap: 5px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+body:is([data-navx="side"],[data-navx="side-r"],[data-navx="side-float"]) .util-items {
+  max-width: 100%;
+  width: auto;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  margin: 0;
+  padding: 2px 0;
+  overflow: hidden;
+}
+body:is([data-navx="side"],[data-navx="side-r"],[data-navx="side-float"]) .util .icon-btn {
+  width: 31px;
+  height: 31px;
+  font-size: .72rem;
+}
+body:is([data-navx="side"],[data-navx="side-r"],[data-navx="side-float"]) .util.collapsed .util-items {
+  max-height: 0;
+  flex-basis: 0;
+  padding: 0;
+}
+
 /* ── Adaptive Multi-Style Logo Variants (Neon / Prism / Material / iOS / Studio / Android) ── */
 body[data-logo-style="neon"] .mc-kontrol-anim {
   filter:
@@ -5554,12 +5591,12 @@ body[data-logo-style="studio"] .mc-kontrol-anim {
 }
 .mc-kontrol-anim .k-dark,
 .mc-brand-dyn .k-dark {
-  fill: var(--logo-dark, #31425a);
+  fill: var(--logo-dark, #5a87bc);
   transition: fill .28s ease;
 }
 .mc-kontrol-anim .k-light,
 .mc-brand-dyn .k-light {
-  fill: var(--logo-light, #617990);
+  fill: var(--logo-light, #eef6ff);
   transition: fill .28s ease;
 }
 .mc-kontrol-anim .k-stage {
@@ -7421,7 +7458,7 @@ body[data-logo-style="studio"] .mc-kontrol-anim {
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-en"><span>Enable Outbound</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-gh" checked onchange="persistOutboundConfigOnly()"><span>GitHub &amp; Updates</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-tg" checked onchange="persistOutboundConfigOnly()"><span>Telegram Bot</span></label>
-            <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr" onchange="persistOutboundConfigOnly()"><span>Foreign Nodes</span></label>
+            <label class="check" style="margin:0;"><input type="checkbox" id="ob-fr" onchange="persistOutboundConfigOnly().then(()=>{if(typeof loadServers==='function')loadServers();})"><span>Foreign Nodes</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-dc" onchange="persistOutboundConfigOnly()"><span>Datacenter</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-cf" onchange="persistOutboundConfigOnly()"><span>Cloudflare</span></label>
             <label class="check" style="margin:0;"><input type="checkbox" id="ob-geo" onchange="persistOutboundConfigOnly()"><span>GeoIP (Location &amp; DC)</span></label>
@@ -8816,43 +8853,43 @@ function T(id, n, g, s, d, l) {
 }
 
 // ═══ NEW CATEGORY: Prism (Minimal Colorful SaaS Bubbles + Floating Sidebar) ═══
-T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
+T('prism-ring', 'Prism Ring', 'Prism', 'side-float prism pill mesh sans cozy grid tiles 22 1 bubbles ring circle', '#0d1628 #162440 #eef6ff #a5bede #60b4ff #93c5fd #2b446c', '#ebf3fc #f8fbff #10243d #4b6584 #1d63dc #4a86c8 #c5d9f0');
 
-T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
-T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#24102c #391842 #fff2fc #deb9df #ef9dff #ffbd73 #77426e', '#fae7f7 #fff8fc #370e34 #754968 #93129d #a74312 #e7bfdb');
-T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#0b211b #15382a #f2ffdf #b8d9bd #99ed73 #ffce70 #41634d', '#eef4d9 #fcfff0 #1a3016 #506044 #356918 #93600a #ccd8ac');
-T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
-T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#082321 #103a36 #ecfff2 #b2d6c8 #60e8c2 #ffb18f #36635a', '#e0f2e5 #f7fff4 #153129 #426859 #006d59 #aa4428 #b9d8c7');
-T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#241911 #39281e #fff2d8 #dfc9ac #ffc278 #ec9e83 #65503a', '#f6e7cf #fff7e9 #352417 #705944 #924c18 #964438 #dac3a5');
-T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
-T('ios-air', 'iOS Air', 'Studio', 'top-glass liquid pill solid round cozy grid tiles 18 1 bubbles ring switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
-T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#231829 #392a40 #fff4ee #dac0cf #f4aec4 #a1d9f7 #66516d', '#fae8e6 #fffafa #35222d #745662 #a73463 #286998 #e6cbd0');
-T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#141e15 #202e20 #f1f6da #c1ceb1 #b9ec79 #f6ce7e #475b3d', '#f0efd9 #fbfbea #25301d #586344 #476724 #865b11 #d0d3b5');
-T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
+T('mdesign', 'MDesign Neon', 'Neon', 'dock glass pill aurora sans cozy grid tiles 16 1', '#0a1324 #13213a #edf6ff #9eb8d9 #56b8ff #82d4ff #27426b', '#eaf3fc #f7fbff #10233d #4a6382 #1660d6 #3888d4 #c3d8ef');
+T('synth', 'Ultraviolet', 'Neon', 'top glass round solid sans cozy grid tiles 12 1', '#0a1324 #13213a #edf6ff #9eb8d9 #56b8ff #82d4ff #27426b', '#eaf3fc #f7fbff #10233d #4a6382 #1660d6 #3888d4 #c3d8ef');
+T('ion', 'Ion Jade', 'Neon', 'rail deck round solid sans compact table ribbon 8 1', '#0a1324 #13213a #edf6ff #9eb8d9 #56b8ff #82d4ff #27426b', '#eaf3fc #f7fbff #10233d #4a6382 #1660d6 #3888d4 #c3d8ef');
+T('m3', 'Material You', 'Material', 'bottom flat pill solid sans cozy grid tiles 22 1', '#0f1827 #19263b #eef5ff #a6bcd8 #6cb2ff #9cc8ff #304769', '#edf4fc #f8fbff #14263d #4f6682 #1f64d6 #5186c4 #c8daee');
+T('lagoon', 'Material Lagoon', 'Material', 'side flat round solid sans cozy list tiles 16 1', '#0f1827 #19263b #eef5ff #a6bcd8 #6cb2ff #9cc8ff #304769', '#edf4fc #f8fbff #14263d #4f6682 #1f64d6 #5186c4 #c8daee');
+T('espresso', 'Material Espresso', 'Material', 'side paper round solid sans roomy grid tiles 16 1', '#0f1827 #19263b #eef5ff #a6bcd8 #6cb2ff #9cc8ff #304769', '#edf4fc #f8fbff #14263d #4f6682 #1f64d6 #5186c4 #c8daee');
+T('slate', 'Slate Pro', 'Studio', 'side flat round solid sans compact table ribbon 6 1', '#0f1722 #182332 #edf4fc #9db3cc #67a8e6 #8dbbe6 #2e425c', '#edf2f8 #f8fbfe #162638 #4d6278 #255ea8 #567ea8 #c8d6e6');
+T('ios-air', 'iOS Air', 'Studio', 'top-glass liquid pill solid round cozy grid tiles 18 1 bubbles ring switch', '#0d1524 #18253a #f0f6ff #a6bddb #66b2ff #99ccff #2f4668', '#eef4fb #fafdff #12243b #516882 #0066cc #4c8fd6 #cbdcf0');
+T('ios', 'iOS Liquid', 'Studio', 'float-b liquid pill mesh round cozy grid tiles 22 1', '#0d1524 #18253a #f0f6ff #a6bddb #66b2ff #99ccff #2f4668', '#eef4fb #fafdff #12243b #516882 #0066cc #4c8fd6 #cbdcf0');
+T('terminal', 'Carbon Terminal', 'Studio', 'top outline square solid mono compact table ribbon 4 1', '#0f1722 #182332 #edf4fc #9db3cc #67a8e6 #8dbbe6 #2e425c', '#edf2f8 #f8fbfe #162638 #4d6278 #255ea8 #567ea8 #c8d6e6');
+T('obsidian', 'Obsidian Mono', 'Studio', 'side flat round solid sans compact table tiles 8 1', '#0f1722 #182332 #edf4fc #9db3cc #67a8e6 #8dbbe6 #2e425c', '#edf2f8 #f8fbfe #162638 #4d6278 #255ea8 #567ea8 #c8d6e6');
 
 // Variants inherit the exact layout of their base style. Each palette has its own profile.
-T('android-minimal', 'Android 17 Minimal', 'Android', 'bottom flat round solid sans cozy list ribbon 16 1 unified line material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
-T('prism-terrace', 'Prism Terrace', 'Prism', 'islands prism round solid sans cozy list ribbon 14 1 bento columns circle', '#171c30 #252d47 #f1f2ff #c1c7df #adb3ff #8fe2cc #414d72', '#edf0fa #fafaff #202841 #57627b #52429c #12645d #c6cde3');
-T('android-index', 'Android Index', 'Android', 'rail deck square solid sans compact table ribbon 8 1 bands line switch', '#15201f #22302c #f1f7ee #bfcfc2 #9cdab7 #f2c589 #445b50', '#eaf2ec #f8fcf8 #1a3025 #4d6357 #236b4a #855314 #bed5c8');
-T('prism-facet', 'Prism Facet', 'Prism', 'rail deck slant diag sans compact table ribbon 8 1 quadrant drum jewel', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
-T('neon-scope', 'Neon Scope', 'Neon', 'top hud square grid mono compact list ribbon 6 1 bands matrix neon', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
-T('material-folio', 'Material Folio', 'Material', 'underline paper round solid serif roomy list tiles 12 1 bento steps ticket', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
-T('studio-proof', 'Studio Proof', 'Studio', 'side-r outline square dots serif roomy grid ribbon 4 1 quadrant dial seal', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
-T('ios-pebble', 'iOS Pebble', 'iOS', 'bubble-bar liquid pill solid round cozy grid tiles 24 1 bubbles tank switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
-T('android-tile', 'Android Tile', 'Android', 'bottom deck round solid sans cozy grid tiles 16 1 quadrant columns material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
+T('android-minimal', 'Android 17 Minimal', 'Android', 'bottom flat round solid sans cozy list ribbon 16 1 unified line material', '#0e1726 #182538 #eef5ff #a4bad6 #6eb0f5 #96c4f5 #2f4563', '#ecf3fa #f7fbff #15273d #4f657e #2463c9 #5284bf #c6d7ea');
+T('prism-terrace', 'Prism Terrace', 'Prism', 'islands prism round solid sans cozy list ribbon 14 1 bento columns circle', '#0d1628 #162440 #eef6ff #a5bede #60b4ff #93c5fd #2b446c', '#ebf3fc #f8fbff #10243d #4b6584 #1d63dc #4a86c8 #c5d9f0');
+T('android-index', 'Android Index', 'Android', 'rail deck square solid sans compact table ribbon 8 1 bands line switch', '#0e1726 #182538 #eef5ff #a4bad6 #6eb0f5 #96c4f5 #2f4563', '#ecf3fa #f7fbff #15273d #4f657e #2463c9 #5284bf #c6d7ea');
+T('prism-facet', 'Prism Facet', 'Prism', 'rail deck slant diag sans compact table ribbon 8 1 quadrant drum jewel', '#0d1628 #162440 #eef6ff #a5bede #60b4ff #93c5fd #2b446c', '#ebf3fc #f8fbff #10243d #4b6584 #1d63dc #4a86c8 #c5d9f0');
+T('neon-scope', 'Neon Scope', 'Neon', 'top hud square grid mono compact list ribbon 6 1 bands matrix neon', '#0a1324 #13213a #edf6ff #9eb8d9 #56b8ff #82d4ff #27426b', '#eaf3fc #f7fbff #10233d #4a6382 #1660d6 #3888d4 #c3d8ef');
+T('material-folio', 'Material Folio', 'Material', 'underline paper round solid serif roomy list tiles 12 1 bento steps ticket', '#0f1827 #19263b #eef5ff #a6bcd8 #6cb2ff #9cc8ff #304769', '#edf4fc #f8fbff #14263d #4f6682 #1f64d6 #5186c4 #c8daee');
+T('studio-proof', 'Studio Proof', 'Studio', 'side-r outline square dots serif roomy grid ribbon 4 1 quadrant dial seal', '#0f1722 #182332 #edf4fc #9db3cc #67a8e6 #8dbbe6 #2e425c', '#edf2f8 #f8fbfe #162638 #4d6278 #255ea8 #567ea8 #c8d6e6');
+T('ios-pebble', 'iOS Pebble', 'iOS', 'bubble-bar liquid pill solid round cozy grid tiles 24 1 bubbles tank switch', '#0d1524 #18253a #f0f6ff #a6bddb #66b2ff #99ccff #2f4668', '#eef4fb #fafdff #12243b #516882 #0066cc #4c8fd6 #cbdcf0');
+T('android-tile', 'Android Tile', 'Android', 'bottom deck round solid sans cozy grid tiles 16 1 quadrant columns material', '#0e1726 #182538 #eef5ff #a4bad6 #6eb0f5 #96c4f5 #2f4563', '#ecf3fa #f7fbff #15273d #4f657e #2463c9 #5284bf #c6d7ea');
 // Additional structural design variants per family (distinct nav, card, button, radius & chart geometry)
-T('prism-orbit', 'Prism Orbit', 'Prism', 'top-glass prism pill mesh sans roomy grid tiles 26 1 bubbles ring circle', '#21142e #332041 #fff1fa #d9bcd6 #dfa6ff #ffaa8e #62446a', '#fae9f4 #fff9fd #35152f #744f6c #82289a #ad4149 #e6c6dd');
-T('prism-bento', 'Prism Bento', 'Prism', 'dock deck round mesh sans compact list ribbon 16 1 bento columns circle', '#171c30 #252d47 #f1f2ff #c1c7df #adb3ff #8fe2cc #414d72', '#edf0fa #fafaff #202841 #57627b #52429c #12645d #c6cde3');
-T('neon-pulse', 'Neon Pulse', 'Neon', 'side-float glass pill aurora sans cozy grid tiles 20 1 bubbles wave neon', '#191325 #2a1d39 #fff5f7 #cab9d3 #5ceacc #ff9baf #594463', '#fff1e8 #fffbf6 #2c1b30 #705564 #00735f #ae365c #e5c7bd');
-T('neon-grid', 'Neon Grid', 'Neon', 'islands outline square grid mono compact table ribbon 6 1 quadrant matrix neon', '#0b211b #15382a #f2ffdf #b8d9bd #99ed73 #ffce70 #41634d', '#eef4d9 #fcfff0 #1a3016 #506044 #356918 #93600a #ccd8ac');
-T('material-dock', 'Material Dock', 'Material', 'dock flat pill solid sans cozy grid tiles 24 1 unified line material', '#29151b #40232a #fff3e7 #e4c3b9 #ffa08a #ffd28c #764b4e', '#ffe8dd #fff7ef #381d24 #79534c #a3344b #8b5608 #e7c4b6');
-T('material-deck', 'Material Deck', 'Material', 'top deck round solid sans compact table ribbon 12 1 bento columns material', '#082321 #103a36 #ecfff2 #b2d6c8 #60e8c2 #ffb18f #36635a', '#e0f2e5 #f7fff4 #153129 #426859 #006d59 #aa4428 #b9d8c7');
-T('studio-glass', 'Studio Glass', 'Studio', 'top-glass glass round solid sans cozy grid tiles 14 1 unified dial round', '#171e27 #232f3a #f5f2e7 #c2c8c9 #86d6db #f7bd80 #485965', '#edece6 #fdfbf5 #202b30 #506166 #206978 #985125 #cccfc6');
-T('studio-minimal', 'Studio Minimal', 'Studio', 'underline flat square solid sans compact list ribbon 4 1 bands line square', '#1b191a #2b2628 #f8f1e7 #c9beb8 #e8cba1 #d9a8a5 #53484b', '#eee7df #fbf8f3 #2d2626 #655a57 #765638 #84515a #d8cabe');
-T('ios-dock', 'iOS Dock', 'iOS', 'dock liquid pill mesh round cozy grid tiles 22 1 bubbles ring switch', '#14151c #242631 #fafaff #bec1d1 #79b7ff #c4a1ff #414454', '#f1f2f7 #fcfcff #171822 #565b70 #0056ae #6a42aa #d2d5e1');
-T('ios-crisp', 'iOS Crisp', 'iOS', 'side-float glass round solid round compact list ribbon 16 1 bento line switch', '#231829 #392a40 #fff4ee #dac0cf #f4aec4 #a1d9f7 #66516d', '#fae8e6 #fffafa #35222d #745662 #a73463 #286998 #e6cbd0');
-T('android-pill', 'Android Pill', 'Android', 'float-b flat pill solid sans cozy grid tiles 22 1 bubbles wave material', '#151b17 #212a23 #eff4e9 #bcc8b9 #acd5a3 #ddc29d #424f43', '#eff3ea #fafcf5 #1c291f #526150 #3c6942 #765226 #ccd6c8');
-T('android-rail', 'Android Rail', 'Android', 'side paper round solid sans roomy list tiles 14 1 bento columns material', '#15201f #22302c #f1f7ee #bfcfc2 #9cdab7 #f2c589 #445b50', '#eaf2ec #f8fcf8 #1a3025 #4d6357 #236b4a #855314 #bed5c8');
+T('prism-orbit', 'Prism Orbit', 'Prism', 'top-glass prism pill mesh sans roomy grid tiles 26 1 bubbles ring circle', '#0d1628 #162440 #eef6ff #a5bede #60b4ff #93c5fd #2b446c', '#ebf3fc #f8fbff #10243d #4b6584 #1d63dc #4a86c8 #c5d9f0');
+T('prism-bento', 'Prism Bento', 'Prism', 'dock deck round mesh sans compact list ribbon 16 1 bento columns circle', '#0d1628 #162440 #eef6ff #a5bede #60b4ff #93c5fd #2b446c', '#ebf3fc #f8fbff #10243d #4b6584 #1d63dc #4a86c8 #c5d9f0');
+T('neon-pulse', 'Neon Pulse', 'Neon', 'side-float glass pill aurora sans cozy grid tiles 20 1 bubbles wave neon', '#0a1324 #13213a #edf6ff #9eb8d9 #56b8ff #82d4ff #27426b', '#eaf3fc #f7fbff #10233d #4a6382 #1660d6 #3888d4 #c3d8ef');
+T('neon-grid', 'Neon Grid', 'Neon', 'islands outline square grid mono compact table ribbon 6 1 quadrant matrix neon', '#0a1324 #13213a #edf6ff #9eb8d9 #56b8ff #82d4ff #27426b', '#eaf3fc #f7fbff #10233d #4a6382 #1660d6 #3888d4 #c3d8ef');
+T('material-dock', 'Material Dock', 'Material', 'dock flat pill solid sans cozy grid tiles 24 1 unified line material', '#0f1827 #19263b #eef5ff #a6bcd8 #6cb2ff #9cc8ff #304769', '#edf4fc #f8fbff #14263d #4f6682 #1f64d6 #5186c4 #c8daee');
+T('material-deck', 'Material Deck', 'Material', 'top deck round solid sans compact table ribbon 12 1 bento columns material', '#0f1827 #19263b #eef5ff #a6bcd8 #6cb2ff #9cc8ff #304769', '#edf4fc #f8fbff #14263d #4f6682 #1f64d6 #5186c4 #c8daee');
+T('studio-glass', 'Studio Glass', 'Studio', 'top-glass glass round solid sans cozy grid tiles 14 1 unified dial round', '#0f1722 #182332 #edf4fc #9db3cc #67a8e6 #8dbbe6 #2e425c', '#edf2f8 #f8fbfe #162638 #4d6278 #255ea8 #567ea8 #c8d6e6');
+T('studio-minimal', 'Studio Minimal', 'Studio', 'underline flat square solid sans compact list ribbon 4 1 bands line square', '#0f1722 #182332 #edf4fc #9db3cc #67a8e6 #8dbbe6 #2e425c', '#edf2f8 #f8fbfe #162638 #4d6278 #255ea8 #567ea8 #c8d6e6');
+T('ios-dock', 'iOS Dock', 'iOS', 'dock liquid pill mesh round cozy grid tiles 22 1 bubbles ring switch', '#0d1524 #18253a #f0f6ff #a6bddb #66b2ff #99ccff #2f4668', '#eef4fb #fafdff #12243b #516882 #0066cc #4c8fd6 #cbdcf0');
+T('ios-crisp', 'iOS Crisp', 'iOS', 'side-float glass round solid round compact list ribbon 16 1 bento line switch', '#0d1524 #18253a #f0f6ff #a6bddb #66b2ff #99ccff #2f4668', '#eef4fb #fafdff #12243b #516882 #0066cc #4c8fd6 #cbdcf0');
+T('android-pill', 'Android Pill', 'Android', 'float-b flat pill solid sans cozy grid tiles 22 1 bubbles wave material', '#0e1726 #182538 #eef5ff #a4bad6 #6eb0f5 #96c4f5 #2f4563', '#ecf3fa #f7fbff #15273d #4f657e #2463c9 #5284bf #c6d7ea');
+T('android-rail', 'Android Rail', 'Android', 'side paper round solid sans roomy list tiles 14 1 bento columns material', '#0e1726 #182538 #eef5ff #a4bad6 #6eb0f5 #96c4f5 #2f4563', '#ecf3fa #f7fbff #15273d #4f657e #2463c9 #5284bf #c6d7ea');
 const themeColors = [
   ['ruby','Ruby','یاقوتی','#29151e #40202e #fff1f4 #d8b6c2 #ff91aa #ffc486 #6c394c','#ffebee #fff9fa #371722 #744958 #a42045 #974f17 #edc3cc'],
   ['ocean','Ocean','اقیانوسی','#101e30 #192e45 #eff7ff #b6cade #7bbfff #8de6dc #355878','#e7f2ff #f7fbff #152d49 #4c627c #155b9f #076b69 #bed3ea'],
@@ -8905,7 +8942,6 @@ const ALL_TABS_CATALOG = [
   { id: 'monitor',    i18n: 'nav_monitor',    fa: 'آپتایم',        en: 'Uptime',           icon: 'pulse',   def: true,  descEn: 'Uptime monitors, heartbeat bars, alerts & public /status page.', descFa: 'مانیتورینگ آپتایم، نمودار ضربان قلب و صفحه عمومی وضعیت.' },
   { id: 'outbound',   i18n: 'nav_outbound',   fa: 'اوتباند Xray',  en: 'Outbound (Xray)',  icon: 'send',    def: true,  descEn: 'Master isolated Xray SOCKS5 proxy (Single Config & Load Balance).', descFa: 'هسته Xray ایزوله سرور مستر (تک‌کانفیگ فعال و لودبالانس).' },
   { id: 'domains',    i18n: 'nav_domains',    fa: 'دامنه‌ها',      en: 'Domains',          icon: 'globe',   def: true,  descEn: 'Cloudflare & ArvanCloud DNS records & auto-failover.', descFa: 'مدیریت رکوردهای کلودفلر و آروان‌کلود و فیل‌اور خودکار.' },
-  { id: 'settings',   i18n: 'nav_settings',   fa: 'تنظیمات',       en: 'Settings',         icon: 'sliders', def: true,  locked: true, descEn: 'Panel settings, security, themes, backups & updates.', descFa: 'تنظیمات پنل، امنیت، تم‌ها، بکاپ و آپدیت.' },
   { id: 'datacenter', i18n: 'nav_datacenter', fa: 'دیتاسنتر',      en: 'Datacenter',       icon: 'cloud',   def: false, descEn: 'Hetzner, DigitalOcean, Linode, OVH & YottaSrc API + OS Rebuild.', descFa: 'مدیریت ابری Hetzner، DO، Linode، OVH و YottaSrc + ریبیلد OS.' },
   { id: 'telegram',   i18n: 'nav_telegram',   fa: 'ربات تلگرام',   en: 'Telegram Bot',     icon: 'send',    def: false, descEn: 'Telegram control bot, inline menus, alerts & auto-backup.', descFa: 'ربات مدیریت تلگرام، هشدارها و بکاپ خودکار.' },
 ];
@@ -8922,7 +8958,7 @@ function loadNavTabsConfig() {
   const seen = new Set();
   if (Array.isArray(saved)) {
     saved.forEach(entry => {
-      if (!entry || !entry.id || !byId[entry.id] || seen.has(entry.id)) return;
+      if (!entry || !entry.id || entry.id === 'settings' || !byId[entry.id] || seen.has(entry.id)) return;
       seen.add(entry.id);
       list.push({ id: entry.id, visible: byId[entry.id].locked ? true : !!entry.visible });
     });
@@ -9370,8 +9406,13 @@ function applyTheme() {
     const bl = Math.round((a & 255) * (1 - w) + (b & 255) * w);
     return '#' + [r, g, bl].map(v => Math.max(0, Math.min(255, v)).toString(16).padStart(2, '0')).join('');
   };
-  const _toneLight = dark ? _mixHex(_accHex, '#ffffff', 0.36) : _mixHex(_accHex, '#ffffff', 0.24);
-  const _toneDark  = dark ? _mixHex(_accHex, '#0a1426', 0.30) : _mixHex(_accHex, '#0b1628', 0.44);
+  const _isDefBlue = !curTheme().paletteKey && !custom.accent && !custom[effMode() + '_accent'];
+  const _toneLight = _isDefBlue
+    ? (dark ? '#eef6ff' : '#6c92be')
+    : (dark ? _mixHex(_accHex, '#ffffff', 0.52) : _mixHex(_accHex, '#ffffff', 0.24));
+  const _toneDark  = _isDefBlue
+    ? (dark ? '#5a87bc' : '#2b4a76')
+    : (dark ? _mixHex(_accHex, '#182b47', 0.26) : _mixHex(_accHex, '#0b1628', 0.44));
   set('--accent-light', _toneLight);
   set('--accent-dark', _toneDark);
   set('--logo-light', _toneLight);
@@ -10200,6 +10241,37 @@ function peerModeBadge(s) {
   return `<span class="badge b-iran mono peer-ver-badge" title="${esc(tip)}">${lbl}</span>`;
 }
 
+function srvRouteBadge(s) {
+  const id = +s.id;
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const eff = !!s.effective_outbound;
+  const cfg = !!s.outbound_configured || !!s.use_outbound;
+  if (eff) {
+    const tip = fa ? 'متصل از طریق اوتباند Xray (کلیک برای تغییر به مستقیم)' : 'Routed via Master Outbound (Click to switch to Direct)';
+    return `<button type="button" class="badge b-ok mono srv-ob-badge" style="cursor:pointer; border:none;" title="${esc(tip)}" onclick="event.stopPropagation(); toggleServerOutbound(${id}, false)">🚀 OUTBOUND</button>`;
+  }
+  if (cfg) {
+    const tip = fa ? 'تنظیم روی اوتباند ولی Xray خاموش است (کلیک برای رفتن به اوتباند)' : 'Outbound enabled but Xray is stopped (Click to open Outbound)';
+    return `<button type="button" class="badge b-warn mono srv-ob-badge" style="cursor:pointer; border:none;" title="${esc(tip)}" onclick="event.stopPropagation(); switchTab('outbound')">⚠ OB OFF</button>`;
+  }
+  const tip = fa ? 'اتصال مستقیم (کلیک برای تغییر به اوتباند Xray)' : 'Direct connection (Click to switch to Outbound)';
+  return `<button type="button" class="badge b-miss mono srv-ob-badge" style="cursor:pointer; border:none; opacity:.82;" title="${esc(tip)}" onclick="event.stopPropagation(); toggleServerOutbound(${id}, true)">DIRECT</button>`;
+}
+
+async function toggleServerOutbound(id, useOb) {
+  const fa = (typeof lang !== 'undefined' && lang === 'fa');
+  const r = await api('api/servers/' + id + '/outbound', 'POST', { use_outbound: !!useOb });
+  if (r && r.ok) {
+    toast(r.effective_outbound
+      ? (fa ? '🚀 مسیر اتصال سرور روی اوتباند Xray قرار گرفت' : '🚀 Server switched to Master Outbound (Xray)')
+      : (fa ? '🔌 مسیر اتصال سرور روی مستقیم (Direct) قرار گرفت' : '🔌 Server switched to Direct connection'));
+    await loadServers();
+    setTimeout(loadServers, 1800);
+  } else {
+    toast((r && r.error) || (fa ? 'خطا در تغییر مسیر اتصال (ابتدا اوتباند Xray را روشن کنید)' : 'Failed — make sure Master Outbound is running'), true);
+  }
+}
+
 function pingBadgeClass(val) {
   const s = String(val || '').trim();
   if (!s || s === '---' || s === 'N/A') return 'ping-na';
@@ -10247,12 +10319,12 @@ function renderServerCard(s) {
       <div class="srv-col-hide srv-head-pings mono">
         <span class="srv-ip-copy" title="Click to copy IP" onclick="event.stopPropagation(); copyText('${esc(s.host)}','IP')">${esc(s.host)}</span>
         <span class="badge ${pingBadgeClass(s.ping_ms)} ping-pill-inline" data-srv-ping-wrap="${id}" title="Direct Ping (Master → Server)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || "---")}</span></span>
-        ${(s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Outbound Ping (via Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}
+        ${(s.effective_outbound || s.use_outbound || s.outbound_ping_ms) ? `<span class="badge ${pingBadgeClass(s.outbound_ping_ms)} ping-pill-inline" data-srv-ob-ping-wrap="${id}" title="Outbound Ping (via Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || "---")}</span></span>` : ''}
         ${s.reverse_ping_ms ? `<span class="badge ${pingBadgeClass(s.reverse_ping_ms)} ping-pill-inline" data-srv-rev-ping-wrap="${id}" title="Reverse Ping (Server → Iran Master)">↩️<span data-srv-rev-ping="${id}">${esc(s.reverse_ping_ms)}</span></span>` : ''}
       </div>
       <div class="srv-col-hide srv-head-cpu mono">CPU <span style="color:var(--accent);">${esc(s.cpu || '0%')}</span> • RAM <span style="color:var(--pink);">${esc(s.ram || '0%')}</span></div>
       <div class="srv-head-right">
-        <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${s.use_outbound ? '<span class="badge b-ok mono srv-ob-badge">OUTBOUND</span>' : ''}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی (مستقیم + اوتباند + ریورس)' : 'Ping now (Direct + Outbound + Reverse)'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
+        <div class="srv-col-hide" style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">${peerModeBadge(s)}${srvRouteBadge(s)}<button type="button" class="hdr-bubble-btn" data-srv-ping-btn="${id}" title="${lang === 'fa' ? 'پینگ دستی (مستقیم + اوتباند + ریورس)' : 'Ping now (Direct + Outbound + Reverse)'}" onclick="event.stopPropagation(); manualPingServer(${id})">📡 ${lang === 'fa' ? 'پینگ' : 'Ping'}</button></div>
         <span class="chev">▾</span>
       </div>
     </div>
@@ -10268,7 +10340,7 @@ function renderServerCard(s) {
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">Network Speed &amp; Uptime</div>
           <div class="srv-mini-val"><span style="color:var(--green);">↓ ${esc(s.net_rx || '0 B/s')}</span> <span style="color:var(--muted);">/</span> <span style="color:var(--yellow);">↑ ${esc(s.net_tx || '0 B/s')}</span></div>
-          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''}${s.reverse_ping_ms ? ` <span class="badge ${pingBadgeClass(s.reverse_ping_ms)} mono ping-pill-inline" data-srv-rev-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Reverse Ping (Server → Iran Master)">↩️<span data-srv-rev-ping="${id}">${esc(s.reverse_ping_ms)}</span></span>` : ''}</div>
+          <div class="srv-mini-sub">${t('lbl_uptime')}: <span class="mono" style="color:var(--text);">${esc(s.uptime || '---')}</span> • <span class="badge ${pingBadgeClass(s.ping_ms)} mono ping-pill-inline" data-srv-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Direct Ping from Iran (Master)">${flagSVG('IR')}<span data-srv-ping="${id}">${esc(s.ping_ms || '---')}</span></span>${(s.effective_outbound || s.use_outbound || s.outbound_ping_ms) ? ` <span class="badge ${pingBadgeClass(s.outbound_ping_ms)} mono ping-pill-inline" data-srv-ob-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Ping via Master Outbound (Xray)">🚀<span data-srv-ob-ping="${id}">${esc(s.outbound_ping_ms || '---')}</span></span>` : ''}${s.reverse_ping_ms ? ` <span class="badge ${pingBadgeClass(s.reverse_ping_ms)} mono ping-pill-inline" data-srv-rev-ping-wrap="${id}" style="padding:1px 7px; font-size:.7rem;" title="Reverse Ping (Server → Iran Master)">↩️<span data-srv-rev-ping="${id}">${esc(s.reverse_ping_ms)}</span></span>` : ''}</div>
         </div>
         <div class="srv-mini-box">
           <div class="srv-mini-lbl">${t('lbl_location')}</div>
@@ -10589,7 +10661,7 @@ function openSrvModal(id) {
   $('btn-save-srv').textContent = s ? t('btn_save') : t('btn_connect_save');
   $('s-name').value = s ? s.name : '';
   if ($('s-role')) $('s-role').value = s ? (s.role || 'foreign') : 'auto';
-  pickSrvRoute(s ? !!s.use_outbound : false);
+  pickSrvRoute(s ? !!(s.use_outbound || s.effective_outbound) : false);
   $('srv-test-res').style.display = 'none';
   $('s-host').value = s ? s.host : '';
   $('s-port').value = s ? s.port : (SETTINGS.default_ssh_port || 22);
@@ -12516,13 +12588,15 @@ async function saveMasterOutbound() {
   const btn = $('btn-ob-save'); btn.disabled = true; btn.textContent = 'Starting...';
   const out = $('ob-out');
   try {
-    OB_CFG.enabled = $('ob-en').checked;
+    if ($('ob-en')) $('ob-en').checked = true;
+    OB_CFG.enabled = true;
     OB_CFG.mode = ($('ob-mode') && $('ob-mode').value) || 'single';
     OB_CFG.use_github = $('ob-gh').checked;
     OB_CFG.use_telegram = $('ob-tg').checked;
     OB_CFG.use_foreign = $('ob-fr').checked;
     OB_CFG.use_datacenter = $('ob-dc') ? $('ob-dc').checked : false;
     OB_CFG.use_cloudflare = $('ob-cf') ? $('ob-cf').checked : false;
+    OB_CFG.use_geoip = $('ob-geo') ? $('ob-geo').checked : false;
     OB_CFG.lb_strategy = $('ob-lb').value;
     OB_CFG.probe_interval = $('ob-int').value;
     const r = await api('api/outbound/save', 'POST', OB_CFG);
@@ -12530,6 +12604,7 @@ async function saveMasterOutbound() {
       toast(r.message || 'Master Outbound started');
       if (out) { out.style.display = 'block'; out.textContent = r.message || 'Running'; }
       loadMasterOutbound();
+      if (typeof loadServers === 'function') loadServers();
     } else {
       toast(r.error || 'Failed to save outbound', true);
       if (out) { out.style.display = 'block'; out.textContent = r.error || 'Failed to start Xray'; }
@@ -12549,7 +12624,7 @@ async function testMasterOutbound() {
 
 async function stopMasterOutbound() {
   const r = await api('api/outbound/stop', 'POST');
-  if (r.ok) { toast('Master Outbound stopped.'); loadMasterOutbound(); }
+  if (r.ok) { toast('Master Outbound stopped.'); loadMasterOutbound(); if (typeof loadServers === 'function') loadServers(); }
 }
 
 
@@ -13274,6 +13349,7 @@ function openSrvDropdown(ev, id, group, btn) {
   } else if (group === 'mc') {
     items = [
       { lbl: fa ? '🚀 نصب و راه‌اندازی (Setup)' : '🚀 Setup', fn: () => openSetupModal(id) },
+      { lbl: (s.effective_outbound || s.use_outbound) ? (fa ? '🔌 تغییر مسیر به مستقیم (Direct)' : '🔌 Switch Route to Direct') : (fa ? '🚀 تغییر مسیر به اوتباند (Xray)' : '🚀 Switch Route to Outbound'), fn: () => toggleServerOutbound(id, !(s.effective_outbound || s.use_outbound)) },
       { lbl: fa ? '🔗 اسکن تانل‌های MControl قبلی' : '🔗 Scan Existing MControl Tunnels', fn: () => openMControlAdoptModal(id) },
       { lbl: fa ? '🔄 انتقال از MTunnel (Migrator)' : '🔄 Migrate from MTunnel', fn: () => openLegacyModal(id) },
       { lbl: s.auth_mode === 'peer' ? (fa ? '📡 تست اتصال Peer' : '📡 Check Peer') : ('📡 ' + t('btn_check_ssh')), fn: () => probeOne(id) },
@@ -18292,7 +18368,7 @@ async function startServerOnboarding(id, srvObj, legacyInfo) {
   if (pairRes && pairRes.ok) {
     setOnboardProgress(100, L.okTitle, L.okSub);
     if ($('ob-peer-stat')) { $('ob-peer-stat').textContent = 'PAIRED ✔'; $('ob-peer-stat').style.color = 'var(--green)'; }
-    if ($('ob-src-val')) $('ob-src-val').textContent = (pairRes.source === 'iran_mirror' || isIran) ? 'Iran Mirror' : 'Direct';
+    if ($('ob-src-val')) $('ob-src-val').textContent = (pairRes.used_outbound || pairRes.source === 'outbound') ? '🚀 Outbound' : ((pairRes.source === 'iran_mirror' || isIran) ? 'Iran Mirror' : 'Direct');
     if ($('ob-peer-code-lbl')) $('ob-peer-code-lbl').textContent = 'Peer Code: ' + (pairRes.peer_code || 'ACTIVE') + ' • Port :' + (pairRes.agent_port || 2054) + ' (SSH Password Wiped)';
     if (card) card.className = 'ob-result-card show';
   } else {

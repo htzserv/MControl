@@ -130,8 +130,8 @@ private fun easeOutBack(x: Float): Float {
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val baseAccent = MaterialTheme.colorScheme.primary
-    val toneLight = if (isDark) lerp(baseAccent, Color.White, 0.36f) else lerp(baseAccent, Color.White, 0.22f)
-    val toneDark  = if (isDark) lerp(baseAccent, Color(0xFF0A1426), 0.30f) else lerp(baseAccent, Color(0xFF0B1628), 0.44f)
+    val toneLight = if (isDark) Color(0xFFEEF6FF) else Color(0xFF6C92BE)
+    val toneDark  = if (isDark) Color(0xFF5A87BC) else Color(0xFF2B4A76)
     val lightTint = ColorFilter.tint(toneLight)
     val darkTint  = ColorFilter.tint(toneDark)
 

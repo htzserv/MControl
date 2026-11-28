@@ -211,11 +211,7 @@ func (h *Handler) geoSocksProxy() string {
 }
 
 func isOutboundActive() bool {
-	out, err := exec.Command("systemctl", "is-active", outboundUnit).Output()
-	if err != nil || strings.TrimSpace(string(out)) != "active" {
-		return false
-	}
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), 400*time.Millisecond)
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", outboundSocksPort), 450*time.Millisecond)
 	if err != nil {
 		return false
 	}
