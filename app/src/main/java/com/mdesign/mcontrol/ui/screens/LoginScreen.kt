@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.animation.core.*
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
@@ -15,6 +16,7 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import com.mdesign.mcontrol.R
 import androidx.compose.foundation.background
@@ -43,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mdesign.mcontrol.data.MControlApi
 import com.mdesign.mcontrol.data.PanelProfile
+import com.mdesign.mcontrol.ui.components.MControlAnimatedLogo
+import com.mdesign.mcontrol.ui.components.MControlWordmark
 import com.mdesign.mcontrol.ui.theme.MDesignAccent
 import kotlinx.coroutines.launch
 import java.net.URI
@@ -116,21 +120,21 @@ private fun buildKntrPath(w: Float, h: Float): Path {
     val sy = h / 559f
     return Path().apply {
         moveTo(900f * sx, 68f * sy)
-        quadraticBezierTo(825f * sx, 108f * sy, 779f * sx, 152f * sy)
-        quadraticBezierTo(775f * sx, 175f * sy, 818f * sx, 212f * sy)
-        quadraticBezierTo(882f * sx, 265f * sy, 874f * sx, 306f * sy)
-        quadraticBezierTo(865f * sx, 354f * sy, 795f * sx, 355f * sy)
-        quadraticBezierTo(725f * sx, 355f * sy, 684f * sx, 344f * sy)
-        quadraticBezierTo(678f * sx, 300f * sy, 678f * sx, 252f * sy)
-        quadraticBezierTo(678f * sx, 302f * sy, 672f * sx, 344f * sy)
-        quadraticBezierTo(625f * sx, 348f * sy, 576f * sx, 344f * sy)
-        quadraticBezierTo(568f * sx, 298f * sy, 568f * sx, 250f * sy)
-        quadraticBezierTo(568f * sx, 300f * sy, 562f * sx, 344f * sy)
-        quadraticBezierTo(508f * sx, 348f * sy, 446f * sx, 344f * sy)
-        quadraticBezierTo(434f * sx, 298f * sy, 434f * sx, 254f * sy)
-        quadraticBezierTo(434f * sx, 320f * sy, 428f * sx, 368f * sy)
-        quadraticBezierTo(418f * sx, 422f * sy, 365f * sx, 458f * sy)
-        quadraticBezierTo(338f * sx, 476f * sy, 316f * sx, 486f * sy)
+        quadraticTo(825f * sx, 108f * sy, 779f * sx, 152f * sy)
+        quadraticTo(775f * sx, 175f * sy, 818f * sx, 212f * sy)
+        quadraticTo(882f * sx, 265f * sy, 874f * sx, 306f * sy)
+        quadraticTo(865f * sx, 354f * sy, 795f * sx, 355f * sy)
+        quadraticTo(725f * sx, 355f * sy, 684f * sx, 344f * sy)
+        quadraticTo(678f * sx, 300f * sy, 678f * sx, 252f * sy)
+        quadraticTo(678f * sx, 302f * sy, 672f * sx, 344f * sy)
+        quadraticTo(625f * sx, 348f * sy, 576f * sx, 344f * sy)
+        quadraticTo(568f * sx, 298f * sy, 568f * sx, 250f * sy)
+        quadraticTo(568f * sx, 300f * sy, 562f * sx, 344f * sy)
+        quadraticTo(508f * sx, 348f * sy, 446f * sx, 344f * sy)
+        quadraticTo(434f * sx, 298f * sy, 434f * sx, 254f * sy)
+        quadraticTo(434f * sx, 320f * sy, 428f * sx, 368f * sy)
+        quadraticTo(418f * sx, 422f * sy, 365f * sx, 458f * sy)
+        quadraticTo(338f * sx, 476f * sy, 316f * sx, 486f * sy)
     }
 }
 
@@ -140,11 +144,11 @@ private fun buildLamPath(w: Float, h: Float): Path {
     return Path().apply {
         moveTo(288f * sx, 78f * sy)
         lineTo(290f * sx, 235f * sy)
-        quadraticBezierTo(290f * sx, 325f * sy, 275f * sx, 368f * sy)
-        quadraticBezierTo(250f * sx, 412f * sy, 185f * sx, 414f * sy)
-        quadraticBezierTo(112f * sx, 414f * sy, 86f * sx, 360f * sy)
-        quadraticBezierTo(74f * sx, 314f * sy, 96f * sx, 268f * sy)
-        quadraticBezierTo(112f * sx, 246f * sy, 140f * sx, 245f * sy)
+        quadraticTo(290f * sx, 325f * sy, 275f * sx, 368f * sy)
+        quadraticTo(250f * sx, 412f * sy, 185f * sx, 414f * sy)
+        quadraticTo(112f * sx, 414f * sy, 86f * sx, 360f * sy)
+        quadraticTo(74f * sx, 314f * sy, 96f * sx, 268f * sy)
+        quadraticTo(112f * sx, 246f * sy, 140f * sx, 245f * sy)
     }
 }
 
@@ -153,16 +157,15 @@ private fun buildDotPath(cx: Float, cy: Float, w: Float, h: Float): Path {
     val sy = h / 559f
     return Path().apply {
         moveTo((cx + 10f) * sx, (cy - 4f) * sy)
-        quadraticBezierTo((cx + 11f) * sx, (cy + 10f) * sy, cx * sx, (cy + 10f) * sy)
-        quadraticBezierTo((cx - 11f) * sx, (cy + 10f) * sy, (cx - 10f) * sx, (cy - 2f) * sy)
-        quadraticBezierTo((cx - 8f) * sx, (cy - 11f) * sy, (cx + 4f) * sx, (cy - 8f) * sy)
+        quadraticTo((cx + 11f) * sx, (cy + 10f) * sy, cx * sx, (cy + 10f) * sy)
+        quadraticTo((cx - 11f) * sx, (cy + 10f) * sy, (cx - 10f) * sx, (cy - 2f) * sy)
+        quadraticTo((cx - 8f) * sx, (cy - 11f) * sy, (cx + 4f) * sx, (cy - 8f) * sy)
     }
 }
 
 @Composable
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
-    // Dynamic theme pigment color; drop shadows & 3D studio bevel highlights stay 100% fixed!
-    val logoTint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+    val accentTint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
 
     val transition = rememberInfiniteTransition(label = "kontrol_pen_3s")
     val t by transition.animateFloat(
@@ -183,7 +186,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     val d3Prog   = easeOutCubic((t - 2.19f) / 0.18f)
 
     Box(modifier = modifier.alpha(loopAlpha), contentAlignment = Alignment.Center) {
-        // 1. "کنتر" — fixed shadow + dynamic theme pigment + fixed 3D studio bevel/gloss
+        // 1. "کنتر" — Theme-colored fill + fixed 3D shadows & gloss, revealed by seamless pen stroke
         if (kntrProg > 0.005f) {
             Box(
                 modifier = Modifier
@@ -199,7 +202,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                             path = seg,
                             color = Color.White,
                             style = Stroke(
-                                width = size.width * (156f / 960f),
+                                width = size.width * (142f / 960f),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             ),
@@ -207,12 +210,20 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                         )
                     }
             ) {
-                Image(painter = painterResource(id = R.drawable.logo_kntr_shadow), contentDescription = null, modifier = Modifier.fillMaxSize())
-                Image(painter = painterResource(id = R.drawable.logo_kntr_sil), contentDescription = "کنترل", colorFilter = logoTint, modifier = Modifier.fillMaxSize())
-                Image(painter = painterResource(id = R.drawable.logo_kntr_shade), contentDescription = null, modifier = Modifier.fillMaxSize())
+                Image(
+                    painter = painterResource(id = R.drawable.logo_kntr_sil),
+                    contentDescription = "کنترل",
+                    colorFilter = accentTint,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.logo_kntr_shade),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
-        // 2. "ل" — fixed shadow + dynamic theme pigment + fixed 3D studio bevel/gloss
+        // 2. "ل" — Theme-colored fill + fixed 3D shadows & gloss, revealed by seamless pen stroke
         if (lamProg > 0.005f) {
             Box(
                 modifier = Modifier
@@ -228,7 +239,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                             path = seg,
                             color = Color.White,
                             style = Stroke(
-                                width = size.width * (152f / 960f),
+                                width = size.width * (138f / 960f),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             ),
@@ -236,12 +247,21 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                         )
                     }
             ) {
-                Image(painter = painterResource(id = R.drawable.logo_lam_shadow), contentDescription = null, modifier = Modifier.fillMaxSize())
-                Image(painter = painterResource(id = R.drawable.logo_lam_sil), contentDescription = null, colorFilter = logoTint, modifier = Modifier.fillMaxSize())
-                Image(painter = painterResource(id = R.drawable.logo_lam_shade), contentDescription = null, modifier = Modifier.fillMaxSize())
+                Image(
+                    painter = painterResource(id = R.drawable.logo_lam_sil),
+                    contentDescription = null,
+                    colorFilter = accentTint,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.logo_lam_shade),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
-        // 3. Three dots — fixed shadow + dynamic theme pigment + fixed 3D studio bevel/gloss
+        // 3. Two dots (same theme color & fixed 3D shade) — swift pen taps RTL
+        val d2Anim = easeOutCubic((t - 2.08f) / 0.18f)
         if (d1Prog > 0.005f) {
             Box(
                 modifier = Modifier
@@ -249,13 +269,12 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
                     .drawWithContent {
                         drawContent()
-                        val strokeW = size.width * (84f / 960f)
+                        val strokeW = size.width * (72f / 960f)
                         val stroke = Stroke(width = strokeW, cap = StrokeCap.Round, join = StrokeJoin.Round)
                         val combined = Path()
                         listOf(
-                            Triple(659f, 138f, d1Prog),
-                            Triple(567f, 137f, d2Prog),
-                            Triple(477f, 137f, d3Prog)
+                            Triple(678f, 137f, d1Prog),
+                            Triple(568f, 137f, d2Anim)
                         ).forEach { (cx, cy, p) ->
                             if (p > 0.005f) {
                                 val dp = buildDotPath(cx, cy, size.width, size.height)
@@ -268,9 +287,17 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                         drawPath(path = combined, color = Color.White, style = stroke, blendMode = BlendMode.DstIn)
                     }
             ) {
-                Image(painter = painterResource(id = R.drawable.logo_dots_shadow), contentDescription = null, modifier = Modifier.fillMaxSize())
-                Image(painter = painterResource(id = R.drawable.logo_dots_sil), contentDescription = null, colorFilter = logoTint, modifier = Modifier.fillMaxSize())
-                Image(painter = painterResource(id = R.drawable.logo_dots_shade), contentDescription = null, modifier = Modifier.fillMaxSize())
+                Image(
+                    painter = painterResource(id = R.drawable.logo_dots_sil),
+                    contentDescription = null,
+                    colorFilter = accentTint,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Image(
+                    painter = painterResource(id = R.drawable.logo_dots_shade),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }
