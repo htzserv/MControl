@@ -1,6 +1,9 @@
 package com.mdesign.mcontrol.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.mdesign.mcontrol.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -121,13 +124,12 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        MControlAnimatedLogo(
-            modifier = Modifier.size(168.dp)
+        Image(
+            painter = painterResource(id = R.drawable.mcontrol_logo),
+            contentDescription = "MControl Logo",
+            modifier = Modifier.size(152.dp)
         )
-        Spacer(Modifier.height(4.dp))
-        MControlWordmark(
-            modifier = Modifier.width(210.dp).height(46.dp)
-        )
+
         Spacer(Modifier.height(18.dp))
 
         if (savedPanels.isNotEmpty()) {

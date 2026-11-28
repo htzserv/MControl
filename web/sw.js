@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v14';
+const CACHE_NAME = 'mcontrol-pwa-v16';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -7,7 +7,10 @@ const PRECACHE_URLS = [
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './logo-base.png',
+  './logo-text.png',
+  './logo-dots.png'
 ];
 
 const OFFLINE_HTML = `<!DOCTYPE html>
@@ -31,14 +34,7 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <div class="card">
-    <svg class="logo" viewBox="0 0 120 120" fill="none">
-      <rect width="120" height="120" rx="28" fill="#1B2E4B"/>
-      <path d="M21 54 V27 Q21 21 27 19.5 Q60 11 93 19.5 Q99 21 99 27 V54" stroke="#6BB6B5" stroke-width="5.0" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M24 68 C29 84 43 96 60 104 C77 96 91 84 96 68" stroke="#5A7B9B" stroke-width="5.0" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M13 61 H20 L25 49 L32 71 L43 29 L50 51" stroke="#5A7B9B" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M107 61 H100 L95 49 L88 71 L77 29 L70 51" stroke="#5A7B9B" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77" stroke="#6BB6B5" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <img class="logo" src="icon-192.png" alt="MControl">
     <h2>Connection Lost / ارتباط قطع شد</h2>
     <p>Cannot reach your MControl panel right now. Check your internet or VPN connection and retry.</p>
     <button onclick="location.reload()">↻ Retry Connection</button>

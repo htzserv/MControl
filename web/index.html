@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="MControl">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" id="mc-favicon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2228%22%20fill%3D%22%231B2E4B%22%2F%3E%3Cpath%20d%3D%22M21%2054%20V27%20Q21%2021%2027%2019.5%20Q60%2011%2093%2019.5%20Q99%2021%2099%2027%20V54%22%20fill%3D%22none%22%20stroke%3D%22%236BB6B5%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M24%2068%20C29%2084%2043%2096%2060%20104%20C77%2096%2091%2084%2096%2068%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%225.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M13%2061%20H20%20L25%2049%20L32%2071%20L43%2029%20L50%2051%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%225.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M107%2061%20H100%20L95%2049%20L88%2071%20L77%2029%20L70%2051%22%20fill%3D%22none%22%20stroke%3D%22%235A7B9B%22%20stroke-width%3D%225.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3Cpath%20d%3D%22M43%2061%20H49%20L54%2045%20L60%2077%20L66%2045%20L71%2061%20H77%22%20fill%3D%22none%22%20stroke%3D%22%236BB6B5%22%20stroke-width%3D%225.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E">
+<link rel="icon" id="mc-favicon" type="image/png" href="icon-192.png">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -5372,24 +5372,78 @@ html, body {
   }
 }
 
+
+/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo ─────────────────── */
+.mc-kontrol-anim {
+  width: min(210px, 54vw);
+  height: min(210px, 54vw);
+  aspect-ratio: 1 / 1;
+  display: block;
+  margin: 0 auto 6px;
+  cursor: pointer;
+  overflow: visible;
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .35));
+}
+.mc-kontrol-anim .k-base {
+  opacity: 0;
+  transform-origin: 256px 256px;
+  animation: kBaseIn .45s cubic-bezier(.16, 1, .3, 1) forwards;
+}
+.mc-kontrol-anim .k-wipe-rect {
+  animation: kWriteRTL 1.15s cubic-bezier(.38, .08, .22, 1) .28s both;
+}
+.mc-kontrol-anim .k-dot {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mc-kontrol-anim .k-dot-1 { animation: kDotPop .38s cubic-bezier(.34, 1.56, .64, 1) 1.38s forwards; }
+.mc-kontrol-anim .k-dot-2 { animation: kDotPop .38s cubic-bezier(.34, 1.56, .64, 1) 1.56s forwards; }
+.mc-kontrol-anim .k-dot-3 { animation: kDotPop .38s cubic-bezier(.34, 1.56, .64, 1) 1.74s forwards; }
+
+@keyframes kBaseIn {
+  0%   { opacity: 0; transform: scale(.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes kWriteRTL {
+  0%   { x: 468px; width: 0px; }
+  100% { x: 44px;  width: 424px; }
+}
+@keyframes kDotPop {
+  0%   { opacity: 0; transform: scale(0) translateY(-10px); }
+  70%  { opacity: 1; transform: scale(1.18) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 </style>
 </head>
 <body data-theme="mdesign" data-navx="dock" data-card="glass" data-btn="pill" data-bg="aurora" data-font="sans" data-den="cozy" data-srv="grid" data-stat="tiles">
 <!-- PWA Animated Launch Splash Screen -->
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
-    <svg class="mc-shield-logo" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle class="mc-ping-ring" cx="60" cy="60" r="42"/>
-        <circle class="mc-ping-ring r2" cx="60" cy="60" r="42"/>
-        <path class="mc-shield-path" d="M21 54 V27 Q21 21 27 19.5 Q60 11 93 19.5 Q99 21 99 27 V54"/>
-        <path class="mc-shield-path" d="M24 68 C29 84 43 96 60 104 C77 96 91 84 96 68"/>
-        <path class="mc-wave-outer" d="M13 61 H20 L25 49 L32 71 L43 29 L50 51"/>
-        <path class="mc-wave-outer" d="M107 61 H100 L95 49 L88 71 L77 29 L70 51"/>
-        <path class="mc-wave-mid" d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77"/>
-        <path class="mc-wave-pulse" pathLength="140" d="M13 61 H20 L25 49 L32 71 L43 29 L50 51"/>
-        <path class="mc-wave-pulse" pathLength="140" d="M107 61 H100 L95 49 L88 71 L77 29 L70 51"/>
-        <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77"/>
-    </svg>
+    <svg class="mc-kontrol-anim" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:108px;height:108px;margin:0;" onclick="replayKontrolLogo(this)">
+        <defs>
+          <clipPath id="ks-write">
+            <rect class="k-wipe-rect" x="468" y="0" width="0" height="512"/>
+          </clipPath>
+          <clipPath id="ks-d1"><rect x="315" y="168" width="52" height="66"/></clipPath>
+          <clipPath id="ks-d2"><rect x="275" y="168" width="42" height="66"/></clipPath>
+          <clipPath id="ks-d3"><rect x="226" y="168" width="51" height="66"/></clipPath>
+        </defs>
+        <image class="k-base" href="logo-base.png" x="0" y="0" width="512" height="512"/>
+        <g clip-path="url(#ks-write)">
+          <image href="logo-text.png" x="0" y="0" width="512" height="512"/>
+        </g>
+        <g clip-path="url(#ks-d1)">
+          <image class="k-dot k-dot-1" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+        </g>
+        <g clip-path="url(#ks-d2)">
+          <image class="k-dot k-dot-2" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+        </g>
+        <g clip-path="url(#ks-d3)">
+          <image class="k-dot k-dot-3" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+        </g>
+      </svg>
   </div>
   <div class="pwa-sp-title" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-splash" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- M (bold rounded geometric) -->
@@ -5792,39 +5846,29 @@ html, body {
   </div>
   <div class="login-shell">
     <div class="login-brand-hero">
-      <svg class="mc-logo-anim mc-shield-logo" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle class="mc-ping-ring" cx="60" cy="60" r="42"/>
-        <circle class="mc-ping-ring r2" cx="60" cy="60" r="42"/>
-        <path class="mc-shield-path" d="M21 54 V27 Q21 21 27 19.5 Q60 11 93 19.5 Q99 21 99 27 V54"/>
-        <path class="mc-shield-path" d="M24 68 C29 84 43 96 60 104 C77 96 91 84 96 68"/>
-        <path class="mc-wave-outer" d="M13 61 H20 L25 49 L32 71 L43 29 L50 51"/>
-        <path class="mc-wave-outer" d="M107 61 H100 L95 49 L88 71 L77 29 L70 51"/>
-        <path class="mc-wave-mid" d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77"/>
-        <path class="mc-wave-pulse" pathLength="140" d="M13 61 H20 L25 49 L32 71 L43 29 L50 51"/>
-        <path class="mc-wave-pulse" pathLength="140" d="M107 61 H100 L95 49 L88 71 L77 29 L70 51"/>
-        <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77"/>
+      <svg class="mc-kontrol-anim" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" onclick="replayKontrolLogo(this)">
+        <defs>
+          <clipPath id="kl-write">
+            <rect class="k-wipe-rect" x="468" y="0" width="0" height="512"/>
+          </clipPath>
+          <clipPath id="kl-d1"><rect x="315" y="168" width="52" height="66"/></clipPath>
+          <clipPath id="kl-d2"><rect x="275" y="168" width="42" height="66"/></clipPath>
+          <clipPath id="kl-d3"><rect x="226" y="168" width="51" height="66"/></clipPath>
+        </defs>
+        <image class="k-base" href="logo-base.png" x="0" y="0" width="512" height="512"/>
+        <g clip-path="url(#kl-write)">
+          <image href="logo-text.png" x="0" y="0" width="512" height="512"/>
+        </g>
+        <g clip-path="url(#kl-d1)">
+          <image class="k-dot k-dot-1" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+        </g>
+        <g clip-path="url(#kl-d2)">
+          <image class="k-dot k-dot-2" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+        </g>
+        <g clip-path="url(#kl-d3)">
+          <image class="k-dot k-dot-3" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+        </g>
       </svg>
-      <h2 class="login-brand-title" aria-label="MControl" style="background:none !important; -webkit-background-clip:initial !important; color:inherit !important; margin:0;">
-        <svg class="mc-wordmark mc-wordmark-hero" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- M (bold rounded geometric) -->
-        <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
-        <!-- C -->
-        <path class="mc-wm-c" d="M114 25 A23 23 0 1 0 114 55"/>
-        <!-- o (stenciled split o: left arc & right arc with vertical top/bottom gaps) -->
-        <path class="mc-wm-c" d="M137 31 A16 16 0 0 0 137 61"/>
-        <path class="mc-wm-c" d="M145 31 A16 16 0 0 1 145 61"/>
-        <!-- n -->
-        <path class="mc-wm-c" d="M172 62 V32 M172 44 C172 34 179 30 187 30 C195 30 201 35 201 44 V62"/>
-        <!-- t -->
-        <path class="mc-wm-c" d="M222 18 V54 C222 60 226 63 232 63 H235 M213 33 H234"/>
-        <!-- r -->
-        <path class="mc-wm-c" d="M250 62 V32 M250 43 C250 35 256 30 264 30 H267"/>
-        <!-- o (full rounded) -->
-        <circle class="mc-wm-c" cx="292" cy="46" r="16"/>
-        <!-- l -->
-        <path class="mc-wm-c" d="M324 14 V62"/>
-        </svg>
-      </h2>
     </div>
     <div class="card login-card" style="text-align:center;">
       <div id="http-warn" class="warnbox" style="display:none; text-align:start; font-size:.75rem;" data-i18n="http_warn">Plain HTTP: your password is sent unencrypted. Enable HTTPS or use a reverse proxy.</div>
@@ -5892,17 +5936,7 @@ html, body {
 
   <div id="chrome">
     <div class="brand">
-      <svg class="mc-brand-svg mc-shield-logo" viewBox="0 0 120 120" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle class="mc-ping-ring" cx="60" cy="60" r="42"/>
-        <path class="mc-shield-path" d="M21 54 V27 Q21 21 27 19.5 Q60 11 93 19.5 Q99 21 99 27 V54"/>
-        <path class="mc-shield-path" d="M24 68 C29 84 43 96 60 104 C77 96 91 84 96 68"/>
-        <path class="mc-wave-outer" d="M13 61 H20 L25 49 L32 71 L43 29 L50 51"/>
-        <path class="mc-wave-outer" d="M107 61 H100 L95 49 L88 71 L77 29 L70 51"/>
-        <path class="mc-wave-mid" d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77"/>
-        <path class="mc-wave-pulse" pathLength="140" d="M13 61 H20 L25 49 L32 71 L43 29 L50 51"/>
-        <path class="mc-wave-pulse" pathLength="140" d="M107 61 H100 L95 49 L88 71 L77 29 L70 51"/>
-        <path class="mc-wave-pulse mc-wave-mid-pulse" pathLength="140" d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77"/>
-      </svg>
+      <img class="mc-brand-svg" src="icon-192.png" alt="MControl" style="object-fit:contain;">
       <span class="bt" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-nav" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- M (bold rounded geometric) -->
         <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
@@ -9048,12 +9082,7 @@ function applyTheme() {
   const p = e.pal, set = (k, v) => b.style.setProperty(k, v);
   colorRoles.forEach(([role], i) => set('--' + role, p[i]));
   const mtc = $('meta-theme-color'); if (mtc && p[0]) mtc.setAttribute('content', p[0]);
-  const fav = $('mc-favicon');
-  if (fav && p[0] && p[4]) {
-    const fBg = p[0], fPri = p[4], fSec = p[5] || p[4];
-    const fSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="${fBg}"/><path d="M21 54 V27 Q21 21 27 19.5 Q60 11 93 19.5 Q99 21 99 27 V54" fill="none" stroke="${fPri}" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 68 C29 84 43 96 60 104 C77 96 91 84 96 68" fill="none" stroke="${fSec}" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 61 H20 L25 49 L32 71 L43 29 L50 51" fill="none" stroke="${fSec}" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M107 61 H100 L95 49 L88 71 L77 29 L70 51" fill="none" stroke="${fSec}" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M43 61 H49 L54 45 L60 77 L66 45 L71 61 H77" fill="none" stroke="${fPri}" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    fav.setAttribute('href', 'data:image/svg+xml,' + encodeURIComponent(fSvg));
-  }
+  // Static PNG favicon (icon-192.png) preserved
   const inkOn = c => lum(c) > 0.179 ? '#0a0d14' : '#ffffff';
   set('--on-accent', inkOn(p[4]));
   set('--on-accent2', inkOn(p[5]));
@@ -18588,6 +18617,13 @@ if (_deskAlertsOn && $('btn-desk-alerts')) $('btn-desk-alerts').classList.add('b
   </div>
 </div>
 
-<script src="saas-dnd.js"></script>
+<script src="saas-dnd.js">
+function replayKontrolLogo(el) {
+  if (!el || !el.parentNode) return;
+  const clone = el.cloneNode(true);
+  el.parentNode.replaceChild(clone, el);
+}
+
+</script>
 </body>
 </html>
