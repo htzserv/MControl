@@ -103,7 +103,6 @@ private fun buildPanelBaseUrl(addressInput: String, portInput: String, webPathIn
 
 @Composable
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val accentTint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
     val transition = rememberInfiniteTransition(label = "kontrol_3s")
     val t by transition.animateFloat(
@@ -115,43 +114,24 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
         ),
         label = "t"
     )
-    val baseAlpha = when {
-        t < 0.36f -> (t / 0.36f).coerceIn(0f, 1f)
-        t > 2.70f -> ((3f - t) / 0.30f).coerceIn(0f, 1f)
-        else -> 1f
-    }
-    val baseScale = if (t < 0.36f) 0.94f + 0.06f * (t / 0.36f) else 1f
     val writeProg = when {
-        t < 0.36f -> 0f
-        t < 1.62f -> {
-            val u = ((t - 0.36f) / 1.26f).coerceIn(0f, 1f)
+        t < 1.44f -> {
+            val u = (t / 1.44f).coerceIn(0f, 1f)
             1f - (1f - u) * (1f - u)
         }
         else -> 1f
     }
-    val textAlpha = if (t > 2.64f) ((2.91f - t) / 0.27f).coerceIn(0f, 1f) else 1f
+    val textAlpha = if (t > 2.58f) ((2.88f - t) / 0.30f).coerceIn(0f, 1f) else 1f
 
     fun dotAlpha(start: Float): Float = when {
         t < start -> 0f
-        t < start + 0.22f -> ((t - start) / 0.22f).coerceIn(0f, 1f)
-        t > 2.64f -> ((2.91f - t) / 0.27f).coerceIn(0f, 1f)
+        t < start + 0.24f -> ((t - start) / 0.24f).coerceIn(0f, 1f)
+        t > 2.58f -> ((2.88f - t) / 0.30f).coerceIn(0f, 1f)
         else -> 1f
     }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        // 1. Dark / Light 3D Squircle Base (Fade-In)
-        Image(
-            painter = painterResource(id = if (isDark) R.drawable.logo_base_dark else R.drawable.logo_base),
-            contentDescription = "MControl",
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    alpha = baseAlpha
-                    scaleX = baseScale
-                    scaleY = baseScale
-                }
-        )
-        // 2. "کنترل" Handwriting Right-to-Left Reveal (Tinted with Theme Primary + 3D Gloss)
+        // 1. "کنترل" Handwriting Right-to-Left Reveal (No Background, Large, Theme Primary)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -165,7 +145,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logo_text_sil),
-                contentDescription = null,
+                contentDescription = "کنترل",
                 colorFilter = accentTint,
                 modifier = Modifier.fillMaxSize()
             )
@@ -175,10 +155,10 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxSize()
             )
         }
-        // 3. Three Dots popping in Right-to-Left (Tinted with Theme Primary + 3D Gloss)
-        val d1 = dotAlpha(1.62f)
-        val d2 = dotAlpha(1.80f)
-        val d3 = dotAlpha(1.98f)
+        // 2. Three Dots popping in Right-to-Left
+        val d1 = dotAlpha(1.44f)
+        val d2 = dotAlpha(1.62f)
+        val d3 = dotAlpha(1.80f)
         listOf(
             Triple(0.617f, 0.711f, d1),
             Triple(0.539f, 0.621f, d2),
@@ -244,7 +224,7 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         KontrolAnimatedLogo(
-            modifier = Modifier.size(156.dp)
+            modifier = Modifier.size(240.dp)
         )
 
         Spacer(Modifier.height(18.dp))

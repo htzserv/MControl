@@ -5373,29 +5373,20 @@ html, body {
 }
 
 
-/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo (3s Loop) ──────── */
+/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo (3s Loop, No BG) ── */
 .mc-kontrol-anim {
-  width: min(210px, 54vw);
-  height: min(210px, 54vw);
-  aspect-ratio: 1 / 1;
+  width: min(320px, 78vw);
+  height: auto;
+  aspect-ratio: 804 / 470;
   display: block;
-  margin: 0 auto 6px;
+  margin: 0 auto 4px;
   cursor: pointer;
   overflow: visible;
-  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, .32));
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .24));
 }
-.mc-kontrol-anim .k-base {
-  opacity: 0;
-  transform-origin: 512px 512px;
-  animation: kBaseFade 3s cubic-bezier(.16, 1, .3, 1) infinite;
-}
-.mc-kontrol-anim .k-base-light,
 .mc-brand-dyn .k-base-light { display: none; }
-.mc-kontrol-anim .k-base-dark,
 .mc-brand-dyn .k-base-dark { display: block; }
-body.light-mode .mc-kontrol-anim .k-base-light,
 body.light-mode .mc-brand-dyn .k-base-light { display: block; }
-body.light-mode .mc-kontrol-anim .k-base-dark,
 body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 .mc-kontrol-anim .k-fill,
 .mc-brand-dyn .k-fill {
@@ -5417,39 +5408,38 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 .mc-kontrol-anim .k-dot-2 { animation: kDot2 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 .mc-kontrol-anim .k-dot-3 { animation: kDot3 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 
-@keyframes kBaseFade {
-  0%   { opacity: 0; transform: scale(.94); }
-  12%  { opacity: 1; transform: scale(1); }
-  90%  { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(.97); }
-}
 @keyframes kWriteRTL {
-  0%, 12%  { x: 920px; width: 0px; }
-  54%      { x: 100px; width: 820px; }
-  90%      { x: 100px; width: 820px; }
+  0%       { x: 920px; width: 0px; }
+  48%      { x: 100px; width: 820px; }
+  88%      { x: 100px; width: 820px; }
   100%     { x: 920px; width: 0px; }
 }
 @keyframes kTextHold {
-  0%, 12%  { opacity: 1; }
-  88%      { opacity: 1; }
-  97%,100% { opacity: 0; }
+  0%       { opacity: 1; }
+  86%      { opacity: 1; }
+  96%,100% { opacity: 0; }
 }
 @keyframes kDot1 {
-  0%, 54%  { opacity: 0; transform: scale(0) translateY(-14px); }
-  61%      { opacity: 1; transform: scale(1.16) translateY(0); }
-  65%      { opacity: 1; transform: scale(1) translateY(0); }
-  88%      { opacity: 1; transform: scale(1) translateY(0); }
-  97%,100% { opacity: 0; transform: scale(.7); }
+  0%, 48%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  56%      { opacity: 1; transform: scale(1.16) translateY(0); }
+  61%      { opacity: 1; transform: scale(1) translateY(0); }
+  86%      { opacity: 1; transform: scale(1) translateY(0); }
+  96%,100% { opacity: 0; transform: scale(.7); }
 }
 @keyframes kDot2 {
-  0%, 60%  { opacity: 0; transform: scale(0) translateY(-14px); }
-  67%      { opacity: 1; transform: scale(1.16) translateY(0); }
-  71%      { opacity: 1; transform: scale(1) translateY(0); }
-  88%      { opacity: 1; transform: scale(1) translateY(0); }
-  97%,100% { opacity: 0; transform: scale(.7); }
+  0%, 54%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  62%      { opacity: 1; transform: scale(1.16) translateY(0); }
+  67%      { opacity: 1; transform: scale(1) translateY(0); }
+  86%      { opacity: 1; transform: scale(1) translateY(0); }
+  96%,100% { opacity: 0; transform: scale(.7); }
 }
 @keyframes kDot3 {
-  0%, 66%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  0%, 60%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  68%      { opacity: 1; transform: scale(1.16) translateY(0); }
+  73%      { opacity: 1; transform: scale(1) translateY(0); }
+  86%      { opacity: 1; transform: scale(1) translateY(0); }
+  96%,100% { opacity: 0; transform: scale(.7); }
+}
   73%      { opacity: 1; transform: scale(1.16) translateY(0); }
   77%      { opacity: 1; transform: scale(1) translateY(0); }
   88%      { opacity: 1; transform: scale(1) translateY(0); }
@@ -5470,7 +5460,7 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 <!-- PWA Animated Launch Splash Screen -->
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
-    <svg class="mc-kontrol-anim" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:116px;height:116px;margin:0;" onclick="replayKontrolLogo(this)">
+    <svg class="mc-kontrol-anim" viewBox="110 290 804 470" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:180px;margin:0;" onclick="replayKontrolLogo(this)">
         <defs>
           <clipPath id="ks-write">
             <rect class="k-wipe-rect" x="920" y="0" width="0" height="1024"/>
@@ -5481,10 +5471,6 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
           <mask id="ks-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
           <mask id="ks-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
         </defs>
-        <g class="k-base">
-          <image class="k-base-dark" href="logo-base-dark.png" x="0" y="0" width="1024" height="1024"/>
-          <image class="k-base-light" href="logo-base.png" x="0" y="0" width="1024" height="1024"/>
-        </g>
         <g class="k-text-g" clip-path="url(#ks-write)">
           <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-tmask)"/>
           <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
@@ -5910,7 +5896,7 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
   </div>
   <div class="login-shell">
     <div class="login-brand-hero">
-      <svg class="mc-kontrol-anim" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" onclick="replayKontrolLogo(this)">
+      <svg class="mc-kontrol-anim" viewBox="110 290 804 470" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" onclick="replayKontrolLogo(this)">
         <defs>
           <clipPath id="kl-write">
             <rect class="k-wipe-rect" x="920" y="0" width="0" height="1024"/>
@@ -5921,10 +5907,6 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
           <mask id="kl-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
           <mask id="kl-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
         </defs>
-        <g class="k-base">
-          <image class="k-base-dark" href="logo-base-dark.png" x="0" y="0" width="1024" height="1024"/>
-          <image class="k-base-light" href="logo-base.png" x="0" y="0" width="1024" height="1024"/>
-        </g>
         <g class="k-text-g" clip-path="url(#kl-write)">
           <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-tmask)"/>
           <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
