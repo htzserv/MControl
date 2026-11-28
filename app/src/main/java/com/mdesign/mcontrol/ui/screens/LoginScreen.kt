@@ -8,6 +8,13 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import com.mdesign.mcontrol.R
@@ -101,6 +108,60 @@ private fun buildPanelBaseUrl(addressInput: String, portInput: String, webPathIn
 }
 
 
+private fun easeOutCubic(x: Float): Float {
+    val c = x.coerceIn(0f, 1f)
+    val inv = 1f - c
+    return 1f - inv * inv * inv
+}
+
+private fun buildKntrPath(w: Float, h: Float): Path {
+    val sx = w / 960f
+    val sy = h / 559f
+    return Path().apply {
+        moveTo(900f * sx, 68f * sy)
+        quadraticTo(825f * sx, 108f * sy, 779f * sx, 152f * sy)
+        quadraticTo(775f * sx, 175f * sy, 818f * sx, 212f * sy)
+        quadraticTo(882f * sx, 265f * sy, 874f * sx, 306f * sy)
+        quadraticTo(865f * sx, 354f * sy, 795f * sx, 355f * sy)
+        quadraticTo(725f * sx, 355f * sy, 684f * sx, 344f * sy)
+        quadraticTo(678f * sx, 300f * sy, 678f * sx, 252f * sy)
+        quadraticTo(678f * sx, 302f * sy, 672f * sx, 344f * sy)
+        quadraticTo(625f * sx, 348f * sy, 576f * sx, 344f * sy)
+        quadraticTo(568f * sx, 298f * sy, 568f * sx, 250f * sy)
+        quadraticTo(568f * sx, 300f * sy, 562f * sx, 344f * sy)
+        quadraticTo(508f * sx, 348f * sy, 446f * sx, 344f * sy)
+        quadraticTo(434f * sx, 298f * sy, 434f * sx, 254f * sy)
+        quadraticTo(434f * sx, 320f * sy, 428f * sx, 368f * sy)
+        quadraticTo(418f * sx, 422f * sy, 365f * sx, 458f * sy)
+        quadraticTo(338f * sx, 476f * sy, 316f * sx, 486f * sy)
+    }
+}
+
+private fun buildLamPath(w: Float, h: Float): Path {
+    val sx = w / 960f
+    val sy = h / 559f
+    return Path().apply {
+        moveTo(288f * sx, 78f * sy)
+        lineTo(290f * sx, 235f * sy)
+        quadraticTo(290f * sx, 325f * sy, 275f * sx, 368f * sy)
+        quadraticTo(250f * sx, 412f * sy, 185f * sx, 414f * sy)
+        quadraticTo(112f * sx, 414f * sy, 86f * sx, 360f * sy)
+        quadraticTo(74f * sx, 314f * sy, 96f * sx, 268f * sy)
+        quadraticTo(112f * sx, 246f * sy, 140f * sx, 245f * sy)
+    }
+}
+
+private fun buildDotPath(cx: Float, cy: Float, w: Float, h: Float): Path {
+    val sx = w / 960f
+    val sy = h / 559f
+    return Path().apply {
+        moveTo((cx + 10f) * sx, (cy - 4f) * sy)
+        quadraticTo((cx + 11f) * sx, (cy + 10f) * sy, cx * sx, (cy + 10f) * sy)
+        quadraticTo((cx - 11f) * sx, (cy + 10f) * sy, (cx - 10f) * sx, (cy - 2f) * sy)
+        quadraticTo((cx - 8f) * sx, (cy - 11f) * sy, (cx + 4f) * sx, (cy - 8f) * sy)
+    }
+}
+
 @Composable
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -108,7 +169,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     val lamRes  = if (isDark) R.drawable.logo_lam_white  else R.drawable.logo_lam_blue
     val dotsRes = if (isDark) R.drawable.logo_dots_white else R.drawable.logo_dots_blue
 
-    val transition = rememberInfiniteTransition(label = "kontrol_wave_3s")
+    val transition = rememberInfiniteTransition(label = "kontrol_pen_3s")
     val t by transition.animateFloat(
         initialValue = 0f,
         targetValue = 3f,
@@ -119,100 +180,95 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
         label = "t"
     )
 
-    // Unified dot-style spring pop-in (returns alpha, offsetY_dp, scale)
-    fun popState(startSec: Float): Triple<Float, Float, Float> {
-        val dur = 0.36f
-        return when {
-            t < startSec -> Triple(0f, -12f, 0.86f)
-            t < startSec + dur -> {
-                val u = ((t - startSec) / dur).coerceIn(0f, 1f)
-                val ease = 1f - (1f - u) * (1f - u) * (1f - u)
-                val bounce = if (u < 0.72f) 0.86f + 0.18f * (u / 0.72f) else 1.04f - 0.04f * ((u - 0.72f) / 0.28f)
-                Triple(ease, -12f * (1f - ease), bounce)
-            }
-            t > 2.58f -> {
-                val f = ((2.88f - t) / 0.30f).coerceIn(0f, 1f)
-                Triple(f, 0f, 0.92f + 0.08f * f)
-            }
-            else -> Triple(1f, 0f, 1f)
-        }
-    }
+    val loopAlpha = if (t > 2.70f) ((2.94f - t) / 0.24f).coerceIn(0f, 1f) else 1f
+    val kntrProg = easeOutCubic(t / 1.35f)
+    val lamProg  = easeOutCubic((t - 1.32f) / 0.63f)
+    val d1Prog   = easeOutCubic((t - 1.95f) / 0.18f)
+    val d2Prog   = easeOutCubic((t - 2.07f) / 0.18f)
+    val d3Prog   = easeOutCubic((t - 2.19f) / 0.18f)
 
-    val p1 = popState(0.00f) // ک
-    val p2 = popState(0.24f) // ن + dot 1
-    val p3 = popState(0.48f) // ت + dot 2
-    val p4 = popState(0.72f) // ر + dot 3
-    val p5 = popState(0.96f) // ل
-
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        // Letters ک | ن | ت | ر + their dots popping in together from right to left
-        listOf(
-            Triple(0.7485f, 1.0000f, p1),
-            Triple(0.6495f, 0.7505f, p2),
-            Triple(0.5245f, 0.6515f, p3),
-            Triple(0.0000f, 0.5265f, p4)
-        ).forEach { (lx, rx, st) ->
-            val (a, dy, sc) = st
-            if (a > 0.01f) {
-                Image(
-                    painter = painterResource(id = kntrRes),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawWithContent {
-                            clipRect(left = size.width * lx, top = 0f, right = size.width * rx, bottom = size.height) {
-                                this@drawWithContent.drawContent()
-                            }
-                        }
-                        .graphicsLayer {
-                            alpha = a
-                            translationY = dy.dp.toPx()
-                            scaleX = sc
-                            scaleY = sc
-                        }
-                )
-            }
-        }
-        // 3 separated dots popping in together with ن / ت / ر
-        listOf(
-            Triple(0.6391f, 0.7652f, p2),
-            Triple(0.5448f, 0.6391f, p3),
-            Triple(0.4164f, 0.5448f, p4)
-        ).forEach { (lx, rx, st) ->
-            val (a, dy, sc) = st
-            if (a > 0.01f) {
-                Image(
-                    painter = painterResource(id = dotsRes),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawWithContent {
-                            clipRect(left = size.width * lx, top = 0f, right = size.width * rx, bottom = size.height) {
-                                this@drawWithContent.drawContent()
-                            }
-                        }
-                        .graphicsLayer {
-                            alpha = a
-                            translationY = dy.dp.toPx()
-                            scaleX = sc
-                            scaleY = sc
-                        }
-                )
-            }
-        }
-        // ل (separate component — clean pop-in)
-        val (la, ldy, lsc) = p5
-        if (la > 0.01f) {
+    Box(modifier = modifier.alpha(loopAlpha), contentAlignment = Alignment.Center) {
+        // 1. "کنتر" — one seamless continuous pen stroke
+        if (kntrProg > 0.005f) {
             Image(
-                painter = painterResource(id = lamRes),
+                painter = painterResource(id = kntrRes),
                 contentDescription = "کنترل",
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer {
-                        alpha = la
-                        translationY = ldy.dp.toPx()
-                        scaleX = lsc
-                        scaleY = lsc
+                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                    .drawWithContent {
+                        drawContent()
+                        val full = buildKntrPath(size.width, size.height)
+                        val pm = PathMeasure().apply { setPath(full, false) }
+                        val seg = Path()
+                        pm.getSegment(0f, pm.length * kntrProg, seg, true)
+                        drawPath(
+                            path = seg,
+                            color = Color.White,
+                            style = Stroke(
+                                width = size.width * (136f / 960f),
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
+            )
+        }
+        // 2. "ل" — one seamless continuous pen stroke
+        if (lamProg > 0.005f) {
+            Image(
+                painter = painterResource(id = lamRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                    .drawWithContent {
+                        drawContent()
+                        val full = buildLamPath(size.width, size.height)
+                        val pm = PathMeasure().apply { setPath(full, false) }
+                        val seg = Path()
+                        pm.getSegment(0f, pm.length * lamProg, seg, true)
+                        drawPath(
+                            path = seg,
+                            color = Color.White,
+                            style = Stroke(
+                                width = size.width * (132f / 960f),
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
+            )
+        }
+        // 3. Three dots — swift calligraphy pen taps right-to-left
+        if (d1Prog > 0.005f) {
+            Image(
+                painter = painterResource(id = dotsRes),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                    .drawWithContent {
+                        drawContent()
+                        val strokeW = size.width * (78f / 960f)
+                        val stroke = Stroke(width = strokeW, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                        val combined = Path()
+                        listOf(
+                            Triple(659f, 138f, d1Prog),
+                            Triple(567f, 137f, d2Prog),
+                            Triple(477f, 137f, d3Prog)
+                        ).forEach { (cx, cy, p) ->
+                            if (p > 0.005f) {
+                                val dp = buildDotPath(cx, cy, size.width, size.height)
+                                val pm = PathMeasure().apply { setPath(dp, false) }
+                                val seg = Path()
+                                pm.getSegment(0f, pm.length * p, seg, true)
+                                combined.addPath(seg)
+                            }
+                        }
+                        drawPath(path = combined, color = Color.White, style = stroke, blendMode = BlendMode.DstIn)
                     }
             )
         }
