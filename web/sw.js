@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v22';
+const CACHE_NAME = 'mcontrol-pwa-v23';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -15,7 +15,11 @@ const PRECACHE_URLS = [
   './logo-text-mask.png',
   './logo-text-gloss.png',
   './logo-dots-mask.png',
-  './logo-dots-gloss.png'
+  './logo-dots-gloss.png',
+  './logo-word-sil.png',
+  './logo-word-gloss.png',
+  './logo-dots-sil-c.png',
+  './logo-dots-gloss-c.png'
 ];
 
 const OFFLINE_HTML = `<!DOCTYPE html>

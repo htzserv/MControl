@@ -5373,68 +5373,95 @@ html, body {
 }
 
 
-/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo (3s Loop, No BG) ── */
+/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo (3s Loop, Pure CSS) ── */
 .mc-kontrol-anim {
+  position: relative;
   width: min(320px, 78vw);
-  height: auto;
-  aspect-ratio: 804 / 470;
-  display: block;
-  margin: 0 auto 4px;
+  height: min(187px, 45.6vw);
+  margin: 0 auto 6px;
   cursor: pointer;
-  overflow: visible;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .24));
+  user-select: none;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, .22));
 }
-.mc-brand-dyn .k-base-light { display: none; }
-.mc-brand-dyn .k-base-dark { display: block; }
-body.light-mode .mc-brand-dyn .k-base-light { display: block; }
-body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
-.mc-kontrol-anim .k-fill,
-.mc-brand-dyn .k-fill {
-  fill: var(--accent, #22d3ee);
-  transition: fill .28s ease;
+.mc-kontrol-anim .k-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
-.mc-kontrol-anim .k-wipe-rect {
+.mc-kontrol-anim .k-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--accent, #22d3ee);
+  transition: background-color .28s ease;
+}
+.mc-kontrol-anim .k-word-tint {
+  -webkit-mask: url('logo-word-sil.png') center / 100% 100% no-repeat;
+  mask: url('logo-word-sil.png') center / 100% 100% no-repeat;
+}
+.mc-kontrol-anim .k-dots-tint {
+  -webkit-mask: url('logo-dots-sil-c.png') center / 100% 100% no-repeat;
+  mask: url('logo-dots-sil-c.png') center / 100% 100% no-repeat;
+}
+.mc-kontrol-anim .k-gloss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+}
+.mc-kontrol-anim .k-word-wrap {
+  will-change: clip-path, opacity;
   animation: kWriteRTL 3s cubic-bezier(.32, .08, .22, 1) infinite;
 }
-.mc-kontrol-anim .k-text-g {
-  animation: kTextHold 3s linear infinite;
-}
+.mc-kontrol-anim .k-d1-clip { clip-path: inset(0 23.1% 0 64.9%); }
+.mc-kontrol-anim .k-d2-clip { clip-path: inset(0 34.6% 0 55.0%); }
+.mc-kontrol-anim .k-d3-clip { clip-path: inset(0 44.8% 0 43.3%); }
 .mc-kontrol-anim .k-dot {
   opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
+  will-change: transform, opacity;
 }
 .mc-kontrol-anim .k-dot-1 { animation: kDot1 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 .mc-kontrol-anim .k-dot-2 { animation: kDot2 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 .mc-kontrol-anim .k-dot-3 { animation: kDot3 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 
-@keyframes kWriteRTL {
-  0%       { x: 920px; width: 0px; }
-  48%      { x: 100px; width: 820px; }
-  88%      { x: 100px; width: 820px; }
-  100%     { x: 920px; width: 0px; }
+.mc-brand-dyn .k-base-light { display: none; }
+.mc-brand-dyn .k-base-dark { display: block; }
+body.light-mode .mc-brand-dyn .k-base-light { display: block; }
+body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
+.mc-brand-dyn .k-fill {
+  fill: var(--accent, #22d3ee);
+  transition: fill .28s ease;
 }
-@keyframes kTextHold {
-  0%       { opacity: 1; }
-  86%      { opacity: 1; }
-  96%,100% { opacity: 0; }
+
+@keyframes kWriteRTL {
+  0%       { clip-path: inset(0 0 0 100%); opacity: 1; }
+  48%      { clip-path: inset(0 0 0 0%);   opacity: 1; }
+  86%      { clip-path: inset(0 0 0 0%);   opacity: 1; }
+  96%      { clip-path: inset(0 0 0 0%);   opacity: 0; }
+  100%     { clip-path: inset(0 0 0 100%); opacity: 0; }
 }
 @keyframes kDot1 {
-  0%, 48%  { opacity: 0; transform: scale(0) translateY(-14px); }
-  56%      { opacity: 1; transform: scale(1.16) translateY(0); }
-  61%      { opacity: 1; transform: scale(1) translateY(0); }
-  86%      { opacity: 1; transform: scale(1) translateY(0); }
-  96%,100% { opacity: 0; transform: scale(.7); }
+  0%, 48%  { opacity: 0; transform: translateY(-10px) scale(.85); }
+  56%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  62%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
 }
 @keyframes kDot2 {
-  0%, 54%  { opacity: 0; transform: scale(0) translateY(-14px); }
-  62%      { opacity: 1; transform: scale(1.16) translateY(0); }
-  67%      { opacity: 1; transform: scale(1) translateY(0); }
-  86%      { opacity: 1; transform: scale(1) translateY(0); }
-  96%,100% { opacity: 0; transform: scale(.7); }
+  0%, 54%  { opacity: 0; transform: translateY(-10px) scale(.85); }
+  62%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  68%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
 }
 @keyframes kDot3 {
-  0%, 60%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  0%, 60%  { opacity: 0; transform: translateY(-10px) scale(.85); }
+  68%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  74%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
+}
   68%      { opacity: 1; transform: scale(1.16) translateY(0); }
   73%      { opacity: 1; transform: scale(1) translateY(0); }
   86%      { opacity: 1; transform: scale(1) translateY(0); }
@@ -5460,40 +5487,30 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
 <!-- PWA Animated Launch Splash Screen -->
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
-    <svg class="mc-kontrol-anim" viewBox="110 290 804 470" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:180px;margin:0;" onclick="replayKontrolLogo(this)">
-        <defs>
-          <clipPath id="ks-write">
-            <rect class="k-wipe-rect" x="920" y="0" width="0" height="1024"/>
-          </clipPath>
-          <clipPath id="ks-d1"><rect x="632" y="340" width="96" height="126"/></clipPath>
-          <clipPath id="ks-d2"><rect x="552" y="340" width="84" height="126"/></clipPath>
-          <clipPath id="ks-d3"><rect x="458" y="340" width="96" height="126"/></clipPath>
-          <mask id="ks-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
-          <mask id="ks-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
-        </defs>
-        <g class="k-text-g" clip-path="url(#ks-write)">
-          <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-tmask)"/>
-          <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
-        </g>
-        <g clip-path="url(#ks-d1)">
-          <g class="k-dot k-dot-1">
-            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-dmask)"/>
-            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-          </g>
-        </g>
-        <g clip-path="url(#ks-d2)">
-          <g class="k-dot k-dot-2">
-            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-dmask)"/>
-            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-          </g>
-        </g>
-        <g clip-path="url(#ks-d3)">
-          <g class="k-dot k-dot-3">
-            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-dmask)"/>
-            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-          </g>
-        </g>
-      </svg>
+    <div class="mc-kontrol-anim" style="width:185px;height:108px;margin:0;" onclick="replayKontrolLogo(this)" aria-label="کنترل">
+        <div class="k-layer k-word-wrap">
+          <div class="k-tint k-word-tint"></div>
+          <img class="k-gloss" src="logo-word-gloss.png" alt="کنترل">
+        </div>
+        <div class="k-layer k-d1-clip">
+          <div class="k-layer k-dot k-dot-1">
+            <div class="k-tint k-dots-tint"></div>
+            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-d2-clip">
+          <div class="k-layer k-dot k-dot-2">
+            <div class="k-tint k-dots-tint"></div>
+            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-d3-clip">
+          <div class="k-layer k-dot k-dot-3">
+            <div class="k-tint k-dots-tint"></div>
+            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+          </div>
+        </div>
+      </div>
   </div>
   <div class="pwa-sp-title" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-splash" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- M (bold rounded geometric) -->
@@ -5896,40 +5913,30 @@ body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
   </div>
   <div class="login-shell">
     <div class="login-brand-hero">
-      <svg class="mc-kontrol-anim" viewBox="110 290 804 470" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" onclick="replayKontrolLogo(this)">
-        <defs>
-          <clipPath id="kl-write">
-            <rect class="k-wipe-rect" x="920" y="0" width="0" height="1024"/>
-          </clipPath>
-          <clipPath id="kl-d1"><rect x="632" y="340" width="96" height="126"/></clipPath>
-          <clipPath id="kl-d2"><rect x="552" y="340" width="84" height="126"/></clipPath>
-          <clipPath id="kl-d3"><rect x="458" y="340" width="96" height="126"/></clipPath>
-          <mask id="kl-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
-          <mask id="kl-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
-        </defs>
-        <g class="k-text-g" clip-path="url(#kl-write)">
-          <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-tmask)"/>
-          <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
-        </g>
-        <g clip-path="url(#kl-d1)">
-          <g class="k-dot k-dot-1">
-            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-dmask)"/>
-            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-          </g>
-        </g>
-        <g clip-path="url(#kl-d2)">
-          <g class="k-dot k-dot-2">
-            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-dmask)"/>
-            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-          </g>
-        </g>
-        <g clip-path="url(#kl-d3)">
-          <g class="k-dot k-dot-3">
-            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-dmask)"/>
-            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
-          </g>
-        </g>
-      </svg>
+      <div class="mc-kontrol-anim" onclick="replayKontrolLogo(this)" aria-label="کنترل">
+        <div class="k-layer k-word-wrap">
+          <div class="k-tint k-word-tint"></div>
+          <img class="k-gloss" src="logo-word-gloss.png" alt="کنترل">
+        </div>
+        <div class="k-layer k-d1-clip">
+          <div class="k-layer k-dot k-dot-1">
+            <div class="k-tint k-dots-tint"></div>
+            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-d2-clip">
+          <div class="k-layer k-dot k-dot-2">
+            <div class="k-tint k-dots-tint"></div>
+            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-d3-clip">
+          <div class="k-layer k-dot k-dot-3">
+            <div class="k-tint k-dots-tint"></div>
+            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
+          </div>
+        </div>
+      </div>
     </div>
     <div class="card login-card" style="text-align:center;">
       <div id="http-warn" class="warnbox" style="display:none; text-align:start; font-size:.75rem;" data-i18n="http_warn">Plain HTTP: your password is sent unencrypted. Enable HTTPS or use a reverse proxy.</div>
