@@ -1,4 +1,4 @@
-## v1.8.1.2
+## v1.9.0
 
 - **Pure-Vector Two-Tone "کنترل" Logo & Adaptive Theme Styles:**
   - Replaced legacy multi-layer PNG logos with ultra-light pure-vector SVG (`web/index.html`) and Android `VectorDrawable` (`res/drawable/logo_*.xml` & `ic_launcher_foreground.xml`), cutting total package size to ~620 KB with zero edge artifacts.
@@ -14,7 +14,9 @@
 - **UI/UX & Layout Polish:**
   - Removed redundant `Settings` tab from the main nav catalog (relying on the floating Settings bubble).
   - Fixed vertical scrolling in `#login-screen` for the categorized Login Theme Drawer, traffic donut ring sub-label clipping, and bottom `.util` icon wrapping inside 232px sidebars.
-  - Bumped PWA Service Worker cache to `mcontrol-pwa-v37` and Android app to `v1.8.1.2` (`versionCode = 9`).
+  - **Faster GitHub Actions Publishing (`release.yml` & `android-apk.yml`):**
+  - Enabled Go build cache (`cache-dependency-path: go.mod`), parallel `amd64`/`arm64` compilation and ZIP packaging, batched `gh release upload`, 4x concurrent ParsPack S3 mirror sync, and Android-only `paths` filtering with Gradle `--build-cache`.
+- Bumped PWA Service Worker cache to `mcontrol-pwa-v38` and Android app to `v1.9.0` (`versionCode = 10`).
 
 ## v1.8.1.1
 

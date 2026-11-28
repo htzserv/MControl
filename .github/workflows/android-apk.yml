@@ -3,9 +3,13 @@ name: Build & Publish MControl Android APK
 on:
   push:
     branches: ["main", "v2-core"]
-    paths-ignore:
-      - "README.md"
-      - "CHANGELOG.md"
+    paths:
+      - "app/**"
+      - "VERSION"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/android-apk.yml"
   workflow_dispatch:
     inputs:
       channel:
@@ -20,6 +24,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-apk:
@@ -83,7 +90,13 @@ jobs:
           else
             # Generate a clean RSA-2048 Release Keystore (avoids Android Debug cert CN=Android Debug)
             GEN_PASS="MControlRelease2026!"
-            keytool -genkeypair -v               -keystore "$KS_FILE"               -storetype PKCS12               -keyalg RSA -keysize 2048 -validity 10000               -alias mcontrol               -storepass "$GEN_PASS" -keypass "$GEN_PASS"               -dname "CN=MControl, OU=MDesign, O=MDesign, L=Tehran, C=IR"
+            keytool -genkeypair -v \
+              -keystore "$KS_FILE" \
+              -storetype PKCS12 \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -alias mcontrol \
+              -storepass "$GEN_PASS" -keypass "$GEN_PASS" \
+              -dname "CN=MControl, OU=MDesign, O=MDesign, L=Tehran, C=IR"
             echo "ks_path=${KS_FILE}" >> "$GITHUB_OUTPUT"
             echo "ks_pass=${GEN_PASS}" >> "$GITHUB_OUTPUT"
             echo "key_alias=mcontrol" >> "$GITHUB_OUTPUT"
@@ -102,7 +115,7 @@ jobs:
           MCONTROL_KEY_ALIAS: ${{ steps.sign.outputs.key_alias }}
           MCONTROL_KEY_PASSWORD: ${{ steps.sign.outputs.key_pass }}
         run: |
-          gradle assembleRelease --no-daemon --stacktrace
+          gradle assembleRelease --no-daemon --build-cache --stacktrace
           mkdir -p dist
           V="${MC_VER}"
           cp app/build/outputs/apk/release/app-release.apk "dist/MControl-Android-v${V}.apk"
@@ -134,7 +147,7 @@ jobs:
           name: MControl-Android-v${{ steps.ver.outputs.version }}-${{ steps.ver.outputs.mode }}-APK
           path: dist/MControl-Android-v${{ steps.ver.outputs.version }}.apk
 
-      - name: Publish APK to GitHub Releases (Stable & Beta)
+      - name: Publish APK to GitHub Releases (batched Stable & Beta)
         env:
           GH_TOKEN: ${{ github.token }}
           MC_VER: ${{ steps.ver.outputs.version }}
@@ -143,22 +156,40 @@ jobs:
           MC_BNUM: ${{ steps.ver.outputs.build_num }}
         run: |
           set -euo pipefail
+          upload_batch() {
+            tag="$1"; shift
+            for attempt in 1 2 3; do
+              if gh release upload "$tag" "$@" --clobber; then return 0; fi
+              echo "APK batch upload attempt $attempt to $tag failed, retrying..."
+              sleep $((attempt * 3))
+            done
+            return 1
+          }
+
           # Always update rolling beta-latest release with latest Beta APK
           if ! gh release view "beta-latest" >/dev/null 2>&1; then
             gh release create "beta-latest" --title "MControl Rolling Beta (v${MC_VER} #${MC_BNUM})" --notes "Rolling beta builds including MControl Android Beta APK." --prerelease
           fi
-          gh release upload "beta-latest"             "dist/MControl-Android-beta.apk"             "dist/MControl-Android-beta.apk.sha256"             "dist/MControl-Android-latest.apk"             "dist/MControl-Android-latest.apk.sha256"             "dist/apk-beta-meta.json"             --clobber
+          upload_batch "beta-latest" \
+            "dist/MControl-Android-beta.apk" \
+            "dist/MControl-Android-beta.apk.sha256" \
+            "dist/MControl-Android-latest.apk" \
+            "dist/MControl-Android-latest.apk.sha256" \
+            "dist/apk-beta-meta.json"
 
           # In official release mode, also attach to vX.Y.Z release
           if [ "$MC_MODE" = "release" ]; then
             if ! gh release view "$MC_TAG" >/dev/null 2>&1; then
               gh release create "$MC_TAG" --title "MControl ${MC_TAG}" --notes "MControl ${MC_TAG} release including native Android APK (MDesign Material 3)." --latest
             fi
-            gh release upload "$MC_TAG"               "dist/MControl-Android-v${MC_VER}.apk"               "dist/MControl-Android-v${MC_VER}.apk.sha256"               "dist/MControl-Android-latest.apk"               "dist/MControl-Android-latest.apk.sha256"               --clobber
+            upload_batch "$MC_TAG" \
+              "dist/MControl-Android-v${MC_VER}.apk" \
+              "dist/MControl-Android-v${MC_VER}.apk.sha256" \
+              "dist/MControl-Android-latest.apk" \
+              "dist/MControl-Android-latest.apk.sha256"
           fi
 
-      - name: Sync Android APK (Stable & Beta) to ParsPack Iran Mirror (S3)
-        continue-on-error: true
+      - name: Sync Android APK (Stable & Beta) to ParsPack Iran Mirror (strict alert on failure)
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.PP_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.PP_SECRET_KEY }}
@@ -169,13 +200,17 @@ jobs:
           PP_BUCKET: ${{ secrets.PP_BUCKET }}
           MC_MODE: ${{ steps.ver.outputs.mode }}
         run: |
+          set -euo pipefail
           if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${PP_ENDPOINT:-}" ] || [ -z "${PP_BUCKET:-}" ]; then
-            echo "ParsPack S3 secrets not configured — skipping APK mirror sync."
-            exit 0
+            echo "::error::ParsPack S3 secrets are not configured!"
+            exit 1
           fi
           EP="${PP_ENDPOINT%/}"
           aws configure set default.s3.max_concurrent_requests 1
           aws configure set default.s3.multipart_threshold 64MB
+          aws configure set default.s3.addressing_style path
+
+          FAIL_CNT=0
           upload_to() {
             pfx="$1"
             for f in dist/*; do
@@ -183,16 +218,24 @@ jobs:
               b=$(basename "$f")
               ok=0
               for i in 1 2 3; do
-                if aws --endpoint-url "$EP" s3 cp "$f" "s3://${PP_BUCKET}/${pfx}/${b}" --acl public-read                    || aws --endpoint-url "$EP" s3 cp "$f" "s3://${PP_BUCKET}/${pfx}/${b}"; then
+                if aws --endpoint-url "$EP" s3 cp "$f" "s3://${PP_BUCKET}/${pfx}/${b}" --acl public-read --no-progress 2>&1                    || aws --endpoint-url "$EP" s3 cp "$f" "s3://${PP_BUCKET}/${pfx}/${b}" --no-progress 2>&1; then
                   ok=1; break
                 fi
+                echo "ParsPack APK attempt $i failed for ${b}, retrying in $((i * 4))s..."
                 sleep $((i * 4))
               done
-              [ "$ok" -eq 1 ] || echo "::warning::Could not upload ${b} to ParsPack ${pfx}"
+              if [ "$ok" -ne 1 ]; then
+                echo "::error::Failed to upload ${b} to ParsPack (${pfx})"
+                FAIL_CNT=$((FAIL_CNT + 1))
+              fi
             done
           }
           upload_to "MControl/beta-latest"
           if [ "$MC_MODE" = "release" ]; then
             upload_to "MControl"
           fi
-          echo "ParsPack Android APK mirror sync complete (mode=${MC_MODE})!"
+          if [ "$FAIL_CNT" -gt 0 ]; then
+            echo "::error::ParsPack Android APK mirror sync FAILED (${FAIL_CNT} file(s))!"
+            exit 1
+          fi
+          echo "ParsPack Android APK mirror sync complete & verified (mode=${MC_MODE})!"

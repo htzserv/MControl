@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# MControl v1.8.1.2 — 2-Step MDesign Interactive Installer (Step 1: Iran/Foreign -> Step 2: Stable/Beta ± Engines)
-MODULE_VERSION="1.8.1.2"
+# MControl v1.9.0 — 2-Step MDesign Interactive Installer (Step 1: Iran/Foreign -> Step 2: Stable/Beta ± Engines)
+MODULE_VERSION="1.9.0"
 set -euo pipefail
 umask 077
 
@@ -550,18 +550,66 @@ BETA_DISP=""
 BETA_LINE=""
 if [[ "$CHANNEL" == "beta" ]]; then
     BETA_DISP=" · Beta #${BETA_NUM:-latest}"
-    BETA_LINE="  ${FR}├─${NC} ${W}Beta Version:${NC} ${Y}v${VERSION_TXT}-beta.${BETA_NUM:-latest}${NC}\n"
+    BETA_LINE="  ${FR}├─${NC} ${W}Beta Version :${NC} ${Y}v${VERSION_TXT}-beta.${BETA_NUM:-latest}${NC}\n"
 fi
-echo -e "  ${FR}├─${NC} ${G}✓ Systemd service active (v${VERSION_TXT}${BETA_DISP} · ${PKG_LBL} · ${SRC_LBL}).${NC}"
-echo -e "  ${FR}│${NC}"
-echo -e "  ${FR}├─${NC} ${W}Panel URL   :${NC} ${C}http://${IP4}:${PORT}/${NC}"
+
+# Read active panel settings from SQLite DB (if already initialized)
+SVC_STATE=$(systemctl is-active mcontrol.service 2>/dev/null || echo "unknown")
+PANEL_DOMAIN=""
+PANEL_WPATH=""
+PANEL_SCHEME="http"
+if [[ -f "${DATA_DIR}/tls.crt" && -f "${DATA_DIR}/tls.key" ]]; then
+    PANEL_SCHEME="https"
+fi
+if [[ -f "${DATA_DIR}/mcontrol.db" ]] && command -v python3 >/dev/null 2>&1; then
+    PANEL_DOMAIN=$(python3 - "${DATA_DIR}/mcontrol.db" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+r = con.execute("SELECT value FROM settings WHERE key='listen_domain'").fetchone()
+print((r[0] or "").strip() if r else "")
+PY
+)
+    PANEL_WPATH=$(python3 - "${DATA_DIR}/mcontrol.db" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+con = sqlite3.connect(sys.argv[1])
+r = con.execute("SELECT value FROM settings WHERE key='web_path'").fetchone()
+print((r[0] or "").strip().strip("/") if r else "")
+PY
+)
+fi
+PANEL_HOST="${PANEL_DOMAIN:-$IP4}"
+PANEL_URL="${PANEL_SCHEME}://${PANEL_HOST}:${PORT}/"
+[[ -n "$PANEL_WPATH" ]] && PANEL_URL="${PANEL_SCHEME}://${PANEL_HOST}:${PORT}/${PANEL_WPATH}/"
+
+echo ""
+echo -e "  ${FR}╔══════════════════════════════════════════════════════════╗${NC}"
+echo -e "  ${FR}║${NC}  ${G}✓ MControl Installation Complete — Panel Settings${NC}"
+echo -e "  ${FR}╠══════════════════════════════════════════════════════════╣${NC}"
+echo -e "  ${FR}├─${NC} ${W}Service      :${NC} ${G}${SVC_STATE}${NC} (v${VERSION_TXT}${BETA_DISP} · ${PKG_LBL})"
+echo -e "  ${FR}├─${NC} ${W}Source       :${NC} ${C}${SRC_LBL}${NC} (${CHANNEL^^})"
 [[ -n "$BETA_LINE" ]] && printf '%b' "$BETA_LINE"
-echo -e "  ${FR}└─${NC} ${W}CLI Menu    :${NC} ${Y}mcontrol${NC}\n"
+echo -e "  ${FR}├─${NC} ${W}Panel URL    :${NC} ${C}${PANEL_URL}${NC}"
+echo -e "  ${FR}├─${NC} ${W}Port / Proto :${NC} ${Y}${PORT}${NC} (${PANEL_SCHEME^^})"
+[[ -n "$PANEL_WPATH" ]] && echo -e "  ${FR}├─${NC} ${W}Web Path     :${NC} ${Y}/${PANEL_WPATH}/${NC}"
+echo -e "  ${FR}├─${NC} ${W}Data Dir     :${NC} ${DIM}${DATA_DIR}${NC}"
+echo -e "  ${FR}└─${NC} ${W}CLI Command  :${NC} ${Y}mcontrol${NC}"
+echo -e "  ${FR}╚══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
 if command -v xdg-open >/dev/null 2>&1 && [[ -n "${DISPLAY:-}" ]]; then
-    xdg-open "http://${IP4}:${PORT}/" >/dev/null 2>&1 || true
+    xdg-open "${PANEL_URL}" >/dev/null 2>&1 || true
 elif command -v open >/dev/null 2>&1; then
-    open "http://${IP4}:${PORT}/" >/dev/null 2>&1 || true
+    open "${PANEL_URL}" >/dev/null 2>&1 || true
 fi
-if [[ -t 0 && -t 1 && -x /usr/local/bin/mcontrol ]]; then
-    exec /usr/local/bin/mcontrol
+
+if [[ -x /usr/local/bin/mcontrol ]]; then
+    if [[ -t 1 && -r /dev/tty ]]; then
+        printf "  ${Y}Press [Enter] to open MControl CLI menu...${NC}"
+        read -r _ </dev/tty || true
+        exec /usr/local/bin/mcontrol </dev/tty
+    elif [[ -t 0 && -t 1 ]]; then
+        printf "  ${Y}Press [Enter] to open MControl CLI menu...${NC}"
+        read -r _ || true
+        exec /usr/local/bin/mcontrol
+    fi
 fi

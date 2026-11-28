@@ -1,4 +1,4 @@
-# MControl v1.8.1.2 — Installation & CLI Guide
+# MControl v1.9.0 — Installation & CLI Guide
 
 Central control panel for managing servers, tunnels, uptime monitors, DNS domains, and the Android app (**MDesign**).
 

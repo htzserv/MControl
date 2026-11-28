@@ -1,0 +1,99 @@
+name: Wipe & Full Resync ParsPack Mirror
+
+on:
+  workflow_dispatch:
+    inputs:
+      wipe_first:
+        description: "Delete all existing files under MControl/ on ParsPack before re-syncing"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  wipe-and-resync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wipe ParsPack MControl/ & Re-Clone All Releases from GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          WIPE_FIRST: ${{ github.event.inputs.wipe_first }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.PP_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.PP_SECRET_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          PP_ENDPOINT: ${{ secrets.PP_ENDPOINT }}
+          PP_BUCKET: ${{ secrets.PP_BUCKET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${PP_ENDPOINT:-}" ] || [ -z "${PP_BUCKET:-}" ]; then
+            echo "::error::ParsPack S3 secrets (PP_ACCESS_KEY / PP_SECRET_KEY / PP_ENDPOINT / PP_BUCKET) are missing!"
+            exit 1
+          fi
+          EP="${PP_ENDPOINT%/}"
+          aws configure set default.s3.max_concurrent_requests 1
+          aws configure set default.s3.multipart_threshold 64MB
+          aws configure set default.s3.addressing_style path
+
+          if [ "$WIPE_FIRST" = "true" ]; then
+            echo "Wiping all cached files under s3://${PP_BUCKET}/MControl/ ..."
+            aws --endpoint-url "$EP" s3 rm "s3://${PP_BUCKET}/MControl/" --recursive
+            echo "Wipe complete."
+          fi
+
+          WORK=$(mktemp -d)
+          trap 'rm -rf "$WORK"' EXIT
+
+          upload_dir() {
+            src_dir="$1"; dest_pfx="$2"
+            fail=0
+            for f in "$src_dir"/*; do
+              [ -f "$f" ] || continue
+              b=$(basename "$f")
+              case "$b" in *arm64*) continue ;; esac
+              ok=0
+              for i in 1 2 3; do
+                if aws --endpoint-url "$EP" s3 cp "$f" "s3://${PP_BUCKET}/${dest_pfx}/${b}" --acl public-read --no-progress 2>&1 \
+                   || aws --endpoint-url "$EP" s3 cp "$f" "s3://${PP_BUCKET}/${dest_pfx}/${b}" --no-progress 2>&1; then
+                  ok=1; break
+                fi
+                sleep $((i * 4))
+              done
+              if [ "$ok" -ne 1 ]; then
+                echo "::error::Failed to upload ${b} to ${dest_pfx}"
+                fail=$((fail + 1))
+              fi
+            done
+            [ "$fail" -eq 0 ] || exit 1
+          }
+
+          # 1. Latest Official Release -> MControl/
+          mkdir -p "$WORK/stable"
+          echo "Downloading latest official release from ${REPO}..."
+          gh release download --repo "$REPO" --dir "$WORK/stable" --clobber
+          upload_dir "$WORK/stable" "MControl"
+
+          # 2. Bundle-latest (prereqs + xray + engines) -> MControl/
+          if gh release view "bundle-latest" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p "$WORK/bundle"
+            echo "Downloading bundle-latest from ${REPO}..."
+            gh release download "bundle-latest" --repo "$REPO" --dir "$WORK/bundle" --clobber
+            upload_dir "$WORK/bundle" "MControl"
+          fi
+
+          # 3. Beta-latest -> MControl/beta-latest/
+          if gh release view "beta-latest" --repo "$REPO" >/dev/null 2>&1; then
+            mkdir -p "$WORK/beta"
+            echo "Downloading beta-latest from ${REPO}..."
+            gh release download "beta-latest" --repo "$REPO" --dir "$WORK/beta" --clobber
+            upload_dir "$WORK/beta" "MControl/beta-latest"
+          fi
+
+          echo "Full ParsPack wipe & resync completed successfully!"

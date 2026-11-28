@@ -421,7 +421,7 @@ fun SettingsScreen(
                 }
                 if (panelUpdate != null) {
                     Text(
-                        "Current: v${panelUpdate.currentVersion.ifBlank { "1.8.1.2" }}" +
+                        "Current: v${panelUpdate.currentVersion.ifBlank { "1.9.0" }}" +
                             (if (panelUpdate.stableAvailable) " • Stable: v${panelUpdate.stableVersion}" else "") +
                             (if (panelUpdate.betaAvailable) " • Beta: ${panelUpdate.betaTag}" else ""),
                         fontSize = 12.sp,
@@ -493,7 +493,7 @@ fun SettingsScreen(
         }
 
         Text(
-            "MControl Android v1.8.1.2 • MDesign",
+            "MControl Android v1.9.0 • MDesign",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 4.dp)
