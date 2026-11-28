@@ -12,8 +12,8 @@ android {
         applicationId = "com.mdesign.mcontrol"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.8.1.1"
+        versionCode = 9
+        versionName = "1.8.1.2"
         vectorDrawables { useSupportLibrary = true }
     }
 

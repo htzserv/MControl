@@ -1,3 +1,21 @@
+## v1.8.1.2
+
+- **Pure-Vector Two-Tone "کنترل" Logo & Adaptive Theme Styles:**
+  - Replaced legacy multi-layer PNG logos with ultra-light pure-vector SVG (`web/index.html`) and Android `VectorDrawable` (`res/drawable/logo_*.xml` & `ic_launcher_foreground.xml`), cutting total package size to ~620 KB with zero edge artifacts.
+  - Added smooth GPU-accelerated ribbon glide, elastic dots, and luminous sheen animation on Web, PWA Splash, and Android `LoginScreen.kt`.
+  - Added automatic per-family logo styling (`Neon`, `Prism`, `Material`, `iOS`, `Studio`, `Android`), unified Blue default palettes across all 33 theme styles, and White & Steel-Blue default logo colors (customizable per theme).
+  - Set default appearance mode to `Auto` across Web (`web/index.html`) and Android (`PanelStore.kt`).
+- **Server Outbound Routing & Live Status (`api.go`, `outbound.go`, `db.go`):**
+  - Hardened `isOutboundActive()` with direct TCP health checks on `127.0.0.1:10808`.
+  - Exposed `effective_outbound` and `outbound_configured` on server API responses so global Foreign Outbound and per-server Outbound routes reflect accurately in the UI.
+  - Added 1-click `POST /api/servers/{id}/outbound` route switching directly from each server's `DIRECT` / `🚀 OUTBOUND` badge and server menu, plus fixed `saveMasterOutbound()` to auto-enable and persist `use_geoip`.
+- **Existing MControl Tunnel & Peer Server Scanner (`internal/api/adopt.go`):**
+  - Added `GET /api/servers/{id}/mcontrol/scan` and `POST /api/servers/{id}/mcontrol/adopt` accessible on-demand from the `⚡ MControl & Peer` server menu and Setup modal (zero overhead on Add Server).
+- **UI/UX & Layout Polish:**
+  - Removed redundant `Settings` tab from the main nav catalog (relying on the floating Settings bubble).
+  - Fixed vertical scrolling in `#login-screen` for the categorized Login Theme Drawer, traffic donut ring sub-label clipping, and bottom `.util` icon wrapping inside 232px sidebars.
+  - Bumped PWA Service Worker cache to `mcontrol-pwa-v37` and Android app to `v1.8.1.2` (`versionCode = 9`).
+
 ## v1.8.1.1
 
 - **Setup & Modal Width Fix:**
