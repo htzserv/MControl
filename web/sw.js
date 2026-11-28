@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v28';
+const CACHE_NAME = 'mcontrol-pwa-v29';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -15,7 +15,13 @@ const PRECACHE_URLS = [
   './logo-kntr-blue.png',
   './logo-kntr-white.png',
   './logo-lam-blue.png',
-  './logo-lam-white.png'
+  './logo-lam-white.png',
+  './logo-kntr-shadow.png',
+  './logo-kntr-shade.png',
+  './logo-lam-shadow.png',
+  './logo-lam-shade.png',
+  './logo-dots-shadow.png',
+  './logo-dots-shade.png'
 ];
 
 const OFFLINE_HTML = `<!DOCTYPE html>
