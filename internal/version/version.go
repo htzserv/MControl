@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Rolling beta mirror sync test build
 const Current = "1.9.0"
 
 // Compare compares two 4-segment version strings (e.g. "1.4.0.0" vs "1.4.0.1").
