@@ -5377,7 +5377,7 @@ html, body {
 }
 
 
-/* ── Animated "کنترل" Logo (3s Loop, Crisp 2x Supersampled, Blue/White) ── */
+/* ── Animated "کنترل" Logo (3s Unified Dot-Style Wave from ک → ل) ───── */
 .mc-kontrol-anim {
   position: relative;
   width: min(330px, 80vw);
@@ -5385,6 +5385,7 @@ html, body {
   margin: 0 auto 6px;
   cursor: pointer;
   user-select: none;
+  overflow: visible;
 }
 .mc-kontrol-anim .k-layer {
   position: absolute;
@@ -5409,44 +5410,62 @@ body.light-mode .mc-brand-dyn .k-img-light { display: block; }
 body.light-mode .mc-kontrol-anim .k-img-dark,
 body.light-mode .mc-brand-dyn .k-img-dark { display: none; }
 
-.mc-kontrol-anim .k-word-wrap {
-  will-change: clip-path, opacity;
-  animation: kWriteRTL 3s cubic-bezier(.32, .08, .22, 1) infinite;
-}
+/* Exact valley clips for ک | ن | ت | ر (tiny 0.18% overlap prevents hairline seams) */
+.mc-kontrol-anim .k-seg-k   { clip-path: inset(0 0%     0 74.85%); }
+.mc-kontrol-anim .k-seg-n   { clip-path: inset(0 24.95% 0 64.95%); }
+.mc-kontrol-anim .k-seg-t   { clip-path: inset(0 34.85% 0 52.45%); }
+.mc-kontrol-anim .k-seg-r   { clip-path: inset(0 47.35% 0 0%); }
+/* Exact 3 separated dot clips (right-to-left) */
 .mc-kontrol-anim .k-d1-clip { clip-path: inset(0 23.48% 0 63.91%); }
 .mc-kontrol-anim .k-d2-clip { clip-path: inset(0 36.09% 0 54.48%); }
 .mc-kontrol-anim .k-d3-clip { clip-path: inset(0 45.52% 0 41.64%); }
-.mc-kontrol-anim .k-dot {
+
+/* Unified dot-style spring pop-in cascade starting from ک -> ن+• -> ت+• -> ر+• -> ل */
+.mc-kontrol-anim .k-pop {
   opacity: 0;
   will-change: transform, opacity;
 }
-.mc-kontrol-anim .k-dot-1 { animation: kDot1 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
-.mc-kontrol-anim .k-dot-2 { animation: kDot2 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
-.mc-kontrol-anim .k-dot-3 { animation: kDot3 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-p1 { animation: kPop1 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-p2 { animation: kPop2 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-p3 { animation: kPop3 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-p4 { animation: kPop4 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-p5 { animation: kPop5 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 
-@keyframes kWriteRTL {
-  0%       { clip-path: inset(0 0 0 100%); opacity: 1; }
-  48%      { clip-path: inset(0 0 0 0%);   opacity: 1; }
-  86%      { clip-path: inset(0 0 0 0%);   opacity: 1; }
-  96%      { clip-path: inset(0 0 0 0%);   opacity: 0; }
-  100%     { clip-path: inset(0 0 0 100%); opacity: 0; }
-}
-@keyframes kDot1 {
-  0%, 48%  { opacity: 0; transform: translateY(-10px) scale(.85); }
-  56%      { opacity: 1; transform: translateY(0) scale(1.04); }
-  62%      { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes kPop1 {
+  0%       { opacity: 0; transform: translateY(-13px) scale(.86); }
+  11%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  17%      { opacity: 1; transform: translateY(0) scale(1); }
   86%      { opacity: 1; transform: translateY(0) scale(1); }
   96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
 }
-@keyframes kDot2 {
-  0%, 54%  { opacity: 0; transform: translateY(-10px) scale(.85); }
-  62%      { opacity: 1; transform: translateY(0) scale(1.04); }
-  68%      { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes kPop2 {
+  0%, 8%   { opacity: 0; transform: translateY(-13px) scale(.86); }
+  19%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  25%      { opacity: 1; transform: translateY(0) scale(1); }
   86%      { opacity: 1; transform: translateY(0) scale(1); }
   96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
 }
-@keyframes kDot3 {
-  0%, 60%  { opacity: 0; transform: translateY(-10px) scale(.85); }
+@keyframes kPop3 {
+  0%, 16%  { opacity: 0; transform: translateY(-13px) scale(.86); }
+  27%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  33%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
+}
+@keyframes kPop4 {
+  0%, 24%  { opacity: 0; transform: translateY(-13px) scale(.86); }
+  35%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  41%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
+}
+@keyframes kPop5 {
+  0%, 32%  { opacity: 0; transform: translateY(-13px) scale(.86); }
+  43%      { opacity: 1; transform: translateY(0) scale(1.04); }
+  49%      { opacity: 1; transform: translateY(0) scale(1); }
+  86%      { opacity: 1; transform: translateY(0) scale(1); }
+  96%,100% { opacity: 0; transform: translateY(0) scale(.92); }
+}
   68%      { opacity: 1; transform: translateY(0) scale(1.04); }
   74%      { opacity: 1; transform: translateY(0) scale(1); }
   86%      { opacity: 1; transform: translateY(0) scale(1); }
@@ -5483,27 +5502,51 @@ body.light-mode .mc-brand-dyn .k-img-dark { display: none; }
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
     <div class="mc-kontrol-anim" style="width:min(340px,82vw);height:min(199px,48vw);margin:0;" onclick="replayKontrolLogo(this)" aria-label="کنترل">
-        <div class="k-layer k-word-wrap">
-          <img class="k-img k-img-light" src="logo-word-blue.png" alt="کنترل">
-          <img class="k-img k-img-dark" src="logo-word-white.png" alt="کنترل">
+        <div class="k-layer k-seg-k">
+          <div class="k-layer k-pop k-p1">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="کنترل">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="کنترل">
+          </div>
+        </div>
+        <div class="k-layer k-seg-n">
+          <div class="k-layer k-pop k-p2">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="">
+          </div>
         </div>
         <div class="k-layer k-d1-clip">
-          <div class="k-layer k-dot k-dot-1">
+          <div class="k-layer k-pop k-p2">
             <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
             <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-seg-t">
+          <div class="k-layer k-pop k-p3">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="">
           </div>
         </div>
         <div class="k-layer k-d2-clip">
-          <div class="k-layer k-dot k-dot-2">
+          <div class="k-layer k-pop k-p3">
             <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
             <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
+        <div class="k-layer k-seg-r">
+          <div class="k-layer k-pop k-p4">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="">
+          </div>
+        </div>
         <div class="k-layer k-d3-clip">
-          <div class="k-layer k-dot k-dot-3">
+          <div class="k-layer k-pop k-p4">
             <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
             <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
+        </div>
+        <div class="k-layer k-pop k-p5">
+          <img class="k-img k-img-light" src="logo-lam-blue.png" alt="">
+          <img class="k-img k-img-dark" src="logo-lam-white.png" alt="">
         </div>
       </div>
   </div>
@@ -5890,41 +5933,51 @@ body.light-mode .mc-brand-dyn .k-img-dark { display: none; }
   <div class="login-shell">
     <div class="login-brand-hero">
       <div class="mc-kontrol-anim" onclick="replayKontrolLogo(this)" aria-label="کنترل">
-        <div class="k-layer k-word-wrap">
-          <img class="k-img k-img-light" src="logo-word-blue.png" alt="کنترل">
-          <img class="k-img k-img-dark" src="logo-word-white.png" alt="کنترل">
+        <div class="k-layer k-seg-k">
+          <div class="k-layer k-pop k-p1">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="کنترل">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="کنترل">
+          </div>
+        </div>
+        <div class="k-layer k-seg-n">
+          <div class="k-layer k-pop k-p2">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="">
+          </div>
         </div>
         <div class="k-layer k-d1-clip">
-          <div class="k-layer k-dot k-dot-1">
+          <div class="k-layer k-pop k-p2">
             <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
             <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
+          </div>
+        </div>
+        <div class="k-layer k-seg-t">
+          <div class="k-layer k-pop k-p3">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="">
           </div>
         </div>
         <div class="k-layer k-d2-clip">
-          <div class="k-layer k-dot k-dot-2">
+          <div class="k-layer k-pop k-p3">
             <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
             <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
+        <div class="k-layer k-seg-r">
+          <div class="k-layer k-pop k-p4">
+            <img class="k-img k-img-light" src="logo-kntr-blue.png" alt="">
+            <img class="k-img k-img-dark" src="logo-kntr-white.png" alt="">
+          </div>
+        </div>
         <div class="k-layer k-d3-clip">
-          <div class="k-layer k-dot k-dot-3">
+          <div class="k-layer k-pop k-p4">
             <img class="k-img k-img-light" src="logo-dots-blue.png" alt="">
             <img class="k-img k-img-dark" src="logo-dots-white.png" alt="">
           </div>
         </div>
-      </div>
-    </div>
-        <div class="k-layer k-d2-clip">
-          <div class="k-layer k-dot k-dot-2">
-            <div class="k-tint k-dots-tint"></div>
-            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
-          </div>
-        </div>
-        <div class="k-layer k-d3-clip">
-          <div class="k-layer k-dot k-dot-3">
-            <div class="k-tint k-dots-tint"></div>
-            <img class="k-gloss" src="logo-dots-gloss-c.png" alt="">
-          </div>
+        <div class="k-layer k-pop k-p5">
+          <img class="k-img k-img-light" src="logo-lam-blue.png" alt="">
+          <img class="k-img k-img-dark" src="logo-lam-white.png" alt="">
         </div>
       </div>
     </div>

@@ -104,9 +104,11 @@ private fun buildPanelBaseUrl(addressInput: String, portInput: String, webPathIn
 @Composable
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val wordRes = if (isDark) R.drawable.logo_word_white else R.drawable.logo_word_blue
+    val kntrRes = if (isDark) R.drawable.logo_kntr_white else R.drawable.logo_kntr_blue
+    val lamRes  = if (isDark) R.drawable.logo_lam_white  else R.drawable.logo_lam_blue
     val dotsRes = if (isDark) R.drawable.logo_dots_white else R.drawable.logo_dots_blue
-    val transition = rememberInfiniteTransition(label = "kontrol_3s")
+
+    val transition = rememberInfiniteTransition(label = "kontrol_wave_3s")
     val t by transition.animateFloat(
         initialValue = 0f,
         targetValue = 3f,
@@ -116,60 +118,103 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
         ),
         label = "t"
     )
-    val writeProg = when {
-        t < 1.44f -> {
-            val u = (t / 1.44f).coerceIn(0f, 1f)
-            1f - (1f - u) * (1f - u)
-        }
-        else -> 1f
-    }
-    val textAlpha = if (t > 2.58f) ((2.88f - t) / 0.30f).coerceIn(0f, 1f) else 1f
 
-    fun dotAlpha(start: Float): Float = when {
-        t < start -> 0f
-        t < start + 0.24f -> ((t - start) / 0.24f).coerceIn(0f, 1f)
-        t > 2.58f -> ((2.88f - t) / 0.30f).coerceIn(0f, 1f)
-        else -> 1f
+    // Unified dot-style spring pop-in (returns alpha, offsetY_dp, scale)
+    fun popState(startSec: Float): Triple<Float, Float, Float> {
+        val dur = 0.36f
+        return when {
+            t < startSec -> Triple(0f, -12f, 0.86f)
+            t < startSec + dur -> {
+                val u = ((t - startSec) / dur).coerceIn(0f, 1f)
+                val ease = 1f - (1f - u) * (1f - u) * (1f - u)
+                val bounce = if (u < 0.72f) 0.86f + 0.18f * (u / 0.72f) else 1.04f - 0.04f * ((u - 0.72f) / 0.28f)
+                Triple(ease, -12f * (1f - ease), bounce)
+            }
+            t > 2.58f -> {
+                val f = ((2.88f - t) / 0.30f).coerceIn(0f, 1f)
+                Triple(f, 0f, 0.92f + 0.08f * f)
+            }
+            else -> Triple(1f, 0f, 1f)
+        }
     }
+
+    val p1 = popState(0.00f) // ک
+    val p2 = popState(0.24f) // ن + dot 1
+    val p3 = popState(0.48f) // ت + dot 2
+    val p4 = popState(0.72f) // ر + dot 3
+    val p5 = popState(0.96f) // ل
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        // 1. "کنترل" Handwriting Right-to-Left Reveal (Original Blue in Light / White in Dark)
-        Image(
-            painter = painterResource(id = wordRes),
-            contentDescription = "کنترل",
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(textAlpha)
-                .drawWithContent {
-                    val left = size.width * (1f - writeProg)
-                    clipRect(left = left, top = 0f, right = size.width, bottom = size.height) {
-                        this@drawWithContent.drawContent()
-                    }
-                }
-        )
-        // 2. Three cleanly separated Dots popping in Right-to-Left
-        val d1 = dotAlpha(1.44f)
-        val d2 = dotAlpha(1.62f)
-        val d3 = dotAlpha(1.80f)
+        // Letters ک | ن | ت | ر + their dots popping in together from right to left
         listOf(
-            Triple(0.6391f, 0.7652f, d1),
-            Triple(0.5448f, 0.6391f, d2),
-            Triple(0.4164f, 0.5448f, d3)
-        ).forEach { (lx, rx, a) ->
+            Triple(0.7485f, 1.0000f, p1),
+            Triple(0.6495f, 0.7505f, p2),
+            Triple(0.5245f, 0.6515f, p3),
+            Triple(0.0000f, 0.5265f, p4)
+        ).forEach { (lx, rx, st) ->
+            val (a, dy, sc) = st
+            if (a > 0.01f) {
+                Image(
+                    painter = painterResource(id = kntrRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawWithContent {
+                            clipRect(left = size.width * lx, top = 0f, right = size.width * rx, bottom = size.height) {
+                                this@drawWithContent.drawContent()
+                            }
+                        }
+                        .graphicsLayer {
+                            alpha = a
+                            translationY = dy.dp.toPx()
+                            scaleX = sc
+                            scaleY = sc
+                        }
+                )
+            }
+        }
+        // 3 separated dots popping in together with ن / ت / ر
+        listOf(
+            Triple(0.6391f, 0.7652f, p2),
+            Triple(0.5448f, 0.6391f, p3),
+            Triple(0.4164f, 0.5448f, p4)
+        ).forEach { (lx, rx, st) ->
+            val (a, dy, sc) = st
             if (a > 0.01f) {
                 Image(
                     painter = painterResource(id = dotsRes),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .alpha(a)
                         .drawWithContent {
                             clipRect(left = size.width * lx, top = 0f, right = size.width * rx, bottom = size.height) {
                                 this@drawWithContent.drawContent()
                             }
                         }
+                        .graphicsLayer {
+                            alpha = a
+                            translationY = dy.dp.toPx()
+                            scaleX = sc
+                            scaleY = sc
+                        }
                 )
             }
+        }
+        // ل (separate component — clean pop-in)
+        val (la, ldy, lsc) = p5
+        if (la > 0.01f) {
+            Image(
+                painter = painterResource(id = lamRes),
+                contentDescription = "کنترل",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = la
+                        translationY = ldy.dp.toPx()
+                        scaleX = lsc
+                        scaleY = lsc
+                    }
+            )
         }
     }
 }
