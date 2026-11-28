@@ -124,7 +124,7 @@ private fun buildKntrPath(w: Float, h: Float): Path {
     return Path().apply {
         moveTo(606f * sx, 48f * sy)
         quadraticTo(562f * sx, 68f * sy, 529f * sx, 98f * sy)
-        quadraticTo(526f * sx, 118f * sy, 558f * sx, 146f * sy)
+        quadraticTo(526f * sx, 118f * sy, 566f * sx, 146f * sy)
         quadraticTo(598f * sx, 178f * sy, 594f * sx, 204f * sy)
         quadraticTo(588f * sx, 236f * sy, 535f * sx, 235f * sy)
         quadraticTo(488f * sx, 234f * sy, 464f * sx, 224f * sy)
@@ -211,7 +211,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                             path = seg,
                             color = Color.White,
                             style = Stroke(
-                                width = size.width * (92f / 656f),
+                                width = size.width * (104f / 656f),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             ),
@@ -249,7 +249,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                             path = seg,
                             color = Color.White,
                             style = Stroke(
-                                width = size.width * (92f / 656f),
+                                width = size.width * (104f / 656f),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             ),
@@ -285,7 +285,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                 drawCircle(color = toneDark,  radius = r, center = Offset(384.1f * sx, 86.3f * sy))
                 drawCircle(color = toneDark,  radius = r, center = Offset(320.4f * sx, 86.3f * sy))
 
-                val stroke = Stroke(width = 58f * sx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                val stroke = Stroke(width = 66f * sx, cap = StrokeCap.Round, join = StrokeJoin.Round)
                 val combined = Path()
                 listOf(
                     Triple(447.5f, 86.3f, d1Prog),
