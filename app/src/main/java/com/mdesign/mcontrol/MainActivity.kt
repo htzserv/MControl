@@ -169,6 +169,15 @@ fun MControlApp(
         }
     }
 
+    LaunchedEffect(tab, showLogin, activePanel?.id, activePanel?.token) {
+        if (!showLogin && activePanel != null && tab == 3) {
+            while (true) {
+                kotlinx.coroutines.delay(5000)
+                api?.getMonitors()?.onSuccess { monitors = it }
+            }
+        }
+    }
+
     LaunchedEffect(activePanel?.id, activePanel?.token) {
         if (!showLogin && activePanel != null) {
             refreshAll()

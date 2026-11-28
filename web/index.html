@@ -5373,7 +5373,7 @@ html, body {
 }
 
 
-/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo ─────────────────── */
+/* ── Animated "کنترل" Handwriting + 3-Dots Reveal Logo (3s Loop) ──────── */
 .mc-kontrol-anim {
   width: min(210px, 54vw);
   height: min(210px, 54vw);
@@ -5382,35 +5382,84 @@ html, body {
   margin: 0 auto 6px;
   cursor: pointer;
   overflow: visible;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .35));
+  filter: drop-shadow(0 16px 32px rgba(0, 0, 0, .32));
 }
 .mc-kontrol-anim .k-base {
   opacity: 0;
-  transform-origin: 256px 256px;
-  animation: kBaseIn .45s cubic-bezier(.16, 1, .3, 1) forwards;
+  transform-origin: 512px 512px;
+  animation: kBaseFade 3s cubic-bezier(.16, 1, .3, 1) infinite;
+}
+.mc-kontrol-anim .k-base-light,
+.mc-brand-dyn .k-base-light { display: none; }
+.mc-kontrol-anim .k-base-dark,
+.mc-brand-dyn .k-base-dark { display: block; }
+body.light-mode .mc-kontrol-anim .k-base-light,
+body.light-mode .mc-brand-dyn .k-base-light { display: block; }
+body.light-mode .mc-kontrol-anim .k-base-dark,
+body.light-mode .mc-brand-dyn .k-base-dark { display: none; }
+.mc-kontrol-anim .k-fill,
+.mc-brand-dyn .k-fill {
+  fill: var(--accent, #22d3ee);
+  transition: fill .28s ease;
 }
 .mc-kontrol-anim .k-wipe-rect {
-  animation: kWriteRTL 1.15s cubic-bezier(.38, .08, .22, 1) .28s both;
+  animation: kWriteRTL 3s cubic-bezier(.32, .08, .22, 1) infinite;
+}
+.mc-kontrol-anim .k-text-g {
+  animation: kTextHold 3s linear infinite;
 }
 .mc-kontrol-anim .k-dot {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
 }
-.mc-kontrol-anim .k-dot-1 { animation: kDotPop .38s cubic-bezier(.34, 1.56, .64, 1) 1.38s forwards; }
-.mc-kontrol-anim .k-dot-2 { animation: kDotPop .38s cubic-bezier(.34, 1.56, .64, 1) 1.56s forwards; }
-.mc-kontrol-anim .k-dot-3 { animation: kDotPop .38s cubic-bezier(.34, 1.56, .64, 1) 1.74s forwards; }
+.mc-kontrol-anim .k-dot-1 { animation: kDot1 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-dot-2 { animation: kDot2 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
+.mc-kontrol-anim .k-dot-3 { animation: kDot3 3s cubic-bezier(.34, 1.56, .64, 1) infinite; }
 
-@keyframes kBaseIn {
-  0%   { opacity: 0; transform: scale(.92); }
-  100% { opacity: 1; transform: scale(1); }
+@keyframes kBaseFade {
+  0%   { opacity: 0; transform: scale(.94); }
+  12%  { opacity: 1; transform: scale(1); }
+  90%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(.97); }
 }
 @keyframes kWriteRTL {
-  0%   { x: 468px; width: 0px; }
-  100% { x: 44px;  width: 424px; }
+  0%, 12%  { x: 920px; width: 0px; }
+  54%      { x: 100px; width: 820px; }
+  90%      { x: 100px; width: 820px; }
+  100%     { x: 920px; width: 0px; }
 }
-@keyframes kDotPop {
-  0%   { opacity: 0; transform: scale(0) translateY(-10px); }
+@keyframes kTextHold {
+  0%, 12%  { opacity: 1; }
+  88%      { opacity: 1; }
+  97%,100% { opacity: 0; }
+}
+@keyframes kDot1 {
+  0%, 54%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  61%      { opacity: 1; transform: scale(1.16) translateY(0); }
+  65%      { opacity: 1; transform: scale(1) translateY(0); }
+  88%      { opacity: 1; transform: scale(1) translateY(0); }
+  97%,100% { opacity: 0; transform: scale(.7); }
+}
+@keyframes kDot2 {
+  0%, 60%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  67%      { opacity: 1; transform: scale(1.16) translateY(0); }
+  71%      { opacity: 1; transform: scale(1) translateY(0); }
+  88%      { opacity: 1; transform: scale(1) translateY(0); }
+  97%,100% { opacity: 0; transform: scale(.7); }
+}
+@keyframes kDot3 {
+  0%, 66%  { opacity: 0; transform: scale(0) translateY(-14px); }
+  73%      { opacity: 1; transform: scale(1.16) translateY(0); }
+  77%      { opacity: 1; transform: scale(1) translateY(0); }
+  88%      { opacity: 1; transform: scale(1) translateY(0); }
+  97%,100% { opacity: 0; transform: scale(.7); }
+}
+  39.5%    { opacity: 1; transform: scale(1.16) translateY(0); }
+  41.5%    { opacity: 1; transform: scale(1) translateY(0); }
+  93%      { opacity: 1; transform: scale(1) translateY(0); }
+  98%,100% { opacity: 0; transform: scale(.7); }
+}
   70%  { opacity: 1; transform: scale(1.18) translateY(0); }
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
@@ -5421,27 +5470,42 @@ html, body {
 <!-- PWA Animated Launch Splash Screen -->
 <div id="pwa-splash" aria-hidden="true">
   <div class="pwa-sp-logo-wrap">
-    <svg class="mc-kontrol-anim" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:108px;height:108px;margin:0;" onclick="replayKontrolLogo(this)">
+    <svg class="mc-kontrol-anim" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:116px;height:116px;margin:0;" onclick="replayKontrolLogo(this)">
         <defs>
           <clipPath id="ks-write">
-            <rect class="k-wipe-rect" x="468" y="0" width="0" height="512"/>
+            <rect class="k-wipe-rect" x="920" y="0" width="0" height="1024"/>
           </clipPath>
-          <clipPath id="ks-d1"><rect x="315" y="168" width="52" height="66"/></clipPath>
-          <clipPath id="ks-d2"><rect x="275" y="168" width="42" height="66"/></clipPath>
-          <clipPath id="ks-d3"><rect x="226" y="168" width="51" height="66"/></clipPath>
+          <clipPath id="ks-d1"><rect x="632" y="340" width="96" height="126"/></clipPath>
+          <clipPath id="ks-d2"><rect x="552" y="340" width="84" height="126"/></clipPath>
+          <clipPath id="ks-d3"><rect x="458" y="340" width="96" height="126"/></clipPath>
+          <mask id="ks-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
+          <mask id="ks-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
         </defs>
-        <image class="k-base" href="logo-base.png" x="0" y="0" width="512" height="512"/>
-        <g clip-path="url(#ks-write)">
-          <image href="logo-text.png" x="0" y="0" width="512" height="512"/>
+        <g class="k-base">
+          <image class="k-base-dark" href="logo-base-dark.png" x="0" y="0" width="1024" height="1024"/>
+          <image class="k-base-light" href="logo-base.png" x="0" y="0" width="1024" height="1024"/>
+        </g>
+        <g class="k-text-g" clip-path="url(#ks-write)">
+          <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-tmask)"/>
+          <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
         </g>
         <g clip-path="url(#ks-d1)">
-          <image class="k-dot k-dot-1" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+          <g class="k-dot k-dot-1">
+            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-dmask)"/>
+            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+          </g>
         </g>
         <g clip-path="url(#ks-d2)">
-          <image class="k-dot k-dot-2" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+          <g class="k-dot k-dot-2">
+            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-dmask)"/>
+            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+          </g>
         </g>
         <g clip-path="url(#ks-d3)">
-          <image class="k-dot k-dot-3" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+          <g class="k-dot k-dot-3">
+            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#ks-dmask)"/>
+            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+          </g>
         </g>
       </svg>
   </div>
@@ -5846,27 +5910,42 @@ html, body {
   </div>
   <div class="login-shell">
     <div class="login-brand-hero">
-      <svg class="mc-kontrol-anim" viewBox="0 0 512 512" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" onclick="replayKontrolLogo(this)">
+      <svg class="mc-kontrol-anim" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" onclick="replayKontrolLogo(this)">
         <defs>
           <clipPath id="kl-write">
-            <rect class="k-wipe-rect" x="468" y="0" width="0" height="512"/>
+            <rect class="k-wipe-rect" x="920" y="0" width="0" height="1024"/>
           </clipPath>
-          <clipPath id="kl-d1"><rect x="315" y="168" width="52" height="66"/></clipPath>
-          <clipPath id="kl-d2"><rect x="275" y="168" width="42" height="66"/></clipPath>
-          <clipPath id="kl-d3"><rect x="226" y="168" width="51" height="66"/></clipPath>
+          <clipPath id="kl-d1"><rect x="632" y="340" width="96" height="126"/></clipPath>
+          <clipPath id="kl-d2"><rect x="552" y="340" width="84" height="126"/></clipPath>
+          <clipPath id="kl-d3"><rect x="458" y="340" width="96" height="126"/></clipPath>
+          <mask id="kl-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
+          <mask id="kl-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
         </defs>
-        <image class="k-base" href="logo-base.png" x="0" y="0" width="512" height="512"/>
-        <g clip-path="url(#kl-write)">
-          <image href="logo-text.png" x="0" y="0" width="512" height="512"/>
+        <g class="k-base">
+          <image class="k-base-dark" href="logo-base-dark.png" x="0" y="0" width="1024" height="1024"/>
+          <image class="k-base-light" href="logo-base.png" x="0" y="0" width="1024" height="1024"/>
+        </g>
+        <g class="k-text-g" clip-path="url(#kl-write)">
+          <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-tmask)"/>
+          <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
         </g>
         <g clip-path="url(#kl-d1)">
-          <image class="k-dot k-dot-1" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+          <g class="k-dot k-dot-1">
+            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-dmask)"/>
+            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+          </g>
         </g>
         <g clip-path="url(#kl-d2)">
-          <image class="k-dot k-dot-2" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+          <g class="k-dot k-dot-2">
+            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-dmask)"/>
+            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+          </g>
         </g>
         <g clip-path="url(#kl-d3)">
-          <image class="k-dot k-dot-3" href="logo-dots.png" x="0" y="0" width="512" height="512"/>
+          <g class="k-dot k-dot-3">
+            <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kl-dmask)"/>
+            <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+          </g>
         </g>
       </svg>
     </div>
@@ -5876,7 +5955,7 @@ html, body {
       <form id="login-form" method="post" action="javascript:void(0)" autocomplete="on" onsubmit="event.preventDefault(); login();">
         <div class="field in-ico-wrap">
           <svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <input id="l-user" name="username" type="text" data-i18n-ph="ph_user" placeholder="Username" value="admin" autocomplete="username" required>
+          <input id="l-user" name="username" type="text" data-i18n-ph="ph_user" placeholder="Username" value="" autocomplete="username" required>
         </div>
         <div class="field in-ico-wrap">
           <svg class="in-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -5936,7 +6015,18 @@ html, body {
 
   <div id="chrome">
     <div class="brand">
-      <img class="mc-brand-svg" src="icon-192.png" alt="MControl" style="object-fit:contain;">
+      <svg class="mc-brand-svg mc-brand-dyn" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <mask id="kn-tmask"><image href="logo-text-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
+          <mask id="kn-dmask"><image href="logo-dots-mask.png" x="0" y="0" width="1024" height="1024"/></mask>
+        </defs>
+        <image class="k-base-dark" href="logo-base-dark.png" x="0" y="0" width="1024" height="1024"/>
+        <image class="k-base-light" href="logo-base.png" x="0" y="0" width="1024" height="1024"/>
+        <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kn-tmask)"/>
+        <image href="logo-text-gloss.png" x="0" y="0" width="1024" height="1024"/>
+        <rect class="k-fill" x="0" y="0" width="1024" height="1024" mask="url(#kn-dmask)"/>
+        <image href="logo-dots-gloss.png" x="0" y="0" width="1024" height="1024"/>
+      </svg>
       <span class="bt" aria-label="MControl"><svg class="mc-wordmark mc-wordmark-nav" viewBox="0 0 340 76" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- M (bold rounded geometric) -->
         <path class="mc-wm-m" d="M12 64 V18 C12 16 14 15 16 17 L34 52 C35 54 37 54 38 52 L56 17 C58 15 60 16 60 18 V64"/>
@@ -8618,16 +8708,13 @@ const svg = (n, cls) => `<svg class="${cls || 'svg-ico'}" viewBox="0 0 24 24" fi
 const ALL_TABS_CATALOG = [
   { id: 'overview',   i18n: 'nav_overview',   fa: 'داشبورد',       en: 'Overview',         icon: 'grid',    def: true,  descEn: 'Live CPU/RAM/Disk telemetry, metrics history & alerts.', descFa: 'آمار زنده سرور مستر، نمودارها و هشدارها.' },
   { id: 'servers',    i18n: 'nav_servers',    fa: 'سرورها',        en: 'Servers',          icon: 'server',  def: true,  descEn: 'Manage Iran & Foreign nodes, Peer v4, dual/reverse ping & terminal.', descFa: 'مدیریت سرورهای ایران و خارج، Peer v4، پینگ سه‌گانه و ترمینال.' },
-  { id: 'datacenter', i18n: 'nav_datacenter', fa: 'دیتاسنتر',      en: 'Datacenter',       icon: 'cloud',   def: true,  descEn: 'Hetzner, DigitalOcean, Linode, OVH & YottaSrc API + OS Rebuild.', descFa: 'مدیریت ابری Hetzner، DO، Linode، OVH و YottaSrc + ریبیلد OS.' },
   { id: 'tunnels',    i18n: 'nav_tunnels',    fa: 'تانل‌ها',       en: 'Tunnels',          icon: 'route',   def: true,  descEn: 'Backhaul, Rathole, Realm, Paqet, GRE/IPIP & MSmart auto-failover.', descFa: 'مدیریت تانل‌های Backhaul، Rathole، Realm، Paqet و MSmart.' },
-  { id: 'domains',    i18n: 'nav_domains',    fa: 'دامنه‌ها',      en: 'Domains',          icon: 'globe',   def: true,  descEn: 'Cloudflare & ArvanCloud DNS records & auto-failover.', descFa: 'مدیریت رکوردهای کلودفلر و آروان‌کلود و فیل‌اور خودکار.' },
   { id: 'monitor',    i18n: 'nav_monitor',    fa: 'آپتایم',        en: 'Uptime',           icon: 'pulse',   def: true,  descEn: 'Uptime monitors, heartbeat bars, alerts & public /status page.', descFa: 'مانیتورینگ آپتایم، نمودار ضربان قلب و صفحه عمومی وضعیت.' },
-  { id: 'outbound',   i18n: 'nav_outbound',   fa: 'اوتباند Xray',  en: 'Outbound (Xray)',  icon: 'send',    def: false, descEn: 'Master isolated Xray SOCKS5 proxy (Single Config & Load Balance).', descFa: 'هسته Xray ایزوله سرور مستر (تک‌کانفیگ فعال و لودبالانس).' },
+  { id: 'outbound',   i18n: 'nav_outbound',   fa: 'اوتباند Xray',  en: 'Outbound (Xray)',  icon: 'send',    def: true,  descEn: 'Master isolated Xray SOCKS5 proxy (Single Config & Load Balance).', descFa: 'هسته Xray ایزوله سرور مستر (تک‌کانفیگ فعال و لودبالانس).' },
+  { id: 'domains',    i18n: 'nav_domains',    fa: 'دامنه‌ها',      en: 'Domains',          icon: 'globe',   def: true,  descEn: 'Cloudflare & ArvanCloud DNS records & auto-failover.', descFa: 'مدیریت رکوردهای کلودفلر و آروان‌کلود و فیل‌اور خودکار.' },
+  { id: 'settings',   i18n: 'nav_settings',   fa: 'تنظیمات',       en: 'Settings',         icon: 'sliders', def: true,  locked: true, descEn: 'Panel settings, security, themes, backups & updates.', descFa: 'تنظیمات پنل، امنیت، تم‌ها، بکاپ و آپدیت.' },
+  { id: 'datacenter', i18n: 'nav_datacenter', fa: 'دیتاسنتر',      en: 'Datacenter',       icon: 'cloud',   def: false, descEn: 'Hetzner, DigitalOcean, Linode, OVH & YottaSrc API + OS Rebuild.', descFa: 'مدیریت ابری Hetzner، DO، Linode، OVH و YottaSrc + ریبیلد OS.' },
   { id: 'telegram',   i18n: 'nav_telegram',   fa: 'ربات تلگرام',   en: 'Telegram Bot',     icon: 'send',    def: false, descEn: 'Telegram control bot, inline menus, alerts & auto-backup.', descFa: 'ربات مدیریت تلگرام، هشدارها و بکاپ خودکار.' },
-  { id: 'themes',     i18n: 'nav_themes',     fa: 'تم‌ها',         en: 'Themes',           icon: 'palette', def: false, descEn: 'MDesign Theme Studio, presets, colors, branding & Edit Tabs.', descFa: 'استودیو تم MDesign، رنگ‌ها، برندینگ و ویرایش تب‌ها.' },
-  { id: 'profiles',   i18n: 'nav_profiles',   fa: 'پروفایل و بکاپ', en: 'Profiles & Backup', icon: 'key',    def: false, descEn: 'Saved SSH profiles, port profiles & encrypted panel backups.', descFa: 'پروفایل‌های SSH ذخیره‌شده، پورت‌ها و بکاپ رمزنگاری‌شده.' },
-  { id: 'terminal',   i18n: 'nav_terminal',   fa: 'ترمینال مستر',  en: 'Master Terminal',  icon: 'term',    def: false, descEn: 'Direct shell terminal on this local Master control server.', descFa: 'ترمینال مستقیم روی همین سرور مستر کنترل.' },
-  { id: 'update',     i18n: 'nav_update',     fa: 'آپدیت',         en: 'Update Center',    icon: 'refresh', def: false, descEn: 'Official GitHub & Iran Mirror updates, beta builds & offline ZIP.', descFa: 'آپدیت از گیت‌هاب و میرور ایران، بتا و آپدیت آفلاین ZIP.' },
 ];
 
 function loadNavTabsConfig() {
@@ -9706,7 +9793,7 @@ function switchTab(name) {
   if (name === 'servers') { syncServersQuiet(); backgroundProbeServers(); }
   if (name === 'tunnels') { loadTunnels(); loadLegacyTunnels(); loadProfiles(); pollMSmartStatus(); }
   if (name === 'domains') { loadCloudflareStatus(); loadFailoverUI(); }
-  if (name === 'monitor') { loadMonitorsTab(); }
+  if (name === 'monitor') { loadMonitorsTab(); startMonitorLivePoll(); } else { stopMonitorLivePoll(); }
   if (name === 'datacenter') { loadDatacenterTab(); }
   if (name === 'settings') { initMobileSettingsCollapse(); renderSettingsSectionsHub(); renderEditTabsStudio(); loadSettings(); loadProfiles(); loadTLSStatus(); loadMasterCache(); loadCloudflareStatus(false); loadMasterOutbound(); loadTelegramStatus(); }
   const orbs = $('side-orbs'); if (orbs) orbs.classList.toggle('visible', name !== 'overview');
@@ -16448,6 +16535,20 @@ function formatProbeLabel(pf) {
     if (s) return (s.auth_mode === 'peer' ? '⚡ Agent: ' : 'SSH: ') + s.name;
   }
   return pf;
+}
+
+
+let _monLiveTimer = null;
+function startMonitorLivePoll() {
+  stopMonitorLivePoll();
+  _monLiveTimer = setInterval(() => {
+    if (curTab === 'monitor' && !document.hidden && token && !document.querySelector('.modal-bg.active')) {
+      loadMonitorsTab();
+    }
+  }, 5000);
+}
+function stopMonitorLivePoll() {
+  if (_monLiveTimer) { clearInterval(_monLiveTimer); _monLiveTimer = null; }
 }
 
 async function loadMonitorsTab() {

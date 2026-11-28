@@ -2,6 +2,13 @@ package com.mdesign.mcontrol.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.animation.core.*
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import com.mdesign.mcontrol.R
 import androidx.compose.foundation.background
@@ -93,6 +100,118 @@ private fun buildPanelBaseUrl(addressInput: String, portInput: String, webPathIn
     return if (path.isNotEmpty()) "${baseWithPort.trimEnd('/')}/$path" else baseWithPort.trimEnd('/')
 }
 
+
+@Composable
+private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val accentTint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+    val transition = rememberInfiniteTransition(label = "kontrol_3s")
+    val t by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "t"
+    )
+    val baseAlpha = when {
+        t < 0.36f -> (t / 0.36f).coerceIn(0f, 1f)
+        t > 2.70f -> ((3f - t) / 0.30f).coerceIn(0f, 1f)
+        else -> 1f
+    }
+    val baseScale = if (t < 0.36f) 0.94f + 0.06f * (t / 0.36f) else 1f
+    val writeProg = when {
+        t < 0.36f -> 0f
+        t < 1.62f -> {
+            val u = ((t - 0.36f) / 1.26f).coerceIn(0f, 1f)
+            1f - (1f - u) * (1f - u)
+        }
+        else -> 1f
+    }
+    val textAlpha = if (t > 2.64f) ((2.91f - t) / 0.27f).coerceIn(0f, 1f) else 1f
+
+    fun dotAlpha(start: Float): Float = when {
+        t < start -> 0f
+        t < start + 0.22f -> ((t - start) / 0.22f).coerceIn(0f, 1f)
+        t > 2.64f -> ((2.91f - t) / 0.27f).coerceIn(0f, 1f)
+        else -> 1f
+    }
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        // 1. Dark / Light 3D Squircle Base (Fade-In)
+        Image(
+            painter = painterResource(id = if (isDark) R.drawable.logo_base_dark else R.drawable.logo_base),
+            contentDescription = "MControl",
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    alpha = baseAlpha
+                    scaleX = baseScale
+                    scaleY = baseScale
+                }
+        )
+        // 2. "کنترل" Handwriting Right-to-Left Reveal (Tinted with Theme Primary + 3D Gloss)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(textAlpha)
+                .drawWithContent {
+                    val left = size.width * (0.90f - 0.80f * writeProg)
+                    clipRect(left = left, top = 0f, right = size.width, bottom = size.height) {
+                        this@drawWithContent.drawContent()
+                    }
+                }
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.logo_text_sil),
+                contentDescription = null,
+                colorFilter = accentTint,
+                modifier = Modifier.fillMaxSize()
+            )
+            Image(
+                painter = painterResource(id = R.drawable.logo_text_gloss),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        // 3. Three Dots popping in Right-to-Left (Tinted with Theme Primary + 3D Gloss)
+        val d1 = dotAlpha(1.62f)
+        val d2 = dotAlpha(1.80f)
+        val d3 = dotAlpha(1.98f)
+        listOf(
+            Triple(0.617f, 0.711f, d1),
+            Triple(0.539f, 0.621f, d2),
+            Triple(0.447f, 0.541f, d3)
+        ).forEach { (lx, rx, a) ->
+            if (a > 0.01f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .alpha(a)
+                        .drawWithContent {
+                            clipRect(left = size.width * lx, top = size.height * 0.33f, right = size.width * rx, bottom = size.height * 0.46f) {
+                                this@drawWithContent.drawContent()
+                            }
+                        }
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_dots_sil),
+                        contentDescription = null,
+                        colorFilter = accentTint,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_dots_gloss),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun LoginScreen(
     savedPanels: List<PanelProfile>,
@@ -124,10 +243,8 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.mcontrol_logo),
-            contentDescription = "MControl Logo",
-            modifier = Modifier.size(152.dp)
+        KontrolAnimatedLogo(
+            modifier = Modifier.size(156.dp)
         )
 
         Spacer(Modifier.height(18.dp))
