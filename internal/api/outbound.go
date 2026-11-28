@@ -1161,8 +1161,7 @@ WantedBy=multi-user.target
 	}
 	if !active {
 		jlog, _ := exec.Command("journalctl", "-u", outboundUnit, "-n", "12", "--no-pager").CombinedOutput()
-		return 0, "", http.StatusInternalServerError, fmt.Errorf("Xray started but SOCKS5 127.0.0.1:10808 did not come up:
-%s", strings.TrimSpace(string(jlog)))
+		return 0, "", http.StatusInternalServerError, fmt.Errorf("Xray started but SOCKS5 127.0.0.1:10808 did not come up:\n%s", strings.TrimSpace(string(jlog)))
 	}
 
 	modeDesc := "Single Config"
