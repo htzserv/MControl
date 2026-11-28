@@ -1,5 +1,5 @@
 /* MControl MDesign PWA Service Worker v2 */
-const CACHE_NAME = 'mcontrol-pwa-v24';
+const CACHE_NAME = 'mcontrol-pwa-v26';
 const PRECACHE_URLS = [
   './',
   './manifest.json',
@@ -8,18 +8,6 @@ const PRECACHE_URLS = [
   './icon-512.png',
   './icon-maskable-512.png',
   './apple-touch-icon.png',
-  './logo-base.png',
-  './logo-text.png',
-  './logo-dots.png',
-  './logo-base-dark.png',
-  './logo-text-mask.png',
-  './logo-text-gloss.png',
-  './logo-dots-mask.png',
-  './logo-dots-gloss.png',
-  './logo-word-sil.png',
-  './logo-word-gloss.png',
-  './logo-dots-sil-c.png',
-  './logo-dots-gloss-c.png',
   './logo-word-blue.png',
   './logo-dots-blue.png',
   './logo-word-white.png',

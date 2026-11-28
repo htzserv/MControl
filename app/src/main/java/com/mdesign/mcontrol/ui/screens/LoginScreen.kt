@@ -152,9 +152,9 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
         val d2 = dotAlpha(1.62f)
         val d3 = dotAlpha(1.80f)
         listOf(
-            Triple(0.652f, 0.756f, d1),
-            Triple(0.547f, 0.652f, d2),
-            Triple(0.443f, 0.547f, d3)
+            Triple(0.6391f, 0.7652f, d1),
+            Triple(0.5448f, 0.6391f, d2),
+            Triple(0.4164f, 0.5448f, d3)
         ).forEach { (lx, rx, a) ->
             if (a > 0.01f) {
                 Image(
