@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -967,15 +968,7 @@ func ensureXrayInstalled(mirrorURL string) (string, error) {
 	return installOrUpdateXray(mirrorURL)
 }
 
-func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
-	var payload struct {
-		outboundConfig
-		SaveOnly bool `json:"save_only"`
-	}
-	if !readJSON(w, r, &payload) {
-		return
-	}
-	req := payload.outboundConfig
+func (h *Handler) applyAndStartOutbound(req outboundConfig) (int, string, int, error) {
 	if req.Mode != "single" && req.Mode != "loadbalance" {
 		req.Mode = "single"
 	}
@@ -993,33 +986,6 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Nodes == nil {
 		req.Nodes = []outboundNode{}
-	}
-	req.Link = strings.TrimSpace(req.Link)
-	if len(req.Nodes) == 0 && req.Link != "" {
-		if n, ok := parseNodeSummary(req.Link, "manual"); ok {
-			req.Nodes = append(req.Nodes, n)
-			req.ActiveNodeID = n.ID
-		}
-	}
-	if err := h.saveOutboundCfg(req); err != nil {
-		fail(w, http.StatusInternalServerError, "failed to save outbound config to database: "+err.Error())
-		return
-	}
-
-	if payload.SaveOnly {
-		writeJSON(w, http.StatusOK, map[string]any{
-			"ok":      true,
-			"config":  req,
-			"running": isOutboundActive(),
-			"message": "Outbound config saved.",
-		})
-		return
-	}
-
-	if !req.Enabled {
-		_ = exec.Command("systemctl", "disable", "--now", outboundUnit).Run()
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "running": false, "message": "Master Outbound disabled & saved."})
-		return
 	}
 
 	var outbounds []any
@@ -1039,19 +1005,17 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 				if req.Nodes[i].Enabled && strings.TrimSpace(req.Nodes[i].URI) != "" {
 					chosen = &req.Nodes[i]
 					req.ActiveNodeID = chosen.ID
-					h.saveOutboundCfg(req)
+					_ = h.saveOutboundCfg(req)
 					break
 				}
 			}
 		}
 		if chosen == nil {
-			fail(w, http.StatusBadRequest, "select or add an active single config first")
-			return
+			return 0, "", http.StatusBadRequest, fmt.Errorf("select or add an active single config first")
 		}
 		obj, err := parseLinkToXrayOutbound(chosen.URI, "proxy-0")
 		if err != nil {
-			fail(w, http.StatusBadRequest, "invalid active config: "+err.Error())
-			return
+			return 0, "", http.StatusBadRequest, fmt.Errorf("invalid active config: %w", err)
 		}
 		outbounds = append(outbounds, obj)
 		activeSingleName = chosen.Name
@@ -1075,15 +1039,13 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 			if firstErr != nil {
 				msg = firstErr.Error()
 			}
-			fail(w, http.StatusBadRequest, msg)
-			return
+			return 0, "", http.StatusBadRequest, fmt.Errorf("%s", msg)
 		}
 	}
 
 	bin, err := ensureXrayInstalled(h.store.GetSettings().PanelMirrorURL)
 	if err != nil {
-		fail(w, http.StatusBadGateway, err.Error())
-		return
+		return 0, "", http.StatusBadGateway, err
 	}
 
 	fullCfg := map[string]any{
@@ -1157,13 +1119,11 @@ func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
 	_ = os.MkdirAll("/etc/mcontrol", 0750)
 	b, _ := json.MarshalIndent(fullCfg, "", "  ")
 	if err := os.WriteFile(outboundCfgPath, b, 0600); err != nil {
-		fail(w, http.StatusInternalServerError, "write config failed: "+err.Error())
-		return
+		return 0, "", http.StatusInternalServerError, fmt.Errorf("write config failed: %w", err)
 	}
 
 	if testOut, testErr := exec.Command(bin, "run", "-test", "-c", outboundCfgPath).CombinedOutput(); testErr != nil {
-		fail(w, http.StatusBadRequest, "Xray config validation failed: "+strings.TrimSpace(string(testOut)))
-		return
+		return 0, "", http.StatusBadRequest, fmt.Errorf("Xray config validation failed: %s", strings.TrimSpace(string(testOut)))
 	}
 
 	unitTxt := fmt.Sprintf(`[Unit]
@@ -1183,18 +1143,16 @@ WantedBy=multi-user.target
 `, outboundSocksPort, bin, outboundCfgPath)
 
 	if err := os.WriteFile("/etc/systemd/system/"+outboundUnit, []byte(unitTxt), 0644); err != nil {
-		fail(w, http.StatusInternalServerError, "write service failed: "+err.Error())
-		return
+		return 0, "", http.StatusInternalServerError, fmt.Errorf("write service failed: %w", err)
 	}
 	_ = exec.Command("systemctl", "daemon-reload").Run()
 	_ = exec.Command("systemctl", "enable", outboundUnit).Run()
 	if out, err := exec.Command("systemctl", "restart", outboundUnit).CombinedOutput(); err != nil {
-		fail(w, http.StatusInternalServerError, "start outbound failed: "+strings.TrimSpace(string(out)))
-		return
+		return 0, "", http.StatusInternalServerError, fmt.Errorf("start outbound failed: %s", strings.TrimSpace(string(out)))
 	}
 
 	active := false
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 6; i++ {
 		time.Sleep(500 * time.Millisecond)
 		if isOutboundActive() {
 			active = true
@@ -1203,8 +1161,8 @@ WantedBy=multi-user.target
 	}
 	if !active {
 		jlog, _ := exec.Command("journalctl", "-u", outboundUnit, "-n", "12", "--no-pager").CombinedOutput()
-		fail(w, http.StatusInternalServerError, "Xray started but SOCKS5 127.0.0.1:10808 did not come up:\n"+strings.TrimSpace(string(jlog)))
-		return
+		return 0, "", http.StatusInternalServerError, fmt.Errorf("Xray started but SOCKS5 127.0.0.1:10808 did not come up:
+%s", strings.TrimSpace(string(jlog)))
 	}
 
 	modeDesc := "Single Config"
@@ -1214,11 +1172,98 @@ WantedBy=multi-user.target
 	if req.Mode == "loadbalance" && len(outbounds) > 1 {
 		modeDesc = fmt.Sprintf("Load Balance • %d Nodes (%s)", len(outbounds), req.LBStrategy)
 	}
+	return len(outbounds), modeDesc, http.StatusOK, nil
+}
+
+// StartOutboundAutoRestore reconciles Master Outbound (Xray) on startup / after DB restore.
+func (h *Handler) StartOutboundAutoRestore() {
+	go func() {
+		cfg := h.loadOutboundCfg()
+		if !cfg.Enabled || len(cfg.Nodes) == 0 {
+			return
+		}
+		if _, err := os.Stat(outboundCfgPath); err == nil && isOutboundActive() {
+			return
+		}
+		log.Printf("[outbound] auto-restoring Master Outbound (Xray) from database config...")
+		for attempt := 1; attempt <= 3; attempt++ {
+			n, desc, _, err := h.applyAndStartOutbound(cfg)
+			if err == nil {
+				log.Printf("[outbound] auto-restored successfully (%d node(s) • %s)", n, desc)
+				return
+			}
+			log.Printf("[outbound] auto-restore attempt %d failed: %v", attempt, err)
+			time.Sleep(time.Duration(attempt*8) * time.Second)
+		}
+	}()
+}
+
+func (h *Handler) handleOutboundSave(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		outboundConfig
+		SaveOnly bool `json:"save_only"`
+	}
+	if !readJSON(w, r, &payload) {
+		return
+	}
+	req := payload.outboundConfig
+	if req.Mode != "single" && req.Mode != "loadbalance" {
+		req.Mode = "single"
+	}
+	if req.LBStrategy == "" {
+		req.LBStrategy = "leastPing"
+	}
+	if req.ProbeURL == "" {
+		req.ProbeURL = "https://www.gstatic.com/generate_204"
+	}
+	if req.ProbeInterval == "" {
+		req.ProbeInterval = "30s"
+	}
+	if req.Subs == nil {
+		req.Subs = []outboundSub{}
+	}
+	if req.Nodes == nil {
+		req.Nodes = []outboundNode{}
+	}
+	req.Link = strings.TrimSpace(req.Link)
+	if len(req.Nodes) == 0 && req.Link != "" {
+		if n, ok := parseNodeSummary(req.Link, "manual"); ok {
+			req.Nodes = append(req.Nodes, n)
+			req.ActiveNodeID = n.ID
+		}
+	}
+	if err := h.saveOutboundCfg(req); err != nil {
+		fail(w, http.StatusInternalServerError, "failed to save outbound config to database: "+err.Error())
+		return
+	}
+
+	if payload.SaveOnly {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"config":  req,
+			"running": isOutboundActive(),
+			"message": "Outbound config saved.",
+		})
+		return
+	}
+
+	if !req.Enabled {
+		_ = exec.Command("systemctl", "disable", "--now", outboundUnit).Run()
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "running": false, "message": "Master Outbound disabled & saved."})
+		return
+	}
+
+	activeNodes, modeDesc, code, err := h.applyAndStartOutbound(req)
+	if err != nil {
+		fail(w, code, err.Error())
+		return
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"ok":           true,
 		"running":      true,
 		"xray_version": xrayVersionString(),
-		"active_nodes": len(outbounds),
+		"active_nodes": activeNodes,
 		"socks_addr":   fmt.Sprintf("127.0.0.1:%d", outboundSocksPort),
 		"message":      fmt.Sprintf("Master Outbound active on 127.0.0.1:%d • %s", outboundSocksPort, modeDesc),
 	})

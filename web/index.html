@@ -11,7 +11,8 @@
 <meta name="apple-mobile-web-app-title" content="MControl">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="robots" content="noindex,nofollow">
-<link rel="icon" id="mc-favicon" type="image/png" href="icon-192.png">
+<link rel="icon" id="mc-favicon" type="image/svg+xml" href="favicon.svg?v=2">
+  <link rel="alternate icon" type="image/png" sizes="192x192" href="favicon.png?v=2">
 <title>MControl — MDesign Central Panel</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════
@@ -80,7 +81,7 @@ body[data-den="roomy"]   { --pad: 28px; --gap: 24px; --fs: 1rem; }
 /* ── Background axis ─────────────────────────────────────────────── */
 body[data-bg="grid"]    { background-image: linear-gradient(color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px); background-size: 36px 36px; }
 body[data-bg="dots"]    { background-image: radial-gradient(color-mix(in srgb, var(--text) 16%, transparent) 1.2px, transparent 1.5px); background-size: 22px 22px; }
-body[data-bg="aurora"]  { background-image: radial-gradient(60% 48% at 12% 0%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%), radial-gradient(50% 44% at 92% 8%, color-mix(in srgb, var(--accent2) 22%, transparent), transparent 70%); }
+body[data-bg="aurora"]  { background-image: radial-gradient(85% 42% at 18% -6%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 72%), radial-gradient(75% 40% at 86% 4%, color-mix(in srgb, var(--accent2) 18%, #6366f1), transparent 72%), radial-gradient(60% 35% at 52% 102%, color-mix(in srgb, var(--green) 12%, transparent), transparent 70%); background-attachment: fixed; }
 body[data-bg="mesh"]    { background-image: radial-gradient(40% 40% at 10% 15%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%), radial-gradient(38% 38% at 88% 20%, color-mix(in srgb, var(--accent2) 28%, transparent), transparent 70%), radial-gradient(42% 42% at 70% 92%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%), radial-gradient(35% 35% at 12% 85%, color-mix(in srgb, var(--accent2) 18%, transparent), transparent 70%); }
 body[data-bg="scan"]    { background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px), radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 70%); }
 body[data-bg="noise"]   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .10 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
@@ -353,14 +354,15 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
   overflow-y: auto; overflow-x: hidden;
   background: var(--bg);
 }
-.login-bg-fx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.login-bg-fx { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
 .login-orb {
-  position: absolute; border-radius: 50%; filter: blur(80px); opacity: .42;
-  animation: floatOrb 12s ease-in-out infinite alternate;
+  position: absolute; border-radius: 50%; filter: blur(84px); opacity: .42;
+  animation: floatOrb 14s ease-in-out infinite alternate;
+  will-change: transform;
 }
-.login-orb.o1 { width: 420px; height: 420px; top: -120px; left: -90px; background: var(--accent); animation-duration: 13s; }
-.login-orb.o2 { width: 380px; height: 380px; bottom: -130px; right: -80px; background: var(--accent2); animation-duration: 16s; animation-delay: -4s; }
-.login-orb.o3 { width: 260px; height: 260px; top: 45%; left: 55%; background: var(--green); opacity: .20; animation-duration: 19s; animation-delay: -8s; }
+.login-orb.o1 { width: 460px; height: 460px; top: -140px; left: -100px; background: var(--accent); animation-duration: 14s; }
+.login-orb.o2 { width: 420px; height: 420px; bottom: -140px; right: -90px; background: var(--accent2); animation-duration: 17s; animation-delay: -4s; }
+.login-orb.o3 { width: 320px; height: 320px; top: 42%; left: 54%; background: var(--green); opacity: .24; animation-duration: 20s; animation-delay: -8s; }
 .login-grid-fx {
   position: absolute; inset: -40px; opacity: .28;
   background-image: linear-gradient(color-mix(in srgb, var(--accent) 16%, transparent) 1px, transparent 1px),
@@ -369,6 +371,27 @@ body[data-navx="side"] .side-orbs, body[data-navx="rail"] .side-orbs { inset-inl
   mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 78%);
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 78%);
   animation: driftGrid 24s linear infinite;
+}
+/* Aurora mode: silky flowing Northern-Lights curtains (no circular blob or square grid) */
+#login-screen[data-lfx="aurora"] .login-grid-fx { opacity: 0; }
+#login-screen[data-lfx="aurora"] .login-orb {
+  border-radius: 42% 58% 64% 36% / 48% 38% 62% 52%;
+  filter: blur(72px);
+}
+#login-screen[data-lfx="aurora"] .login-orb.o1 {
+  width: 78vw; max-width: 920px; height: 42vh; top: -14vh; left: -12vw;
+  background: linear-gradient(125deg, color-mix(in srgb, var(--accent) 85%, #22d3ee), color-mix(in srgb, var(--green) 65%, var(--accent)), transparent 82%);
+  opacity: .34; transform: rotate(-11deg); animation-duration: 16s;
+}
+#login-screen[data-lfx="aurora"] .login-orb.o2 {
+  width: 72vw; max-width: 860px; height: 40vh; top: 8vh; right: -14vw; bottom: auto;
+  background: linear-gradient(235deg, color-mix(in srgb, var(--accent2) 82%, #818cf8), color-mix(in srgb, var(--accent) 70%, #38bdf8), transparent 80%);
+  opacity: .30; transform: rotate(10deg); animation-duration: 20s; animation-delay: -5s;
+}
+#login-screen[data-lfx="aurora"] .login-orb.o3 {
+  width: 64vw; max-width: 740px; height: 34vh; bottom: -10vh; left: 18vw; top: auto;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--green) 70%, #2dd4bf), color-mix(in srgb, var(--accent) 72%, #6366f1), transparent 85%);
+  opacity: .22; transform: rotate(-6deg); animation-duration: 24s; animation-delay: -9s;
 }
 #login-screen[data-lfx="minimal"] .login-orb,
 #login-screen[data-lfx="minimal"] .login-grid-fx { opacity: .07; }
@@ -9452,7 +9475,7 @@ function applyTheme() {
   b.classList.toggle('light-mode', !dark);
   document.documentElement.style.colorScheme = m;
   ls.set('mc_last_color_'+(e.base||e.id),themeId);
-  ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom));
+  ls.set('mc_theme', themeId); ls.set('mc_mode', mode); ls.set('mc_style_' + themeId, JSON.stringify(custom)); if (typeof saveThemeToServer === 'function') saveThemeToServer(false);
   ls.set('mc_layout_'+(e.base || e.id),JSON.stringify(Object.fromEntries(Object.entries(custom).filter(([key])=>layoutKey(key)))));
   if ($('login-theme-drawer')?.classList.contains('open')) renderLoginSwatches();
   const mb = $('btn-mode');
@@ -9474,10 +9497,86 @@ window.addEventListener('resize', () => { document.body.dataset.navx = navxFor(e
 if (mq && mq.addEventListener) mq.addEventListener('change', () => { if (mode === 'auto') { applyTheme(); renderThemes(); renderStudio(); } });
 
 
+let _themeTouchedPreLogin = false;
+let _themeSaveTimer = null;
+let _applyingServerTheme = false;
+
+function collectThemePayload() {
+  return {
+    themeId: typeof themeId !== 'undefined' ? themeId : 'mdesign',
+    mode: typeof mode !== 'undefined' ? mode : 'auto',
+    custom: (typeof custom !== 'undefined' && custom && typeof custom === 'object') ? custom : {},
+    loginFX: ls.get('mc_login_fx', 'aurora'),
+    lang: typeof lang !== 'undefined' ? lang : ls.get('mc_lang', 'en')
+  };
+}
+
+function saveThemeToServer(immediate) {
+  if (_applyingServerTheme) return;
+  if (typeof token === 'undefined' || !token) {
+    _themeTouchedPreLogin = true;
+    return;
+  }
+  const doSave = () => {
+    const raw = JSON.stringify(collectThemePayload());
+    api('api/ui/theme', 'POST', { theme_json: raw }).catch(() => {});
+  };
+  if (immediate) {
+    if (_themeSaveTimer) { clearTimeout(_themeSaveTimer); _themeSaveTimer = null; }
+    doSave();
+  } else {
+    if (_themeSaveTimer) clearTimeout(_themeSaveTimer);
+    _themeSaveTimer = setTimeout(doSave, 450);
+  }
+}
+
+async function syncThemeFromServer(pushIfTouched) {
+  if (typeof token === 'undefined' || !token) return;
+  if (pushIfTouched && _themeTouchedPreLogin) {
+    _themeTouchedPreLogin = false;
+    saveThemeToServer(true);
+    return;
+  }
+  try {
+    const r = await api('api/ui/theme');
+    if (r && r.ok && r.theme_json) {
+      const cfg = JSON.parse(r.theme_json);
+      if (cfg && typeof cfg === 'object') {
+        _applyingServerTheme = true;
+        try {
+          if (cfg.themeId && TH.some(x => x.id === cfg.themeId)) {
+            themeId = cfg.themeId;
+            ls.set('mc_theme', themeId);
+          }
+          if (cfg.mode && ['auto', 'dark', 'light'].includes(cfg.mode)) {
+            mode = cfg.mode;
+            ls.set('mc_mode', mode);
+          }
+          if (cfg.custom && typeof cfg.custom === 'object') {
+            custom = cfg.custom;
+            ls.set('mc_style_' + themeId, JSON.stringify(custom));
+          }
+          if (cfg.loginFX) setLoginFX(cfg.loginFX);
+          if (cfg.lang && (cfg.lang === 'fa' || cfg.lang === 'en')) {
+            lang = cfg.lang;
+            ls.set('mc_lang', lang);
+          }
+          applyTheme();
+          if (typeof applyLang === 'function') applyLang();
+        } finally {
+          _applyingServerTheme = false;
+        }
+        return;
+      }
+    }
+    saveThemeToServer(true);
+  } catch (e) {}
+}
+
 function setLoginFX(fx) {
   const sc = $('login-screen');
   if (sc) sc.dataset.lfx = fx;
-  ls.set('mc_login_fx', fx);
+  ls.set('mc_login_fx', fx); if (typeof saveThemeToServer === 'function') saveThemeToServer(false);
   document.querySelectorAll('[data-lfx-pick]').forEach(b => b.classList.toggle('on', b.dataset.lfxPick === fx));
 }
 let _loginThemeFam = 'All';
@@ -14861,7 +14960,7 @@ function stopTimers() {
 function enterApp() {
   $('login-screen').style.display = 'none'; $('setup-screen').style.display = 'none'; $('app').style.display = 'block';
   applyLang(); applyUtilCollapsed(); const _pwaTab = new URLSearchParams(location.search).get('tab'); switchTab(['overview','servers','datacenter','tunnels','domains','monitor','settings'].includes(_pwaTab) ? _pwaTab : 'overview');
-  loadServers(); loadSettings(); loadProfiles(); startTimers();
+  loadServers(); loadSettings(); loadProfiles(); if (typeof syncThemeFromServer === 'function') syncThemeFromServer(false); startTimers();
   setTimeout(() => checkUpdates(false), 1200);
 }
 async function login() {
@@ -14876,6 +14975,7 @@ async function login() {
       token = res.token; ls.set('mc_token', token);
       $('l-pass').value = ''; if ($('l-2fa')) $('l-2fa').value = '';
       if ($('l-2fa-wrap')) $('l-2fa-wrap').style.display = 'none';
+      if (typeof syncThemeFromServer === 'function') await syncThemeFromServer(true);
       enterApp();
     } else {
       if (res.require_2fa && $('l-2fa-wrap')) {

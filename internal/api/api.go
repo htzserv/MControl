@@ -488,6 +488,29 @@ func (h *Handler) handleSaveTabPrefs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
+func (h *Handler) handleGetUITheme(w http.ResponseWriter, r *http.Request) {
+	raw := h.store.GetSetting("ui_theme_json")
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "theme_json": raw})
+}
+
+func (h *Handler) handleSaveUITheme(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ThemeJSON string `json:"theme_json"`
+	}
+	if !readJSON(w, r, &req) {
+		return
+	}
+	if len(req.ThemeJSON) > 65536 {
+		fail(w, http.StatusBadRequest, "theme payload too large")
+		return
+	}
+	if err := h.store.SetSetting("ui_theme_json", req.ThemeJSON); err != nil {
+		fail(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (h *Handler) handleIranReachabilityCheck(w http.ResponseWriter, r *http.Request) {
 	id, ok := pathID(w, r)
 	if !ok {
@@ -706,6 +729,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/ui/nav-tabs", h.auth(h.handleSaveNavTabs))
 	mux.HandleFunc("GET /api/ui/tab-prefs", h.auth(h.handleGetTabPrefs))
 	mux.HandleFunc("POST /api/ui/tab-prefs", h.auth(h.handleSaveTabPrefs))
+	mux.HandleFunc("GET /api/ui/theme", h.auth(h.handleGetUITheme))
+	mux.HandleFunc("POST /api/ui/theme", h.auth(h.handleSaveUITheme))
 	mux.HandleFunc("POST /api/servers/{id}/install", h.auth(h.handleInstallCore))
 	mux.HandleFunc("POST /api/servers/{id}/pair", h.auth(h.handlePairPeer))
 	mux.HandleFunc("POST /api/servers/{id}/outbound", h.auth(h.handleToggleServerOutbound))

@@ -73,6 +73,7 @@ func main() {
 	innerMux := http.NewServeMux()
 	apiHandler := api.New(store, activePort)
 	apiHandler.Register(innerMux)
+	apiHandler.StartOutboundAutoRestore()
 	apiHandler.StartAutoProbe()
 	apiHandler.StartTelegramBot()
 	apiHandler.StartCloudflareAutoSync()
