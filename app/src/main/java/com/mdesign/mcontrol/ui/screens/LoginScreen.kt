@@ -1,12 +1,15 @@
 package com.mdesign.mcontrol.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.animation.core.*
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -116,58 +119,64 @@ private fun easeOutCubic(x: Float): Float {
 }
 
 private fun buildKntrPath(w: Float, h: Float): Path {
-    val sx = w / 960f
-    val sy = h / 559f
+    val sx = w / 656f
+    val sy = h / 370f
     return Path().apply {
-        moveTo(900f * sx, 68f * sy)
-        quadraticTo(825f * sx, 108f * sy, 779f * sx, 152f * sy)
-        quadraticTo(775f * sx, 175f * sy, 818f * sx, 212f * sy)
-        quadraticTo(882f * sx, 265f * sy, 874f * sx, 306f * sy)
-        quadraticTo(865f * sx, 354f * sy, 795f * sx, 355f * sy)
-        quadraticTo(725f * sx, 355f * sy, 684f * sx, 344f * sy)
-        quadraticTo(678f * sx, 300f * sy, 678f * sx, 252f * sy)
-        quadraticTo(678f * sx, 302f * sy, 672f * sx, 344f * sy)
-        quadraticTo(625f * sx, 348f * sy, 576f * sx, 344f * sy)
-        quadraticTo(568f * sx, 298f * sy, 568f * sx, 250f * sy)
-        quadraticTo(568f * sx, 300f * sy, 562f * sx, 344f * sy)
-        quadraticTo(508f * sx, 348f * sy, 446f * sx, 344f * sy)
-        quadraticTo(434f * sx, 298f * sy, 434f * sx, 254f * sy)
-        quadraticTo(434f * sx, 320f * sy, 428f * sx, 368f * sy)
-        quadraticTo(418f * sx, 422f * sy, 365f * sx, 458f * sy)
-        quadraticTo(338f * sx, 476f * sy, 316f * sx, 486f * sy)
+        moveTo(606f * sx, 48f * sy)
+        quadraticTo(562f * sx, 68f * sy, 529f * sx, 98f * sy)
+        quadraticTo(526f * sx, 118f * sy, 558f * sx, 146f * sy)
+        quadraticTo(598f * sx, 178f * sy, 594f * sx, 204f * sy)
+        quadraticTo(588f * sx, 236f * sy, 535f * sx, 235f * sy)
+        quadraticTo(488f * sx, 234f * sy, 464f * sx, 224f * sy)
+        quadraticTo(460f * sx, 194f * sy, 460f * sx, 162f * sy)
+        quadraticTo(460f * sx, 196f * sy, 456f * sx, 226f * sy)
+        quadraticTo(418f * sx, 231f * sy, 389f * sx, 226f * sy)
+        quadraticTo(384f * sx, 195f * sy, 384f * sx, 165f * sy)
+        quadraticTo(384f * sx, 198f * sy, 380f * sx, 227f * sy)
+        quadraticTo(340f * sx, 232f * sy, 300f * sx, 228f * sy)
+        quadraticTo(292f * sx, 196f * sy, 292f * sx, 170f * sy)
+        quadraticTo(292f * sx, 214f * sy, 286f * sx, 248f * sy)
+        quadraticTo(274f * sx, 288f * sy, 242f * sx, 310f * sy)
+        quadraticTo(228f * sx, 318f * sy, 218f * sx, 322f * sy)
     }
 }
 
 private fun buildLamPath(w: Float, h: Float): Path {
-    val sx = w / 960f
-    val sy = h / 559f
+    val sx = w / 656f
+    val sy = h / 370f
     return Path().apply {
-        moveTo(288f * sx, 78f * sy)
-        lineTo(290f * sx, 235f * sy)
-        quadraticTo(290f * sx, 325f * sy, 275f * sx, 368f * sy)
-        quadraticTo(250f * sx, 412f * sy, 185f * sx, 414f * sy)
-        quadraticTo(112f * sx, 414f * sy, 86f * sx, 360f * sy)
-        quadraticTo(74f * sx, 314f * sy, 96f * sx, 268f * sy)
-        quadraticTo(112f * sx, 246f * sy, 140f * sx, 245f * sy)
+        moveTo(192f * sx, 52f * sy)
+        lineTo(193f * sx, 168f * sy)
+        quadraticTo(193f * sx, 218f * sy, 182f * sx, 246f * sy)
+        quadraticTo(162f * sx, 276f * sy, 114f * sx, 277f * sy)
+        quadraticTo(66f * sx, 274f * sy, 52f * sx, 230f * sy)
+        quadraticTo(47f * sx, 196f * sy, 65f * sx, 168f * sy)
+        quadraticTo(74f * sx, 156f * sy, 86f * sx, 155f * sy)
     }
 }
 
 private fun buildDotPath(cx: Float, cy: Float, w: Float, h: Float): Path {
-    val sx = w / 960f
-    val sy = h / 559f
+    val sx = w / 656f
+    val sy = h / 370f
     return Path().apply {
-        moveTo((cx + 10f) * sx, (cy - 4f) * sy)
-        quadraticTo((cx + 11f) * sx, (cy + 10f) * sy, cx * sx, (cy + 10f) * sy)
-        quadraticTo((cx - 11f) * sx, (cy + 10f) * sy, (cx - 10f) * sx, (cy - 2f) * sy)
-        quadraticTo((cx - 8f) * sx, (cy - 11f) * sy, (cx + 4f) * sx, (cy - 8f) * sy)
+        moveTo((cx + 7.5f) * sx, (cy - 3.3f) * sy)
+        quadraticTo((cx + 8.5f) * sx, (cy + 6.7f) * sy, cx * sx, (cy + 6.7f) * sy)
+        quadraticTo((cx - 8.5f) * sx, (cy + 6.7f) * sy, (cx - 7.5f) * sx, (cy - 1.3f) * sy)
+        quadraticTo((cx - 5.5f) * sx, (cy - 8.3f) * sy, (cx + 2.5f) * sx, (cy - 6.3f) * sy)
     }
 }
 
 @Composable
 private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
-    val accentTint = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val baseAccent = MaterialTheme.colorScheme.primary
+    // Two-tone flat ribbon palette derived smoothly from theme accent
+    val toneLight = if (isDark) lerp(baseAccent, Color.White, 0.36f) else lerp(baseAccent, Color.White, 0.22f)
+    val toneDark  = if (isDark) lerp(baseAccent, Color(0xFF0A1426), 0.30f) else lerp(baseAccent, Color(0xFF0B1628), 0.44f)
+    val lightTint = ColorFilter.tint(toneLight)
+    val darkTint  = ColorFilter.tint(toneDark)
 
-    val transition = rememberInfiniteTransition(label = "kontrol_pen_3s")
+    val transition = rememberInfiniteTransition(label = "kontrol_ribbon_3s")
     val t by transition.animateFloat(
         initialValue = 0f,
         targetValue = 3f,
@@ -186,7 +195,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
     val d3Prog   = easeOutCubic((t - 2.19f) / 0.18f)
 
     Box(modifier = modifier.alpha(loopAlpha), contentAlignment = Alignment.Center) {
-        // 1. "کنتر" — Theme-colored fill + fixed 3D shadows & gloss, revealed by seamless pen stroke
+        // 1. "کنتر" — Pure Vector Two-Tone Flat Ribbon revealed by seamless pen stroke
         if (kntrProg > 0.005f) {
             Box(
                 modifier = Modifier
@@ -202,7 +211,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                             path = seg,
                             color = Color.White,
                             style = Stroke(
-                                width = size.width * (142f / 960f),
+                                width = size.width * (92f / 656f),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             ),
@@ -211,19 +220,20 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                     }
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_kntr_sil),
+                    painter = painterResource(id = R.drawable.logo_kntr_base),
                     contentDescription = "کنترل",
-                    colorFilter = accentTint,
+                    colorFilter = darkTint,
                     modifier = Modifier.fillMaxSize()
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.logo_kntr_shade),
+                    painter = painterResource(id = R.drawable.logo_kntr_light),
                     contentDescription = null,
+                    colorFilter = lightTint,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
-        // 2. "ل" — Theme-colored fill + fixed 3D shadows & gloss, revealed by seamless pen stroke
+        // 2. "ل" — Pure Vector Two-Tone Flat Ribbon revealed by seamless pen stroke
         if (lamProg > 0.005f) {
             Box(
                 modifier = Modifier
@@ -239,7 +249,7 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                             path = seg,
                             color = Color.White,
                             style = Stroke(
-                                width = size.width * (138f / 960f),
+                                width = size.width * (92f / 656f),
                                 cap = StrokeCap.Round,
                                 join = StrokeJoin.Round
                             ),
@@ -248,56 +258,49 @@ private fun KontrolAnimatedLogo(modifier: Modifier = Modifier) {
                     }
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_lam_sil),
+                    painter = painterResource(id = R.drawable.logo_lam_base),
                     contentDescription = null,
-                    colorFilter = accentTint,
+                    colorFilter = darkTint,
                     modifier = Modifier.fillMaxSize()
                 )
                 Image(
-                    painter = painterResource(id = R.drawable.logo_lam_shade),
+                    painter = painterResource(id = R.drawable.logo_lam_light),
                     contentDescription = null,
+                    colorFilter = lightTint,
                     modifier = Modifier.fillMaxSize()
                 )
             }
         }
-        // 3. Two dots (same theme color & fixed 3D shade) — swift pen taps RTL
-        val d2Anim = easeOutCubic((t - 2.08f) / 0.18f)
+        // 3. Three dots: ن (light) + two unified ت dots (both dark)
         if (d1Prog > 0.005f) {
-            Box(
+            Canvas(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                    .drawWithContent {
-                        drawContent()
-                        val strokeW = size.width * (72f / 960f)
-                        val stroke = Stroke(width = strokeW, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                        val combined = Path()
-                        listOf(
-                            Triple(678f, 137f, d1Prog),
-                            Triple(568f, 137f, d2Anim)
-                        ).forEach { (cx, cy, p) ->
-                            if (p > 0.005f) {
-                                val dp = buildDotPath(cx, cy, size.width, size.height)
-                                val pm = PathMeasure().apply { setPath(dp, false) }
-                                val seg = Path()
-                                pm.getSegment(0f, pm.length * p, seg, true)
-                                combined.addPath(seg)
-                            }
-                        }
-                        drawPath(path = combined, color = Color.White, style = stroke, blendMode = BlendMode.DstIn)
-                    }
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_dots_sil),
-                    contentDescription = null,
-                    colorFilter = accentTint,
-                    modifier = Modifier.fillMaxSize()
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.logo_dots_shade),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize()
-                )
+                val sx = size.width / 656f
+                val sy = size.height / 370f
+                val r = 29.3f * sx
+                drawCircle(color = toneLight, radius = r, center = Offset(447.5f * sx, 86.3f * sy))
+                drawCircle(color = toneDark,  radius = r, center = Offset(384.1f * sx, 86.3f * sy))
+                drawCircle(color = toneDark,  radius = r, center = Offset(320.4f * sx, 86.3f * sy))
+
+                val stroke = Stroke(width = 58f * sx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                val combined = Path()
+                listOf(
+                    Triple(447.5f, 86.3f, d1Prog),
+                    Triple(384.1f, 86.3f, d2Prog),
+                    Triple(320.4f, 86.3f, d3Prog)
+                ).forEach { (cx, cy, p) ->
+                    if (p > 0.005f) {
+                        val dp = buildDotPath(cx, cy, size.width, size.height)
+                        val pm = PathMeasure().apply { setPath(dp, false) }
+                        val seg = Path()
+                        pm.getSegment(0f, pm.length * p, seg, true)
+                        combined.addPath(seg)
+                    }
+                }
+                drawPath(path = combined, color = Color.White, style = stroke, blendMode = BlendMode.DstIn)
             }
         }
     }
